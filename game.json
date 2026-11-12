@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "title": "Die Schatten von Eldermoor",
+  "startLevel": "test1",
+  "startGold": 20,
+  "startInv": { "potion": 2 },
+  "items": {
+    "potion": { "name": "Heiltrank", "kind": "consumable", "heal": 15, "desc": "Stellt 15 LP wieder her." },
+    "iron_key": { "name": "Eiserner Schlüssel", "kind": "quest", "desc": "Schwer und kalt. Passt in ein Eisenschloss. Kann nicht verloren gehen." }
+  },
+  "heroes": [
+    { "id": "h1", "name": "Berenn", "role": "Krieger", "row": "front", "maxHp": 34, "atk": 8, "def": 5, "init": 4, "ranged": false },
+    { "id": "h2", "name": "Sira", "role": "Schurke", "row": "front", "maxHp": 24, "atk": 7, "def": 3, "init": 7, "ranged": false },
+    { "id": "h3", "name": "Odalys", "role": "Priester", "row": "back", "maxHp": 26, "atk": 5, "def": 3, "init": 3, "ranged": false },
+    { "id": "h4", "name": "Ivo", "role": "Magier", "row": "back", "maxHp": 18, "atk": 8, "def": 1, "init": 5, "ranged": true }
+  ],
+  "enemies": {
+    "schrat": { "name": "Moorschrat", "hp": 80, "atk": 13, "def": 3, "init": 5, "gold": 15 }
+  },
+  "palettes": {
+    "keller": {
+      "stone": [168, 160, 146],
+      "moss": [92, 128, 70],
+      "wood": [150, 104, 62],
+      "iron": [118, 124, 136],
+      "floor": [128, 118, 106],
+      "ceil": [96, 90, 84],
+      "flesh": [112, 132, 96],
+      "glow": [255, 206, 92]
+    }
+  },
+  "levels": {
+    "test1": {
+      "id": "test1",
+      "name": "Testgewölbe (Phase 1)",
+      "palette": "keller",
+      "map": [
+        "######################",
+        "#.....#.......########",
+        "#.....m.......m#######",
+        "#.............m#######",
+        "#.....#.......########",
+        "#######.##############",
+        "#######.#####.......m#",
+        "#######.............m#",
+        "#############.......m#",
+        "######################"
+      ],
+      "start": { "x": 3, "y": 3, "dir": 1 },
+      "objects": [
+        { "id": "door_a", "type": "door", "x": 6, "y": 3, "locked": false },
+        { "id": "chest_a", "type": "chest", "x": 12, "y": 1, "loot": [ { "item": "iron_key", "n": 1 }, { "item": "potion", "n": 2 }, { "gold": 12 } ] },
+        { "id": "door_b", "type": "door", "x": 12, "y": 7, "locked": true, "key": "iron_key" },
+        { "id": "en1", "type": "enemy", "x": 16, "y": 7, "kind": "schrat" },
+        { "id": "exit1", "type": "exit", "x": 19, "y": 7 }
+      ]
+    }
+  }
+}
