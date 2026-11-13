@@ -45,6 +45,18 @@ Gegner-EP (jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die voll
 | Magier | hinten | ja | 18 | 8 | 1 | 5 | 30/9/2/4 |
 | Waldläufer | hinten | ja | 24 | 7 | 2 | 6 | 40/8/3/5 |
 
+## Fähigkeiten und Ressource (vorläufig, Schritt 3a)
+
+Angriff und Verteidigen schenken 1 Punkt Ressource zurück; nach jedem Kampf ist sie voll.
+
+| Beruf | Ressource (Stufe 1 / Stufe 10) | Fähigkeit | Kosten | Wirkung |
+|---|---|---|---|---|
+| Krieger | Ausdauer 10 / 28 | Wuchtschlag | 4 | Schwerer Hieb: 160 % Schaden. |
+| Schurke | Ausdauer 10 / 28 | Hinterhalt | 4 | Trifft immer, 140 % Schaden. |
+| Priester | Mana 12 / 39 | Heilende Hand | 5 | Heilt einen Helden um 20 LP. |
+| Magier | Mana 12 / 39 | Feuerblitz | 5 | Magischer Treffer: 180 % Schaden. |
+| Waldläufer | Ausdauer 10 / 28 | Gezielter Schuss | 4 | Trifft immer, 150 % Schaden. |
+
 ## Werte je Stufe (Mensch, keine Rassenmodifikatoren)
 
 ### Krieger

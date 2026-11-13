@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Phase 2 Schritt 0, 1 (auf dem Gerät getestet) und 2 (nur Node/Headless getestet) umgesetzt, Version 0.2.2
+Autor: eldermoor-dev · Stand: Phase 2 Schritt 0 bis 2 auf dem Gerät getestet; Schritt 3a (Mana/Ausdauer, Fähigkeiten) nur Node/Headless getestet, Version 0.3.0
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -52,7 +52,7 @@ Autor: eldermoor-dev · Stand: Phase 2 Schritt 0, 1 (auf dem Gerät getestet) un
 **Spielstand (Version 3)**: `{format:'eldermoor-save', v:3, savedAt, state}`; `state` = `rng, levelId, player, heroes, inv, gold, flags, objs, seen, notes, steps` (`combat` wird nie gespeichert).
 Migration: `MIGRATIONS[n]` wandelt Version n → n+1 (`logic.js`); beim Laden wird bis `SAVE_VERSION` verkettet.
 **Migration v1→v2 (erläutert):** v1-Helden hatten nur `role`. Die Migration ergänzt je Held `race: 'human'`, `cls` (Krieger→warrior, Schurke→rogue, Priester→priest, Magier→mage) und `look = Index*7+3` (genau der bisherige Porträt-Startwert, Aussehen bleibt gleich). **Nichts anderes wird verändert**: LP, Kampfwerte, Position, Gold, Inventar, Objekte, Karte, Notizen, Zufallszustand bleiben bitgleich. „Mensch“ hat Modifikatoren 0, die gespeicherten Werte entsprechen daher genau Mensch + Beruf. Unbekannter Beruf in einem v1-Stand → Ladefehler mit Meldung. Die Eingabedatei wird nicht verändert; erst beim nächsten Speichern entsteht v2. v1-Stände bleiben dauerhaft ladbar. Neuere Spielstände werden abgelehnt. Geladene Stände werden validiert (`validateState`).
-**Migration v2→v3 (erläutert):** Helden bekommen `level: 1` und `xp: 0`. Sonst wird nichts verändert (Stufe 1 hat kein Wachstum, die gespeicherten Kampfwerte bleiben genau gleich; LP, Position, Gold, Inventar, Objekte, Karte bleiben bitgleich). v1-Stände laufen die Kette v1→v2→v3. Die Eingabe wird nicht verändert; erst beim nächsten Speichern entsteht v3. Gültigkeit beim Laden: Stufe ganzzahlig 1..10, EP ganzzahlig ≥ 0. **Hinweis:** Der geplante Schritt „Mehrere Gebiete“ braucht damit Spielstand **v4** (Migration v3→v4), nicht v3.
+**Migration v2→v3 (erläutert):** Helden bekommen `level: 1` und `xp: 0`. Sonst wird nichts verändert (Stufe 1 hat kein Wachstum, die gespeicherten Kampfwerte bleiben genau gleich; LP, Position, Gold, Inventar, Objekte, Karte bleiben bitgleich). v1-Stände laufen die Kette v1→v2→v3. Die Eingabe wird nicht verändert; erst beim nächsten Speichern entsteht v3. Gültigkeit beim Laden: Stufe ganzzahlig 1..10, EP ganzzahlig ≥ 0. **Migration v3→v4 (0.3.0):** Helden bekommen `maxMp` und `mp` (voll) nach `classes.<id>.res` und Stufe (`deriveMp`). Die Migration bekommt die Spieldaten als zweites Argument (`migrate(save, migrations, target, data)`). Gültigkeit: `maxMp` ganzzahlig ≥ 0, `0 ≤ mp ≤ maxMp`. **Hinweis:** Der geplante Schritt „Mehrere Gebiete“ braucht damit Spielstand **v5** (Migration v4→v5).
 Erfahrung: Nach einem Sieg bekommt jeder Held mit LP > 0 die EP-Summe der besiegten Gegner (`grantXp`). Bewusstlose gehen leer aus. Aufstieg setzt die Kampfwerte neu; die LP steigen nur um den Zuwachs der Max-LP (keine Vollheilung). Bei Stufe 10 werden EP gedeckelt.
 Slots in IndexedDB: Schlüssel `auto`, `slot1`, `slot2`, `slot3`, `settings`.
 
@@ -78,6 +78,14 @@ Monster-Sprite neu: `genSchrat` erzeugt 160×160 statt 64×64 (Borke, Moos, Gewe
 ## Änderungen 0.1.5
 Neue Einstellung **Bildschärfe**: Scharf (960×540, Texturen auf 128 verdoppelt mit Scale2x + Korn) ist jetzt Standard, Retro (480×270, wie in der Vorgabe) bleibt wählbar. Auf Nutzerwunsch („zu verpixelt“). Technik: `setResolution(r)` ändert die live exportierten `W`/`H` in render.js, `buildRenderer()` in main.js baut Renderer, Texturen, Canvas und ImageData neu; die Bühne bleibt ein ganzzahliges Vielfaches von 480×270. Bei nicht ganzzahligem Verhältnis (z. B. 3×/2 = 1,5) glättet der Browser (`image-rendering:auto`), bei ganzzahligem bleibt es pixelig-scharf. Messung der Renderzeit auf dem Gerät: Debug-Modus.
 
+## Änderungen 0.3.0 (Phase 2, Schritt 3a: Ressource und Fähigkeiten)
+- Schritt 3 wird in Teile geteilt, die einzeln auf dem Handy getestet werden: **3a** Ressource + eine Fähigkeit je Beruf (diese Version), **3b** Statuswirkungen, **3c** bis zu 3 Gegner (Zielwahl, „Alle angreifen“, angekündigte Aktionen, einfache KI, Schadensdetail, neue Gegnertypen), **3d** Pause zwischen Zügen, schnelle Doppeltipps ignorieren.
+- `classes.<id>.res = { name, base, growth }` (Mana oder Ausdauer, Wachstum in Zehnteln je Stufe, Rassen ändern es nicht) und `classes.<id>.ability = { id, name, kind: damage|heal, cost, mult (Prozent) | heal, sure?, desc }`. Krieger Wuchtschlag (160 %), Schurke Hinterhalt (140 %, trifft immer), Priester Heilende Hand (+20 LP, Zielwahl), Magier Feuerblitz (180 %), Waldläufer Gezielter Schuss (150 %, trifft immer). Zahlen **vorläufig**, siehe BALANCE.md.
+- Regeln: Fähigkeit kostet Ressource; Angriff und Verteidigen geben 1 Punkt zurück (`MP_REGEN`); nach Sieg und nach Niederlage ist die Ressource voll (vorläufig, bis Rast in Schritt 5). **Keine Abklingzeit** in 3a (die Kosten begrenzen den Einsatz); falls Abklingzeit gewünscht, später nachziehen. Normalangriff bleibt unverändert, Fähigkeiten sind also stärker.
+- `calcDamage(state, atk, def, {mult, sure})`: gleiche Zufallsfolge wie vorher (der Trefferwurf wird auch bei `sure` verbraucht). `heroAction` Typ `ability` (Fehler `no-mp`, `no-ability`, `bad-target`).
+- Oberfläche: Button „✦ Name (Kosten Ressource)“ statt des gesperrten „Zaubern“; Priester wählt Ziel; Heldenkarte zeigt `x/y MP` oder `AU`; Touch-Knopf „Fähigkeit“ (nur im Kampf). Spielstand v4 (siehe oben). BALANCE.md um Fähigkeitentabelle erweitert.
+- Tests: 36 Node. Neu: Fähigkeiten (Kosten, zu wenig Ressource, Rückgewinn, Heilung, Sieg füllt auf, Migration v3→v4, Datenprüfung). `VERSION` 0.3.0. Noch **nicht** auf dem Gerät geprüft.
+
 ## Änderungen 0.2.2 (Phase 2, Schritt 2)
 - Stufen 1 bis 10, EP-Tabelle, Wachstum je Beruf (`growth`), `deriveStats` mit Stufe, `grantXp`, EP-Vergabe nach dem Sieg (Moorschrat 120 EP: alle vier Helden steigen auf Stufe 2 auf). Spielstand v3 mit Migration v2→v3 (siehe oben). Charakteransicht zeigt Stufe und „EP x / y“.
 - `BALANCE.md` (erzeugt aus game.json). Alle Zahlen **vorläufig** (vom Assistenten gesetzt, nicht gespielt/gemessen).
@@ -101,6 +109,7 @@ Neue Einstellung **Bildschärfe**: Scharf (960×540, Texturen auf 128 verdoppelt
 - Tests: 29 (vorher 20), neu u. a. echter v1-Spielstand (mit dem Code von 0.1.5 erzeugt, in tests.js eingebettet), Gruppenvalidierung, 25 Rasse×Beruf-Kombinationen, Gleichheit Schnellstart = alte Gruppe, Porträts, Standard `steps=false`.
 
 ## Entscheidungen des Nutzers für Phase 2 (Stand 13.11.2026)
+- **Bewusstlose Helden bekommen keine Erfahrung** (Nutzer, 13.11.2026). Sie bleiben bei 0 LP, bis eine Rast (Schritt 5) sie mit 1 LP zurückholt. So ist es schon umgesetzt (`grantXp`).
 - Gruppe: 4 Helden **frei erstellbar** (Rasse + Beruf), dazu Schnellstart-Gruppe.
 - **Rassen (5):** Mensch, Elf, Zwerg, Ork, Gnom.
 - **Berufe (5):** Krieger, Schurke, Priester, Magier, Waldläufer.
@@ -121,7 +130,7 @@ Neue Einstellung **Bildschärfe**: Scharf (960×540, Texturen auf 128 verdoppelt
 - **Keine Musik** bleibt (Entscheidung des Nutzers hat Vorrang vor der Gemini-Liste; am 13.11.2026 bestätigt, **vorläufig**, kann später geändert werden). Fokus auf Geräusche (Ambient, später Monsterlaute in der Ferne, Schalter, Wind draußen).
 - Übernommen aus der Ideenliste: „Alle angreifen“ (Schritt 3), Stangenwaffen aus der Hinterreihe über Waffenreichweite (Schritt 5), Automap ohne Geheimnisse mit eigenen Markern (vorhanden; Geheimwände bleiben bis zur Entdeckung Wand), Rätsel nur mit Hinweisen in der Welt (Wandinschriften, Dialoge), Zauberleiste ohne Blättern (Schritt 5), faire Schwierigkeit. Bodengegenstände auf Touch per Antippen statt Ziehen.
 - Gruppe: 4 Helden (`PARTY_SIZE`); bis 6 mit NPC-Rekruten erst Phase 4 (Platz der Heldenkarten in der Leiste vorher prüfen).
-- **Neuer Schritt vor dem Testdungeon: „Mehrere Gebiete“ (vom Nutzer am 13.11.2026 bestätigt).** Grund (aus dem Code belegt): `state.objs`, `state.seen`, `state.notes` gehören heute einem Level, `applyDefeat` kehrt zum Start dieses Levels zurück, `exit` setzt nur ein Flag. Nötig: Übergänge (Treppe/Ausgang → Gebiet + Position), Zustand je Gebiet, Spielstand **v4** mit Migration v3→v4 (v1/v2/v3-Stände bleiben ladbar; v3 ist seit 0.2.2 vergeben).
+- **Neuer Schritt vor dem Testdungeon: „Mehrere Gebiete“ (vom Nutzer am 13.11.2026 bestätigt).** Grund (aus dem Code belegt): `state.objs`, `state.seen`, `state.notes` gehören heute einem Level, `applyDefeat` kehrt zum Start dieses Levels zurück, `exit` setzt nur ein Flag. Nötig: Übergänge (Treppe/Ausgang → Gebiet + Position), Zustand je Gebiet, Spielstand **v5** mit Migration v4→v5 (v1 bis v4 bleiben ladbar; v4 ist seit 0.3.0 vergeben).
 - **Kampagnenplan (Vorschlag des Assistenten, Zeiten sind Schätzungen, erst der Testdungeon liefert Messwerte):**
 
 | Kap. | Ort / Biom | Schwerpunkt | Schätzung |
@@ -137,7 +146,7 @@ Neue Einstellung **Bildschärfe**: Scharf (960×540, Texturen auf 128 verdoppelt
 
 ## Nicht enthalten / geplant
 - Charaktereditor, Rassen, Berufe, Attribute, XP/Stufen, Ausrüstung, Runenzauber, Rast/Nahrung → Phase 2
-- Mehrere Gebiete/Stockwerke (Spielstand v4), Hebel, Druckplatten, Teleporter, Geheimwände, Wandinschriften, Bodengegenstände, Dialogfenster, Falle, mehrere Gegnertypen → Phase 3, danach Kapitel 1 (Testdungeon)
+- Mehrere Gebiete/Stockwerke (Spielstand v5), Hebel, Druckplatten, Teleporter, Geheimwände, Wandinschriften, Bodengegenstände, Dialogfenster, Falle, mehrere Gegnertypen → Phase 3, danach Kapitel 1 (Testdungeon)
 - Kapitel 2 bis 5, Außenbiom (Himmel, Bäume), rekrutierbare NPCs, Gruppe bis 6 → Phase 4
 - Gamepad (Einstellung ist nur ein Hinweistext), Fernseher-Optimierung, Performance-Messung auf dem Gerät, Balance-Feinschliff → Phase 5
 - Echte Icons für Buttons (aktuell Textsymbole)

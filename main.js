@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setReso
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.2.2';
+const VERSION = '0.3.0';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -25,7 +25,7 @@ const S = {
   data: null, game: null, lvl: null, settings: { ...DEFAULTS }, tex: null, rc: null, ctx: null, img: null,
   sfx: new Sfx(), cam: { x: 0, y: 0, a: 0 }, target: { x: 0, y: 0, a: 0 }, tween: null,
   held: [], queued: null, nextAllowed: 0, lock: false, modal: null, started: false, log: [],
-  debug: { god: false }, itemMode: false, invUse: null, draft: null, fps: 60, frameMs: 0, lastRender: 0,
+  debug: { god: false }, itemMode: false, abMode: false, invUse: null, draft: null, fps: 60, frameMs: 0, lastRender: 0,
   installEvent: null, loadMs: null, hadController: false
 };
 
@@ -62,7 +62,7 @@ function startGame(state) {
   S.game = state;
   S.lvl = getLevel(S.data, state);
   S.rc.setPalette(S.data.palettes[S.lvl.palette]);
-  S.held = []; S.queued = null; S.lock = false; S.itemMode = false; S.log = [];
+  S.held = []; S.queued = null; S.lock = false; S.itemMode = false; S.abMode = false; S.log = [];
   S.started = true;
   snapCam();
   closeModal();
@@ -266,7 +266,7 @@ function act(name) {
       if (g.combat) heroAct({ type: 'attack' });
       else { const f = frontEnemy(); if (f) startCombatUI(f); else say('Kein Gegner in Reichweite.'); }
       break;
-    case 'cast': say('Runenzauber folgen in Phase 2.'); break;
+    case 'cast': if (g.combat && !S.lock) useAbility(); else say(g.combat ? 'Warte, bis du dran bist.' : 'Fähigkeiten gibt es nur im Kampf.'); break;
     default: break;
   }
 }
@@ -347,11 +347,11 @@ async function heroAct(a) {
   if (S.lock || !S.game.combat) return;
   const r = heroAction(S.game, S.data, a);
   if (r.error) {
-    const t = { 'full-hp': 'Dieser Held hat volle LP.', 'no-item': 'Kein Heiltrank mehr.', 'bad-target': 'Das Ziel kann nicht geheilt werden.', 'not-available': 'Noch nicht verfügbar.' }[r.error];
+    const t = { 'full-hp': 'Dieser Held hat volle LP.', 'no-item': 'Kein Heiltrank mehr.', 'bad-target': 'Das Ziel kann nicht geheilt werden.', 'not-available': 'Noch nicht verfügbar.', 'no-mp': 'Zu wenig Mana oder Ausdauer.', 'no-ability': 'Dieser Held hat keine Fähigkeit.' }[r.error];
     if (t) say(t);
     return;
   }
-  S.itemMode = false;
+  S.itemMode = false; S.abMode = false;
   showResult(r);
   renderAll();
   if (r.over === 'victory') { vib([40, 60, 40]); return; }
@@ -364,10 +364,21 @@ function onActionBar(e) {
   const c = b.dataset.c;
   if (c === 'attack') heroAct({ type: 'attack' });
   else if (c === 'defend') heroAct({ type: 'defend' });
-  else if (c === 'item') { S.itemMode = !S.itemMode; renderCombat(); }
-  else if (c === 'spell') say('Runenzauber folgen in Phase 2.');
+  else if (c === 'item') { S.itemMode = !S.itemMode; S.abMode = false; renderCombat(); }
+  else if (c === 'spell') useAbility();
+  else if (c.startsWith('abheal:')) { S.abMode = false; heroAct({ type: 'ability', target: +c.slice(7) }); }
   else if (c === 'log') openCombatLog();
   else if (c.startsWith('heal:')) heroAct({ type: 'item', item: 'potion', hero: +c.slice(5) });
+}
+// Fähigkeit des Helden am Zug: Schadensfähigkeit wirkt sofort, Heilung fragt nach dem Ziel
+function useAbility() {
+  const a = currentActor(S.game);
+  if (!a || a.side !== 'h') return;
+  const h = S.game.heroes[a.idx], ab = S.data.classes[h.cls].ability;
+  if (!ab) return;
+  if (h.mp < ab.cost) { say(`Zu wenig ${S.data.classes[h.cls].res.name} (${h.mp}/${ab.cost}).`); return; }
+  if (ab.kind === 'heal') { S.abMode = !S.abMode; S.itemMode = false; renderCombat(); }
+  else heroAct({ type: 'ability' });
 }
 function showGameOver() {
   S.sfx.play('defeat');
@@ -414,7 +425,7 @@ function renderParty() {
     card.append(makePortrait(h));
     const info = document.createElement('div');
     info.style.cssText = 'flex:1;min-width:0';
-    info.innerHTML = `<div class="nm">${esc(h.name)}</div><div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div><div class="hp">${h.hp}/${h.maxHp} <span class="rw">${h.row === 'front' ? '· vorn' : '· hinten'}</span></div>`;
+    info.innerHTML = `<div class="nm">${esc(h.name)}</div><div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div><div class="hp">${h.hp}/${h.maxHp} · ${h.mp}/${h.maxMp} ${esc(S.data.classes[h.cls].res.name === 'Mana' ? 'MP' : 'AU')} <span class="rw">${h.row === 'front' ? '· vorn' : '· hinten'}</span></div>`;
     card.append(info);
     box.append(card);
   });
@@ -437,10 +448,16 @@ function renderCombat() {
   if (c.over || !a) { ab.hidden = true; return; }
   if (a.side !== 'h' || S.lock) { ab.innerHTML = `<div class="wait">${a.side === 'h' ? esc(S.game.heroes[a.idx].name) + ' ist gleich dran …' : 'Gegner ist am Zug …'}</div><button class="ab" data-c="log" style="flex:0 0 auto">Protokoll</button>`; return; }
   const potions = S.game.inv.potion || 0;
-  let html = `<button class="ab" data-c="attack">⚔ Angriff</button><button class="ab" data-c="defend">⛨ Verteidigen</button><button class="ab" data-c="item" ${potions ? '' : 'disabled'}>Gegenstand (${potions})</button><button class="ab" data-c="spell" disabled>✦ Zaubern</button><button class="ab" data-c="log">Protokoll</button>`;
+  const ch = S.game.heroes[a.idx], cab = S.data.classes[ch.cls].ability, cres = S.data.classes[ch.cls].res;
+  const abBtn = cab ? `<button class="ab" data-c="spell" ${ch.mp >= cab.cost ? '' : 'disabled'}>✦ ${esc(cab.name)} (${cab.cost} ${esc(cres.name)})</button>` : '';
+  let html = `<button class="ab" data-c="attack">⚔ Angriff</button><button class="ab" data-c="defend">⛨ Verteidigen</button><button class="ab" data-c="item" ${potions ? '' : 'disabled'}>Gegenstand (${potions})</button>${abBtn}<button class="ab" data-c="log">Protokoll</button>`;
   if (S.itemMode) {
     html += '<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">' + S.game.heroes.map((h, i) =>
       `<button class="ab" data-c="heal:${i}" ${h.hp > 0 && h.hp < h.maxHp ? '' : 'disabled'}>Heiltrank → ${esc(h.name)}</button>`).join('') + '</div>';
+  }
+  if (S.abMode && cab && cab.kind === 'heal') {
+    html += '<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">' + S.game.heroes.map((h, i) =>
+      `<button class="ab" data-c="abheal:${i}" ${h.hp > 0 && h.hp < h.maxHp ? '' : 'disabled'}>${esc(cab.name)} → ${esc(h.name)}</button>`).join('') + '</div>';
   }
   ab.innerHTML = html;
 }
@@ -470,7 +487,7 @@ function openMenu() {
 function helpHtml() {
   return `<h2>Steuerung &amp; Info</h2>
   <h3>Links: Bewegung</h3><p>↑ Vor, ↓ Zurück, ← → seitwärts, ↶ ↷ um 90° drehen. Gedrückt halten wiederholt die Bewegung.</p>
-  <h3>Rechts: Aktionen</h3><p>◉ Interagieren (Türen, Truhen, Gegner ansprechen), ⚔ Angriff, ✦ Zaubern (ab Phase 2), ▣ Inventar, ☻ Charakter.</p>
+  <h3>Rechts: Aktionen</h3><p>◉ Interagieren (Türen, Truhen, Gegner ansprechen), ⚔ Angriff, ✦ Fähigkeit (nur im Kampf, kostet Mana oder Ausdauer), ▣ Inventar, ☻ Charakter.</p>
   <h3>Oben</h3><p>Karte (auf eine erkundete Zelle tippen setzt oder entfernt eine Notiz), Speichern, Laden, Einstellungen, Menü.</p>
   <h3>Kampf</h3><p>Rundenbasiert. Die Zugreihenfolge steht oben. Hinterreihe-Helden ohne Fernkampf treffen nur halb so hart.</p>
   <h3>Ziel des Prototyps</h3><p>Truhe im Nebenraum öffnen, Eisenschlüssel nehmen, die Eisentür aufschließen, den Moorschrat besiegen und den Runenstein erreichen.</p>

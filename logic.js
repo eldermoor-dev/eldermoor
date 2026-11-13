@@ -1,7 +1,7 @@
 // Die Schatten von Eldermoor – Spiellogik (ohne DOM, in Node testbar)
 // Autor: eldermoor-dev
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 export const SAVE_FORMAT = 'eldermoor-save';
 export const DIRS = [
   { dx: 0, dy: -1 }, // 0 Norden
@@ -73,6 +73,14 @@ export function deriveStats(data, race, cls, level = 1) {
   return out;
 }
 
+// Ressource (Mana/Ausdauer): classes.<id>.res = { name, base, growth (Zehntel je Stufe) }; Rassen ändern sie nicht.
+export function deriveMp(data, cls, level = 1) {
+  const r = data.classes[cls] && data.classes[cls].res;
+  if (!r) return 0;
+  return Math.max(0, r.base + Math.floor(((level - 1) * (r.growth || 0)) / 10));
+}
+export const MP_REGEN = 1; // Angriff oder Verteidigen schenkt so viele Punkte zurück
+
 // Verteilt Erfahrung an alle nicht bewusstlosen Helden; Stufenaufstieg erhöht Werte, LP steigen um den Zuwachs der Max-LP.
 // Bewusstlose (LP 0) gehen leer aus. Rückgabe: Liste der Aufstiege.
 export function grantXp(state, data, amount, msgs = []) {
@@ -90,6 +98,8 @@ export function grantXp(state, data, amount, msgs = []) {
       h.level = to;
       for (const k of STAT_KEYS) h[k] = st[k];
       h.hp = Math.min(h.maxHp, h.hp + dHp);
+      const nMp = deriveMp(data, h.cls, to), dMp = Math.max(0, nMp - h.maxMp);
+      h.maxMp = nMp; h.mp = Math.min(nMp, h.mp + dMp);
       ups.push({ hero: h.name, level: to });
       msgs.push(`${h.name} steigt auf Stufe ${to} auf!`);
     }
@@ -127,7 +137,8 @@ export function createHero(data, spec, index) {
   return {
     id: 'h' + (index + 1), name: spec.name.trim(), race: spec.race, cls: spec.cls, role: c.name, level: 1, xp: 0,
     row: spec.row || c.row, maxHp: st.maxHp, atk: st.atk, def: st.def, init: st.init, ranged: !!c.ranged,
-    look: Number.isInteger(spec.look) ? spec.look : index * 7 + 3, hp: st.maxHp
+    look: Number.isInteger(spec.look) ? spec.look : index * 7 + 3, hp: st.maxHp,
+    maxMp: deriveMp(data, spec.cls, 1), mp: deriveMp(data, spec.cls, 1)
   };
 }
 
@@ -354,8 +365,10 @@ export function currentActor(state) {
 
 // Trefferchance 90 %, Schaden = Angriff + 0..2 − Verteidigung/2 (min. 1)
 export function calcDamage(state, atk, def, opts = {}) {
-  if (rand(state) >= 0.9) return 0;
+  const roll = rand(state);
+  if (!opts.sure && roll >= 0.9) return 0;
   let d = Math.max(1, atk + randInt(state, 0, 2) - Math.floor(def / 2));
+  if (opts.mult) d = Math.max(1, Math.floor((d * opts.mult) / 100));
   if (opts.backMelee) d = Math.ceil(d / 2);
   if (opts.defending) d = Math.max(1, Math.floor(d / 2));
   return d;
@@ -376,10 +389,15 @@ function finishVictory(state, data, msgs) {
     if (obj) { obj.dead = true; obj.hp = 0; }
   }
   state.gold += gold;
+  for (const h of state.heroes) h.mp = h.maxMp; // vorläufig: Ressource nach dem Kampf voll (Rast folgt in Schritt 5)
   msgs.push(`Sieg! Beute: ${gold} Gold.`);
   if (xp > 0) { msgs.push(`Erfahrung: +${xp} EP für jeden Helden, der noch steht.`); grantXp(state, data, xp, msgs); }
   state.combat = null;
   return gold;
+}
+
+function regen(h, msgs) {
+  if (h.mp < h.maxMp) h.mp = Math.min(h.maxMp, h.mp + MP_REGEN);
 }
 
 export function heroAction(state, data, act) {
@@ -403,10 +421,38 @@ export function heroAction(state, data, act) {
       sfx = 'hit';
       if (e.hp === 0) msgs.push(`${e.name} bricht zusammen.`);
     }
+    regen(h, msgs);
+  } else if (act.type === 'ability') {
+    const ab = data.classes[h.cls].ability;
+    if (!ab) return { error: 'no-ability' };
+    if (h.mp < ab.cost) return { error: 'no-mp' };
+    const rn = data.classes[h.cls].res.name;
+    if (ab.kind === 'heal') {
+      const t = state.heroes[act.target];
+      if (!t || t.hp <= 0 || t.hp >= t.maxHp) return { error: 'bad-target' };
+      const gain = Math.min(ab.heal, t.maxHp - t.hp);
+      t.hp += gain; h.mp -= ab.cost;
+      msgs.push(`${h.name} wirkt ${ab.name}: ${t.name} +${gain} LP (−${ab.cost} ${rn}).`);
+      sfx = 'heal';
+    } else {
+      let ti = act.target;
+      if (ti == null || !c.enemies[ti] || c.enemies[ti].hp <= 0) ti = c.enemies.findIndex((e) => e.hp > 0);
+      const e = c.enemies[ti];
+      h.mp -= ab.cost;
+      const d = calcDamage(state, h.atk, data.enemies[e.kind].def, { backMelee: h.row === 'back' && !h.ranged, mult: ab.mult, sure: !!ab.sure });
+      if (d === 0) { msgs.push(`${h.name} setzt ${ab.name} ein, verfehlt aber ${e.name} (−${ab.cost} ${rn}).`); sfx = 'miss'; }
+      else {
+        e.hp = Math.max(0, e.hp - d);
+        msgs.push(`${h.name} setzt ${ab.name} ein: ${d} Schaden an ${e.name} (−${ab.cost} ${rn}).`);
+        sfx = 'hit';
+        if (e.hp === 0) msgs.push(`${e.name} bricht zusammen.`);
+      }
+    }
   } else if (act.type === 'defend') {
     c.defending[a.idx] = true;
     msgs.push(`${h.name} geht in Deckung.`);
     sfx = 'defend';
+    regen(h, msgs);
   } else if (act.type === 'item') {
     const r = useItemOutside(state, data, act.item || 'potion', act.hero);
     if (r.error) return r;
@@ -461,7 +507,7 @@ export function enemyStep(state, data, opts = {}) {
 export function applyDefeat(state, data) {
   const lvl = getLevel(data, state);
   state.player = { x: lvl.start.x, y: lvl.start.y, dir: lvl.start.dir };
-  state.heroes.forEach((h) => { h.hp = Math.max(1, Math.ceil(h.maxHp / 2)); });
+  state.heroes.forEach((h) => { h.hp = Math.max(1, Math.ceil(h.maxHp / 2)); h.mp = h.maxMp; });
   const loss = Math.floor(state.gold * 0.25);
   state.gold -= loss;
   if (state.combat) {
@@ -495,6 +541,17 @@ export const MIGRATIONS = {
     const st = save.state;
     if (!st || !Array.isArray(st.heroes)) throw new Error('Spielstand v2: Gruppe fehlt');
     return { ...save, v: 3, state: { ...st, heroes: st.heroes.map((h) => ({ ...h, level: 1, xp: 0 })) } };
+  },
+  // v3 -> v4: Helden bekommen Mana/Ausdauer (voll) passend zu Beruf und Stufe. Alles andere bleibt.
+  // Braucht die Spieldaten (Beruf -> Ressource); die Migration bekommt sie über das zweite Argument.
+  3: (save, data) => {
+    const st = save.state;
+    if (!st || !Array.isArray(st.heroes)) throw new Error('Spielstand v3: Gruppe fehlt');
+    return { ...save, v: 4, state: { ...st, heroes: st.heroes.map((h) => {
+      if (!data || !has(data.classes, h.cls)) throw new Error(`Spielstand v3: Beruf „${h && h.cls}“ unbekannt`);
+      const m = deriveMp(data, h.cls, Number.isInteger(h.level) ? h.level : 1);
+      return { ...h, maxMp: m, mp: m };
+    }) } };
   }
 };
 
@@ -502,12 +559,12 @@ export function serialize(state) {
   return { format: SAVE_FORMAT, v: SAVE_VERSION, savedAt: new Date().toISOString(), state: clone(state) };
 }
 
-export function migrate(save, migrations = MIGRATIONS, target = SAVE_VERSION) {
+export function migrate(save, migrations = MIGRATIONS, target = SAVE_VERSION, data = null) {
   let s = save;
   while (s.v < target) {
     const m = migrations[s.v];
     if (!m) throw new Error(`Keine Migration von Version ${s.v}`);
-    const next = m(s);
+    const next = m(s, data);
     if (!next || !(next.v > s.v)) throw new Error('Migration hat die Version nicht erhöht');
     s = next;
   }
@@ -536,6 +593,8 @@ export function validateState(state, data) {
     if (!Number.isInteger(hh.look)) err.push(`${n}: Aussehen ungültig`);
     if (!Number.isInteger(hh.level) || hh.level < 1 || hh.level > maxLevel(data)) err.push(`${n}: Stufe ungültig`);
     if (!Number.isInteger(hh.xp) || hh.xp < 0) err.push(`${n}: Erfahrung ungültig`);
+    if (!Number.isInteger(hh.maxMp) || hh.maxMp < 0) err.push(`${n}: Max-Ressource ungültig`);
+    else if (!Number.isInteger(hh.mp) || hh.mp < 0 || hh.mp > hh.maxMp) err.push(`${n}: Ressource ungültig`);
     if (typeof hh.hp !== 'number' || hh.hp < 0 || hh.hp > hh.maxHp) err.push(`${n}: LP ungültig`);
   });
   if (!state.inv || typeof state.inv !== 'object') err.push('Inventar ungültig');
@@ -554,7 +613,7 @@ export function deserialize(input, data, migrations = MIGRATIONS) {
   }
   if (!save || save.format !== SAVE_FORMAT || !Number.isInteger(save.v) || save.v < 1) throw new Error('Keine Eldermoor-Spielstanddatei');
   if (save.v > SAVE_VERSION) throw new Error('Spielstand stammt aus einer neueren Version – bitte Spiel aktualisieren');
-  const m = migrate(save, migrations);
+  const m = migrate(save, migrations, SAVE_VERSION, data);
   const errors = validateState(m.state, data);
   if (errors.length) throw new Error('Spielstand ungültig: ' + errors.join('; '));
   m.state.combat = null; // Kämpfe werden nie mitten im Kampf gespeichert/geladen
@@ -577,6 +636,8 @@ export function balanceMarkdown(data) {
   for (const r of Object.values(data.races)) L.push(`| ${r.name} | ${sg(r.mods.maxHp)} | ${sg(r.mods.atk)} | ${sg(r.mods.def)} | ${sg(r.mods.init)} |`);
   L.push('', '## Berufe (Basis auf Stufe 1, Wachstum in Zehnteln je Stufe)', '', '| Beruf | Reihe | Fernkampf | LP | Angriff | Verteidigung | Initiative | Wachstum LP/Ang/Vert/Init |', '|---|---|---|---|---|---|---|---|');
   for (const c of Object.values(data.classes)) L.push(`| ${c.name} | ${c.row === 'front' ? 'vorn' : 'hinten'} | ${c.ranged ? 'ja' : 'nein'} | ${c.base.maxHp} | ${c.base.atk} | ${c.base.def} | ${c.base.init} | ${c.growth.maxHp}/${c.growth.atk}/${c.growth.def}/${c.growth.init} |`);
+  L.push('', '## Fähigkeiten und Ressource (vorläufig, Schritt 3a)', '', `Angriff und Verteidigen schenken ${MP_REGEN} Punkt Ressource zurück; nach jedem Kampf ist sie voll.`, '', '| Beruf | Ressource (Stufe 1 / Stufe ' + mx + ') | Fähigkeit | Kosten | Wirkung |', '|---|---|---|---|---|');
+  for (const [cid, c] of Object.entries(data.classes)) { const a = c.ability; if (a) L.push(`| ${c.name} | ${c.res.name} ${deriveMp(data, cid, 1)} / ${deriveMp(data, cid, mx)} | ${a.name} | ${a.cost} | ${a.desc} |`); }
   L.push('', '## Werte je Stufe (Mensch, keine Rassenmodifikatoren)', '');
   for (const [cid, c] of Object.entries(data.classes)) {
     L.push(`### ${c.name}`, '', '| Stufe | LP | Angriff | Verteidigung | Initiative |', '|---|---|---|---|---|');

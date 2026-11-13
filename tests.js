@@ -216,7 +216,7 @@ export async function runTests(data, env = {}) {
     assert(threw, 'ohne Migration');
     threw = false; try { L.migrate(save, { 1: (x) => x }, 2); } catch { threw = true; }
     assert(threw, 'Migration ohne Versionssprung');
-    assert(L.SAVE_VERSION === 3 && typeof L.MIGRATIONS[1] === 'function' && typeof L.MIGRATIONS[2] === 'function', 'echte Migrationen 1→2 und 2→3 müssen vorhanden sein');
+    assert(L.SAVE_VERSION === 4 && [1, 2, 3].every((n) => typeof L.MIGRATIONS[n] === 'function'), 'echte Migrationen 1→2, 2→3 und 3→4 müssen vorhanden sein');
   });
 
   // ---- Phase 2, Schritt 1: Rassen, Berufe, Gruppe, Migration v1→v2 ----
@@ -313,11 +313,11 @@ export async function runTests(data, env = {}) {
     bad((s) => { s.pop(); }, /genau 4/);
   });
 
-  await test('Spielstand v3: eigene Gruppe überlebt Speichern/Laden, ungültige Heldendaten werden abgelehnt', () => {
+  await test('Spielstand v4: eigene Gruppe überlebt Speichern/Laden, ungültige Heldendaten werden abgelehnt', () => {
     const s = L.newGame(data, 9, CUSTOM);
     s.heroes[1].hp = 5; s.heroes[0].hp = 0;
     const save = L.serialize(s);
-    eq(save.v, 3, 'Version');
+    eq(save.v, 4, 'Version');
     eq(L.deserialize(JSON.stringify(save), data), { ...s, combat: null }, 'Roundtrip');
     const rej = (mut, label) => {
       const b = L.serialize(s); mut(b.state.heroes[2]);
@@ -332,7 +332,7 @@ export async function runTests(data, env = {}) {
     rej((h) => { delete h.look; }, 'fehlendes Aussehen');
   });
 
-  await test('Migration v1→v2→v3: echter Spielstand aus Version 0.1.5 lädt, nichts geht verloren', () => {
+  await test('Migration v1→v2→v3→v4: echter Spielstand aus Version 0.1.5 lädt, nichts geht verloren', () => {
     const v1 = JSON.parse(V1_SAVE);
     eq(v1.v, 1, 'Fixture ist v1');
     assert(!('race' in v1.state.heroes[0]), 'Fixture darf noch keine Rasse haben');
@@ -341,6 +341,7 @@ export async function runTests(data, env = {}) {
       const o = v1.state.heroes[i];
       for (const k of Object.keys(o)) eq(h[k], o[k], `Held ${i + 1}.${k} geändert`);
       eq([h.race, h.look, h.level, h.xp], ['human', i * 7 + 3, 1, 0], `Held ${i + 1}: neue Felder`);
+      eq([h.maxMp, h.mp], [L.deriveMp(data, h.cls, 1), L.deriveMp(data, h.cls, 1)], `Held ${i + 1}: Ressource voll`);
       const dv = L.deriveStats(data, h.race, h.cls);
       eq([h.maxHp, h.atk, h.def, h.init], [dv.maxHp, dv.atk, dv.def, dv.init], `Held ${i + 1}: Werte = Mensch + Beruf`);
     });
@@ -352,8 +353,65 @@ export async function runTests(data, env = {}) {
     assert(obj.v === 1 && !('race' in obj.state.heroes[0]), 'Eingabe wird nicht verändert');
     assert(L.tryMove(st, data, 'f').moved, 'Spiel läuft weiter');
     const again = L.serialize(st);
-    eq(again.v, 3, 'neu gespeichert als v3');
+    eq(again.v, 4, 'neu gespeichert als v4');
     eq(L.deserialize(JSON.stringify(again), data).player, st.player, 'erneut ladbar');
+  });
+
+  await test('Fähigkeiten (3a): Kosten, Wirkung, Rückgewinn, Ressource nach Sieg, Migration v3→v4', () => {
+    eq([L.deriveMp(data, 'warrior', 1), L.deriveMp(data, 'mage', 1), L.deriveMp(data, 'mage', 10)], [10, 12, 39], 'Ressourcenwerte');
+    const s = L.newGame(data, 5);
+    const [wa, ro, pr, ma] = s.heroes;
+    eq([wa.maxMp, pr.maxMp, ma.mp], [10, 12, 12], 'Startwerte');
+    L.startCombat(s, data, s.objs.find((o) => o.type === 'enemy'));
+    const cur = () => s.heroes[L.currentActor(s).idx];
+    let guard = 0;
+    while (L.currentActor(s).side !== 'h' && guard++ < 10) L.enemyStep(s, data, { god: true });
+    const h = cur();
+    const e = s.combat.enemies[0];
+    const r = L.heroAction(s, data, { type: 'ability', target: 0 });
+    if (h.cls === 'priest') eq(r.error, 'bad-target', 'Heilung braucht ein Ziel'); else {
+      assert(!r.error && h.mp === h.maxMp - data.classes[h.cls].ability.cost, 'Kosten abgezogen: ' + JSON.stringify(r));
+    }
+    // zu wenig Ressource
+    const s2 = L.newGame(data, 5); L.startCombat(s2, data, s2.objs.find((o) => o.type === 'enemy'));
+    while (L.currentActor(s2).side !== 'h') L.enemyStep(s2, data, { god: true });
+    const h2 = s2.heroes[L.currentActor(s2).idx]; h2.mp = 0;
+    eq(L.heroAction(s2, data, { type: 'ability', target: 0 }).error, 'no-mp', 'zu wenig Ressource');
+    // Rückgewinn durch Angriff / Verteidigen
+    const hp0 = s2.combat.enemies[0].hp;
+    L.heroAction(s2, data, { type: 'defend' });
+    eq(h2.mp, 1, 'Verteidigen schenkt 1');
+    // Priester heilt
+    const s3 = L.newGame(data, 5); L.startCombat(s3, data, s3.objs.find((o) => o.type === 'enemy'));
+    while (!(L.currentActor(s3).side === 'h' && s3.heroes[L.currentActor(s3).idx].cls === 'priest')) {
+      const a = L.currentActor(s3);
+      if (a.side === 'h') L.heroAction(s3, data, { type: 'defend' }); else L.enemyStep(s3, data, { god: true });
+    }
+    const pi = L.currentActor(s3).idx; s3.heroes[0].hp = 3; const mp0 = s3.heroes[pi].mp;
+    const hr = L.heroAction(s3, data, { type: 'ability', target: 0 });
+    assert(!hr.error && s3.heroes[0].hp === 23 && s3.heroes[pi].mp === mp0 - 5, 'Heilung +20, Kosten 5: ' + JSON.stringify(hr));
+    // Sieg füllt Ressource wieder auf
+    s3.heroes.forEach((x) => { x.mp = 0; }); s3.combat.enemies[0].hp = 1;
+    let g2 = 0;
+    while (s3.combat && g2++ < 30) { const a = L.currentActor(s3); if (a.side === 'h') L.heroAction(s3, data, { type: 'attack', target: 0 }); else L.enemyStep(s3, data, { god: true }); }
+    assert(s3.heroes.every((x) => x.mp === x.maxMp), 'Ressource nach Sieg voll');
+    // Migration v3 -> v4 mit Stufe 5
+    const old = L.serialize(L.newGame(data, 7)); old.v = 3;
+    old.state.heroes.forEach((x) => { delete x.maxMp; delete x.mp; });
+    old.state.heroes[3].level = 5; old.state.heroes[3].xp = 1000;
+    for (const k of ['maxHp', 'atk', 'def', 'init']) old.state.heroes[3][k] = L.deriveStats(data, 'human', 'mage', 5)[k];
+    old.state.heroes[3].hp = old.state.heroes[3].maxHp;
+    const up = L.deserialize(JSON.stringify(old), data);
+    eq([up.heroes[3].maxMp, up.heroes[3].mp], [L.deriveMp(data, 'mage', 5), L.deriveMp(data, 'mage', 5)], 'Magier Stufe 5');
+    // Stufenaufstieg erhöht die Ressource
+    const s4 = L.newGame(data, 3); L.grantXp(s4, data, 100, []);
+    eq(s4.heroes[3].maxMp, L.deriveMp(data, 'mage', 2), 'maxMp wächst');
+    // Datenprüfung: jede Fähigkeit vollständig
+    for (const [k, c] of Object.entries(data.classes)) {
+      assert(c.res && c.res.name && Number.isInteger(c.res.base) && Number.isInteger(c.res.growth), `Beruf ${k}: Ressource`);
+      assert(c.ability && c.ability.name && Number.isInteger(c.ability.cost) && c.ability.cost <= c.res.base, `Beruf ${k}: Fähigkeit bezahlbar`);
+      assert(c.ability.kind === 'heal' ? c.ability.heal > 0 : c.ability.mult >= 100, `Beruf ${k}: Wirkung`);
+    }
   });
 
   await test('Migration v1→v2: beschädigte v1-Stände werden mit klarer Meldung abgelehnt', () => {
