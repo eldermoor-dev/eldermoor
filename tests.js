@@ -253,6 +253,25 @@ export async function runTests(data, env = {}) {
     return `${n} Kombinationen`;
   });
 
+  await test('Zufallsgruppe: immer gültig, Vorderreihe nie leer, Namen bleiben', () => {
+    const names = ['Anna', 'Bo', 'Cem', 'Dora'];
+    let seed = 12345;
+    const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+    const seen = new Set();
+    for (let i = 0; i < 300; i++) {
+      const p = L.randomParty(data, names, rnd);
+      eq(p.map((h) => h.name), names, 'Namen');
+      eq(L.validateParty(data, p), [], 'gültig');
+      assert(p.some((h) => h.row === 'front'), 'Vorderreihe besetzt');
+      L.buildParty(data, p).forEach((h) => seen.add(h.race));
+    }
+    eq(seen.size, Object.keys(data.races).length, 'alle Rassen kommen vor');
+    // Sonderfall: Zufallszahl 0,99 ergibt lauter Hinterreihen-Berufe, Held 1 wird dann auf Vorderreihe gesetzt
+    const worst = L.randomParty(data, names, () => 0.999);
+    assert(worst.some((h) => h.row === 'front'), 'Vorderreihe auch im Extremfall');
+    eq(L.randomParty(data, names, () => 0.999).length, 4, 'vier Helden');
+  });
+
   await test('Schnellstart-Gruppe entspricht exakt der festen Gruppe aus Version 0.1.5', () => {
     const old = [['Berenn', 'Krieger', 'front', 34, 8, 5, 4, false], ['Sira', 'Schurke', 'front', 24, 7, 3, 7, false],
       ['Odalys', 'Priester', 'back', 26, 5, 3, 3, false], ['Ivo', 'Magier', 'back', 18, 8, 1, 5, true]];

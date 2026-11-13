@@ -3,13 +3,13 @@
 import {
   DIRS, DIR_NAMES, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, validateParty, NAME_MAX
+  buildParty, deriveStats, validateParty, randomParty, NAME_MAX
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setResolution, W, H, BASE_W, BASE_H } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.2.0';
+const VERSION = '0.2.1';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -499,8 +499,8 @@ function openInventory() {
 function openCharacter() {
   const g = S.game;
   openModal(`<h2>Charaktere</h2><div class="grid4">` + g.heroes.map((h) =>
-    `<div class="hc"><b>${esc(h.name)}</b><div class="muted">${esc(raceName(h.race))} · ${esc(h.role)} · ${h.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}</div>
-    <div>LP ${h.hp}/${h.maxHp}</div><div>Angriff ${h.atk} · Verteidigung ${h.def}</div><div>Initiative ${h.init}</div><div>${h.ranged ? 'Fernkampf' : 'Nahkampf'}</div></div>`).join('') +
+    `<div class="hc"><b>${esc(h.name)}</b><div class="muted">${esc(raceName(h.race))} · ${esc(h.role)}</div><div class="muted">${h.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}</div>
+    <div>LP ${h.hp}/${h.maxHp}</div><div>Angriff ${h.atk}</div><div>Verteidigung ${h.def}</div><div>Initiative ${h.init}</div><div>${h.ranged ? 'Fernkampf' : 'Nahkampf'}</div></div>`).join('') +
     `</div><p class="muted">Attribute, Stufen und Ausrüstung folgen in den nächsten Schritten von Phase 2.</p><div class="acts">${closeBtn}</div>`, 'character');
 }
 
@@ -711,6 +711,12 @@ async function onModalClick(e) {
   else if (m === 'party-quick') startNewGame(null);
   else if (m === 'party-edit' || m === 'party-reset') openPartyEditor(true);
   else if (m === 'party-back') openNewGame();
+  else if (m === 'party-random') {
+    if (!S.draft) initDraft();
+    const rs = randomParty(S.data, S.draft.map((h) => h.name));
+    S.draft = rs.map((r) => ({ name: r.name, race: r.race, cls: r.cls, row: r.row, rowSet: false }));
+    openPartyEditor(false);
+  }
   else if (m === 'party-start') {
     const specs = (S.draft || []).map((h) => ({ name: h.name, race: h.race, cls: h.cls, row: h.row }));
     const err = validateParty(S.data, specs);
@@ -783,7 +789,7 @@ function openPartyEditor(reset) {
   }).join('');
   openModal(`<h2>Gruppe erstellen</h2><p class="muted">Vier Helden. Rasse und Beruf bestimmen die Werte (vorläufige Zahlen). Die Reihe folgt dem Beruf, lässt sich aber ändern.</p>
     <div class="grid4" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">${cards}</div><p class="bad" id="party-err"></p>
-    <div class="acts"><button class="mb primary" data-m="party-start">Spiel starten</button><button class="mb" data-m="party-reset">Schnellstart-Werte laden</button><button class="mb" data-m="party-back">Zurück</button></div>`, 'party');
+    <div class="acts"><button class="mb primary" data-m="party-start">Spiel starten</button><button class="mb" data-m="party-random">Zufällige Gruppe</button><button class="mb" data-m="party-reset">Schnellstart-Werte laden</button><button class="mb" data-m="party-back">Zurück</button></div>`, 'party');
   box.scrollTop = keep;
   paintCanvases('data-p', S.draft.map((h, i) => ({ role: d.classes[h.cls].name, race: h.race, look: i * 7 + 3 })));
 }

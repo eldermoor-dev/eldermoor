@@ -87,6 +87,22 @@ export function createHero(data, spec, index) {
   };
 }
 
+// Würfelt Rasse und Beruf für vier Helden (rand: Funktion 0 ≤ x < 1, für Tests austauschbar).
+// Mindestens ein Held steht vorn (sonst wäre die Vorderreihe leer): Held 1 wird dann auf einen Vorderreihen-Beruf gesetzt.
+export function randomParty(data, names, rand = Math.random) {
+  const races = Object.keys(data.races), classes = Object.keys(data.classes);
+  const pick = (arr) => arr[Math.min(arr.length - 1, Math.floor(rand() * arr.length))];
+  const out = names.slice(0, PARTY_SIZE).map((name) => {
+    const cls = pick(classes);
+    return { name, race: pick(races), cls, row: data.classes[cls].row };
+  });
+  if (!out.some((h) => h.row === 'front')) {
+    const front = classes.find((c) => data.classes[c].row === 'front');
+    if (front && out.length) { out[0].cls = front; out[0].row = 'front'; }
+  }
+  return out;
+}
+
 export function buildParty(data, specs = data.quickParty) {
   const err = validateParty(data, specs);
   if (err.length) throw new Error('Gruppe ungültig: ' + err.join('; '));
