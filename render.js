@@ -440,11 +440,18 @@ export function buildGrid(lvl, objs) {
   for (const o of objs) if (o.type === 'door' && !o.open) grid[o.y * w + o.x] = o.locked ? WALL_DOOR_LOCKED : WALL_DOOR;
   return { grid, gw: w, gh: h };
 }
-export function buildSprites(objs, tex, time) {
+export function buildSprites(objs, tex, time, angle = 0) {
   const out = [];
+  const rx = Math.cos(angle), ry = Math.sin(angle); // „rechts“ aus Sicht der Kamera
   for (const o of objs) {
     if (o.type === 'chest') out.push({ x: o.x, y: o.y, tex: o.open ? tex.sprites.chestOpen : tex.sprites.chest, scale: 0.5 });
-    else if (o.type === 'enemy' && !o.dead) out.push({ x: o.x, y: o.y, tex: tex.sprites.schrat, scale: 0.85 * (1 + 0.02 * Math.sin(time * 3)) });
+    else if (o.type === 'enemy' && !o.dead) {
+      const n = Array.isArray(o.kinds) ? Math.min(3, o.kinds.length) : 1; // Gruppe: eine Gestalt je Gegner, nebeneinander
+      for (let i = 0; i < n; i++) {
+        const off = n > 1 ? (i - (n - 1) / 2) * 0.36 : 0;
+        out.push({ x: o.x + rx * off, y: o.y + ry * off, tex: tex.sprites.schrat, scale: (n > 1 ? 0.62 : 0.85) * (1 + 0.02 * Math.sin(time * 3 + i)) });
+      }
+    }
     else if (o.type === 'exit') out.push({ x: o.x, y: o.y, tex: tex.sprites.portal, scale: 0.9 });
   }
   return out;

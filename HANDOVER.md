@@ -78,6 +78,11 @@ Monster-Sprite neu: `genSchrat` erzeugt 160×160 statt 64×64 (Borke, Moos, Gewe
 ## Änderungen 0.1.5
 Neue Einstellung **Bildschärfe**: Scharf (960×540, Texturen auf 128 verdoppelt mit Scale2x + Korn) ist jetzt Standard, Retro (480×270, wie in der Vorgabe) bleibt wählbar. Auf Nutzerwunsch („zu verpixelt“). Technik: `setResolution(r)` ändert die live exportierten `W`/`H` in render.js, `buildRenderer()` in main.js baut Renderer, Texturen, Canvas und ImageData neu; die Bühne bleibt ein ganzzahliges Vielfaches von 480×270. Bei nicht ganzzahligem Verhältnis (z. B. 3×/2 = 1,5) glättet der Browser (`image-rendering:auto`), bei ganzzahligem bleibt es pixelig-scharf. Messung der Renderzeit auf dem Gerät: Debug-Modus.
 
+## Änderungen 0.4.1 (Korrektur zu 0.4.0, auf dem Gerät gefunden)
+- **Fehler:** Die Zielwahl nutzte `S.target`, das schon das Kamera-Ziel ist; nach dem ersten Kampf stand dort eine Zahl, jede Bewegung warf `TypeError` („Cannot create property 'x' on number '0'“), das Spiel war nicht mehr bewegbar. Behoben: Kampfziel heißt jetzt `S.foe`. Lehre: Zustandsfelder in `S` vor dem Anlegen auf Namenskonflikte prüfen; Test „nach dem Kampf wieder bewegen“ fehlte (nur Headless-Browser-Skript, nicht in tests.js).
+- Gruppen zeigen jetzt eine Gestalt je Gegner (nebeneinander, `buildSprites(objs, tex, time, angle)`); weiterhin alle mit dem Moorschrat-Sprite.
+- `VERSION` 0.4.1.
+
 ## Änderungen 0.4.0 (Phase 2, Schritt 3c: mehrere Gegner)
 - Gegnergruppen bis 3: Karten-Objekt `{type:'enemy', kind, kinds:[…]}` (`kind` = erste Art, bestimmt das Sprite; **alle Arten nutzen vorerst das Moorschrat-Sprite**, eigene Grafiken fehlen). Gleiche Arten werden A, B, C genannt. Einzelgegner verhalten sich wie vorher (LP aus dem Objekt).
 - Zielwahl: Gegnerzeile antippen (markiert), Angriff und Fähigkeit gehen auf das Ziel; fällt es aus, rückt das nächste nach. **„Alle“** (`heroAction` Typ `sweep`, `SWEEP_MULT` 60 %): trifft jeden lebenden Gegner mit 60 % Schaden, kostenlos, nur bei mindestens 2 Gegnern. **Annahme (nicht gesichert):** Die Ideenliste sagte nur „Alle angreifen“; ich habe es so gedeutet.

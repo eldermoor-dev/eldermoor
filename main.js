@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setReso
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.4.0';
+const VERSION = '0.4.1';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -25,7 +25,7 @@ const S = {
   data: null, game: null, lvl: null, settings: { ...DEFAULTS }, tex: null, rc: null, ctx: null, img: null,
   sfx: new Sfx(), cam: { x: 0, y: 0, a: 0 }, target: { x: 0, y: 0, a: 0 }, tween: null,
   held: [], queued: null, nextAllowed: 0, lock: false, modal: null, started: false, log: [],
-  debug: { god: false }, itemMode: false, abMode: false, target: 0, invUse: null, draft: null, fps: 60, frameMs: 0, lastRender: 0,
+  debug: { god: false }, itemMode: false, abMode: false, foe: 0, invUse: null, draft: null, fps: 60, frameMs: 0, lastRender: 0,
   installEvent: null, loadMs: null, hadController: false
 };
 
@@ -183,7 +183,7 @@ function frame(now) {
   }
   const t0 = performance.now();
   const { grid, gw, gh } = buildGrid(S.lvl, S.game.objs);
-  S.rc.render({ px: S.cam.x, py: S.cam.y, angle: S.cam.a, grid, gw, gh, sprites: buildSprites(S.game.objs, S.tex, now / 1000), time: now / 1000 });
+  S.rc.render({ px: S.cam.x, py: S.cam.y, angle: S.cam.a, grid, gw, gh, sprites: buildSprites(S.game.objs, S.tex, now / 1000, S.cam.a), time: now / 1000 });
   S.ctx.putImageData(S.img, 0, 0);
   S.frameMs = S.frameMs * 0.9 + (performance.now() - t0) * 0.1;
   if (S.loadMs == null) S.loadMs = Math.round(performance.now());
@@ -316,7 +316,7 @@ function startCombatUI(enemyObj) {
   S.held = []; S.queued = null;
   startCombat(S.game, S.data, enemyObj);
   S.clog = []; S.annKey = null;
-  S.target = 0;
+  S.foe = 0;
   const name = S.game.combat.enemies.map((e) => e.name).join(', ');
   say(`${name} ${S.game.combat.enemies.length > 1 ? 'greifen' : 'greift'} an!`);
   S.sfx.play('miss'); vib(40);
@@ -357,7 +357,7 @@ async function runEnemyTurns() {
 }
 async function heroAct(a) {
   if (S.lock || !S.game.combat) return;
-  if (a.target == null && (a.type === 'attack' || a.type === 'ability')) a.target = S.target;
+  if (a.target == null && (a.type === 'attack' || a.type === 'ability')) a.target = S.foe;
   const r = heroAction(S.game, S.data, a);
   if (r.error) {
     const t = { 'full-hp': 'Dieser Held hat volle LP.', 'no-item': 'Kein Heiltrank mehr.', 'bad-target': 'Das Ziel kann nicht geheilt werden.', 'not-available': 'Noch nicht verfügbar.', 'no-mp': 'Zu wenig Mana oder Ausdauer.', 'no-ability': 'Dieser Held hat keine Fähigkeit.' }[r.error];
@@ -374,7 +374,7 @@ function onEnemyBox(e) {
   const row = e.target.closest('[data-e]');
   if (!row || !S.game.combat) return;
   const i = +row.dataset.e;
-  if (S.game.combat.enemies[i] && S.game.combat.enemies[i].hp > 0) { S.target = i; renderCombat(); }
+  if (S.game.combat.enemies[i] && S.game.combat.enemies[i].hp > 0) { S.foe = i; renderCombat(); }
 }
 function onActionBar(e) {
   const b = e.target.closest('[data-c]');
@@ -457,12 +457,12 @@ function renderCombat() {
   eb.hidden = false;
   const cur = c.over ? null : currentActor(S.game);
   const curName = cur ? (cur.side === 'h' ? S.game.heroes[cur.idx].name : c.enemies[cur.idx].name) : '';
-  if (!c.enemies[S.target] || c.enemies[S.target].hp <= 0) S.target = Math.max(0, c.enemies.findIndex((e) => e.hp > 0));
+  if (!c.enemies[S.foe] || c.enemies[S.foe].hp <= 0) S.foe = Math.max(0, c.enemies.findIndex((e) => e.hp > 0));
   const multi = c.enemies.filter((e) => e.hp > 0).length > 1;
   eb.innerHTML = (cur ? `<div class="turnbar ${cur.side === 'h' ? 'hero' : 'foe'}">${cur.side === 'h' ? 'Am Zug: ' + esc(curName) : 'Gegner am Zug: ' + esc(curName)}</div>` : '') + c.enemies.map((e) => {
     const pct = Math.round(100 * e.hp / e.maxHp);
     const ei = c.enemies.indexOf(e);
-    return `<div class="en${e.hp <= 0 ? ' dead' : ''}${multi && ei === S.target && e.hp > 0 ? ' sel' : ''}" data-e="${ei}"><b>${esc(e.name)} ${stIcons('e', ei)}</b><span>${e.hp}/${e.maxHp} LP</span><div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div>${e.intent === 'heavy' ? '<em class="warn">⚠ Schwerer Schlag</em>' : ''}</div>`;
+    return `<div class="en${e.hp <= 0 ? ' dead' : ''}${multi && ei === S.foe && e.hp > 0 ? ' sel' : ''}" data-e="${ei}"><b>${esc(e.name)} ${stIcons('e', ei)}</b><span>${e.hp}/${e.maxHp} LP</span><div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div>${e.intent === 'heavy' ? '<em class="warn">⚠ Schwerer Schlag</em>' : ''}</div>`;
   }).join('') + `<div class="order">Runde ${c.round}: ` + c.order.map((o, i) => {
     const nm = o.side === 'h' ? S.game.heroes[o.idx].name : c.enemies[o.idx].name;
     return `<span class="${(i === c.pos ? 'now' : i < c.pos ? 'done' : '') + (o.side === 'e' ? ' foe' : '')}">${esc(nm)}</span>`;
