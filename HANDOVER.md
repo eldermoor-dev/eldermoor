@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Phase 1 (Prototyp), Version 0.1.2
+Autor: eldermoor-dev · Stand: Phase 1 (Prototyp), Version 0.1.5
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -59,6 +59,30 @@ Fackelflackern als Einstellung (Aus/Schwach/Normal, Standard Schwach); Hinweis �
 
 ## Änderungen 0.1.2
 Einstellungen: Schrittgeräusche und Hintergrundgeräusche einzeln abschaltbar (`steps`, `ambient`). Kampf: gelber/roter Zugbalken („Am Zug: …“), Zugansage pro Zug, Begründung in den Meldungen (Reihe, Deckung, halber Schaden), Knopf „Protokoll“ (Kampfprotokoll mit Rundentrennern, nur im Speicher, nicht im Spielstand).
+
+## Änderungen 0.1.3
+Layout: `fitStack()` misst die Knopfblöcke und passt Meldungen/Aktionsleiste/Heldenkarten dazwischen ein (Fehler: Überlappung mit Steuerknöpfen bei Sicherheitsrand am Display, vom Nutzer gemeldet).
+
+## Änderungen 0.1.4
+Monster-Sprite neu: `genSchrat` erzeugt 160×160 statt 64×64 (Borke, Moos, Geweih, Klauen, Wurzelbeine, schräge Augen). Sprites können jetzt eigene Größe haben (`tex.w`); Wand-/Bodentexturen bleiben 64×64. Bildauflösung bleibt 480×270. Oberfläche (Kampfanzeige, Leiste, Karten) skaliert über `--hs` mit dem Spielbild (kleiner, wenn nur 3× passt, z. B. mit Adressleiste).
+
+## Änderungen 0.1.5
+Neue Einstellung **Bildschärfe**: Scharf (960×540, Texturen auf 128 verdoppelt mit Scale2x + Korn) ist jetzt Standard, Retro (480×270, wie in der Vorgabe) bleibt wählbar. Auf Nutzerwunsch („zu verpixelt“). Technik: `setResolution(r)` ändert die live exportierten `W`/`H` in render.js, `buildRenderer()` in main.js baut Renderer, Texturen, Canvas und ImageData neu; die Bühne bleibt ein ganzzahliges Vielfaches von 480×270. Bei nicht ganzzahligem Verhältnis (z. B. 3×/2 = 1,5) glättet der Browser (`image-rendering:auto`), bei ganzzahligem bleibt es pixelig-scharf. Messung der Renderzeit auf dem Gerät: Debug-Modus.
+
+## Entscheidungen des Nutzers für Phase 2 (Stand 13.11.2026)
+- Gruppe: 4 Helden **frei erstellbar** (Rasse + Beruf), dazu Schnellstart-Gruppe.
+- **Rassen (5):** Mensch, Elf, Zwerg, Ork, Gnom.
+- **Berufe (5):** Krieger, Schurke, Priester, Magier, Waldläufer.
+- Magie: Runenzauber mit **Mana**.
+- Tod: Helden werden **bewusstlos**, kein Dauer-Tod; nach Rast wieder einsatzbereit.
+- Schwierigkeit: **fair**, wählbar (Einstellung).
+- Gegner pro Kampf: bis zu **3** in Phase 2.
+- Hunger/Nahrung: **mild**.
+- Töne: **Schrittgeräusche standardmäßig aus** (noch umzusetzen: `DEFAULTS.steps = false`), Hintergrund an, **keine Musik**.
+- Erster Inhalt nach den Systemen: **Testdungeon** (12–18 Räume, mindestens 2 Geheimnisse, 1 Rätsel, Endgegner, 30–45 Min.), danach Kapitel 1 Graufurt.
+- Neue Monster: Aussehen und Namen frei erfunden, Nutzer prüft per Screenshot.
+- Externer Auftrag (ChatGPT, „Version 0.2“) wurde gesichtet: Kampf (Initiative, Angriff/Verteidigung/Spezial/Gegenstand, Status Gift/Betäubung/Schutz, Ressourcen, transparente Schadensberechnung, einfache KI) und Charakterentwicklung (XP, Attribute, Klassenfähigkeiten, Ausrüstung, Rassen/Berufe, dauerhafte Speicherung) werden **zusammen** in Phase 2 umgesetzt. Sicherung der laufenden Version: GitHub „Neue Version erstellen“ (v0.1.5) vor Beginn.
+- Spielstand: Migration v1→v2 ausdrücklich erläutern; v1-Stände müssen ladbar bleiben.
 
 ## Nicht enthalten / geplant
 - Charaktereditor, Rassen, Berufe, Attribute, XP/Stufen, Ausrüstung, Runenzauber, Rast/Nahrung → Phase 2

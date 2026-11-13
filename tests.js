@@ -4,7 +4,7 @@
 // Handy:   Einstellungen → Selbsttest (läuft dieselbe Testsuite im Browser)
 
 import * as L from './logic.js';
-import { makeTextures, Raycaster, buildGrid, buildSprites, W, H } from './render.js';
+import { makeTextures, Raycaster, buildGrid, buildSprites, setResolution, W, H } from './render.js';
 
 const FILES = ['index.html', 'main.js', 'render.js', 'logic.js', 'audio.js', 'store.js', 'tests.js', 'game.json', 'sw.js', 'manifest.webmanifest'];
 
@@ -221,7 +221,7 @@ export async function runTests(data, env = {}) {
   await test('Grafik: Texturen gültig, Renderer füllt jedes Pixel (3 Qualitätsstufen)', () => {
     const tex = makeTextures();
     const chk = (t, name, allowTransparent) => {
-      assert(t.w === 64 && t.h === 64 && t.data.length === 4096, `${name}: Größe`);
+      assert(t.w >= 64 && t.h === t.w && t.data.length === t.w * t.h, `${name}: Größe`);
       for (const v of t.data) assert(v < 64 || (allowTransparent && v === 255), `${name}: ungültiger Palettenindex ${v}`);
     };
     for (const [k, t] of Object.entries(tex.wall)) chk(t, 'Wand ' + k, false);
@@ -246,6 +246,25 @@ export async function runTests(data, env = {}) {
       assert(colors.size > 12 && colors.size <= 64, `${q}: Farbanzahl ${colors.size} (erwartet 13..64, feste Palette)`);
     }
     return 'Renderzeit in Node (nur Orientierung, nicht Gerät): ' + info.join(', ');
+  });
+
+  await test('Grafik: Scharf-Modus (960×540, Texturen 128) rendert ohne Fehler', () => {
+    const prevRes = W / 480; // aktuelle Auflösung merken (das laufende Spiel nutzt dieselbe Moduleinstellung)
+    setResolution(2);
+    try {
+      const tex = makeTextures(2);
+      assert(W === 960 && H === 540, 'Auflösung');
+      assert(tex.wall[1].w === 128 && tex.sprites.schrat.w === 160, 'Texturgrößen');
+      const s = fresh();
+      const lvl = L.getLevel(data, s);
+      const { grid, gw, gh } = buildGrid(lvl, s.objs);
+      const rc = new Raycaster(tex, data.palettes[lvl.palette]);
+      assert(rc.buf.length === 960 * 540, 'Puffergröße');
+      rc.render({ px: 3.5, py: 3.5, angle: Math.PI / 2, grid, gw, gh, sprites: buildSprites(s.objs, tex, 0), time: 1 });
+      let nz = 0; for (let i = 0; i < rc.buf.length; i++) if (rc.buf[i] !== 0) nz++;
+      assert(nz === rc.buf.length, 'Pixel unbeschrieben');
+    } finally { setResolution(prevRes); }
+    assert(W === 480 * prevRes && H === 270 * prevRes, 'Zurücksetzen');
   });
 
   await test('Grafik: Sprites werden gezeichnet und von Wänden verdeckt', () => {

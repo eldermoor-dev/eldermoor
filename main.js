@@ -4,15 +4,15 @@ import {
   DIRS, DIR_NAMES, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt
 } from './logic.js';
-import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, W, H } from './render.js';
+import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setResolution, W, H, BASE_W, BASE_H } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.1.2';
+const VERSION = '0.1.5';
 const $ = (s, r = document) => r.querySelector(s);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const DEFAULTS = { volume: 0.7, muted: false, quality: 'medium', vibration: true, fontScale: 1, colorblind: false, debug: false, flicker: 0.35, steps: true, ambient: true };
+const DEFAULTS = { volume: 0.7, muted: false, quality: 'medium', vibration: true, fontScale: 1, colorblind: false, debug: false, flicker: 0.35, steps: true, ambient: true, sharp: 'scharf' };
 const REPEAT = new Set(['fwd', 'back', 'sl', 'sr', 'tl', 'tr']);
 const SLOT_KEYS = ['auto', 'slot1', 'slot2', 'slot3'];
 const SLOT_NAMES = { auto: 'Autosave', slot1: 'Slot 1', slot2: 'Slot 2', slot3: 'Slot 3' };
@@ -33,13 +33,11 @@ async function boot() {
     document.body.insertAdjacentHTML('beforeend', '<div style="position:fixed;inset:0;z-index:99;background:#000;padding:20px">Spieldaten konnten nicht geladen werden. Bitte online einmal neu laden.</div>');
     return;
   }
-  S.tex = makeTextures();
   S.game = newGame(S.data, 1);
   S.lvl = getLevel(S.data, S.game);
-  S.rc = new Raycaster(S.tex, S.data.palettes[S.lvl.palette]);
   S.ctx = $('#view').getContext('2d', { alpha: false });
-  S.img = new ImageData(new Uint8ClampedArray(S.rc.buf.buffer), W, H);
   await loadSettings();
+  buildRenderer();
   applySettings();
   S.data.heroes.forEach((h, i) => {
     const cv = document.createElement('canvas'); cv.width = cv.height = 32;
@@ -87,6 +85,7 @@ function applySettings() {
   S.sfx.setMuted(s.muted);
   S.sfx.stepsOn = s.steps !== false;
   if (S.started) { if (s.ambient !== false) S.sfx.startAmbient(); else S.sfx.stopAmbient(); }
+  if (S.rc) { buildRenderer(); }
   S.rc.quality = s.quality;
   S.rc.flicker = s.flicker;
   document.documentElement.style.setProperty('--fs', String(s.fontScale));
@@ -101,14 +100,47 @@ function vib(ms) {
 }
 
 // ---------------------------------------------------------------- Layout (ganzzahlige Skalierung)
+// Renderer in der gewählten Auflösung (Retro 480×270 oder Scharf 960×540) neu aufbauen
+function buildRenderer() {
+  const res = S.settings.sharp === 'retro' ? 1 : 2;
+  if (S.res === res && S.rc) return;
+  const old = S.rc;
+  S.res = res;
+  setResolution(res);
+  S.tex = makeTextures(res);
+  S.rc = new Raycaster(S.tex, S.data.palettes[S.lvl.palette]);
+  if (old) { S.rc.quality = old.quality; S.rc.flicker = old.flicker; }
+  const cv = $('#view'); cv.width = W; cv.height = H;
+  S.img = new ImageData(new Uint8ClampedArray(S.rc.buf.buffer), W, H);
+  layout();
+}
 function layout() {
   const dpr = window.devicePixelRatio || 1;
   // 2 Gerätepixel Toleranz: 411 CSS-px × 2,625 = 1079 Gerätepixel würden sonst 3× statt 4× ergeben
-  const scale = Math.max(1, Math.floor(Math.min((window.innerWidth * dpr + 2) / W, (window.innerHeight * dpr + 2) / H)));
+  // Die Bühne bleibt ein ganzzahliges Vielfaches von 480×270; Scharf rendert intern mit doppelter Auflösung
+  const scale = Math.max(1, Math.floor(Math.min((window.innerWidth * dpr + 2) / BASE_W, (window.innerHeight * dpr + 2) / BASE_H)));
   const st = $('#stage');
-  st.style.width = (W * scale / dpr) + 'px';
-  st.style.height = (H * scale / dpr) + 'px';
+  st.style.width = (BASE_W * scale / dpr) + 'px';
+  st.style.height = (BASE_H * scale / dpr) + 'px';
+  const ratio = scale / (S.res || 1);
+  $('#view').style.imageRendering = Number.isInteger(ratio) ? 'pixelated' : 'auto';
   S.scale = scale;
+  // Oberfläche schrumpft mit dem Spielbild (z. B. 3× statt 4× mit sichtbarer Adressleiste)
+  S.hs = Math.max(0.6, Math.min(1, (BASE_H * scale / dpr) / 400));
+  document.documentElement.style.setProperty('--hs', String(S.hs));
+  fitStack();
+}
+// Meldungen, Aktionsleiste und Heldenkarten passen genau zwischen die beiden Knopfblöcke (auch mit Sicherheitsrand am Display)
+function fitStack() {
+  const st = $('#stage'), stack = $('#stack');
+  if (!st || !stack) return;
+  const sr = st.getBoundingClientRect(), lp = $('#ctl-left').getBoundingClientRect(), rp = $('#ctl-right').getBoundingClientRect();
+  const left = Math.max(sr.left, lp.right + 6), right = Math.min(sr.right, rp.left - 6);
+  if (right - left < 240) { stack.style.left = ''; stack.style.width = ''; stack.style.transform = ''; return; }
+  const hs = S.hs || 1;
+  stack.style.left = ((left - sr.left) / hs) + 'px';
+  stack.style.width = ((right - left) / hs) + 'px';
+  stack.style.transform = 'none';
 }
 
 // ---------------------------------------------------------------- Kamera
@@ -151,7 +183,7 @@ function frame(now) {
   if (S.loadMs == null) S.loadMs = Math.round(performance.now());
   if (S.settings.debug && (Math.floor(now / 500) !== S.lastFpsTick)) {
     S.lastFpsTick = Math.floor(now / 500);
-    $('#fps').textContent = `FPS ${S.fps.toFixed(0)} · Render ${S.frameMs.toFixed(1)} ms · ${S.settings.quality} · Skalierung ${S.scale}× · Start→1. Bild ${S.loadMs} ms`;
+    $('#fps').textContent = `FPS ${S.fps.toFixed(0)} · Render ${S.frameMs.toFixed(1)} ms · ${S.settings.quality} · Skalierung ${S.scale}× · ${W}×${H} · Start→1. Bild ${S.loadMs} ms`;
   }
 }
 
@@ -520,6 +552,7 @@ function openSettings() {
   <div class="row"><label>Schrittgeräusche</label>${chk('steps')}</div>
   <div class="row"><label>Hintergrundgeräusche (Wind, Tropfen, Fackel)</label>${chk('ambient')}</div>
   <div class="row"><label>Grafikqualität</label>${sel('quality', [['low', 'Niedrig'], ['medium', 'Mittel'], ['high', 'Hoch']])}</div>
+  <div class="row"><label>Bildschärfe</label>${sel('sharp', [['scharf', 'Scharf (960×540)'], ['retro', 'Retro (480×270)']])}</div>
   <div class="row"><label>Fackelflackern</label>${sel('flicker', [[0, 'Aus'], [0.35, 'Schwach'], [1, 'Normal']])}</div>
   <div class="row"><label>Vibration</label>${chk('vibration')}</div>
   <div class="row"><label>Schriftgröße</label>${sel('fontScale', [[0.9, 'Klein'], [1, 'Normal'], [1.15, 'Groß'], [1.3, 'Sehr groß']])}</div>

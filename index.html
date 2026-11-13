@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>Die Schatten von Eldermoor</title>
 <style>
-:root{--fs:1;--b:54px;--hp-good:#6fbf5a;--hp-bad:#d24b3c;--amber:#d9a441;--ink:#e8dcc0;--panel:rgba(14,11,8,.84);--line:#6b5630}
+:root{--fs:1;--hs:1;--b:54px;--hp-good:#6fbf5a;--hp-bad:#d24b3c;--amber:#d9a441;--ink:#e8dcc0;--panel:rgba(14,11,8,.84);--line:#6b5630}
 body.cb{--hp-good:#4aa3ff;--hp-bad:#ff9f1c}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:#000;overflow:hidden;overscroll-behavior:none;touch-action:none;
@@ -25,7 +25,7 @@ button{font:inherit;color:inherit}
 @keyframes hit{0%{filter:brightness(2.4) saturate(1.6)}100%{filter:none}}
 #hud{position:absolute;inset:0;pointer-events:none}
 #fps{position:absolute;left:4px;top:4px;font:11px monospace;background:#000a;padding:2px 5px;border-radius:3px;color:#9f9}
-#enemybox{position:absolute;left:50%;top:44px;transform:translateX(-50%);width:min(56%,420px);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:.78rem}
+#enemybox{zoom:var(--hs,1);position:absolute;left:50%;top:calc(44px / var(--hs,1));transform:translateX(-50%);width:min(56%,420px);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:.78rem}
 #enemybox .en{display:flex;gap:8px;align-items:center}
 #enemybox .en .bar{flex:1}
 .order{margin-top:3px;display:flex;gap:4px;flex-wrap:wrap;font-size:.72rem}
@@ -33,11 +33,11 @@ button{font:inherit;color:inherit}
 .order span.now{background:var(--amber);color:#1b1208;border-color:var(--amber);font-weight:700}
 .order span.done{opacity:.4}
 .order span.foe{border-color:#7a3a30}
-#stack{position:absolute;left:50%;bottom:4px;transform:translateX(-50%);width:min(62%,540px);display:flex;flex-direction:column;gap:4px}
+#stack{zoom:var(--hs,1);position:absolute;left:50%;bottom:calc(4px / var(--hs,1));transform:translateX(-50%);width:min(62%,540px);display:flex;flex-direction:column;gap:4px}
 #log{text-align:center;font-size:.84rem;text-shadow:0 1px 2px #000,0 0 5px #000}
 #log div{background:rgba(0,0,0,.42);border-radius:4px;padding:1px 6px;margin-top:2px}
 #actionbar{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;pointer-events:auto}
-#actionbar .ab{flex:1 1 0;min-height:36px;padding:0 6px;border-radius:8px;background:rgba(42,33,22,.92);border:1px solid var(--amber);font-size:.78rem;white-space:nowrap}
+#actionbar .ab{flex:1 1 auto;min-height:36px;padding:0 6px;border-radius:8px;background:rgba(42,33,22,.92);border:1px solid var(--amber);font-size:.78rem;white-space:nowrap}
 #actionbar .ab[disabled]{opacity:.4;border-color:#5a4a30}
 #actionbar .wait{padding:8px;font-size:.84rem;background:var(--panel);border-radius:6px}
 #party{display:flex;gap:4px}

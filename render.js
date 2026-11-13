@@ -3,7 +3,10 @@
 // Der Renderer arbeitet auf einem eigenen Pixelpuffer (Uint32Array) und kennt weder DOM noch Canvas.
 // Dadurch ist er in Node testbar und später austauschbar.
 
-export const W = 480, H = 270, TEX = 64;
+export const BASE_W = 480, BASE_H = 270, TEX = 64; // Grundauflösung (Retro) und Texturgröße der Generatoren
+// Aktuelle Bildgröße: 480×270 (Retro) oder ein Vielfaches davon (Scharf = 2×). Live-Bindung: Änderung über setResolution().
+export let W = BASE_W, H = BASE_H;
+export function setResolution(r) { W = BASE_W * r; H = BASE_H * r; }
 const MATS = ['stone', 'moss', 'wood', 'iron', 'floor', 'ceil', 'flesh', 'glow'];
 const M = { stone: 0, moss: 1, wood: 2, iron: 3, floor: 4, ceil: 5, flesh: 6, glow: 7 };
 const P = (mat, shade) => M[mat] * 8 + Math.max(0, Math.min(7, Math.round(shade)));
@@ -147,44 +150,89 @@ function genChest(open, seed) {
   return t;
 }
 function genSchrat(seed) {
-  const t = mk(255);
-  const seg = (px, py, ax, ay, bx, by) => {
+  // Hochaufgelöstes Sprite (SN×SN statt 64×64): Moorschrat = knorrige Wesen aus Borke, Moos und fahlem Fleisch
+  const SN = 160, k = 64 / SN;
+  const t = { w: SN, h: SN, data: new Uint8Array(SN * SN).fill(255) };
+  const segd = (px, py, ax, ay, bx, by) => {
     const vx = bx - ax, vy = by - ay;
-    const k = Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / (vx * vx + vy * vy)));
-    return Math.hypot(px - (ax + vx * k), py - (ay + vy * k));
+    const q = Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / (vx * vx + vy * vy)));
+    const nx = ax + vx * q, ny = ay + vy * q;
+    return { d: Math.hypot(px - nx, py - ny), nx, ny, q };
   };
-  for (let y = 0; y < TEX; y++) for (let x = 0; x < TEX; x++) {
-    const bx = (x - 32) / 15, by = (y - 40) / 22;
-    const hx = (x - 32) / 9, hy = (y - 16) / 11;
-    const armL = seg(x, y, 19, 30, 9, 54), armR = seg(x, y, 45, 30, 55, 54);
-    let shape = null, cx = 32, cy = 40, r = 20;
-    if (hx * hx + hy * hy <= 1) { shape = 'head'; cx = 32; cy = 16; r = 11; }
-    else if (bx * bx + by * by <= 1) { shape = 'body'; }
-    else if (armL <= 4.5) { shape = 'arm'; cx = 14; cy = 42; r = 14; }
-    else if (armR <= 4.5) { shape = 'arm'; cx = 50; cy = 42; r = 14; }
-    if (!shape) continue;
-    const l = ((x - cx) * 0.9 + (y - cy) * 0.7) / r;
-    let sh = 3.2 - l * 1.6 + (vnoise(x, y, 4, seed) - 0.5) * 1.8;
-    let mat = 'flesh';
-    if (vnoise(x, y, 8, seed + 3) > 0.64) { mat = 'moss'; sh = 2.5 + sh * 0.3; }
-    if (shape === 'arm' && (y > 51)) sh = 6; // Klauen
-    t.data[y * TEX + x] = P(mat, sh);
-  }
-  const copy = t.data.slice();
-  for (let y = 1; y < TEX - 1; y++) for (let x = 1; x < TEX - 1; x++) { // dunkler Umriss
-    const i = y * TEX + x;
-    if (copy[i] === 255) continue;
-    if (copy[i - 1] === 255 || copy[i + 1] === 255 || copy[i - TEX] === 255 || copy[i + TEX] === 255) t.data[i] = (copy[i] & ~7) | Math.max(0, (copy[i] & 7) - 2);
-  }
-  const eye = (ex, ey) => {
-    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
-      const d = Math.abs(dx) + Math.abs(dy);
-      if (d <= 1) t.data[(ey + dy) * TEX + ex + dx] = P('glow', 7);
-      else if (d === 2) t.data[(ey + dy) * TEX + ex + dx] = P('glow', 3);
+  const lim = (px, py, ax, ay, bx, by, r0, r1) => { // Kapsel mit veränderlichem Radius
+    const s2 = segd(px, py, ax, ay, bx, by); const r = r0 + (r1 - r0) * s2.q;
+    return s2.d <= r ? { cx: s2.nx, cy: s2.ny, r } : null;
+  };
+  const arm = (px, py, sx) => lim(px, py, 32 + sx * 13, 30, 32 + sx * 22, 44, 5, 3.6) || lim(px, py, 32 + sx * 22, 44, 32 + sx * (21 + (sx > 0 ? 1 : 0)), 58, 3.6, 2.6);
+  for (let y = 0; y < SN; y++) for (let x = 0; x < SN; x++) {
+    const px = (x + 0.5) * k, py = (y + 0.5) * k;
+    let hit = null, part = '';
+    const hx = (px - 32) / 8.6, hy = (py - 15.5) / 9.8;
+    if (hx * hx + hy * hy <= 1) { hit = { cx: 32, cy: 15.5, r: 10 }; part = 'head'; }
+    if (!hit) { const n = lim(px, py, 32, 22, 32, 29, 5.2, 6.5); if (n) { hit = n; part = 'neck'; } }
+    if (!hit) {
+      const bx = (px - 32) / (15 - 4.5 * Math.max(0, (py - 34) / 24)), by = (py - 41) / 19;
+      if (bx * bx + by * by <= 1) { hit = { cx: 32, cy: 41, r: 17 }; part = 'body'; }
     }
-  };
-  eye(28, 15); eye(36, 15);
-  for (let x = 27; x <= 37; x++) t.data[(22 + (x % 2)) * TEX + x] = P('flesh', 0);
+    if (!hit) { const a = arm(px, py, -1) || arm(px, py, 1); if (a) { hit = a; part = 'arm'; } }
+    if (!hit) { // Wurzelbeine
+      const l = lim(px, py, 26, 54, 21, 63.5, 3.6, 1.6) || lim(px, py, 38, 54, 43, 63.5, 3.6, 1.6) || lim(px, py, 32, 56, 32, 63.8, 3.4, 1.4);
+      if (l) { hit = l; part = 'root'; }
+    }
+    if (!hit) { // Äste auf dem Kopf (Geweih)
+      const b = lim(px, py, 26.5, 8.5, 21, 1.5, 1.7, 0.7) || lim(px, py, 37.5, 8.5, 43, 1.0, 1.7, 0.7) || lim(px, py, 23.5, 5, 18, 4.2, 0.9, 0.4) || lim(px, py, 40.5, 4.6, 46, 3.4, 0.9, 0.4) || lim(px, py, 22.2, 3.2, 21.2, -0.2, 0.7, 0.3);
+      if (b) { hit = b; part = 'branch'; }
+    }
+    if (!hit) { // Klauen
+      for (const [hx0, sg] of [[10.5, -1], [53.5, 1]]) {
+        const c = lim(px, py, hx0, 58, hx0 - 3.6 * sg, 63.6, 1.3, 0.3) || lim(px, py, hx0, 58, hx0, 64, 1.3, 0.3) || lim(px, py, hx0, 58, hx0 + 3.6 * sg, 63.6, 1.3, 0.3);
+        if (c) { hit = c; part = 'claw'; break; }
+      }
+    }
+    if (!hit) continue;
+    const l = ((px - hit.cx) * 0.9 + (py - hit.cy) * 0.7) / hit.r; // Licht von links oben
+    let sh = 3.5 - l * 1.7 + (vnoise(px, py, 3.5, seed) - 0.5) * 1.0;
+    let mat = 'wood';
+    if (part === 'head') {
+      mat = 'flesh'; sh += 0.3 + (vnoise(px, py, 2.5, seed + 4) - 0.5) * 0.9;
+      if (py < 10.5 + vnoise(px, 0, 3, seed + 6) * 2.2) { mat = 'wood'; sh -= 0.4; } // Borkenstirn
+    } else if (part === 'claw') { mat = 'stone'; sh = 5.4 - l; }
+    else if (part === 'branch') { mat = 'wood'; sh = 2.3 - l * 0.8; }
+    else {
+      const g = vnoise(px * 4, py, 9, seed + 2);                 // senkrechte Rinde
+      if (g < 0.34) sh -= 1.9; else if (g > 0.66) sh += 0.8;
+      sh += (hash(x, y, seed + 5) - 0.5) * 0.5;
+      if (part === 'body' && vnoise(px, py, 5, seed + 3) > 0.6) { mat = 'flesh'; sh = 2.6 - l * 0.8; } // freiliegendes Holz
+    }
+    if (part !== 'claw' && part !== 'branch' && vnoise(px, py, 6.5, seed + 9) > (part === 'root' ? 0.5 : 0.64) + (py < 26 ? 0.06 : 0)) { mat = 'moss'; sh = 2.7 + (1 - l) * 0.9 + (hash(x, y, seed + 11) - 0.5) * 0.7; }
+    t.data[y * SN + x] = P(mat, sh);
+  }
+  // dunkler Umriss, 2 Texel stark
+  for (let pass = 0; pass < 2; pass++) {
+    const copy = t.data.slice();
+    for (let y = 1; y < SN - 1; y++) for (let x = 1; x < SN - 1; x++) {
+      const i = y * SN + x;
+      if (copy[i] === 255) continue;
+      if (copy[i - 1] === 255 || copy[i + 1] === 255 || copy[i - SN] === 255 || copy[i + SN] === 255) t.data[i] = P(MATS[copy[i] >> 3], Math.max(0, (copy[i] & 7) - 2.6));
+    }
+  }
+  const set = (px, py, v) => { const x = Math.floor(px / k), y = Math.floor(py / k); if (x >= 0 && y >= 0 && x < SN && y < SN && t.data[y * SN + x] !== 255) t.data[y * SN + x] = v; };
+  // Augen: schräge, leuchtende Schlitze mit Schein
+  for (const [ex, sg] of [[27.6, -1], [36.4, 1]]) {
+    for (let y = 0; y < SN; y++) for (let x = 0; x < SN; x++) {
+      const px = (x + 0.5) * k - ex, py = (y + 0.5) * k - 14.6;
+      const rx = px * 0.93 - sg * py * 0.36, ry = py * 0.93 + sg * px * 0.36;
+      const e = (rx / 2.5) ** 2 + (ry / 1.25) ** 2;
+      if (e <= 1) set(px + ex, py + 14.6, P('glow', e < 0.45 ? 7 : 5));
+      else if (e <= 3.6 && t.data[y * SN + x] !== 255 && MATS[t.data[y * SN + x] >> 3] === 'flesh') t.data[y * SN + x] = P('flesh', 1.8);
+    }
+  }
+  // Maul: gezackte dunkle Linie mit hellen Zähnen
+  for (let x = 26.5; x <= 37.5; x += k * 0.5) {
+    const zig = Math.abs(((x - 26.5) % 2.2) - 1.1) * 0.9;
+    for (let yy = 21.4 + zig; yy < 22.8 + zig; yy += k * 0.5) set(x, yy, P('flesh', 0));
+    if (Math.floor((x - 26.5) / 1.1) % 2 === 0) for (let yy = 22.3 + zig; yy < 23.4 + zig; yy += k * 0.5) set(x, yy, P('stone', 6));
+  }
   return t;
 }
 function genPortal(seed) {
@@ -203,12 +251,40 @@ function genPortal(seed) {
   return t;
 }
 
-export function makeTextures() {
+// Verdoppelt eine Textur (Scale2x-Kantenglättung) und fügt feines Korn hinzu; Glühen und Transparenz bleiben unberührt.
+function upsample2(t, seed) {
+  const n = t.w, o = n * 2, src = t.data, out = new Uint8Array(o * o);
+  const at = (x, y) => src[(((y % n) + n) % n) * n + (((x % n) + n) % n)];
+  const wrap = t.noWrap !== true;
+  const get = (x, y) => (wrap ? at(x, y) : src[Math.max(0, Math.min(n - 1, y)) * n + Math.max(0, Math.min(n - 1, x))]);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const p = src[y * n + x], a = get(x, y - 1), b = get(x + 1, y), c = get(x - 1, y), d = get(x, y + 1);
+    let e0 = p, e1 = p, e2 = p, e3 = p;
+    if (a !== d && c !== b) {
+      if (c === a) e0 = a; if (a === b) e1 = b; if (d === c) e2 = c; if (b === d) e3 = d;
+    }
+    const q = [e0, e1, e2, e3];
+    for (let i = 0; i < 4; i++) {
+      const ox = x * 2 + (i & 1), oy = y * 2 + (i >> 1);
+      let v = q[i];
+      if (v !== 255 && (v >> 3) !== M.glow && (v >> 3) !== M.iron) {
+        const h = hash(ox, oy, seed);
+        const sh = v & 7;
+        if (h < 0.14 && sh > 0) v -= 1; else if (h > 0.9 && sh < 7) v += 1;
+      }
+      out[oy * o + ox] = v;
+    }
+  }
+  return { w: o, h: o, data: out, noWrap: t.noWrap };
+}
+export function makeTextures(detail = 1) {
+  const up = (t, s) => (detail > 1 ? upsample2(t, s) : t);
+  const spr = (t, s) => { t.noWrap = true; return up(t, s); };
   return {
-    wall: { [WALL_STONE]: genStone(11), [WALL_MOSS]: genMoss(23), [WALL_DOOR]: genDoor(31, false), [WALL_DOOR_LOCKED]: genDoor(31, true) },
-    floor: genFloor(41),
-    ceil: genCeil(53),
-    sprites: { chest: genChest(false, 61), chestOpen: genChest(true, 61), schrat: genSchrat(71), portal: genPortal(81) }
+    wall: { [WALL_STONE]: up(genStone(11), 101), [WALL_MOSS]: up(genMoss(23), 102), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104) },
+    floor: up(genFloor(41), 105),
+    ceil: up(genCeil(53), 106),
+    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: genSchrat(71), portal: spr(genPortal(81), 109) }
   };
 }
 
@@ -258,7 +334,7 @@ export class Raycaster {
         for (let x = 0; x < W; x++) { buf[rowF + x] = fc; buf[rowC + x] = cc; }
       }
     } else {
-      const ftex = tex.floor.data, ctex = tex.ceil.data;
+      const ftex = tex.floor.data, ctex = tex.ceil.data, FN = tex.floor.w, FM = FN - 1;
       const rdx0 = dirX - planeX, rdy0 = dirY - planeY, rdx1 = dirX + planeX, rdy1 = dirY + planeY;
       for (let y = half; y < H; y++) {
         const p = y + 0.5 - half;
@@ -268,8 +344,8 @@ export class Raycaster {
         const sx = rowDist * (rdx1 - rdx0) / W, sy = rowDist * (rdy1 - rdy0) / W;
         const rowF = y * W, rowC = (H - 1 - y) * W;
         for (let x = 0; x < W; x++) {
-          const tx = ((fx * TEX) | 0) & 63, ty = ((fy * TEX) | 0) & 63;
-          const ti = ty * TEX + tx;
+          const tx = ((fx * FN) | 0) & FM, ty = ((fy * FN) | 0) & FM;
+          const ti = ty * FN + tx;
           buf[rowF + x] = tbl[ftex[ti]];
           buf[rowC + x] = tbl[ctex[ti]];
           fx += sx; fy += sy;
@@ -302,14 +378,15 @@ export class Raycaster {
       const y0 = Math.max(0, startRaw), y1 = Math.min(H - 1, startRaw + lineH - 1);
       let wallX = side === 0 ? py + dist * rdy : px + dist * rdx;
       wallX -= Math.floor(wallX);
-      let texX = Math.floor(wallX * TEX);
-      if ((side === 0 && rdx > 0) || (side === 1 && rdy < 0)) texX = TEX - 1 - texX;
-      const td = tex.wall[hit].data;
+      const wt = tex.wall[hit], WN = wt.w, WM = WN - 1;
+      let texX = Math.floor(wallX * WN);
+      if ((side === 0 && rdx > 0) || (side === 1 && rdy < 0)) texX = WN - 1 - texX;
+      const td = wt.data;
       const tbl = this.shadeTbl[Math.min(7, dropFor(dist) + side)];
-      const texStep = TEX / lineH;
+      const texStep = WN / lineH;
       let texPos = (y0 - startRaw) * texStep;
       for (let y = y0; y <= y1; y++) {
-        const c = tbl[td[((texPos | 0) & 63) * TEX + texX]];
+        const c = tbl[td[((texPos | 0) & WM) * WN + texX]];
         texPos += texStep;
         const o = y * W + x;
         buf[o] = c;
@@ -330,7 +407,7 @@ export class Raycaster {
     }
     list.sort((p, o) => o.tY - p.tY);
     for (const { s, tX, tY } of list) {
-      const td = s.tex.data;
+      const td = s.tex.data, TN = s.tex.w;
       const screenX = Math.floor(W / 2 * (1 + tX / tY));
       const sprH = Math.floor(focal / tY * s.scale), sprW = sprH;
       if (sprH < 2) continue;
@@ -340,10 +417,10 @@ export class Raycaster {
       const ya = Math.max(0, top), yb = Math.min(H - 1, bottom - 1);
       for (let x = Math.max(0, x0); x < Math.min(W, x0 + sprW); x++) {
         if (tY >= zbuf[x]) continue;
-        const tx = Math.floor((x - x0) * TEX / sprW);
+        const tx = Math.floor((x - x0) * TN / sprW);
         for (let y = ya; y <= yb; y++) {
-          const ty = Math.floor((y - top) * TEX / sprH);
-          const idx = td[ty * TEX + tx];
+          const ty = Math.floor((y - top) * TN / sprH);
+          const idx = td[ty * TN + tx];
           if (idx === 255) continue;
           buf[y * W + x] = tbl[idx];
         }
