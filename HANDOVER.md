@@ -96,10 +96,19 @@ Neue Einstellung **Bildschärfe**: Scharf (960×540, Texturen auf 128 verdoppelt
 - IndexedDB-Wrapper (`store.js`) ist in Node nicht testbar; nur im Browser geprüft.
 - `screen.orientation.lock` funktioniert vermutlich nur im Vollbild/installiert (nicht geprüft). Das Manifest verlangt Querformat; zusätzlich zeigt die Seite im Hochformat einen Hinweis.
 - Ladezeit-Ziel (Ziel, nicht gemessen): erster Start online < 3 s, danach offline < 1,5 s. Messung: Debug-Modus zeigt „Start→1. Bild“.
+- **Gemessen auf dem Galaxy S25 (Screenshot des Nutzers, 13.11.2026, Version 0.1.5, Scharf 960×540, Grafik Hoch, Vollbild, Skalierung 4×):** FPS 60, Renderzeit 5,1 ms, Start→1. Bild 127 ms.
+- **Vom Nutzer bestätigt:** Offline-Betrieb funktioniert („ohne WLAN geht“); Spielstand speichern (Slot 1) funktioniert; Durchlauf bis zum Runenstein („Gebiet abgeschlossen“) funktioniert; Update auf 0.1.5 über GitHub Pages funktioniert (Titelbild zeigt 0.1.5).
+- Offen (Nutzer hat nicht geantwortet): ob das „wackelnde Schatten“-Problem bei Fackelflackern „Aus“ weg ist; ob der Hinweis der Debug-Zeile (liegt hinter der oberen Knopfleiste) stört (kosmetisch, Debug-Modus).
 - FPS-Ziel 60 auf dem S25. Messung: Debug-Modus (Einstellungen → Debug) zeigt FPS und Renderzeit. Die Schleife ist auf ~60 FPS gedrosselt.
 
-## Nächste Schritte (Phase 2)
-1. `heroes` aus dem Code-Datensatz lösen: Charaktereditor, Rassen/Berufe-Tabellen in `game.json`, Spielstand-Migration v1→v2 (Heldenfelder erweitern).
-2. Attribute + abgeleitete Werte, XP/Stufen bis 10, Ausbalancierungstabelle als Datei.
-3. Inventar/Ausrüstung, Runenzauber (Runenfolgen, eigenes Namensschema), Rast/Nahrung.
-4. Tests in `tests.js` erweitern (Zauber, Rast, Migration v1→v2).
+## Nächste Schritte (Phase 2) – zusammengeführt aus Nutzerwünschen und externem Auftrag
+Reihenfolge, jeweils kleiner, einzeln testbarer Schritt mit Testplan für das Smartphone:
+0. Vor Beginn: GitHub-Version `v0.1.5` als Sicherung anlegen (Nutzer). `DEFAULTS.steps = false`; Debug-Zeile (FPS) nicht hinter die obere Knopfleiste legen.
+1. `heroes` aus dem Code lösen: Charaktereditor (4 Helden frei, Rasse + Beruf), Rassen- und Berufstabellen in `game.json`, Schnellstart-Gruppe. Spielstand-Migration v1→v2 (Heldenfelder erweitern), ausdrücklich erläutern; alte Stände müssen ladbar bleiben.
+2. Attribute und abgeleitete Kampfwerte, XP/Stufen bis 10, Ausbalancierungstabelle als Datei.
+3. Kampf erweitern: Spezialfähigkeiten je Beruf mit Mana/Ausdauer, Statuswirkungen (Gift, Betäubung, Schutz, Schwäche), Gegner-Muster mit **angekündigten** Aktionen (z. B. schwerer Schlag; Verteidigen/Betäuben lohnt), einfache Gegner-KI, bis zu 3 Gegner mit Rollen, Schwächen/Resistenzen, transparente Schadensberechnung (Detailansicht), kurze Pause zwischen Zügen, schnelle Doppeltipps ignorieren. Normalangriff schwächer als Fähigkeiten.
+4. Balance messen (Node-Simulation): „nur Angriff“ muss deutlich schlechter abschneiden als kluges Spielen. Aktueller Stand zum Vergleich: nur Angriff 400/400 Siege (zu leicht, Nutzer bestätigt den Eindruck).
+5. Inventar/Ausrüstung, Runenzauber (Runenfolgen, eigenes Namensschema), Rast/Nahrung (mild).
+6. Tests in `tests.js` erweitern (Zauber, Rast, Status, Migration v1→v2, Balance).
+Danach Phase 3: Testdungeon (12–18 Räume, 2 Geheimnisse, Rätsel, Endgegner, 30–45 Min.). Monster-Verbesserung (Animation, Trefferblitz, Varianten) in Phase 3/4.
+Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätetests meldet der Nutzer.
