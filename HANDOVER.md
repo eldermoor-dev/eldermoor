@@ -222,3 +222,9 @@ Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätet
 - Fix: Gruppenfiguren zeigen nur lebende Gegner (buildSprites bekommt alive-Map aus dem Kampf).
 - Geräte-Test 0.4.1 (13.11.2026, Nutzer-Screenshots): Bewegung nach Sieg OK, 2er-/3er-Gruppe sichtbar, Zielwahl, Alle 60 %, Rechenweg, Gift OK. Offen: Schwerer Schlag, Betäubung, Schwäche, Entgiftung. Beobachtung: tote Gegner als Figur sichtbar (behoben), Zugreihenfolge-Leiste zeigt evtl. tote Gegner (ungeprüft).
 - Balance-Verdacht: Wölfe 9-10 Schaden/Treffer, Ivo im 2. Kampf bewusstlos -> Schritt 4.
+
+
+## Schritt 4: Balance-Simulation (13.11.2026)
+- Neu: `sim.js` (Node, `node sim.js 3000 --write` erzeugt SIM.md), nutzt die echte Spiellogik. Strategien: "nur Angriff" und "klug". Kein Spielcode geändert, Version bleibt 0.4.6.
+- Ergebnis (3000 Läufe): Einzelkämpfe werden von beiden Strategien zu 100 % gewonnen. Nur Angriff: 0,7-0,9 bewusstlose Helden und 34-45 Schaden pro Kampf; klug: 0,1-0,3 KO und 24-29 Schaden. Kampagne Wölfe -> Gang -> Schrat ohne Rast: nur Angriff schafft 71 % (Gang) bzw. 36 % (Schrat), klug 100 %. Mit Rast schafft auch nur Angriff 100 %.
+- Schluss: Rast/Verpflegung (Schritt 5) ist der eigentliche Balance-Hebel. Werte erst danach anfassen und Simulation wiederholen. Grenzen: nur zwei feste Strategien, kein Fliehen, nur Stufe-1-Start mit natürlichem XP-Gewinn.
