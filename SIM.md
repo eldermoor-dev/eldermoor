@@ -13,12 +13,14 @@ Balance-Simulation, 3000 Läufe je Zeile, Spiellogik aus logic.js, Startgruppe =
 | Moorschrat | klug | 100 % | 3.2 | 0.1 | 25.5 |
 
 ## B) Kampagnenfolge Wölfe → Kultisten-Gang → Moorschrat
-Ohne Rast: LP bleiben, besiegte Helden stehen mit 1 LP auf (aktuelle Übergangsregel). Mit Rast: volle LP/Mana zwischen den Kämpfen.
+Ohne Rast: LP bleiben, besiegte Helden stehen mit 1 LP auf (aktuelle Übergangsregel). „Immer voll“: volle LP/Mana zwischen den Kämpfen. „Mit Proviant“: echte Rast (restParty) nach jedem Sieg, Startvorrat 3.
 | Strategie | Rast | Wölfe gewonnen | + Gang gewonnen | + Schrat gewonnen | KO-Helden gesamt |
 |---|---|---|---|---|---|
 | nur Angriff | nein | 100 % | 71 % | 36 % | 5.4 |
-| nur Angriff | ja | 100 % | 100 % | 100 % | 2.3 |
+| nur Angriff | mit Proviant (3) | 100 % | 100 % | 100 % | 2.3 |
+| nur Angriff | immer voll | 100 % | 100 % | 100 % | 2.3 |
 | klug | nein | 100 % | 100 % | 100 % | 1.0 |
-| klug | ja | 100 % | 100 % | 100 % | 0.6 |
+| klug | mit Proviant (3) | 100 % | 100 % | 100 % | 0.6 |
+| klug | immer voll | 100 % | 100 % | 100 % | 0.6 |
 
 Hinweis: Die Simulation nutzt die echten Regeln, aber nur zwei feste Strategien. Ein echter Spieler liegt dazwischen.
