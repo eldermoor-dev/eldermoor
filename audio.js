@@ -11,6 +11,7 @@ export class Sfx {
     this.muted = false;
     this.unsupported = false;
     this.ambientOn = false;
+    this.stepsOn = true; // Schrittgeräusche an/aus (Einstellung)
     this._timers = [];
     this._wind = null;
   }
@@ -65,6 +66,7 @@ export class Sfx {
 
   play(name) {
     if (!this.ctx || this.muted || this.volume <= 0) return;
+    if (name === 'step' && !this.stepsOn) return;
     switch (name) {
       case 'step':
         this._noise({ dur: 0.09, f: 200 + Math.random() * 60, q: 1.2, gain: 0.35 });

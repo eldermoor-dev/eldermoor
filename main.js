@@ -8,11 +8,11 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, W, H } 
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.1.1';
+const VERSION = '0.1.2';
 const $ = (s, r = document) => r.querySelector(s);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const DEFAULTS = { volume: 0.7, muted: false, quality: 'medium', vibration: true, fontScale: 1, colorblind: false, debug: false, flicker: 0.35 };
+const DEFAULTS = { volume: 0.7, muted: false, quality: 'medium', vibration: true, fontScale: 1, colorblind: false, debug: false, flicker: 0.35, steps: true, ambient: true };
 const REPEAT = new Set(['fwd', 'back', 'sl', 'sr', 'tl', 'tr']);
 const SLOT_KEYS = ['auto', 'slot1', 'slot2', 'slot3'];
 const SLOT_NAMES = { auto: 'Autosave', slot1: 'Slot 1', slot2: 'Slot 2', slot3: 'Slot 3' };
@@ -72,7 +72,7 @@ function startGame(state) {
   $('#title').hidden = true;
   document.body.classList.remove('on-title');
   S.sfx.unlock();
-  S.sfx.startAmbient();
+  if (S.settings.ambient !== false) S.sfx.startAmbient();
   renderAll();
 }
 
@@ -85,6 +85,8 @@ function applySettings() {
   const s = S.settings;
   S.sfx.setVolume(s.volume);
   S.sfx.setMuted(s.muted);
+  S.sfx.stepsOn = s.steps !== false;
+  if (S.started) { if (s.ambient !== false) S.sfx.startAmbient(); else S.sfx.stopAmbient(); }
   S.rc.quality = s.quality;
   S.rc.flicker = s.flicker;
   document.documentElement.style.setProperty('--fs', String(s.fontScale));
@@ -273,6 +275,7 @@ function startCombatUI(enemyObj) {
   if (S.game.combat) return;
   S.held = []; S.queued = null;
   startCombat(S.game, S.data, enemyObj);
+  S.clog = []; S.annKey = null;
   const name = S.data.enemies[enemyObj.kind].name;
   say(`${name} greift an!`);
   S.sfx.play('miss'); vib(40);
@@ -280,7 +283,7 @@ function startCombatUI(enemyObj) {
   runEnemyTurns();
 }
 function showResult(r) {
-  (r.msgs || []).forEach(say);
+  (r.msgs || []).forEach((m) => { say(m); clogAdd(m); });
   if (r.sfx) S.sfx.play(r.sfx);
   if (r.sfx === 'hit' || r.sfx === 'hurt') { flash(); vib(r.sfx === 'hurt' ? 60 : 30); }
 }
@@ -324,6 +327,7 @@ function onActionBar(e) {
   else if (c === 'defend') heroAct({ type: 'defend' });
   else if (c === 'item') { S.itemMode = !S.itemMode; renderCombat(); }
   else if (c === 'spell') say('Runenzauber folgen in Phase 2.');
+  else if (c === 'log') openCombatLog();
   else if (c.startsWith('heal:')) heroAct({ type: 'item', item: 'potion', hero: +c.slice(5) });
 }
 function showGameOver() {
@@ -332,7 +336,28 @@ function showGameOver() {
 }
 
 // ---------------------------------------------------------------- HUD
-function renderAll() { renderParty(); renderCombat(); renderLog(); }
+function clogAdd(t, cls) { if (S.clog) S.clog.push({ t, cls: cls || '' }); }
+// Zugansage: einmal pro Zug und Runde ins Kampfprotokoll und in die Meldungen
+function announceTurn() {
+  const c = S.game.combat;
+  if (!c || c.over) return;
+  const a = currentActor(S.game);
+  if (!a) return;
+  const key = c.round + ':' + c.pos;
+  if (S.annKey === key) return;
+  if (!S.annKey || S.annKey.split(':')[0] !== String(c.round)) clogAdd(`Runde ${c.round}`, 'rd');
+  S.annKey = key;
+  const nm = a.side === 'h' ? S.game.heroes[a.idx].name : c.enemies[a.idx].name;
+  const t = a.side === 'h' ? `${nm} ist am Zug.` : `${nm} (Gegner) ist am Zug.`;
+  clogAdd(t, 'turn');
+  say(t);
+}
+function openCombatLog() {
+  const rows = (S.clog || []).map((l) => `<div class="cl ${l.cls}">${esc(l.t)}</div>`).join('') || '<p class="muted">Noch nichts passiert.</p>';
+  openModal(`<h2>Kampfprotokoll</h2><div class="clog">${rows}</div><div class="acts">${closeBtn}</div>`, 'clog');
+  const box = $('#modal-box .clog'); if (box) box.scrollTop = box.scrollHeight;
+}
+function renderAll() { announceTurn(); renderParty(); renderCombat(); renderLog(); }
 function renderLog() { $('#log').innerHTML = S.log.slice(S.game && S.game.combat ? -2 : -3).map((m) => `<div>${esc(m)}</div>`).join(''); }
 function renderParty() {
   const g = S.game, box = $('#party');
@@ -354,7 +379,9 @@ function renderCombat() {
   const c = S.game.combat, eb = $('#enemybox'), ab = $('#actionbar');
   if (!c) { eb.hidden = true; ab.hidden = true; return; }
   eb.hidden = false;
-  eb.innerHTML = c.enemies.map((e) => {
+  const cur = c.over ? null : currentActor(S.game);
+  const curName = cur ? (cur.side === 'h' ? S.game.heroes[cur.idx].name : c.enemies[cur.idx].name) : '';
+  eb.innerHTML = (cur ? `<div class="turnbar ${cur.side === 'h' ? 'hero' : 'foe'}">${cur.side === 'h' ? 'Am Zug: ' + esc(curName) : 'Gegner am Zug: ' + esc(curName)}</div>` : '') + c.enemies.map((e) => {
     const pct = Math.round(100 * e.hp / e.maxHp);
     return `<div class="en"><b>${esc(e.name)}</b><span>${e.hp}/${e.maxHp} LP</span><div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div></div>`;
   }).join('') + `<div class="order">Runde ${c.round}: ` + c.order.map((o, i) => {
@@ -364,9 +391,9 @@ function renderCombat() {
   ab.hidden = false;
   const a = currentActor(S.game);
   if (c.over || !a) { ab.hidden = true; return; }
-  if (a.side !== 'h' || S.lock) { ab.innerHTML = '<div class="wait">Gegner ist am Zug …</div>'; return; }
+  if (a.side !== 'h' || S.lock) { ab.innerHTML = `<div class="wait">${a.side === 'h' ? esc(S.game.heroes[a.idx].name) + ' ist gleich dran …' : 'Gegner ist am Zug …'}</div><button class="ab" data-c="log" style="flex:0 0 auto">Protokoll</button>`; return; }
   const potions = S.game.inv.potion || 0;
-  let html = `<button class="ab" data-c="attack">⚔ Angriff</button><button class="ab" data-c="defend">⛨ Verteidigen</button><button class="ab" data-c="item" ${potions ? '' : 'disabled'}>Gegenstand (${potions})</button><button class="ab" data-c="spell" disabled>✦ Zaubern</button>`;
+  let html = `<button class="ab" data-c="attack">⚔ Angriff</button><button class="ab" data-c="defend">⛨ Verteidigen</button><button class="ab" data-c="item" ${potions ? '' : 'disabled'}>Gegenstand (${potions})</button><button class="ab" data-c="spell" disabled>✦ Zaubern</button><button class="ab" data-c="log">Protokoll</button>`;
   if (S.itemMode) {
     html += '<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">' + S.game.heroes.map((h, i) =>
       `<button class="ab" data-c="heal:${i}" ${h.hp > 0 && h.hp < h.maxHp ? '' : 'disabled'}>Heiltrank → ${esc(h.name)}</button>`).join('') + '</div>';
@@ -489,7 +516,9 @@ function openSettings() {
   const chk = (key) => `<input type="checkbox" data-s="${key}" ${s[key] ? 'checked' : ''}>`;
   openModal(`<h2>Einstellungen</h2>
   <div class="row"><label>Lautstärke</label><input type="range" min="0" max="1" step="0.05" value="${s.volume}" data-s="volume"></div>
-  <div class="row"><label>Ton stumm</label>${chk('muted')}</div>
+  <div class="row"><label>Ton stumm (alles)</label>${chk('muted')}</div>
+  <div class="row"><label>Schrittgeräusche</label>${chk('steps')}</div>
+  <div class="row"><label>Hintergrundgeräusche (Wind, Tropfen, Fackel)</label>${chk('ambient')}</div>
   <div class="row"><label>Grafikqualität</label>${sel('quality', [['low', 'Niedrig'], ['medium', 'Mittel'], ['high', 'Hoch']])}</div>
   <div class="row"><label>Fackelflackern</label>${sel('flicker', [[0, 'Aus'], [0.35, 'Schwach'], [1, 'Normal']])}</div>
   <div class="row"><label>Vibration</label>${chk('vibration')}</div>

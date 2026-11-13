@@ -277,7 +277,8 @@ export function heroAction(state, data, act) {
     if (d === 0) { msgs.push(`${h.name} verfehlt ${e.name}.`); sfx = 'miss'; }
     else {
       e.hp = Math.max(0, e.hp - d);
-      msgs.push(`${h.name} trifft ${e.name} für ${d} Schaden.`);
+      const note = h.row === 'back' && !h.ranged ? ' (Hinterreihe, Nahkampf: halber Schaden)' : '';
+      msgs.push(`${h.name} trifft ${e.name} für ${d} Schaden${note}.`);
       sfx = 'hit';
       if (e.hp === 0) msgs.push(`${e.name} bricht zusammen.`);
     }
@@ -317,11 +318,12 @@ export function enemyStep(state, data, opts = {}) {
   const t = state.heroes[ti];
   const d = calcDamage(state, en.atk, t.def, { defending: !!c.defending[ti] });
   let sfx = 'miss';
-  if (d === 0) msgs.push(`${e.name} verfehlt ${t.name}.`);
+  const why = `${t.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}${c.defending[ti] ? ', in Deckung: halber Schaden' : ''}`;
+  if (d === 0) msgs.push(`${e.name} greift ${t.name} an (${why}) und verfehlt.`);
   else if (opts.god) { msgs.push(`${e.name} trifft ${t.name}, doch Debug-Unverwundbarkeit hält.`); sfx = 'hurt'; }
   else {
     t.hp = Math.max(0, t.hp - d);
-    msgs.push(`${e.name} trifft ${t.name} für ${d} Schaden.`);
+    msgs.push(`${e.name} trifft ${t.name} für ${d} Schaden (${why}).`);
     sfx = 'hurt';
     if (t.hp === 0) msgs.push(`${t.name} sinkt bewusstlos zu Boden.`);
   }
