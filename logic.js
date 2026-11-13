@@ -351,7 +351,7 @@ export function startCombat(state, data, enemyObj) {
   const en = data.enemies[enemyObj.kind];
   state.combat = {
     enemies: [{ objId: enemyObj.id, kind: enemyObj.kind, name: en.name, hp: enemyObj.hp, maxHp: en.hp }],
-    order: [], pos: 0, round: 1, defending: {}, over: null
+    order: [], pos: 0, round: 1, defending: {}, status: {}, over: null
   };
   buildOrder(state, data);
   normalizeTurn(state, data);
@@ -372,6 +372,52 @@ export function calcDamage(state, atk, def, opts = {}) {
   if (opts.backMelee) d = Math.ceil(d / 2);
   if (opts.defending) d = Math.max(1, Math.floor(d / 2));
   return d;
+}
+
+// ---------- Statuswirkungen (nur im Kampf, werden nicht gespeichert) ----------
+// c.status['h0' | 'e0'] = { poison: {t, p}, stun: {t}, weak: {t} }
+const skey = (side, idx) => side + idx;
+const actorName = (state, side, idx) => (side === 'h' ? state.heroes[idx].name : state.combat.enemies[idx].name);
+export function statusOf(state, side, idx) { return (state.combat && state.combat.status[skey(side, idx)]) || {}; }
+function addStatus(state, data, side, idx, inf, msgs) {
+  if (!inf) return;
+  if (inf.chance < 100 && rand(state) * 100 >= inf.chance) return;
+  const c = state.combat, k = skey(side, idx);
+  const st = c.status[k] || (c.status[k] = {});
+  const cur = st[inf.status];
+  st[inf.status] = { t: Math.max(cur ? cur.t : 0, inf.turns), p: Math.max(cur ? cur.p || 0 : 0, inf.power || 0) };
+  const nm = data.statuses[inf.status].name;
+  msgs.push(`${actorName(state, side, idx)}: ${nm}${inf.status === 'poison' ? ` (${inf.turns} Runden, ${inf.power} Schaden je Runde)` : inf.status === 'weak' ? ` (${inf.turns} Runden)` : ''}.`);
+}
+const effAtk = (state, side, idx, atk) => (statusOf(state, side, idx).weak ? Math.max(1, Math.floor((atk * 3) / 4)) : atk);
+
+// Ende des eigenen Zugs: Gift wirkt, Dauer sinkt. Rückgabe: true, wenn danach alle Gegner besiegt sind.
+function endOfTurn(state, data, side, idx, msgs) {
+  const c = state.combat, k = skey(side, idx), st = c.status[k];
+  if (!st) return false;
+  const tgt = side === 'h' ? state.heroes[idx] : c.enemies[idx];
+  if (st.poison && tgt.hp > 0) {
+    const before = tgt.hp;
+    tgt.hp = Math.max(side === 'h' ? 1 : 0, tgt.hp - st.poison.p);
+    const lost = before - tgt.hp;
+    if (lost > 0) msgs.push(`${tgt.name} erleidet ${lost} Giftschaden.`);
+    if (side === 'e' && tgt.hp === 0) msgs.push(`${tgt.name} bricht zusammen.`);
+  }
+  for (const n of ['poison', 'weak']) if (st[n] && --st[n].t <= 0) { delete st[n]; msgs.push(`${tgt.name}: ${data.statuses[n].name} klingt ab.`); }
+  return c.enemies.every((e) => e.hp <= 0);
+}
+
+// Betäubter Akteur am Zug setzt aus. Rückgabe null, wenn der Akteur nicht betäubt ist.
+export function skipStunned(state, data) {
+  const c = state.combat, a = currentActor(state);
+  if (!c || !a) return null;
+  const st = c.status[skey(a.side, a.idx)];
+  if (!st || !st.stun) return null;
+  delete st.stun;
+  const msgs = [`${actorName(state, a.side, a.idx)} ist betäubt und setzt aus.`];
+  if (endOfTurn(state, data, a.side, a.idx, msgs)) { finishVictory(state, data, msgs); return { msgs, sfx: 'miss', over: 'victory' }; }
+  advance(state, data);
+  return { msgs, sfx: 'miss', over: null };
 }
 
 function advance(state, data) {
@@ -412,7 +458,7 @@ export function heroAction(state, data, act) {
     let ti = act.target;
     if (ti == null || !c.enemies[ti] || c.enemies[ti].hp <= 0) ti = c.enemies.findIndex((e) => e.hp > 0);
     const e = c.enemies[ti];
-    const d = calcDamage(state, h.atk, data.enemies[e.kind].def, { backMelee: h.row === 'back' && !h.ranged });
+    const d = calcDamage(state, effAtk(state, 'h', a.idx, h.atk), data.enemies[e.kind].def, { backMelee: h.row === 'back' && !h.ranged });
     if (d === 0) { msgs.push(`${h.name} verfehlt ${e.name}.`); sfx = 'miss'; }
     else {
       e.hp = Math.max(0, e.hp - d);
@@ -432,6 +478,8 @@ export function heroAction(state, data, act) {
       if (!t || t.hp <= 0 || t.hp >= t.maxHp) return { error: 'bad-target' };
       const gain = Math.min(ab.heal, t.maxHp - t.hp);
       t.hp += gain; h.mp -= ab.cost;
+      const stT = c.status['h' + act.target];
+      if (ab.cleanse && stT && stT[ab.cleanse]) { delete stT[ab.cleanse]; msgs.push(`${t.name}: ${data.statuses[ab.cleanse].name} wird genommen.`); }
       msgs.push(`${h.name} wirkt ${ab.name}: ${t.name} +${gain} LP (−${ab.cost} ${rn}).`);
       sfx = 'heal';
     } else {
@@ -439,13 +487,14 @@ export function heroAction(state, data, act) {
       if (ti == null || !c.enemies[ti] || c.enemies[ti].hp <= 0) ti = c.enemies.findIndex((e) => e.hp > 0);
       const e = c.enemies[ti];
       h.mp -= ab.cost;
-      const d = calcDamage(state, h.atk, data.enemies[e.kind].def, { backMelee: h.row === 'back' && !h.ranged, mult: ab.mult, sure: !!ab.sure });
+      const d = calcDamage(state, effAtk(state, 'h', a.idx, h.atk), data.enemies[e.kind].def, { backMelee: h.row === 'back' && !h.ranged, mult: ab.mult, sure: !!ab.sure });
       if (d === 0) { msgs.push(`${h.name} setzt ${ab.name} ein, verfehlt aber ${e.name} (−${ab.cost} ${rn}).`); sfx = 'miss'; }
       else {
         e.hp = Math.max(0, e.hp - d);
         msgs.push(`${h.name} setzt ${ab.name} ein: ${d} Schaden an ${e.name} (−${ab.cost} ${rn}).`);
         sfx = 'hit';
         if (e.hp === 0) msgs.push(`${e.name} bricht zusammen.`);
+        else addStatus(state, data, 'e', ti, ab.inflict, msgs);
       }
     }
   } else if (act.type === 'defend') {
@@ -466,6 +515,7 @@ export function heroAction(state, data, act) {
     const gold = finishVictory(state, data, msgs);
     return { msgs, sfx, over: 'victory', gold };
   }
+  endOfTurn(state, data, 'h', a.idx, msgs);
   advance(state, data);
   return { msgs, sfx, over };
 }
@@ -483,7 +533,7 @@ export function enemyStep(state, data, opts = {}) {
   const pool = front.length && (rand(state) < 0.75 || !back.length) ? front : (back.length ? back : front);
   const ti = pool[randInt(state, 0, pool.length - 1)];
   const t = state.heroes[ti];
-  const d = calcDamage(state, en.atk, t.def, { defending: !!c.defending[ti] });
+  const d = calcDamage(state, effAtk(state, 'e', a.idx, en.atk), t.def, { defending: !!c.defending[ti] });
   let sfx = 'miss';
   const why = `${t.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}${c.defending[ti] ? ', in Deckung: halber Schaden' : ''}`;
   if (d === 0) msgs.push(`${e.name} greift ${t.name} an (${why}) und verfehlt.`);
@@ -493,12 +543,14 @@ export function enemyStep(state, data, opts = {}) {
     msgs.push(`${e.name} trifft ${t.name} für ${d} Schaden (${why}).`);
     sfx = 'hurt';
     if (t.hp === 0) msgs.push(`${t.name} sinkt bewusstlos zu Boden.`);
+    else addStatus(state, data, 'h', ti, en.onHit, msgs);
   }
   if (state.heroes.every((h) => h.hp <= 0)) {
     c.over = 'defeat';
     msgs.push('Die Gruppe ist gefallen.');
     return { msgs, sfx, over: 'defeat' };
   }
+  if (endOfTurn(state, data, 'e', a.idx, msgs)) { const gold = finishVictory(state, data, msgs); return { msgs, sfx, over: 'victory', gold }; }
   advance(state, data);
   return { msgs, sfx, over: null };
 }

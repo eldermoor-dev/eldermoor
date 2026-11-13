@@ -414,6 +414,49 @@ export async function runTests(data, env = {}) {
     }
   });
 
+  await test('Statuswirkungen (3b): Gift, Betäubung, Schwäche, Entgiften, Gift tötet keinen Helden', () => {
+    const mk = (seed) => { const s = L.newGame(data, seed); L.startCombat(s, data, s.objs.find((o) => o.type === 'enemy')); return s; };
+    const toHero = (s, cls) => { let g = 0; while (g++ < 60) { const a = L.currentActor(s); if (a.side === 'h' && s.heroes[a.idx].cls === cls) return a.idx; if (L.skipStunned(s, data)) continue; if (a.side === 'h') L.heroAction(s, data, { type: 'defend' }); else L.enemyStep(s, data, { god: true }); } throw new Error('Held nie am Zug'); };
+    const force = (s, side, idx, name, t, p) => { s.combat.status[side + idx] = { ...(s.combat.status[side + idx] || {}), [name]: { t, p: p || 0 } }; };
+    // Gift auf Gegner: Schurke vergiftet, Schaden am Ende des Gegnerzugs
+    const s = mk(11); const ri = toHero(s, 'rogue'); s.heroes[ri].mp = 10;
+    s.combat.enemies[0].hp = 80;
+    let r; let tries = 0; do { s.heroes[ri].mp = 10; r = L.heroAction(s, data, { type: 'ability', target: 0 }); if (s.combat.status.e0 && s.combat.status.e0.poison) break; toHero(s, 'rogue'); } while (tries++ < 20);
+    assert(s.combat.status.e0 && s.combat.status.e0.poison && s.combat.status.e0.poison.p === 2, 'Gegner vergiftet');
+    const hpBefore = s.combat.enemies[0].hp; let g = 0;
+    while (L.currentActor(s).side !== 'e' && g++ < 20) { const a = L.currentActor(s); L.heroAction(s, data, { type: 'defend' }); }
+    const e0 = s.combat.enemies[0].hp; const er = L.enemyStep(s, data, { god: true });
+    assert(er.msgs.some((m) => /Giftschaden/.test(m)) && s.combat.enemies[0].hp === e0 - 2, 'Giftschaden 2 am Ende des Gegnerzugs: ' + er.msgs.join('|'));
+    // Gift lässt Helden bei 1 LP
+    const s2 = mk(12); force(s2, 'h', 0, 'poison', 3, 5); s2.heroes[0].hp = 2;
+    toHero(s2, 'warrior'); L.heroAction(s2, data, { type: 'defend' });
+    eq(s2.heroes[0].hp, 1, 'Gift tötet nicht');
+    // Betäubung: Akteur setzt aus, Betäubung ist danach weg
+    const s3 = mk(13); force(s3, 'e', 0, 'stun', 1);
+    let skipped = null; g = 0;
+    while (!skipped && g++ < 30) { const a = L.currentActor(s3); skipped = L.skipStunned(s3, data); if (skipped) break; if (a.side === 'h') L.heroAction(s3, data, { type: 'defend' }); else L.enemyStep(s3, data, { god: true }); }
+    assert(skipped && /betäubt/.test(skipped.msgs[0]) && !s3.combat.status.e0.stun, 'Gegner setzt aus');
+    assert(L.skipStunned(s3, data) === null || !s3.combat.status.e0.stun, 'nicht zweimal');
+    // Schwäche: Angriff −25 % (Schaden ohne Zufall prüfen über calcDamage-Eingang: Krieger atk 8 -> 6)
+    const s4 = mk(14); toHero(s4, 'warrior');
+    const hp4 = s4.combat.enemies[0].hp; force(s4, 'h', L.currentActor(s4).idx, 'weak', 2);
+    s4.rng = 1; const rr = L.heroAction(s4, data, { type: 'attack', target: 0 });
+    const dealt = hp4 - s4.combat.enemies[0].hp; assert(dealt === 0 || dealt <= 6 + 2 - 1, 'schwacher Angriff höchstens 7: ' + dealt);
+    // Priester nimmt Gift
+    const s5 = mk(15); const pi = toHero(s5, 'priest'); force(s5, 'h', 0, 'poison', 3, 2); s5.heroes[0].hp = 10;
+    const hr = L.heroAction(s5, data, { type: 'ability', target: 0 });
+    assert(!s5.combat.status.h0.poison && hr.msgs.some((m) => /Gift/.test(m)), 'Gift genommen: ' + JSON.stringify(hr));
+    // Dauer sinkt und Status klingt ab
+    const s6 = mk(16); const wi = toHero(s6, 'warrior'); force(s6, 'h', wi, 'weak', 1);
+    const dr = L.heroAction(s6, data, { type: 'defend' });
+    assert(!s6.combat.status['h' + wi].weak && dr.msgs.some((m) => /klingt ab/.test(m)), 'Schwäche klingt ab');
+    // Daten
+    for (const [k, c] of Object.entries(data.classes)) { const i = c.ability.inflict; if (i) assert(data.statuses[i.status] && i.chance > 0 && i.chance <= 100 && i.turns >= 1, `Beruf ${k}: Statusdaten`); }
+    const oh = data.enemies.schrat.onHit; assert(data.statuses[oh.status] && oh.power >= 1, 'Moorschrat onHit');
+    // Kampf wird nie gespeichert: Status taucht nicht im Spielstand auf
+    assert(!JSON.stringify(L.serialize(L.deserialize(L.serialize(s6), data))).includes('"status"'), 'kein Status im Spielstand');
+  });
+
   await test('Migration v1→v2: beschädigte v1-Stände werden mit klarer Meldung abgelehnt', () => {
     const fails = (mut, re) => {
       const o = JSON.parse(V1_SAVE); mut(o);

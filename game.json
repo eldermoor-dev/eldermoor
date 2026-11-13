@@ -16,11 +16,16 @@
     "gnome": { "name": "Gnom", "desc": "Klein und flink, wenig Ausdauer.", "mods": { "maxHp": -3, "atk": 0, "def": 0, "init": 1 } }
   },
   "classes": {
-    "warrior": { "name": "Krieger", "desc": "Hält die Vorderreihe, viel LP und Verteidigung.", "row": "front", "ranged": false, "base": { "maxHp": 34, "atk": 8, "def": 5, "init": 4 }, "growth": { "maxHp": 60, "atk": 8, "def": 7, "init": 3 }, "res": { "name": "Ausdauer", "base": 10, "growth": 20 }, "ability": { "id": "smash", "name": "Wuchtschlag", "kind": "damage", "cost": 4, "mult": 160, "desc": "Schwerer Hieb: 160 % Schaden." } },
-    "rogue": { "name": "Schurke", "desc": "Schnell, zuerst am Zug.", "row": "front", "ranged": false, "base": { "maxHp": 24, "atk": 7, "def": 3, "init": 7 }, "growth": { "maxHp": 40, "atk": 8, "def": 4, "init": 5 }, "res": { "name": "Ausdauer", "base": 10, "growth": 20 }, "ability": { "id": "ambush", "name": "Hinterhalt", "kind": "damage", "cost": 4, "mult": 140, "sure": true, "desc": "Trifft immer, 140 % Schaden." } },
-    "priest": { "name": "Priester", "desc": "Hinterreihe, Heiler der Gruppe.", "row": "back", "ranged": false, "healer": true, "base": { "maxHp": 26, "atk": 5, "def": 3, "init": 3 }, "growth": { "maxHp": 45, "atk": 5, "def": 4, "init": 3 }, "res": { "name": "Mana", "base": 12, "growth": 30 }, "ability": { "id": "heal", "name": "Heilende Hand", "kind": "heal", "cost": 5, "heal": 20, "desc": "Heilt einen Helden um 20 LP." } },
+    "warrior": { "name": "Krieger", "desc": "Hält die Vorderreihe, viel LP und Verteidigung.", "row": "front", "ranged": false, "base": { "maxHp": 34, "atk": 8, "def": 5, "init": 4 }, "growth": { "maxHp": 60, "atk": 8, "def": 7, "init": 3 }, "res": { "name": "Ausdauer", "base": 10, "growth": 20 }, "ability": { "id": "smash", "name": "Wuchtschlag", "kind": "damage", "cost": 4, "mult": 160, "inflict": { "status": "stun", "chance": 35, "turns": 1 }, "desc": "160 % Schaden, 35 % Chance auf Betäubung (Gegner setzt 1 Zug aus)." } },
+    "rogue": { "name": "Schurke", "desc": "Schnell, zuerst am Zug.", "row": "front", "ranged": false, "base": { "maxHp": 24, "atk": 7, "def": 3, "init": 7 }, "growth": { "maxHp": 40, "atk": 8, "def": 4, "init": 5 }, "res": { "name": "Ausdauer", "base": 10, "growth": 20 }, "ability": { "id": "ambush", "name": "Hinterhalt", "kind": "damage", "cost": 4, "mult": 140, "sure": true, "inflict": { "status": "poison", "chance": 100, "turns": 3, "power": 2 }, "desc": "Trifft immer, 140 % Schaden, vergiftet 3 Runden (2 Schaden je Runde)." } },
+    "priest": { "name": "Priester", "desc": "Hinterreihe, Heiler der Gruppe.", "row": "back", "ranged": false, "healer": true, "base": { "maxHp": 26, "atk": 5, "def": 3, "init": 3 }, "growth": { "maxHp": 45, "atk": 5, "def": 4, "init": 3 }, "res": { "name": "Mana", "base": 12, "growth": 30 }, "ability": { "id": "heal", "name": "Heilende Hand", "kind": "heal", "cost": 5, "heal": 20, "cleanse": "poison", "desc": "Heilt einen Helden um 20 LP und nimmt Gift." } },
     "mage": { "name": "Magier", "desc": "Hinterreihe, Fernkampf, zerbrechlich.", "row": "back", "ranged": true, "base": { "maxHp": 18, "atk": 8, "def": 1, "init": 5 }, "growth": { "maxHp": 30, "atk": 9, "def": 2, "init": 4 }, "res": { "name": "Mana", "base": 12, "growth": 30 }, "ability": { "id": "firebolt", "name": "Feuerblitz", "kind": "damage", "cost": 5, "mult": 180, "desc": "Magischer Treffer: 180 % Schaden." } },
-    "ranger": { "name": "Waldläufer", "desc": "Hinterreihe, Fernkampf mit dem Bogen.", "row": "back", "ranged": true, "base": { "maxHp": 24, "atk": 7, "def": 2, "init": 6 }, "growth": { "maxHp": 40, "atk": 8, "def": 3, "init": 5 }, "res": { "name": "Ausdauer", "base": 10, "growth": 20 }, "ability": { "id": "aimed", "name": "Gezielter Schuss", "kind": "damage", "cost": 4, "mult": 150, "sure": true, "desc": "Trifft immer, 150 % Schaden." } }
+    "ranger": { "name": "Waldläufer", "desc": "Hinterreihe, Fernkampf mit dem Bogen.", "row": "back", "ranged": true, "base": { "maxHp": 24, "atk": 7, "def": 2, "init": 6 }, "growth": { "maxHp": 40, "atk": 8, "def": 3, "init": 5 }, "res": { "name": "Ausdauer", "base": 10, "growth": 20 }, "ability": { "id": "aimed", "name": "Gezielter Schuss", "kind": "damage", "cost": 4, "mult": 150, "sure": true, "inflict": { "status": "weak", "chance": 100, "turns": 2 }, "desc": "Trifft immer, 150 % Schaden, schwächt 2 Runden (−25 % Angriff)." } }
+  },
+  "statuses": {
+    "poison": { "name": "Gift", "icon": "☠", "desc": "Schaden am Ende des eigenen Zugs, Held bleibt dabei mindestens bei 1 LP." },
+    "stun": { "name": "Betäubt", "icon": "✸", "desc": "Der nächste Zug entfällt." },
+    "weak": { "name": "Schwach", "icon": "▼", "desc": "Angriff −25 %." }
   },
   "progression": { "maxLevel": 10, "xp": [100, 250, 450, 700, 1000, 1400, 1900, 2500, 3200] },
   "quickParty": [
@@ -30,7 +35,7 @@
     { "name": "Ivo", "race": "human", "cls": "mage" }
   ],
   "enemies": {
-    "schrat": { "name": "Moorschrat", "hp": 80, "atk": 13, "def": 3, "init": 5, "gold": 15, "xp": 120 }
+    "schrat": { "name": "Moorschrat", "hp": 80, "atk": 13, "def": 3, "init": 5, "gold": 15, "xp": 120, "onHit": { "status": "poison", "chance": 30, "turns": 3, "power": 2 } }
   },
   "palettes": {
     "keller": {
