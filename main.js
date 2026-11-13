@@ -3,13 +3,13 @@
 import {
   DIRS, DIR_NAMES, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
+  buildParty, deriveStats, skipStunned, restParty, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setResolution, W, H, BASE_W, BASE_H } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.4.6';
+const VERSION = '0.5.0';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -539,6 +539,7 @@ const closeBtn = '<button class="mb" data-m="close">Schließen</button>';
 function openMenu() {
   openModal(`<h2>Menü</h2><div class="acts" style="flex-direction:column;align-items:stretch">
     <button class="mb primary" data-m="close">Weiterspielen</button>
+    <button class="mb" data-m="rest">Rasten (Proviant: ${S.game ? (S.game.inv.ration || 0) : 0})</button>
     <button class="mb" data-m="save">Speichern</button>
     <button class="mb" data-m="load">Laden</button>
     <button class="mb" data-m="export">Spielstand exportieren (Datei)</button>
@@ -553,6 +554,7 @@ function helpHtml() {
   <h3>Rechts: Aktionen</h3><p>◉ Interagieren (Türen, Truhen, Gegner ansprechen), ⚔ Angriff, ✦ Fähigkeit (nur im Kampf, kostet Mana oder Ausdauer). Bei mehreren Gegnern: Gegner antippen = Ziel wählen, „Alle“ trifft jeden Gegner mit 60 % Schaden, ▣ Inventar, ☻ Charakter.</p>
   <h3>Oben</h3><p>Karte (auf eine erkundete Zelle tippen setzt oder entfernt eine Notiz), Speichern, Laden, Einstellungen, Menü.</p>
   <h3>Kampf</h3><p>Rundenbasiert. Die Zugreihenfolge steht oben. Hinterreihe-Helden ohne Fernkampf treffen nur halb so hart.</p>
+  <h3>Rast</h3><p>Menü → Rasten (oder im Inventar beim Proviant). Mit Proviant erholt sich die Gruppe vollständig, auch Bewusstlose. Ohne Proviant nur zu 30 %. Nicht im Kampf und nicht, wenn ein Gegner nahe ist.</p>
   <h3>Ziel des Prototyps</h3><p>Truhe im Nebenraum öffnen, Eisenschlüssel nehmen, die Eisentür aufschließen, den Moorschrat besiegen und den Runenstein erreichen.</p>
   <p class="muted">Prototyp Phase 2 (in Arbeit) · Version ${VERSION} · Autor: eldermoor-dev. Alle Grafiken und Geräusche entstehen im Spiel selbst (prozedural). Keine Musik.</p>
   <div class="acts">${closeBtn}</div>`;
@@ -565,7 +567,7 @@ function openInventory() {
   let html = `<h2>Inventar</h2><p>Gold: <b>${g.gold}</b></p>`;
   html += items.length ? items.map(([id, n]) => {
     const it = d.items[id];
-    const use = it.kind === 'consumable' && !g.combat ? `<button class="mb" data-m="use:${id}">Benutzen</button>` : '';
+    const use = it.kind === 'consumable' && !g.combat ? `<button class="mb" data-m="use:${id}">Benutzen</button>` : it.kind === 'supply' && !g.combat ? '<button class="mb" data-m="rest">Rasten</button>' : '';
     return `<div class="row"><div><b>${esc(it.name)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}<div class="muted">${esc(it.desc)}</div></div>${use}</div>`;
   }).join('') : '<p class="muted">Nichts dabei.</p>';
   if (S.invUse) {
@@ -822,6 +824,12 @@ async function onModalClick(e) {
   } else if (m.startsWith('load:')) { await loadSlot(m.slice(5)); }
   else if (m === 'gameover-load') openSlots('load');
   else if (m === 'return') { applyDefeat(g, S.data); S.lock = false; snapCam(); closeModal(); say('Du erwachst am Eingang. Die Gruppe ist angeschlagen.'); renderAll(); }
+  else if (m === 'rest') {
+    const r = restParty(g, S.data);
+    const t = { 'in-combat': 'Im Kampf kann niemand rasten.', 'enemy-near': 'Ein Gegner ist zu nah. So kann die Gruppe nicht rasten.', 'nothing-to-do': 'Alle sind bereits bei Kräften.' }[r.error];
+    if (t) { say(t); toast(t); closeModal(); }
+    else { say(r.msg); S.sfx.play(r.sfx); toast(r.msg, 3200); closeModal(); renderAll(); }
+  }
   else if (m.startsWith('use:')) { S.invUse = m.slice(4); openInventory(); }
   else if (m.startsWith('heal:')) {
     const r = useItemOutside(g, S.data, S.invUse || 'potion', +m.slice(5));
