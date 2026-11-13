@@ -78,10 +78,10 @@ for (const id of Object.keys(ENC)) {
 
 out('');
 out('## B) Kampagnenfolge Wölfe → Kultisten-Gang → Moorschrat');
-out('Ohne Rast: LP bleiben, besiegte Helden stehen mit 1 LP auf (aktuelle Übergangsregel). Mit Rast: volle LP/Mana zwischen den Kämpfen.');
+out('Ohne Rast: LP bleiben, besiegte Helden stehen mit 1 LP auf (aktuelle Übergangsregel). „Immer voll“: volle LP/Mana zwischen den Kämpfen. „Mit Proviant“: echte Rast (restParty) nach jedem Sieg, Startvorrat 3.');
 out('| Strategie | Rast | Wölfe gewonnen | + Gang gewonnen | + Schrat gewonnen | KO-Helden gesamt |');
 out('|---|---|---|---|---|---|');
-for (const strat of ['simple', 'smart']) for (const rest of [false, true]) {
+for (const strat of ['simple', 'smart']) for (const rest of [false, 'ration', true]) {
   let w1 = 0, w2 = 0, w3 = 0; const kos = [];
   for (let i = 0; i < RUNS; i++) {
     const s = L.newGame(data, 5000 + i); let ko = 0;
@@ -91,11 +91,12 @@ for (const strat of ['simple', 'smart']) for (const rest of [false, true]) {
       const r = fight(s, id, strat); ko += r.ko;
       if (!r.won) break;
       stage++;
-      if (rest) s.heroes.forEach((h) => { h.hp = h.maxHp; h.mp = h.maxMp; });
+      if (rest === true) s.heroes.forEach((h) => { h.hp = h.maxHp; h.mp = h.maxMp; });
+      else if (rest === 'ration') { s.objs.forEach((o) => { if (o.type === 'enemy' && !o.dead) { o.x = 99; o.y = 99; } }); L.restParty(s, data); }
     }
     if (stage >= 1) w1++; if (stage >= 2) w2++; if (stage >= 3) w3++; kos.push(ko);
   }
-  out(`| ${strat === 'simple' ? 'nur Angriff' : 'klug'} | ${rest ? 'ja' : 'nein'} | ${pct(w1 / RUNS)} | ${pct(w2 / RUNS)} | ${pct(w3 / RUNS)} | ${f1(stats(kos))} |`);
+  out(`| ${strat === 'simple' ? 'nur Angriff' : 'klug'} | ${rest === true ? 'immer voll' : rest === 'ration' ? 'mit Proviant (3)' : 'nein'} | ${pct(w1 / RUNS)} | ${pct(w2 / RUNS)} | ${pct(w3 / RUNS)} | ${f1(stats(kos))} |`);
 }
 out('');
 out('Hinweis: Die Simulation nutzt die echten Regeln, aber nur zwei feste Strategien. Ein echter Spieler liegt dazwischen.');
