@@ -461,6 +461,31 @@ export async function runTests(data, env = {}) {
     assert(!JSON.stringify(L.serialize(L.deserialize(L.serialize(s6), data))).includes('"status"'), 'kein Status im Spielstand');
   });
 
+  await test('Rast (5a): Proviant, hungrig, Bewusstlose, Kampf/Gegner-Sperre, nichts zu tun', () => {
+    const s = fresh(3);
+    assert(s.inv.ration === 3, 'Startproviant 3');
+    s.player = { x: 1, y: 1, dir: 0 }; // weit weg von Gegnern prüfen wir unten gezielt
+    s.objs.forEach((o) => { if (o.type === 'enemy') { o.x = 18; o.y = 18; } });
+    assert(L.restParty(s, data).error === 'nothing-to-do', 'volle Gruppe: nichts zu tun, kein Proviant weg');
+    assert(s.inv.ration === 3, 'Proviant unverändert');
+    s.heroes[0].hp = 0; s.heroes[1].hp = 5; s.heroes[2].mp = 0; s.heroes[3].hp = 1;
+    const r = L.restParty(s, data);
+    assert(r.fed && s.inv.ration === 2, 'Rast mit Proviant verbraucht 1 Stück');
+    assert(s.heroes.every((h) => h.hp === h.maxHp && h.mp === h.maxMp), 'alle voll, auch der Bewusstlose');
+    s.inv.ration = 0; s.heroes[0].hp = 0; s.heroes[0].mp = 0; s.heroes[1].hp = 1;
+    const h = L.restParty(s, data);
+    assert(!h.fed && s.inv.ration === 0, 'hungrige Rast verbraucht nichts');
+    const b = s.heroes[0];
+    assert(b.hp === Math.ceil(b.maxHp * 0.3) && b.mp === Math.ceil(b.maxMp * 0.3), 'hungrig: nur 30 %, Bewusstloser steht auf');
+    assert(s.heroes[1].hp === 1 + Math.ceil(s.heroes[1].maxHp * 0.3), 'hungrig: Verletzter +30 %');
+    s.objs.find((o) => o.type === 'enemy').x = s.player.x + 2; s.objs.find((o) => o.type === 'enemy').y = s.player.y;
+    s.heroes[1].hp = 1;
+    assert(L.restParty(s, data).error === 'enemy-near', 'Gegner zu nah');
+    const q = fresh(4); q.heroes[0].hp = 3; L.startCombat(q, data, q.objs.find((o) => o.type === 'enemy'));
+    assert(L.restParty(q, data).error === 'in-combat', 'im Kampf keine Rast');
+    assert(data.items.ration && data.items.ration.kind === 'supply', 'Datenpunkt Proviant');
+    const sv = L.deserialize(L.serialize(s), data); assert(sv.inv.ration === 0, 'Proviant im Spielstand');
+  });
   await test('Mehrere Gegner (3c): Gruppen, Zielwahl, Alle angreifen, Schwerer Schlag, KI, Aufstehen, Rechenweg', () => {
     const enemyObj = (id) => { const s = L.newGame(data, 31); return [s, s.objs.find((o) => o.id === id)]; };
     // Gruppen
