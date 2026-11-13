@@ -89,6 +89,16 @@ export async function runTests(data, env = {}) {
     assert(L.tryMove(s, data, 'f').moved, 'durch offene Tür');
   });
 
+  await test('Interaktion: Hinweis „Geh näher heran“ bei Objekt zwei Felder entfernt', () => {
+    const s = fresh();
+    put(s, 4, 3, 1);
+    assert(L.interact(s, data).msg === 'Geh näher heran.', 'Hinweis fehlt');
+    put(s, 3, 3, 1);
+    assert(/nichts zu tun/.test(L.interact(s, data).msg), 'zu weit weg: kein Hinweis');
+    put(s, 5, 3, 1);
+    assert(L.interact(s, data).sfx === 'door', 'Tür öffnet direkt davor');
+  });
+
   await test('Begegnung: Gegner vor dir löst Kampf aus', () => {
     const s = fresh();
     put(s, 14, 7, 1);

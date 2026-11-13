@@ -153,7 +153,12 @@ function addLoot(state, data, loot) {
 export function interact(state, data) {
   const f = frontCell(state);
   const o = blockerAt(state, f.x, f.y);
-  if (!o) return { msg: 'Hier gibt es nichts zu tun.' };
+  if (!o) {
+    const p = state.player, f2 = { x: f.x + DIRS[p.dir].dx, y: f.y + DIRS[p.dir].dy };
+    const b2 = blockerAt(state, f2.x, f2.y);
+    if (b2 && cellChar(getLevel(data, state), f.x, f.y) === '.') return { msg: 'Geh näher heran.' };
+    return { msg: 'Hier gibt es nichts zu tun.' };
+  }
   if (o.type === 'enemy') return { encounter: o };
   if (o.type === 'door') {
     if (o.locked) {

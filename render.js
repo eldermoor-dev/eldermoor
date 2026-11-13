@@ -219,6 +219,7 @@ export class Raycaster {
     this.zbuf = new Float32Array(W);
     this.tex = textures;
     this.quality = 'medium'; // low | medium | high
+    this.flicker = 0.35; // Fackelflackern: 0 = aus, 1 = voll
     this.planeLen = 0.8;
     this.focal = (W / 2) / this.planeLen;
     this.setPalette(paletteDef);
@@ -241,7 +242,8 @@ export class Raycaster {
     const planeX = Math.cos(a) * this.planeLen, planeY = Math.sin(a) * this.planeLen;
     const px = view.px, py = view.py;
     const t = view.time || 0;
-    const fl = q === 'low' ? 1 : 1 + 0.07 * Math.sin(t * 11.3) + 0.05 * Math.sin(t * 5.1 + 1.3) + 0.03 * Math.sin(t * 23.7);
+    const amp = q === 'low' ? 0 : this.flicker;
+    const fl = 1 + amp * (0.07 * Math.sin(t * 11.3) + 0.05 * Math.sin(t * 5.1 + 1.3) + 0.03 * Math.sin(t * 23.7));
     const fogK = 0.85;
     const dropFor = (dist) => Math.min(7, Math.floor(dist * fogK / fl));
 

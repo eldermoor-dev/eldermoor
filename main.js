@@ -8,11 +8,11 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, W, H } 
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.1.0';
+const VERSION = '0.1.1';
 const $ = (s, r = document) => r.querySelector(s);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const DEFAULTS = { volume: 0.7, muted: false, quality: 'medium', vibration: true, fontScale: 1, colorblind: false, debug: false };
+const DEFAULTS = { volume: 0.7, muted: false, quality: 'medium', vibration: true, fontScale: 1, colorblind: false, debug: false, flicker: 0.35 };
 const REPEAT = new Set(['fwd', 'back', 'sl', 'sr', 'tl', 'tr']);
 const SLOT_KEYS = ['auto', 'slot1', 'slot2', 'slot3'];
 const SLOT_NAMES = { auto: 'Autosave', slot1: 'Slot 1', slot2: 'Slot 2', slot3: 'Slot 3' };
@@ -70,6 +70,7 @@ function startGame(state) {
   snapCam();
   closeModal();
   $('#title').hidden = true;
+  document.body.classList.remove('on-title');
   S.sfx.unlock();
   S.sfx.startAmbient();
   renderAll();
@@ -85,6 +86,7 @@ function applySettings() {
   S.sfx.setVolume(s.volume);
   S.sfx.setMuted(s.muted);
   S.rc.quality = s.quality;
+  S.rc.flicker = s.flicker;
   document.documentElement.style.setProperty('--fs', String(s.fontScale));
   document.body.classList.toggle('cb', !!s.colorblind);
   $('#debugbtn').hidden = !s.debug;
@@ -190,7 +192,10 @@ function bindUI() {
 }
 
 // ---------------------------------------------------------------- Aktionen
-function say(msg) { if (!msg) return; S.log.push(msg); if (S.log.length > 60) S.log.shift(); renderLog(); }
+function say(msg) {
+  if (!msg) return;
+  if (!S.game.combat && S.log.length && S.log[S.log.length - 1] === msg) return; // gleiche Meldung nicht wiederholen (nicht im Kampf)
+  S.log.push(msg); if (S.log.length > 60) S.log.shift(); renderLog(); }
 function toast(msg, ms = 2400) {
   const t = $('#toast'); t.textContent = msg; t.hidden = false;
   clearTimeout(toast.h); toast.h = setTimeout(() => { t.hidden = true; }, ms);
@@ -486,6 +491,7 @@ function openSettings() {
   <div class="row"><label>Lautstärke</label><input type="range" min="0" max="1" step="0.05" value="${s.volume}" data-s="volume"></div>
   <div class="row"><label>Ton stumm</label>${chk('muted')}</div>
   <div class="row"><label>Grafikqualität</label>${sel('quality', [['low', 'Niedrig'], ['medium', 'Mittel'], ['high', 'Hoch']])}</div>
+  <div class="row"><label>Fackelflackern</label>${sel('flicker', [[0, 'Aus'], [0.35, 'Schwach'], [1, 'Normal']])}</div>
   <div class="row"><label>Vibration</label>${chk('vibration')}</div>
   <div class="row"><label>Schriftgröße</label>${sel('fontScale', [[0.9, 'Klein'], [1, 'Normal'], [1.15, 'Groß'], [1.3, 'Sehr groß']])}</div>
   <div class="row"><label>Farbenblind-Modus (Blau/Orange statt Grün/Rot)</label>${chk('colorblind')}</div>
@@ -498,7 +504,7 @@ function onModalInput(e) {
   const el = e.target.closest('[data-s]');
   if (!el) return;
   const k = el.dataset.s;
-  const v = el.type === 'checkbox' ? el.checked : (el.type === 'range' || k === 'fontScale') ? parseFloat(el.value) : el.value;
+  const v = el.type === 'checkbox' ? el.checked : (el.type === 'range' || k === 'fontScale' || k === 'flicker') ? parseFloat(el.value) : el.value;
   S.settings[k] = v;
   applySettings();
   saveSettings();
@@ -661,6 +667,7 @@ async function showTitle() {
   const latest = await latestSave();
   $('#btn-continue').disabled = !latest;
   $('#title').hidden = false;
+  document.body.classList.add('on-title');
   renderAll();
 }
 async function latestSave() {
