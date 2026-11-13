@@ -3,13 +3,13 @@
 import {
   DIRS, DIR_NAMES, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, statusOf, validateParty, randomParty, xpForNext, NAME_MAX
+  buildParty, deriveStats, skipStunned, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setResolution, W, H, BASE_W, BASE_H } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.3.1';
+const VERSION = '0.4.0';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -25,7 +25,7 @@ const S = {
   data: null, game: null, lvl: null, settings: { ...DEFAULTS }, tex: null, rc: null, ctx: null, img: null,
   sfx: new Sfx(), cam: { x: 0, y: 0, a: 0 }, target: { x: 0, y: 0, a: 0 }, tween: null,
   held: [], queued: null, nextAllowed: 0, lock: false, modal: null, started: false, log: [],
-  debug: { god: false }, itemMode: false, abMode: false, invUse: null, draft: null, fps: 60, frameMs: 0, lastRender: 0,
+  debug: { god: false }, itemMode: false, abMode: false, target: 0, invUse: null, draft: null, fps: 60, frameMs: 0, lastRender: 0,
   installEvent: null, loadMs: null, hadController: false
 };
 
@@ -219,6 +219,7 @@ function bindUI() {
   $('#modal-box').addEventListener('input', onModalInput);
   $('#modal-box').addEventListener('change', onModalInput);
   $('#actionbar').addEventListener('click', onActionBar);
+  $('#enemybox').addEventListener('click', onEnemyBox);
   $('#title').addEventListener('click', onTitleClick);
   $('#importfile').addEventListener('change', onImportFile);
   window.addEventListener('keydown', (e) => {
@@ -315,14 +316,15 @@ function startCombatUI(enemyObj) {
   S.held = []; S.queued = null;
   startCombat(S.game, S.data, enemyObj);
   S.clog = []; S.annKey = null;
-  const name = S.data.enemies[enemyObj.kind].name;
-  say(`${name} greift an!`);
+  S.target = 0;
+  const name = S.game.combat.enemies.map((e) => e.name).join(', ');
+  say(`${name} ${S.game.combat.enemies.length > 1 ? 'greifen' : 'greift'} an!`);
   S.sfx.play('miss'); vib(40);
   renderAll();
   runEnemyTurns();
 }
 function showResult(r) {
-  (r.msgs || []).forEach((m) => { say(m); clogAdd(m); });
+  (r.msgs || []).forEach((m) => { const [t, dt] = m.split(SEP); say(t); clogAdd(dt ? `${t} [${dt}]` : t); });
   if (r.sfx) S.sfx.play(r.sfx);
   if (r.sfx === 'hit' || r.sfx === 'hurt') { flash(); vib(r.sfx === 'hurt' ? 60 : 30); }
 }
@@ -355,6 +357,7 @@ async function runEnemyTurns() {
 }
 async function heroAct(a) {
   if (S.lock || !S.game.combat) return;
+  if (a.target == null && (a.type === 'attack' || a.type === 'ability')) a.target = S.target;
   const r = heroAction(S.game, S.data, a);
   if (r.error) {
     const t = { 'full-hp': 'Dieser Held hat volle LP.', 'no-item': 'Kein Heiltrank mehr.', 'bad-target': 'Das Ziel kann nicht geheilt werden.', 'not-available': 'Noch nicht verfügbar.', 'no-mp': 'Zu wenig Mana oder Ausdauer.', 'no-ability': 'Dieser Held hat keine Fähigkeit.' }[r.error];
@@ -367,6 +370,12 @@ async function heroAct(a) {
   if (r.over === 'victory') { vib([40, 60, 40]); return; }
   await runEnemyTurns();
 }
+function onEnemyBox(e) {
+  const row = e.target.closest('[data-e]');
+  if (!row || !S.game.combat) return;
+  const i = +row.dataset.e;
+  if (S.game.combat.enemies[i] && S.game.combat.enemies[i].hp > 0) { S.target = i; renderCombat(); }
+}
 function onActionBar(e) {
   const b = e.target.closest('[data-c]');
   if (!b || b.disabled) return;
@@ -376,6 +385,7 @@ function onActionBar(e) {
   else if (c === 'defend') heroAct({ type: 'defend' });
   else if (c === 'item') { S.itemMode = !S.itemMode; S.abMode = false; renderCombat(); }
   else if (c === 'spell') useAbility();
+  else if (c === 'sweep') heroAct({ type: 'sweep' });
   else if (c.startsWith('abheal:')) { S.abMode = false; heroAct({ type: 'ability', target: +c.slice(7) }); }
   else if (c === 'log') openCombatLog();
   else if (c.startsWith('heal:')) heroAct({ type: 'item', item: 'potion', hero: +c.slice(5) });
@@ -447,9 +457,12 @@ function renderCombat() {
   eb.hidden = false;
   const cur = c.over ? null : currentActor(S.game);
   const curName = cur ? (cur.side === 'h' ? S.game.heroes[cur.idx].name : c.enemies[cur.idx].name) : '';
+  if (!c.enemies[S.target] || c.enemies[S.target].hp <= 0) S.target = Math.max(0, c.enemies.findIndex((e) => e.hp > 0));
+  const multi = c.enemies.filter((e) => e.hp > 0).length > 1;
   eb.innerHTML = (cur ? `<div class="turnbar ${cur.side === 'h' ? 'hero' : 'foe'}">${cur.side === 'h' ? 'Am Zug: ' + esc(curName) : 'Gegner am Zug: ' + esc(curName)}</div>` : '') + c.enemies.map((e) => {
     const pct = Math.round(100 * e.hp / e.maxHp);
-    return `<div class="en"><b>${esc(e.name)} ${stIcons('e', S.game.combat.enemies.indexOf(e))}</b><span>${e.hp}/${e.maxHp} LP</span><div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div></div>`;
+    const ei = c.enemies.indexOf(e);
+    return `<div class="en${e.hp <= 0 ? ' dead' : ''}${multi && ei === S.target && e.hp > 0 ? ' sel' : ''}" data-e="${ei}"><b>${esc(e.name)} ${stIcons('e', ei)}</b><span>${e.hp}/${e.maxHp} LP</span><div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div>${e.intent === 'heavy' ? '<em class="warn">⚠ Schwerer Schlag</em>' : ''}</div>`;
   }).join('') + `<div class="order">Runde ${c.round}: ` + c.order.map((o, i) => {
     const nm = o.side === 'h' ? S.game.heroes[o.idx].name : c.enemies[o.idx].name;
     return `<span class="${(i === c.pos ? 'now' : i < c.pos ? 'done' : '') + (o.side === 'e' ? ' foe' : '')}">${esc(nm)}</span>`;
@@ -461,14 +474,14 @@ function renderCombat() {
   const potions = S.game.inv.potion || 0;
   const ch = S.game.heroes[a.idx], cab = S.data.classes[ch.cls].ability, cres = S.data.classes[ch.cls].res;
   const abBtn = cab ? `<button class="ab" data-c="spell" ${ch.mp >= cab.cost ? '' : 'disabled'}>✦ ${esc(cab.name)} (${cab.cost} ${esc(cres.name)})</button>` : '';
-  let html = `<button class="ab" data-c="attack">⚔ Angriff</button><button class="ab" data-c="defend">⛨ Verteidigen</button><button class="ab" data-c="item" ${potions ? '' : 'disabled'}>Gegenstand (${potions})</button>${abBtn}<button class="ab" data-c="log">Protokoll</button>`;
+  let html = `<button class="ab" data-c="attack">⚔ Angriff</button><button class="ab" data-c="defend">⛨ Verteidigen</button><button class="ab" data-c="item" ${potions ? '' : 'disabled'}>Gegenstand (${potions})</button>${abBtn}${multi ? `<button class="ab" data-c="sweep">⚔ Alle (${SWEEP_MULT} %)</button>` : ''}<button class="ab" data-c="log">Protokoll</button>`;
   if (S.itemMode) {
     html += '<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">' + S.game.heroes.map((h, i) =>
       `<button class="ab" data-c="heal:${i}" ${h.hp > 0 && h.hp < h.maxHp ? '' : 'disabled'}>Heiltrank → ${esc(h.name)}</button>`).join('') + '</div>';
   }
   if (S.abMode && cab && cab.kind === 'heal') {
     html += '<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">' + S.game.heroes.map((h, i) =>
-      `<button class="ab" data-c="abheal:${i}" ${h.hp > 0 && h.hp < h.maxHp ? '' : 'disabled'}>${esc(cab.name)} → ${esc(h.name)}</button>`).join('') + '</div>';
+      `<button class="ab" data-c="abheal:${i}" ${h.hp > 0 && (h.hp < h.maxHp || (cab.cleanse && statusOf(S.game, 'h', i)[cab.cleanse])) ? '' : 'disabled'}>${esc(cab.name)} → ${esc(h.name)}</button>`).join('') + '</div>';
   }
   ab.innerHTML = html;
 }
@@ -498,7 +511,7 @@ function openMenu() {
 function helpHtml() {
   return `<h2>Steuerung &amp; Info</h2>
   <h3>Links: Bewegung</h3><p>↑ Vor, ↓ Zurück, ← → seitwärts, ↶ ↷ um 90° drehen. Gedrückt halten wiederholt die Bewegung.</p>
-  <h3>Rechts: Aktionen</h3><p>◉ Interagieren (Türen, Truhen, Gegner ansprechen), ⚔ Angriff, ✦ Fähigkeit (nur im Kampf, kostet Mana oder Ausdauer), ▣ Inventar, ☻ Charakter.</p>
+  <h3>Rechts: Aktionen</h3><p>◉ Interagieren (Türen, Truhen, Gegner ansprechen), ⚔ Angriff, ✦ Fähigkeit (nur im Kampf, kostet Mana oder Ausdauer). Bei mehreren Gegnern: Gegner antippen = Ziel wählen, „Alle“ trifft jeden Gegner mit 60 % Schaden, ▣ Inventar, ☻ Charakter.</p>
   <h3>Oben</h3><p>Karte (auf eine erkundete Zelle tippen setzt oder entfernt eine Notiz), Speichern, Laden, Einstellungen, Menü.</p>
   <h3>Kampf</h3><p>Rundenbasiert. Die Zugreihenfolge steht oben. Hinterreihe-Helden ohne Fernkampf treffen nur halb so hart.</p>
   <h3>Ziel des Prototyps</h3><p>Truhe im Nebenraum öffnen, Eisenschlüssel nehmen, die Eisentür aufschließen, den Moorschrat besiegen und den Runenstein erreichen.</p>

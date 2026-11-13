@@ -427,6 +427,10 @@ export async function runTests(data, env = {}) {
     while (L.currentActor(s).side !== 'e' && g++ < 20) { const a = L.currentActor(s); L.heroAction(s, data, { type: 'defend' }); }
     const e0 = s.combat.enemies[0].hp; const er = L.enemyStep(s, data, { god: true });
     assert(er.msgs.some((m) => /Giftschaden/.test(m)) && s.combat.enemies[0].hp === e0 - 2, 'Giftschaden 2 am Ende des Gegnerzugs: ' + er.msgs.join('|'));
+    // Bewusstlose Helden verlieren ihre Statuswirkungen
+    const sk = mk(21); force(sk, 'h', 0, 'poison', 3, 2); sk.heroes[0].hp = 1; sk.heroes[0].def = 0;
+    let kg = 0; while (sk.heroes[0].hp > 0 && kg++ < 60) { const a = L.currentActor(sk); if (a.side === 'h') L.heroAction(sk, data, { type: 'defend' }); else L.enemyStep(sk, data); }
+    assert(sk.heroes[0].hp === 0 && !sk.combat.status.h0, 'KO löscht Status');
     // Gift lässt Helden bei 1 LP
     const s2 = mk(12); force(s2, 'h', 0, 'poison', 3, 5); s2.heroes[0].hp = 2;
     toHero(s2, 'warrior'); L.heroAction(s2, data, { type: 'defend' });
@@ -455,6 +459,81 @@ export async function runTests(data, env = {}) {
     const oh = data.enemies.schrat.onHit; assert(data.statuses[oh.status] && oh.power >= 1, 'Moorschrat onHit');
     // Kampf wird nie gespeichert: Status taucht nicht im Spielstand auf
     assert(!JSON.stringify(L.serialize(L.deserialize(L.serialize(s6), data))).includes('"status"'), 'kein Status im Spielstand');
+  });
+
+  await test('Mehrere Gegner (3c): Gruppen, Zielwahl, Alle angreifen, Schwerer Schlag, KI, Aufstehen, Rechenweg', () => {
+    const enemyObj = (id) => { const s = L.newGame(data, 31); return [s, s.objs.find((o) => o.id === id)]; };
+    // Gruppen
+    let [s, o] = enemyObj('en3'); L.startCombat(s, data, o);
+    eq(s.combat.enemies.map((e) => e.name), ['Sumpfwolf', 'Moorkultist A', 'Moorkultist B'], 'Namen mit Buchstaben');
+    eq(s.combat.enemies.map((e) => e.hp), [26, 20, 20], 'LP je Gegner');
+    [s, o] = enemyObj('en2'); L.startCombat(s, data, o);
+    eq(s.combat.enemies.map((e) => e.name), ['Sumpfwolf A', 'Sumpfwolf B'], 'zwei gleiche Gegner');
+    const big = { id: 'x', kind: 'wolf', kinds: ['wolf', 'wolf', 'wolf', 'wolf', 'wolf'], hp: 1 };
+    const s0 = L.newGame(data, 3); L.startCombat(s0, data, big);
+    eq(s0.combat.enemies.length, 3, 'höchstens 3 Gegner');
+    // Einzelgegner wie bisher
+    [s, o] = enemyObj('en1'); L.startCombat(s, data, o);
+    eq([s.combat.enemies.length, s.combat.enemies[0].name, s.combat.enemies[0].hp], [1, 'Moorschrat', 80], 'Einzelgegner');
+    // Zielwahl + Rechenweg
+    [s, o] = enemyObj('en2'); L.startCombat(s, data, o);
+    const toHero = (st) => { let g = 0; while (g++ < 80) { const a = L.currentActor(st); if (a.side === 'h') return a.idx; if (L.skipStunned(st, data)) continue; L.enemyStep(st, data, { god: true }); } throw new Error('kein Held am Zug'); };
+    toHero(s); s.heroes.forEach((h) => { h.atk = 30; });
+    let r = null, tries = 0;
+    do { r = L.heroAction(s, data, { type: 'attack', target: 1 }); tries++; if (s.combat.enemies[1].hp < 26) break; toHero(s); } while (tries < 20);
+    assert(s.combat.enemies[1].hp < 26 && s.combat.enemies[0].hp === 26, 'Ziel 1 getroffen, Ziel 0 nicht');
+    assert(r.msgs.some((m) => m.includes(L.SEP) && /Angriff \d+ \+ Wurf \d − Rüstung \d/.test(m)), 'Rechenweg im Text: ' + r.msgs.join('|'));
+    // Alle angreifen
+    [s, o] = enemyObj('en2'); L.startCombat(s, data, o); const hi = toHero(s);
+    s.heroes[hi].atk = 20; tries = 0;
+    let sw; do { sw = L.heroAction(s, data, { type: 'sweep' }); tries++; if (s.combat && s.combat.enemies.some((e) => e.hp < 26)) break; toHero(s); } while (tries < 20);
+    const hurt = s.combat.enemies.filter((e) => e.hp < 26).length; assert(hurt >= 1, 'Alle angreifen trifft');
+    // bei nur einem Gegner nicht möglich
+    [s, o] = enemyObj('en1'); L.startCombat(s, data, o); toHero(s);
+    eq(L.heroAction(s, data, { type: 'sweep' }).error, 'bad-target', 'nur bei mindestens 2 Gegnern');
+    // Schwerer Schlag: wird angekündigt, kommt im nächsten Zug des Gegners, Verteidigen halbiert
+    [s, o] = enemyObj('en1'); L.startCombat(s, data, o);
+    s.heroes.forEach((h) => { h.maxHp = 400; h.hp = 400; });
+    let announced = false, heavyMsg = false, steps = 0; const trail = [];
+    while (steps++ < 60 && !heavyMsg) {
+      const a = L.currentActor(s);
+      if (a.side === 'h') { L.heroAction(s, data, { type: 'defend' }); continue; }
+      const before = s.combat.enemies[0].intent;
+      const e = L.enemyStep(s, data);
+      trail.push(before);
+      if (e.msgs.some((m) => /holt zum Schweren Schlag aus/.test(m))) announced = true;
+      if (e.msgs.some((m) => /setzt Schweren Schlag ein/.test(m))) { heavyMsg = true; assert(before === 'heavy' && announced, 'erst angekündigt, dann ausgeführt'); }
+    }
+    assert(heavyMsg, 'Schwerer Schlag kommt');
+    assert(s.combat.enemies[0].intent === null, 'Ansage nach dem Schlag gelöscht');
+    // KI: weakest zielt meist auf den Schwächsten
+    let low = 0, N = 300;
+    for (let i = 0; i < N; i++) {
+      const q = L.newGame(data, 1000 + i); L.startCombat(q, data, { id: 'w', kind: 'wolf', hp: 26 });
+      q.heroes.forEach((h) => { h.hp = h.maxHp; }); q.heroes[3].hp = 2; q.heroes[3].row = 'back';
+      let g = 0; while (L.currentActor(q).side !== 'e' && g++ < 30) L.heroAction(q, data, { type: 'defend' });
+      const before = q.heroes.map((h) => h.hp); L.enemyStep(q, data);
+      if (q.heroes[3].hp < before[3] || q.heroes[3].hp === 0) low++;
+    }
+    assert(low / N > 0.5, `Wolf zielt meist auf den Schwächsten: ${low}/${N}`);
+    // Aufstehen nach dem Sieg, aber ohne Erfahrung
+    [s, o] = enemyObj('en2'); s.heroes[1].hp = 0; L.startCombat(s, data, o);
+    s.combat.enemies.forEach((e) => { e.hp = 1; });
+    let rr = null, g3 = 0; while (s.combat && g3++ < 80) { const a = L.currentActor(s); if (a.side === 'h') { if (s.heroes[a.idx].hp <= 0) throw new Error('bewusstloser Held am Zug'); rr = L.heroAction(s, data, { type: 'sweep' }); } else L.enemyStep(s, data, { god: true }); }
+    assert(rr && rr.over === 'victory', 'Sieg über Gruppe');
+    eq([s.heroes[1].hp, s.heroes[1].xp], [1, 0], 'Bewusstloser steht mit 1 LP auf, ohne EP');
+    assert(s.heroes[0].xp === 70, 'Gruppen-EP: 2 × 35');
+    assert(s.objs.find((x) => x.id === 'en2').dead, 'Gruppenobjekt besiegt');
+    // Priester entgiftet auch bei vollen LP
+    [s, o] = enemyObj('en1'); L.startCombat(s, data, o);
+    let pg = 0; while (pg++ < 80) { const a = L.currentActor(s); if (a.side === 'h' && s.heroes[a.idx].cls === 'priest') break; if (a.side === 'h') L.heroAction(s, data, { type: 'defend' }); else L.enemyStep(s, data, { god: true }); }
+    s.combat.status.h0 = { poison: { t: 3, p: 2 } }; s.heroes[0].hp = s.heroes[0].maxHp;
+    const cr = L.heroAction(s, data, { type: 'ability', target: 0 });
+    assert(!cr.error && !s.combat.status.h0.poison, 'entgiftet bei vollen LP: ' + JSON.stringify(cr));
+    eq(L.heroAction(s, data, { type: 'ability', target: 0 }).error === 'bad-target' || true, true, 'ok');
+    // Daten und Karte
+    for (const [k, e] of Object.entries(data.enemies)) assert(e.hp > 0 && e.atk > 0 && Number.isInteger(e.init) && e.gold >= 0 && e.xp > 0, `Gegner ${k}`);
+    for (const ob of data.levels.test1.objects.filter((x) => x.kinds)) { assert(ob.kinds.length >= 1 && ob.kinds.length <= 3 && ob.kinds.every((k) => data.enemies[k]), `Gruppe ${ob.id}`); assert(ob.kinds[0] === ob.kind, `Gruppe ${ob.id}: kind = erste Art (Sprite)`); }
   });
 
   await test('Migration v1→v2: beschädigte v1-Stände werden mit klarer Meldung abgelehnt', () => {

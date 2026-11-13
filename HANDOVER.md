@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Phase 2 Schritt 0 bis 2 auf dem Gerät getestet; 3a teilweise auf dem Gerät (Laden alter Stände, Anzeige); 3b nur Node/Headless getestet, Version 0.3.1
+Autor: eldermoor-dev · Stand: Phase 2 Schritt 0 bis 2 auf dem Gerät getestet; 3a teilweise auf dem Gerät (Laden alter Stände, Anzeige); 3b auf dem Gerät bestätigt; 3c nur Node/Headless getestet, Version 0.4.0
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -78,7 +78,21 @@ Monster-Sprite neu: `genSchrat` erzeugt 160×160 statt 64×64 (Borke, Moos, Gewe
 ## Änderungen 0.1.5
 Neue Einstellung **Bildschärfe**: Scharf (960×540, Texturen auf 128 verdoppelt mit Scale2x + Korn) ist jetzt Standard, Retro (480×270, wie in der Vorgabe) bleibt wählbar. Auf Nutzerwunsch („zu verpixelt“). Technik: `setResolution(r)` ändert die live exportierten `W`/`H` in render.js, `buildRenderer()` in main.js baut Renderer, Texturen, Canvas und ImageData neu; die Bühne bleibt ein ganzzahliges Vielfaches von 480×270. Bei nicht ganzzahligem Verhältnis (z. B. 3×/2 = 1,5) glättet der Browser (`image-rendering:auto`), bei ganzzahligem bleibt es pixelig-scharf. Messung der Renderzeit auf dem Gerät: Debug-Modus.
 
-## Änderungen 0.3.1 (Phase 2, Schritt 3b: Statuswirkungen und Kartenlayout)
+## Änderungen 0.4.0 (Phase 2, Schritt 3c: mehrere Gegner)
+- Gegnergruppen bis 3: Karten-Objekt `{type:'enemy', kind, kinds:[…]}` (`kind` = erste Art, bestimmt das Sprite; **alle Arten nutzen vorerst das Moorschrat-Sprite**, eigene Grafiken fehlen). Gleiche Arten werden A, B, C genannt. Einzelgegner verhalten sich wie vorher (LP aus dem Objekt).
+- Zielwahl: Gegnerzeile antippen (markiert), Angriff und Fähigkeit gehen auf das Ziel; fällt es aus, rückt das nächste nach. **„Alle“** (`heroAction` Typ `sweep`, `SWEEP_MULT` 60 %): trifft jeden lebenden Gegner mit 60 % Schaden, kostenlos, nur bei mindestens 2 Gegnern. **Annahme (nicht gesichert):** Die Ideenliste sagte nur „Alle angreifen“; ich habe es so gedeutet.
+- Neue Gegner: Sumpfwolf (`ai: weakest`, 60 % Ziel schwächster Held), Moorkultist (`ai: backline`, 75 % Hinterreihe, Treffer 35 % Schwäche). Moorschrat: `heavy {every:3, mult:170}` = jeder dritte Zug ein **angekündigter** Schwerer Schlag (Ansage im Zug davor, ⚠ in der Gegnerzeile; Verteidigen halbiert). Daten: `ai`, `heavy`, `onHit`.
+- Rechenweg: `calcDamage(…, {trace})` und `explain(trace)`; Meldungen tragen den Rechenweg nach `SEP` (U+241F). Das HUD zeigt nur den Text davor, das **Kampfprotokoll** die Rechnung („Angriff 8 + Wurf 2 − Rüstung 1 = 9“).
+- Nach dem Sieg stehen bewusstlose Helden mit 1 LP auf (nach der EP-Vergabe, also ohne EP); vorläufig bis zur Rast (Schritt 5).
+- Heilende Hand wirkt auch bei vollen LP, wenn der Held vergiftet ist.
+- Testdungeon: `en2` (2 Wölfe) im ersten Raum, `en3` (Wolf + 2 Kultisten) versperrt den Gang vor der Eisentür. **Alte Spielstände enthalten diese Gruppen nicht** (Objekte liegen im Stand), neue Spiele schon.
+- Behoben auf dem Gerät/Headless: `#enemybox` bekam Tipps nicht durch (Canvas fing sie ab) → `pointer-events:auto`.
+- Tests: 38 Node. Neu: Gruppen, Zielwahl, Rechenweg, Alle, Schwerer Schlag, KI, Aufstehen, Entgiften bei vollen LP, Daten. `VERSION` 0.4.0. Noch **nicht** auf dem Gerät geprüft. Offen aus 3: 3d (Pause zwischen Zügen, Doppeltipps ignorieren).
+
+## Änderungen 0.3.2 (Korrektur)
+- Bewusstlose Helden verlieren ihre Statuswirkungen (auf dem Gerät aufgefallen: ☠ blieb bei bewusstloser Sira stehen). `VERSION` 0.3.2.
+
+## Änderungen 0.3.1 (Phase 2, Schritt 3b: Statuswirkungen und Kartenlayout; auf dem Gerät bestätigt: Gift, Anzeige, Layout)
 - `data.statuses`: Gift ☠, Betäubt ✸, Schwach ▼. Zustand nur im Kampf in `state.combat.status['h0'|'e0']` (`{poison:{t,p}, stun:{t}, weak:{t}}`), **nicht gespeichert**, Spielstand bleibt v4.
 - Regeln: Gift schadet am **Ende des eigenen Zugs** (Held bleibt dabei mindestens bei 1 LP, Gegner kann sterben → Sieg). Betäubung: nächster Zug entfällt (`skipStunned`, die Oberfläche ruft sie in `runEnemyTurns` auf, auch für Helden). Schwäche: Angriff ×0,75 abgerundet, min. 1. Dauer sinkt am Ende des eigenen Zugs; erneutes Auflegen nimmt die längere Dauer/stärkere Wirkung.
 - Quellen (vorläufig): Wuchtschlag 35 % Betäubung (1 Zug), Hinterhalt Gift 3 Runden à 2, Gezielter Schuss Schwäche 2 Runden, Heilende Hand nimmt Gift, Moorschrat vergiftet getroffene Helden mit 30 % (3 Runden à 2). Daten: `ability.inflict`, `ability.cleanse`, `enemies.<id>.onHit`.

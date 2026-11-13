@@ -347,10 +347,21 @@ function normalizeTurn(state, data) {
   if (a && a.side === 'h') delete c.defending[a.idx];
 }
 
+// Gegnergruppe (bis zu 3): obj.kinds oder obj.kind; gleiche Arten bekommen Buchstaben (A, B, C)
+const MAX_ENEMIES = 3;
+function group(data, obj) {
+  const kinds = (Array.isArray(obj.kinds) && obj.kinds.length ? obj.kinds : [obj.kind]).slice(0, MAX_ENEMIES);
+  const total = {}, seen = {};
+  kinds.forEach((k) => { total[k] = (total[k] || 0) + 1; });
+  return kinds.map((k) => {
+    const en = data.enemies[k];
+    seen[k] = (seen[k] || 0) + 1;
+    return { objId: obj.id, kind: k, name: total[k] > 1 ? `${en.name} ${'ABC'[seen[k] - 1]}` : en.name, hp: kinds.length === 1 ? obj.hp : en.hp, maxHp: en.hp, cd: 0, intent: null };
+  });
+}
 export function startCombat(state, data, enemyObj) {
-  const en = data.enemies[enemyObj.kind];
   state.combat = {
-    enemies: [{ objId: enemyObj.id, kind: enemyObj.kind, name: en.name, hp: enemyObj.hp, maxHp: en.hp }],
+    enemies: group(data, enemyObj),
     order: [], pos: 0, round: 1, defending: {}, status: {}, over: null
   };
   buildOrder(state, data);
@@ -363,15 +374,23 @@ export function currentActor(state) {
   return c && !c.over ? c.order[c.pos] : null;
 }
 
-// Trefferchance 90 %, Schaden = Angriff + 0..2 − Verteidigung/2 (min. 1)
+// Trefferchance 90 %, Schaden = Angriff + 0..2 − Verteidigung/2 (min. 1), danach Faktor, Hinterreihe, Deckung.
+// opts.trace (Objekt) wird mit der Rechnung gefüllt, damit das Protokoll sie zeigen kann.
+export const SEP = '\u241F'; // trennt Meldungstext und Rechenweg in msgs
+export const SWEEP_MULT = 60; // „Alle angreifen“: Prozent Schaden je Gegner
 export function calcDamage(state, atk, def, opts = {}) {
   const roll = rand(state);
   if (!opts.sure && roll >= 0.9) return 0;
-  let d = Math.max(1, atk + randInt(state, 0, 2) - Math.floor(def / 2));
+  const r = randInt(state, 0, 2), red = Math.floor(def / 2);
+  let d = Math.max(1, atk + r - red);
   if (opts.mult) d = Math.max(1, Math.floor((d * opts.mult) / 100));
   if (opts.backMelee) d = Math.ceil(d / 2);
   if (opts.defending) d = Math.max(1, Math.floor(d / 2));
+  if (opts.trace) Object.assign(opts.trace, { atk, roll: r, red, mult: opts.mult || 0, back: !!opts.backMelee, def: !!opts.defending, total: d });
   return d;
+}
+export function explain(tr) {
+  return `Angriff ${tr.atk} + Wurf ${tr.roll} − Rüstung ${tr.red}${tr.mult ? ` · ${tr.mult} %` : ''}${tr.back ? ' · ½ Hinterreihe' : ''}${tr.def ? ' · ½ Deckung' : ''} = ${tr.total}`;
 }
 
 // ---------- Statuswirkungen (nur im Kampf, werden nicht gespeichert) ----------
@@ -438,6 +457,7 @@ function finishVictory(state, data, msgs) {
   for (const h of state.heroes) h.mp = h.maxMp; // vorläufig: Ressource nach dem Kampf voll (Rast folgt in Schritt 5)
   msgs.push(`Sieg! Beute: ${gold} Gold.`);
   if (xp > 0) { msgs.push(`Erfahrung: +${xp} EP für jeden Helden, der noch steht.`); grantXp(state, data, xp, msgs); }
+  for (const h of state.heroes) if (h.hp <= 0) { h.hp = 1; msgs.push(`${h.name} kommt mit 1 LP wieder zu sich.`); } // vorläufig, bis die Rast kommt (Schritt 5)
   state.combat = null;
   return gold;
 }
@@ -458,12 +478,13 @@ export function heroAction(state, data, act) {
     let ti = act.target;
     if (ti == null || !c.enemies[ti] || c.enemies[ti].hp <= 0) ti = c.enemies.findIndex((e) => e.hp > 0);
     const e = c.enemies[ti];
-    const d = calcDamage(state, effAtk(state, 'h', a.idx, h.atk), data.enemies[e.kind].def, { backMelee: h.row === 'back' && !h.ranged });
+    const tr = {};
+    const d = calcDamage(state, effAtk(state, 'h', a.idx, h.atk), data.enemies[e.kind].def, { backMelee: h.row === 'back' && !h.ranged, trace: tr });
     if (d === 0) { msgs.push(`${h.name} verfehlt ${e.name}.`); sfx = 'miss'; }
     else {
       e.hp = Math.max(0, e.hp - d);
       const note = h.row === 'back' && !h.ranged ? ' (Hinterreihe, Nahkampf: halber Schaden)' : '';
-      msgs.push(`${h.name} trifft ${e.name} für ${d} Schaden${note}.`);
+      msgs.push(`${h.name} trifft ${e.name} für ${d} Schaden${note}.${SEP}${explain(tr)}`);
       sfx = 'hit';
       if (e.hp === 0) msgs.push(`${e.name} bricht zusammen.`);
     }
@@ -475,28 +496,43 @@ export function heroAction(state, data, act) {
     const rn = data.classes[h.cls].res.name;
     if (ab.kind === 'heal') {
       const t = state.heroes[act.target];
-      if (!t || t.hp <= 0 || t.hp >= t.maxHp) return { error: 'bad-target' };
+      const stT = c.status['h' + act.target];
+      if (!t || t.hp <= 0 || (t.hp >= t.maxHp && !(ab.cleanse && stT && stT[ab.cleanse]))) return { error: 'bad-target' };
       const gain = Math.min(ab.heal, t.maxHp - t.hp);
       t.hp += gain; h.mp -= ab.cost;
-      const stT = c.status['h' + act.target];
       if (ab.cleanse && stT && stT[ab.cleanse]) { delete stT[ab.cleanse]; msgs.push(`${t.name}: ${data.statuses[ab.cleanse].name} wird genommen.`); }
-      msgs.push(`${h.name} wirkt ${ab.name}: ${t.name} +${gain} LP (−${ab.cost} ${rn}).`);
+      msgs.push(`${h.name} wirkt ${ab.name}: ${t.name}${gain > 0 ? ` +${gain} LP` : ''} (−${ab.cost} ${rn}).`);
       sfx = 'heal';
     } else {
       let ti = act.target;
       if (ti == null || !c.enemies[ti] || c.enemies[ti].hp <= 0) ti = c.enemies.findIndex((e) => e.hp > 0);
       const e = c.enemies[ti];
       h.mp -= ab.cost;
-      const d = calcDamage(state, effAtk(state, 'h', a.idx, h.atk), data.enemies[e.kind].def, { backMelee: h.row === 'back' && !h.ranged, mult: ab.mult, sure: !!ab.sure });
+      const tr = {};
+      const d = calcDamage(state, effAtk(state, 'h', a.idx, h.atk), data.enemies[e.kind].def, { backMelee: h.row === 'back' && !h.ranged, mult: ab.mult, sure: !!ab.sure, trace: tr });
       if (d === 0) { msgs.push(`${h.name} setzt ${ab.name} ein, verfehlt aber ${e.name} (−${ab.cost} ${rn}).`); sfx = 'miss'; }
       else {
         e.hp = Math.max(0, e.hp - d);
-        msgs.push(`${h.name} setzt ${ab.name} ein: ${d} Schaden an ${e.name} (−${ab.cost} ${rn}).`);
+        msgs.push(`${h.name} setzt ${ab.name} ein: ${d} Schaden an ${e.name} (−${ab.cost} ${rn}).${SEP}${explain(tr)}`);
         sfx = 'hit';
         if (e.hp === 0) msgs.push(`${e.name} bricht zusammen.`);
         else addStatus(state, data, 'e', ti, ab.inflict, msgs);
       }
     }
+  } else if (act.type === 'sweep') {
+    const live = c.enemies.filter((e) => e.hp > 0);
+    if (live.length < 2) return { error: 'bad-target' };
+    let hit = false;
+    for (const e of live) {
+      const tr = {};
+      const d = calcDamage(state, effAtk(state, 'h', a.idx, h.atk), data.enemies[e.kind].def, { backMelee: h.row === 'back' && !h.ranged, mult: SWEEP_MULT, trace: tr });
+      if (d === 0) { msgs.push(`${h.name} verfehlt ${e.name}.`); continue; }
+      hit = true; e.hp = Math.max(0, e.hp - d);
+      msgs.push(`${h.name} trifft ${e.name} für ${d} Schaden.${SEP}${explain(tr)}`);
+      if (e.hp === 0) msgs.push(`${e.name} bricht zusammen.`);
+    }
+    sfx = hit ? 'hit' : 'miss';
+    regen(h, msgs);
   } else if (act.type === 'defend') {
     c.defending[a.idx] = true;
     msgs.push(`${h.name} geht in Deckung.`);
@@ -520,6 +556,17 @@ export function heroAction(state, data, act) {
   return { msgs, sfx, over };
 }
 
+// Zielwahl der Gegner: random (75 % Vorderreihe), weakest (60 % der Held mit den wenigsten LP), backline (75 % Hinterreihe)
+function pickTarget(state, en) {
+  const front = [], back = [], all = [];
+  state.heroes.forEach((h, i) => { if (h.hp > 0) { all.push(i); (h.row === 'front' ? front : back).push(i); } });
+  const ai = en.ai || 'random';
+  if (ai === 'weakest' && rand(state) < 0.6) return all.reduce((b, i) => (state.heroes[i].hp < state.heroes[b].hp ? i : b), all[0]);
+  if (ai === 'backline' && back.length && rand(state) < 0.75) return back[randInt(state, 0, back.length - 1)];
+  const pool = front.length && (rand(state) < 0.75 || !back.length) ? front : (back.length ? back : front);
+  return pool[randInt(state, 0, pool.length - 1)];
+}
+
 export function enemyStep(state, data, opts = {}) {
   const c = state.combat;
   if (!c || c.over) return { error: 'no-combat' };
@@ -528,22 +575,26 @@ export function enemyStep(state, data, opts = {}) {
   const e = c.enemies[a.idx];
   const en = data.enemies[e.kind];
   const msgs = [];
-  const front = [], back = [];
-  state.heroes.forEach((h, i) => { if (h.hp > 0) (h.row === 'front' ? front : back).push(i); });
-  const pool = front.length && (rand(state) < 0.75 || !back.length) ? front : (back.length ? back : front);
-  const ti = pool[randInt(state, 0, pool.length - 1)];
+  const ti = pickTarget(state, en);
   const t = state.heroes[ti];
-  const d = calcDamage(state, effAtk(state, 'e', a.idx, en.atk), t.def, { defending: !!c.defending[ti] });
+  const hv = en.heavy, heavy = !!hv && e.intent === 'heavy';
+  const tr = {};
+  const d = calcDamage(state, effAtk(state, 'e', a.idx, en.atk), t.def, { defending: !!c.defending[ti], mult: heavy ? hv.mult : 0, trace: tr });
   let sfx = 'miss';
   const why = `${t.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}${c.defending[ti] ? ', in Deckung: halber Schaden' : ''}`;
+  if (heavy) msgs.push(`${e.name} setzt ${hv.name} ein!`);
   if (d === 0) msgs.push(`${e.name} greift ${t.name} an (${why}) und verfehlt.`);
   else if (opts.god) { msgs.push(`${e.name} trifft ${t.name}, doch Debug-Unverwundbarkeit hält.`); sfx = 'hurt'; }
   else {
     t.hp = Math.max(0, t.hp - d);
-    msgs.push(`${e.name} trifft ${t.name} für ${d} Schaden (${why}).`);
+    msgs.push(`${e.name} trifft ${t.name} für ${d} Schaden (${why}).${SEP}${explain(tr)}`);
     sfx = 'hurt';
-    if (t.hp === 0) msgs.push(`${t.name} sinkt bewusstlos zu Boden.`);
+    if (t.hp === 0) { msgs.push(`${t.name} sinkt bewusstlos zu Boden.`); delete c.status['h' + ti]; }
     else addStatus(state, data, 'h', ti, en.onHit, msgs);
+  }
+  if (hv) { // angekündigter Schlag: jeder dritte Zug, eine Runde vorher wird er angesagt
+    if (heavy) { e.intent = null; e.cd = 0; }
+    else if (++e.cd >= hv.every - 1) { e.intent = 'heavy'; msgs.push(`${e.name} holt zum ${hv.name} aus! Verteidigen halbiert den Schaden.`); }
   }
   if (state.heroes.every((h) => h.hp <= 0)) {
     c.over = 'defeat';
@@ -682,8 +733,9 @@ export function balanceMarkdown(data) {
   L.push('Kampfwerte = Berufswert + Rassenmodifikator + Wachstum je Stufe: `floor((Stufe − 1) × Wachstum / 10)`, Wachstum in Zehnteln pro Stufe. Untergrenzen: LP 1, Angriff 1, Verteidigung 0, Initiative 0.', '');
   L.push('## Erfahrung', '', '| Stufe | EP gesamt | EP für diese Stufe |', '|---|---|---|', '| 1 | 0 | – |');
   for (let lv = 2; lv <= mx; lv++) L.push(`| ${lv} | ${xp[lv - 2]} | ${xp[lv - 2] - (lv > 2 ? xp[lv - 3] : 0)} |`);
-  L.push('', 'Gegner-EP (jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die volle Summe):', '', '| Gegner | EP | Gold |', '|---|---|---|');
-  for (const e of Object.values(data.enemies)) L.push(`| ${e.name} | ${e.xp || 0} | ${e.gold || 0} |`);
+  L.push('', 'Gegner (EP: jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die volle Summe):', '', '| Gegner | LP | Angriff | Verteidigung | Initiative | EP | Gold | Verhalten |', '|---|---|---|---|---|---|---|---|');
+  const aiName = { weakest: 'zielt auf den schwächsten Helden', backline: 'zielt auf die Hinterreihe' };
+  for (const e of Object.values(data.enemies)) L.push(`| ${e.name} | ${e.hp} | ${e.atk} | ${e.def} | ${e.init} | ${e.xp || 0} | ${e.gold || 0} | ${[aiName[e.ai], e.heavy && `${e.heavy.name} jeden ${e.heavy.every}. Zug, angekündigt (${e.heavy.mult} %)`, e.onHit && `Treffer: ${data.statuses[e.onHit.status].name} ${e.onHit.chance} %`].filter(Boolean).join('; ') || '–'} |`);
   L.push('', '## Rassen (Modifikatoren)', '', '| Rasse | LP | Angriff | Verteidigung | Initiative |', '|---|---|---|---|---|');
   for (const r of Object.values(data.races)) L.push(`| ${r.name} | ${sg(r.mods.maxHp)} | ${sg(r.mods.atk)} | ${sg(r.mods.def)} | ${sg(r.mods.init)} |`);
   L.push('', '## Berufe (Basis auf Stufe 1, Wachstum in Zehnteln je Stufe)', '', '| Beruf | Reihe | Fernkampf | LP | Angriff | Verteidigung | Initiative | Wachstum LP/Ang/Vert/Init |', '|---|---|---|---|---|---|---|---|');

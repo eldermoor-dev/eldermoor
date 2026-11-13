@@ -19,11 +19,13 @@ Kampfwerte = Berufswert + Rassenmodifikator + Wachstum je Stufe: `floor((Stufe �
 | 9 | 2500 | 600 |
 | 10 | 3200 | 700 |
 
-Gegner-EP (jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die volle Summe):
+Gegner (EP: jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die volle Summe):
 
-| Gegner | EP | Gold |
-|---|---|---|
-| Moorschrat | 120 | 15 |
+| Gegner | LP | Angriff | Verteidigung | Initiative | EP | Gold | Verhalten |
+|---|---|---|---|---|---|---|---|
+| Moorschrat | 80 | 13 | 3 | 5 | 120 | 15 | Schweren Schlag jeden 3. Zug, angekündigt (170 %); Treffer: Gift 30 % |
+| Sumpfwolf | 26 | 9 | 1 | 8 | 35 | 6 | zielt auf den schwächsten Helden |
+| Moorkultist | 20 | 7 | 2 | 4 | 30 | 8 | zielt auf die Hinterreihe; Treffer: Schwach 35 % |
 
 ## Rassen (Modifikatoren)
 
