@@ -216,7 +216,7 @@ export async function runTests(data, env = {}) {
     assert(threw, 'ohne Migration');
     threw = false; try { L.migrate(save, { 1: (x) => x }, 2); } catch { threw = true; }
     assert(threw, 'Migration ohne Versionssprung');
-    assert(L.SAVE_VERSION === 2 && typeof L.MIGRATIONS[1] === 'function', 'echte Migration 1→2 muss vorhanden sein');
+    assert(L.SAVE_VERSION === 3 && typeof L.MIGRATIONS[1] === 'function' && typeof L.MIGRATIONS[2] === 'function', 'echte Migrationen 1→2 und 2→3 müssen vorhanden sein');
   });
 
   // ---- Phase 2, Schritt 1: Rassen, Berufe, Gruppe, Migration v1→v2 ----
@@ -313,11 +313,11 @@ export async function runTests(data, env = {}) {
     bad((s) => { s.pop(); }, /genau 4/);
   });
 
-  await test('Spielstand v2: eigene Gruppe überlebt Speichern/Laden, ungültige Heldendaten werden abgelehnt', () => {
+  await test('Spielstand v3: eigene Gruppe überlebt Speichern/Laden, ungültige Heldendaten werden abgelehnt', () => {
     const s = L.newGame(data, 9, CUSTOM);
     s.heroes[1].hp = 5; s.heroes[0].hp = 0;
     const save = L.serialize(s);
-    eq(save.v, 2, 'Version');
+    eq(save.v, 3, 'Version');
     eq(L.deserialize(JSON.stringify(save), data), { ...s, combat: null }, 'Roundtrip');
     const rej = (mut, label) => {
       const b = L.serialize(s); mut(b.state.heroes[2]);
@@ -332,7 +332,7 @@ export async function runTests(data, env = {}) {
     rej((h) => { delete h.look; }, 'fehlendes Aussehen');
   });
 
-  await test('Migration v1→v2: echter Spielstand aus Version 0.1.5 lädt, nichts geht verloren', () => {
+  await test('Migration v1→v2→v3: echter Spielstand aus Version 0.1.5 lädt, nichts geht verloren', () => {
     const v1 = JSON.parse(V1_SAVE);
     eq(v1.v, 1, 'Fixture ist v1');
     assert(!('race' in v1.state.heroes[0]), 'Fixture darf noch keine Rasse haben');
@@ -340,7 +340,7 @@ export async function runTests(data, env = {}) {
     st.heroes.forEach((h, i) => {
       const o = v1.state.heroes[i];
       for (const k of Object.keys(o)) eq(h[k], o[k], `Held ${i + 1}.${k} geändert`);
-      eq([h.race, h.look], ['human', i * 7 + 3], `Held ${i + 1}: neue Felder`);
+      eq([h.race, h.look, h.level, h.xp], ['human', i * 7 + 3, 1, 0], `Held ${i + 1}: neue Felder`);
       const dv = L.deriveStats(data, h.race, h.cls);
       eq([h.maxHp, h.atk, h.def, h.init], [dv.maxHp, dv.atk, dv.def, dv.init], `Held ${i + 1}: Werte = Mensch + Beruf`);
     });
@@ -352,7 +352,7 @@ export async function runTests(data, env = {}) {
     assert(obj.v === 1 && !('race' in obj.state.heroes[0]), 'Eingabe wird nicht verändert');
     assert(L.tryMove(st, data, 'f').moved, 'Spiel läuft weiter');
     const again = L.serialize(st);
-    eq(again.v, 2, 'neu gespeichert als v2');
+    eq(again.v, 3, 'neu gespeichert als v3');
     eq(L.deserialize(JSON.stringify(again), data).player, st.player, 'erneut ladbar');
   });
 
@@ -366,6 +366,99 @@ export async function runTests(data, env = {}) {
     fails((o) => { delete o.state.heroes; }, /Gruppe fehlt/);
     fails((o) => { o.state.heroes[0].hp = 99; }, /LP ungültig/);
     fails((o) => { o.v = 0; }, /Keine Eldermoor-Spielstanddatei/);
+  });
+
+  // ---- Phase 2, Schritt 2: Stufen, Erfahrung, Wachstum, Migration v2→v3 ----
+  await test('Stufen: Stufe 1 = alte Werte, Wachstum nie rückläufig, Stufe 10 plausibel', () => {
+    const pr = data.progression;
+    eq(pr.maxLevel, 10, 'Höchststufe');
+    eq(pr.xp.length, 9, 'Schwellen für Stufe 2 bis 10');
+    assert(pr.xp.every((v, i) => Number.isInteger(v) && v > (i ? pr.xp[i - 1] : 0)), 'Schwellen streng steigend');
+    for (const r of Object.keys(data.races)) for (const c of Object.keys(data.classes)) {
+      const c1 = L.deriveStats(data, r, c), c1b = L.deriveStats(data, r, c, 1);
+      eq(c1, c1b, 'Standardstufe ist 1');
+      let prev = c1;
+      for (let lv = 2; lv <= 10; lv++) {
+        const st = L.deriveStats(data, r, c, lv);
+        for (const k of L.STAT_KEYS) assert(st[k] >= prev[k], `${r}/${c} Stufe ${lv}: ${k} sinkt`);
+        prev = st;
+      }
+      assert(prev.maxHp > c1.maxHp && prev.atk > c1.atk, `${r}/${c}: Stufe 10 muss stärker als Stufe 1 sein`);
+    }
+    const w10 = L.deriveStats(data, 'human', 'warrior', 10);
+    eq([w10.maxHp, w10.atk, w10.def, w10.init], [88, 15, 11, 6], 'Mensch-Krieger Stufe 10 (Handrechnung: 34+54, 8+7, 5+6, 4+2)');
+    let threw = false; try { L.deriveStats(data, 'human', 'warrior', 11); } catch { threw = true; }
+    assert(threw, 'Stufe 11 abgelehnt');
+    threw = false; try { L.deriveStats(data, 'human', 'warrior', 1.5); } catch { threw = true; }
+    assert(threw, 'Stufe 1,5 abgelehnt');
+  });
+
+  await test('Erfahrung: Schwellen, Aufstieg, LP-Zuwachs, Bewusstlose gehen leer aus, Höchststufe begrenzt', () => {
+    eq([0, 99, 100, 249, 250, 3199, 3200, 99999].map((x) => L.levelForXp(data, x)), [1, 1, 2, 2, 3, 9, 10, 10], 'levelForXp');
+    const s = fresh(); s.heroes[2].hp = 0; s.heroes[0].hp = 10;
+    const before = JSON.parse(JSON.stringify(s.heroes));
+    const msgs = [];
+    const ups = L.grantXp(s, data, 100, msgs);
+    eq(ups.map((u) => u.hero), ['Berenn', 'Sira', 'Ivo'], 'Aufstiege (Odalys bewusstlos)');
+    eq(s.heroes[2].xp, 0, 'Bewusstlose bekommt nichts');
+    eq(s.heroes[2].level, 1, 'Bewusstlose bleibt Stufe 1');
+    const b = s.heroes[0], d = L.deriveStats(data, b.race, b.cls, 2);
+    eq([b.level, b.xp, b.maxHp, b.atk, b.def, b.init], [2, 100, d.maxHp, d.atk, d.def, d.init], 'Werte Stufe 2');
+    eq(b.hp, 10 + (d.maxHp - before[0].maxHp), 'LP steigen um den Zuwachs der Max-LP, keine Vollheilung');
+    assert(msgs.some((m) => /Berenn steigt auf Stufe 2/.test(m)), 'Meldung');
+    L.grantXp(s, data, 1000000, []);
+    eq([s.heroes[0].level, s.heroes[0].xp], [10, 3200], 'Höchststufe 10, EP gedeckelt');
+    const st10 = L.deriveStats(data, b.race, b.cls, 10);
+    eq(s.heroes[0].maxHp, st10.maxHp, 'Stufe-10-Werte');
+    eq(L.xpForNext(data, s.heroes[0]), null, 'keine nächste Stufe');
+    eq(L.xpForNext(data, s.heroes[1]), null, 'auch Sira auf Stufe 10');
+    eq(L.grantXp(fresh(), data, 0, []).length, 0, '0 EP ändern nichts');
+  });
+
+  await test('Sieg bringt Erfahrung: Gegner-EP gehen an alle stehenden Helden, Meldungen im Kampflog', () => {
+    const s = L.newGame(data, 777);
+    const en = s.objs.find((o) => o.type === 'enemy');
+    L.startCombat(s, data, en);
+    s.combat.enemies[0].hp = 1;
+    const all = [];
+    for (let i = 0; i < 80 && s.combat; i++) {
+      const a = L.currentActor(s);
+      const r = a.side === 'h' ? L.heroAction(s, data, { type: 'attack' }) : L.enemyStep(s, data, { god: true });
+      (r.msgs || []).forEach((m) => all.push(m));
+    }
+    assert(s.combat === null, 'Kampf beendet');
+    const xp = data.enemies[en.kind].xp;
+    assert(xp > 0, 'Gegner hat EP');
+    s.heroes.forEach((h) => eq(h.xp, xp, `${h.name} EP`));
+    eq(s.heroes.map((h) => h.level), [2, 2, 2, 2], 'alle auf Stufe 2 (120 ≥ 100)');
+    assert(all.some((m) => /Erfahrung: \+120/.test(m)), 'EP-Meldung');
+    assert(all.filter((m) => /steigt auf Stufe 2/.test(m)).length === 4, 'vier Aufstiegsmeldungen');
+  });
+
+  await test('Migration v2→v3: v2-Stand (mit eigener Gruppe) lädt, Werte unverändert, Stufe 1 und 0 EP', () => {
+    const s = L.newGame(data, 5, CUSTOM); s.heroes[1].hp = 7;
+    const v2 = L.serialize(s); v2.v = 2;
+    v2.state.heroes.forEach((h) => { delete h.level; delete h.xp; });
+    const st = L.deserialize(JSON.stringify(v2), data);
+    st.heroes.forEach((h, i) => {
+      eq([h.level, h.xp], [1, 0], `Held ${i + 1}: Stufe/EP`);
+      for (const k of ['name', 'race', 'cls', 'row', 'maxHp', 'atk', 'def', 'init', 'hp', 'look', 'ranged']) eq(h[k], s.heroes[i][k], `Held ${i + 1}.${k}`);
+    });
+    const obj = JSON.parse(JSON.stringify(v2)); L.deserialize(obj, data);
+    assert(obj.v === 2 && !('level' in obj.state.heroes[0]), 'Eingabe wird nicht verändert');
+    const bad = (mut, re) => {
+      const o = JSON.parse(JSON.stringify(L.serialize(s)));
+      mut(o.state.heroes[0]);
+      let msg = ''; try { L.deserialize(o, data); } catch (e) { msg = e.message; }
+      assert(re.test(msg), `erwartet ${re}, erhalten „${msg}“`);
+    };
+    bad((h) => { h.level = 11; }, /Stufe ungültig/);
+    bad((h) => { h.level = 0; }, /Stufe ungültig/);
+    bad((h) => { h.xp = -5; }, /Erfahrung ungültig/);
+    bad((h) => { h.xp = 1.5; }, /Erfahrung ungültig/);
+    const o2 = JSON.parse(JSON.stringify(v2)); delete o2.state.heroes;
+    let msg = ''; try { L.deserialize(o2, data); } catch (e) { msg = e.message; }
+    assert(/Gruppe fehlt/.test(msg), 'v2 ohne Gruppe');
   });
 
   await test('Porträts: alle Berufe × Rassen zeichnen, Waldläufer und Rassen sind unterscheidbar', () => {
@@ -481,6 +574,9 @@ export async function runTests(data, env = {}) {
       assert(/steps:\s*false/.test(m[1]), 'DEFAULTS.steps muss false sein');
       assert(/settingsV:\s*SETTINGS_V/.test(m[1]), 'settingsV fehlt');
     });
+    if (texts['BALANCE.md'] != null) await test('BALANCE.md ist aktuell (entspricht game.json)', () => {
+      assert(texts['BALANCE.md'] === L.balanceMarkdown(data), 'BALANCE.md veraltet: neu erzeugen (Befehl in HANDOVER.md)');
+    });
     await test('Helden kommen nur noch aus game.json (races, classes, quickParty)', () => {
       for (const f of ['logic.js', 'main.js']) assert(!/data\.heroes/.test(texts[f] || ''), `${f}: Zugriff auf data.heroes`);
     });
@@ -507,7 +603,7 @@ if (globalThis.process && process.versions && process.versions.node && process.a
   const url = await import('node:url');
   const dir = path.dirname(url.fileURLToPath(import.meta.url));
   const data = JSON.parse(await fs.readFile(path.join(dir, 'game.json'), 'utf8'));
-  const res = await runTests(data, { extraFiles: ['HANDOVER.md'], readText: (n) => fs.readFile(path.join(dir, n), 'utf8'), exists: (n) => existsSync(path.join(dir, n)) });
+  const res = await runTests(data, { extraFiles: ['HANDOVER.md', 'BALANCE.md'], readText: (n) => fs.readFile(path.join(dir, n), 'utf8'), exists: (n) => existsSync(path.join(dir, n)) });
   for (const r of res.results) console.log(`${r.ok ? 'OK    ' : 'FEHLER'}  ${r.name}${r.detail ? '  – ' + r.detail : ''}`);
   console.log(`\n${res.passed} bestanden, ${res.failed} fehlgeschlagen`);
   process.exit(res.failed ? 1 : 0);

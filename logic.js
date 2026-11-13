@@ -1,7 +1,7 @@
 // Die Schatten von Eldermoor – Spiellogik (ohne DOM, in Node testbar)
 // Autor: eldermoor-dev
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 export const SAVE_FORMAT = 'eldermoor-save';
 export const DIRS = [
   { dx: 0, dy: -1 }, // 0 Norden
@@ -43,14 +43,58 @@ const STAT_MIN = { maxHp: 1, atk: 1, def: 0, init: 0 };
 const has = (o, k) => !!o && typeof k === 'string' && Object.prototype.hasOwnProperty.call(o, k);
 const BAD_NAME_CHARS = /[\u0000-\u001f\u007f]/;
 
-// Kampfwerte = Berufswerte + Rassenmodifikator, nach unten begrenzt
-export function deriveStats(data, race, cls) {
+// ---------- Stufen und Erfahrung ----------
+export const maxLevel = (data) => (data.progression && data.progression.maxLevel) || 1;
+// Erfahrung (kumulativ), die für Stufe n+2 nötig ist, steht in data.progression.xp[n]
+export function levelForXp(data, xp) {
+  const t = (data.progression && data.progression.xp) || [];
+  let lvl = 1;
+  while (lvl < maxLevel(data) && lvl - 1 < t.length && xp >= t[lvl - 1]) lvl++;
+  return lvl;
+}
+export function xpForNext(data, hero) {
+  const t = (data.progression && data.progression.xp) || [];
+  return hero.level >= maxLevel(data) ? null : t[hero.level - 1];
+}
+
+// Kampfwerte = Berufswerte + Rassenmodifikator + Wachstum je Stufe, nach unten begrenzt.
+// Wachstum: classes.<id>.growth in Zehnteln pro Stufe (ganzzahlig, damit nichts durch Rundung abweicht):
+// Zuwachs = floor((Stufe − 1) × Zehntel / 10). Stufe 1 ergibt exakt die alten Werte.
+export function deriveStats(data, race, cls, level = 1) {
   if (!has(data.races, race)) throw new Error(`Unbekannte Rasse: ${race}`);
   if (!has(data.classes, cls)) throw new Error(`Unbekannter Beruf: ${cls}`);
+  if (!Number.isInteger(level) || level < 1 || level > maxLevel(data)) throw new Error(`Ungültige Stufe: ${level}`);
   const r = data.races[race], c = data.classes[cls];
   const out = {};
-  for (const k of STAT_KEYS) out[k] = Math.max(STAT_MIN[k], c.base[k] + ((r.mods && r.mods[k]) || 0));
+  for (const k of STAT_KEYS) {
+    const g = (c.growth && c.growth[k]) || 0;
+    out[k] = Math.max(STAT_MIN[k], c.base[k] + ((r.mods && r.mods[k]) || 0) + Math.floor(((level - 1) * g) / 10));
+  }
   return out;
+}
+
+// Verteilt Erfahrung an alle nicht bewusstlosen Helden; Stufenaufstieg erhöht Werte, LP steigen um den Zuwachs der Max-LP.
+// Bewusstlose (LP 0) gehen leer aus. Rückgabe: Liste der Aufstiege.
+export function grantXp(state, data, amount, msgs = []) {
+  const ups = [];
+  const t = (data.progression && data.progression.xp) || [];
+  const cap = t.length ? t[Math.min(maxLevel(data) - 1, t.length) - 1] : Infinity; // bei Höchststufe wird nicht weitergezählt
+  if (!(amount > 0)) return ups;
+  for (const h of state.heroes) {
+    if (h.hp <= 0) continue;
+    h.xp = Math.min(cap, h.xp + amount);
+    const to = levelForXp(data, h.xp);
+    if (to > h.level) {
+      const st = deriveStats(data, h.race, h.cls, to);
+      const dHp = Math.max(0, st.maxHp - h.maxHp);
+      h.level = to;
+      for (const k of STAT_KEYS) h[k] = st[k];
+      h.hp = Math.min(h.maxHp, h.hp + dHp);
+      ups.push({ hero: h.name, level: to });
+      msgs.push(`${h.name} steigt auf Stufe ${to} auf!`);
+    }
+  }
+  return ups;
 }
 
 // spec: { name, race, cls, row? (Standard: Reihe des Berufs), look? (Porträt-Startwert) }
@@ -81,7 +125,7 @@ export function createHero(data, spec, index) {
   const c = data.classes[spec.cls];
   const st = deriveStats(data, spec.race, spec.cls);
   return {
-    id: 'h' + (index + 1), name: spec.name.trim(), race: spec.race, cls: spec.cls, role: c.name,
+    id: 'h' + (index + 1), name: spec.name.trim(), race: spec.race, cls: spec.cls, role: c.name, level: 1, xp: 0,
     row: spec.row || c.row, maxHp: st.maxHp, atk: st.atk, def: st.def, init: st.init, ranged: !!c.ranged,
     look: Number.isInteger(spec.look) ? spec.look : index * 7 + 3, hp: st.maxHp
   };
@@ -324,14 +368,16 @@ function advance(state, data) {
 
 function finishVictory(state, data, msgs) {
   const c = state.combat;
-  let gold = 0;
+  let gold = 0, xp = 0;
   for (const e of c.enemies) {
     gold += data.enemies[e.kind].gold;
+    xp += data.enemies[e.kind].xp || 0;
     const obj = state.objs.find((o) => o.id === e.objId);
     if (obj) { obj.dead = true; obj.hp = 0; }
   }
   state.gold += gold;
   msgs.push(`Sieg! Beute: ${gold} Gold.`);
+  if (xp > 0) { msgs.push(`Erfahrung: +${xp} EP für jeden Helden, der noch steht.`); grantXp(state, data, xp, msgs); }
   state.combat = null;
   return gold;
 }
@@ -443,6 +489,12 @@ export const MIGRATIONS = {
       return { ...h, race: 'human', cls: V1_ROLE_TO_CLS[h.role], look: i * 7 + 3 }; // look = bisheriger Porträt-Startwert (i*7+3)
     });
     return { ...save, v: 2, state: { ...st, heroes } };
+  },
+  // v2 -> v3: Helden bekommen Stufe 1 und 0 Erfahrung. Kampfwerte und LP bleiben unverändert (Stufe 1 hat kein Wachstum).
+  2: (save) => {
+    const st = save.state;
+    if (!st || !Array.isArray(st.heroes)) throw new Error('Spielstand v2: Gruppe fehlt');
+    return { ...save, v: 3, state: { ...st, heroes: st.heroes.map((h) => ({ ...h, level: 1, xp: 0 })) } };
   }
 };
 
@@ -482,6 +534,8 @@ export function validateState(state, data) {
     if (typeof hh.ranged !== 'boolean') err.push(`${n}: Kampfart ungültig`);
     for (const k of STAT_KEYS) if (!Number.isInteger(hh[k]) || hh[k] < STAT_MIN[k]) err.push(`${n}: ${k} ungültig`);
     if (!Number.isInteger(hh.look)) err.push(`${n}: Aussehen ungültig`);
+    if (!Number.isInteger(hh.level) || hh.level < 1 || hh.level > maxLevel(data)) err.push(`${n}: Stufe ungültig`);
+    if (!Number.isInteger(hh.xp) || hh.xp < 0) err.push(`${n}: Erfahrung ungültig`);
     if (typeof hh.hp !== 'number' || hh.hp < 0 || hh.hp > hh.maxHp) err.push(`${n}: LP ungültig`);
   });
   if (!state.inv || typeof state.inv !== 'object') err.push('Inventar ungültig');
@@ -505,6 +559,37 @@ export function deserialize(input, data, migrations = MIGRATIONS) {
   if (errors.length) throw new Error('Spielstand ungültig: ' + errors.join('; '));
   m.state.combat = null; // Kämpfe werden nie mitten im Kampf gespeichert/geladen
   return m.state;
+}
+
+// ---------- Balancetabelle (erzeugt BALANCE.md; Befehl siehe HANDOVER.md) ----------
+export function balanceMarkdown(data) {
+  const L = [];
+  const mx = maxLevel(data), xp = data.progression.xp;
+  const sg = (n) => (n > 0 ? '+' + n : String(n));
+  L.push('# Balancetabelle – Die Schatten von Eldermoor', '');
+  L.push('Wird aus `game.json` erzeugt (`balanceMarkdown` in logic.js), nicht von Hand ändern. Alle Zahlen sind **vorläufig** (vom Assistenten gesetzt, nicht im Spiel mit Spielern gemessen). Feinabstimmung in Schritt 4 (Balance-Simulation).', '');
+  L.push('Kampfwerte = Berufswert + Rassenmodifikator + Wachstum je Stufe: `floor((Stufe − 1) × Wachstum / 10)`, Wachstum in Zehnteln pro Stufe. Untergrenzen: LP 1, Angriff 1, Verteidigung 0, Initiative 0.', '');
+  L.push('## Erfahrung', '', '| Stufe | EP gesamt | EP für diese Stufe |', '|---|---|---|', '| 1 | 0 | – |');
+  for (let lv = 2; lv <= mx; lv++) L.push(`| ${lv} | ${xp[lv - 2]} | ${xp[lv - 2] - (lv > 2 ? xp[lv - 3] : 0)} |`);
+  L.push('', 'Gegner-EP (jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die volle Summe):', '', '| Gegner | EP | Gold |', '|---|---|---|');
+  for (const e of Object.values(data.enemies)) L.push(`| ${e.name} | ${e.xp || 0} | ${e.gold || 0} |`);
+  L.push('', '## Rassen (Modifikatoren)', '', '| Rasse | LP | Angriff | Verteidigung | Initiative |', '|---|---|---|---|---|');
+  for (const r of Object.values(data.races)) L.push(`| ${r.name} | ${sg(r.mods.maxHp)} | ${sg(r.mods.atk)} | ${sg(r.mods.def)} | ${sg(r.mods.init)} |`);
+  L.push('', '## Berufe (Basis auf Stufe 1, Wachstum in Zehnteln je Stufe)', '', '| Beruf | Reihe | Fernkampf | LP | Angriff | Verteidigung | Initiative | Wachstum LP/Ang/Vert/Init |', '|---|---|---|---|---|---|---|---|');
+  for (const c of Object.values(data.classes)) L.push(`| ${c.name} | ${c.row === 'front' ? 'vorn' : 'hinten'} | ${c.ranged ? 'ja' : 'nein'} | ${c.base.maxHp} | ${c.base.atk} | ${c.base.def} | ${c.base.init} | ${c.growth.maxHp}/${c.growth.atk}/${c.growth.def}/${c.growth.init} |`);
+  L.push('', '## Werte je Stufe (Mensch, keine Rassenmodifikatoren)', '');
+  for (const [cid, c] of Object.entries(data.classes)) {
+    L.push(`### ${c.name}`, '', '| Stufe | LP | Angriff | Verteidigung | Initiative |', '|---|---|---|---|---|');
+    for (let lv = 1; lv <= mx; lv++) { const st = deriveStats(data, 'human', cid, lv); L.push(`| ${lv} | ${st.maxHp} | ${st.atk} | ${st.def} | ${st.init} |`); }
+    L.push('');
+  }
+  L.push('## Alle 25 Kombinationen auf Stufe 1 und Stufe ' + mx, '', '| Rasse | Beruf | Stufe 1 (LP/Ang/Vert/Init) | Stufe ' + mx + ' (LP/Ang/Vert/Init) |', '|---|---|---|---|');
+  for (const [rid, r] of Object.entries(data.races)) for (const [cid, c] of Object.entries(data.classes)) {
+    const a = deriveStats(data, rid, cid, 1), b = deriveStats(data, rid, cid, mx);
+    L.push(`| ${r.name} | ${c.name} | ${a.maxHp}/${a.atk}/${a.def}/${a.init} | ${b.maxHp}/${b.atk}/${b.def}/${b.init} |`);
+  }
+  L.push('');
+  return L.join('\n');
 }
 
 // ---------- Level-Analyse (Softlock-Prüfung) ----------

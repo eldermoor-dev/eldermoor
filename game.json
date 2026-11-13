@@ -16,12 +16,13 @@
     "gnome": { "name": "Gnom", "desc": "Klein und flink, wenig Ausdauer.", "mods": { "maxHp": -3, "atk": 0, "def": 0, "init": 1 } }
   },
   "classes": {
-    "warrior": { "name": "Krieger", "desc": "Hält die Vorderreihe, viel LP und Verteidigung.", "row": "front", "ranged": false, "base": { "maxHp": 34, "atk": 8, "def": 5, "init": 4 } },
-    "rogue": { "name": "Schurke", "desc": "Schnell, zuerst am Zug.", "row": "front", "ranged": false, "base": { "maxHp": 24, "atk": 7, "def": 3, "init": 7 } },
-    "priest": { "name": "Priester", "desc": "Hinterreihe, Heiler der Gruppe.", "row": "back", "ranged": false, "base": { "maxHp": 26, "atk": 5, "def": 3, "init": 3 } },
-    "mage": { "name": "Magier", "desc": "Hinterreihe, Fernkampf, zerbrechlich.", "row": "back", "ranged": true, "base": { "maxHp": 18, "atk": 8, "def": 1, "init": 5 } },
-    "ranger": { "name": "Waldläufer", "desc": "Hinterreihe, Fernkampf mit dem Bogen.", "row": "back", "ranged": true, "base": { "maxHp": 24, "atk": 7, "def": 2, "init": 6 } }
+    "warrior": { "name": "Krieger", "desc": "Hält die Vorderreihe, viel LP und Verteidigung.", "row": "front", "ranged": false, "base": { "maxHp": 34, "atk": 8, "def": 5, "init": 4 }, "growth": { "maxHp": 60, "atk": 8, "def": 7, "init": 3 } },
+    "rogue": { "name": "Schurke", "desc": "Schnell, zuerst am Zug.", "row": "front", "ranged": false, "base": { "maxHp": 24, "atk": 7, "def": 3, "init": 7 }, "growth": { "maxHp": 40, "atk": 8, "def": 4, "init": 5 } },
+    "priest": { "name": "Priester", "desc": "Hinterreihe, Heiler der Gruppe.", "row": "back", "ranged": false, "healer": true, "base": { "maxHp": 26, "atk": 5, "def": 3, "init": 3 }, "growth": { "maxHp": 45, "atk": 5, "def": 4, "init": 3 } },
+    "mage": { "name": "Magier", "desc": "Hinterreihe, Fernkampf, zerbrechlich.", "row": "back", "ranged": true, "base": { "maxHp": 18, "atk": 8, "def": 1, "init": 5 }, "growth": { "maxHp": 30, "atk": 9, "def": 2, "init": 4 } },
+    "ranger": { "name": "Waldläufer", "desc": "Hinterreihe, Fernkampf mit dem Bogen.", "row": "back", "ranged": true, "base": { "maxHp": 24, "atk": 7, "def": 2, "init": 6 }, "growth": { "maxHp": 40, "atk": 8, "def": 3, "init": 5 } }
   },
+  "progression": { "maxLevel": 10, "xp": [100, 250, 450, 700, 1000, 1400, 1900, 2500, 3200] },
   "quickParty": [
     { "name": "Berenn", "race": "human", "cls": "warrior" },
     { "name": "Sira", "race": "human", "cls": "rogue" },
@@ -29,7 +30,7 @@
     { "name": "Ivo", "race": "human", "cls": "mage" }
   ],
   "enemies": {
-    "schrat": { "name": "Moorschrat", "hp": 80, "atk": 13, "def": 3, "init": 5, "gold": 15 }
+    "schrat": { "name": "Moorschrat", "hp": 80, "atk": 13, "def": 3, "init": 5, "gold": 15, "xp": 120 }
   },
   "palettes": {
     "keller": {

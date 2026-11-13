@@ -3,13 +3,13 @@
 import {
   DIRS, DIR_NAMES, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, validateParty, randomParty, NAME_MAX
+  buildParty, deriveStats, validateParty, randomParty, xpForNext, NAME_MAX
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setResolution, W, H, BASE_W, BASE_H } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.2.1';
+const VERSION = '0.2.2';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -496,12 +496,17 @@ function openInventory() {
   html += `<div class="acts">${closeBtn}</div>`;
   openModal(html, 'inventory');
 }
+function xpLine(h) {
+  const need = xpForNext(S.data, h);
+  return need == null ? `EP ${h.xp} · Höchststufe` : `EP ${h.xp} / ${need}`;
+}
 function openCharacter() {
   const g = S.game;
   openModal(`<h2>Charaktere</h2><div class="grid4">` + g.heroes.map((h) =>
     `<div class="hc"><b>${esc(h.name)}</b><div class="muted">${esc(raceName(h.race))} · ${esc(h.role)}</div><div class="muted">${h.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}</div>
+    <div>Stufe ${h.level}</div><div class="muted">${xpLine(h)}</div>
     <div>LP ${h.hp}/${h.maxHp}</div><div>Angriff ${h.atk}</div><div>Verteidigung ${h.def}</div><div>Initiative ${h.init}</div><div>${h.ranged ? 'Fernkampf' : 'Nahkampf'}</div></div>`).join('') +
-    `</div><p class="muted">Attribute, Stufen und Ausrüstung folgen in den nächsten Schritten von Phase 2.</p><div class="acts">${closeBtn}</div>`, 'character');
+    `</div><p class="muted">Ausrüstung und Fähigkeiten folgen in den nächsten Schritten von Phase 2.</p><div class="acts">${closeBtn}</div>`, 'character');
 }
 
 function openMap() {
@@ -778,14 +783,14 @@ function openPartyEditor(reset) {
   const opt = (obj, sel) => Object.entries(obj).map(([k, v]) => `<option value="${k}" ${k === sel ? 'selected' : ''}>${esc(v.name)}</option>`).join('');
   const cards = S.draft.map((h, i) => {
     const st = deriveStats(d, h.race, h.cls), c = d.classes[h.cls], r = d.races[h.race];
-    const warn = h.row === 'back' && !c.ranged ? '<div class="bad">Hinterreihe, Nahkampf: halber Schaden</div>' : '';
+    const warn = h.row === 'back' && !c.ranged && !c.healer ? '<div class="bad">Hinterreihe, Nahkampf: halber Schaden</div>' : '';
     return `<div class="hc"><div class="top"><canvas class="pv" data-p="${i}" width="32" height="32"></canvas>
       <div style="flex:1;min-width:0"><b>Held ${i + 1}</b><input type="text" maxlength="${NAME_MAX}" placeholder="Name" autocomplete="off" autocapitalize="words" spellcheck="false" data-h="${i}:name" value="${esc(h.name)}"></div></div>
       <div class="row"><label>Rasse</label><select data-h="${i}:race">${opt(d.races, h.race)}</select></div>
       <div class="row"><label>Beruf</label><select data-h="${i}:cls">${opt(d.classes, h.cls)}</select></div>
       <div class="row"><label>Reihe</label><select data-h="${i}:row"><option value="front" ${h.row === 'front' ? 'selected' : ''}>Vorderreihe</option><option value="back" ${h.row === 'back' ? 'selected' : ''}>Hinterreihe</option></select></div>
       <div class="muted">${esc(r.desc)} ${esc(c.desc)}</div>
-      <div>LP ${st.maxHp} · Angriff ${st.atk} · Verteidigung ${st.def} · Initiative ${st.init} · ${c.ranged ? 'Fernkampf' : 'Nahkampf'}</div>${warn}</div>`;
+      <div class="stats"><span>LP ${st.maxHp}</span><span>Angriff ${st.atk}</span><span>Verteidigung ${st.def}</span><span>Initiative ${st.init}</span><span>${c.ranged ? 'Fernkampf' : 'Nahkampf'}</span></div>${warn}</div>`;
   }).join('');
   openModal(`<h2>Gruppe erstellen</h2><p class="muted">Vier Helden. Rasse und Beruf bestimmen die Werte (vorläufige Zahlen). Die Reihe folgt dem Beruf, lässt sich aber ändern.</p>
     <div class="grid4" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">${cards}</div><p class="bad" id="party-err"></p>

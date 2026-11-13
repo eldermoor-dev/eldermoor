@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Phase 2 Schritt 0 und 1 umgesetzt und auf dem Gerät getestet, Version 0.2.1
+Autor: eldermoor-dev · Stand: Phase 2 Schritt 0, 1 (auf dem Gerät getestet) und 2 (nur Node/Headless getestet) umgesetzt, Version 0.2.2
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -22,6 +22,7 @@ Autor: eldermoor-dev · Stand: Phase 2 Schritt 0 und 1 umgesetzt und auf dem Ger
 | sw.js | Service Worker, Cache `eldermoor-<VERSION>`. Enthält `VERSION` und `ASSETS` |
 | manifest.webmanifest | PWA-Manifest (fullscreen, landscape) |
 | icon-192.png, icon-512.png | Prozedural erzeugte Icons |
+| BALANCE.md | Balancetabelle (EP, Rassen, Berufe, Werte je Stufe), **erzeugt**, nicht von Hand ändern. Neu erzeugen: `node -e "import('./logic.js').then(async L=>{const fs=await import('node:fs');fs.writeFileSync('BALANCE.md',L.balanceMarkdown(JSON.parse(fs.readFileSync('game.json','utf8'))))})"`. Der Test prüft, dass sie zu game.json passt. Nicht im Offline-Cache. |
 | HANDOVER.md | Diese Datei |
 
 **Regel:** Wird eine Spieldatei geändert, `VERSION` in `main.js` UND `sw.js` erhöhen (der Test prüft Gleichheit). Neue Dateien in `ASSETS` (sw.js) eintragen.
@@ -40,16 +41,19 @@ Autor: eldermoor-dev · Stand: Phase 2 Schritt 0 und 1 umgesetzt und auf dem Ger
 - `levels.<id>`: `map` (Zeilen; `#` Stein, `m` Moos, `.` Boden), `start {x,y,dir}` (dir 0=N,1=O,2=S,3=W), `palette`, `objects[]`
 - Objekte: `door {locked,key}`, `chest {loot[{item,n}|{gold}]}`, `enemy {kind}`, `exit`. Türen/Truhen/Gegner stehen auf Bodenzellen.
 - `items.<id>`: `kind` = `consumable` | `quest`. Questgegenstände werden nie verbraucht und nie mehrfach vergeben.
-- `enemies.<kind>`: `hp, atk, def, init, gold`
+- `enemies.<kind>`: `hp, atk, def, init, gold, xp` (EP je Held, der nach dem Sieg nicht bewusstlos ist)
+- `progression`: `maxLevel` (10), `xp[]` = kumulative EP für Stufe 2 bis 10 (100, 250, 450, 700, 1000, 1400, 1900, 2500, 3200). **Vorläufig**, Feinabstimmung in Schritt 4.
 - `races.<id>`: `name, desc, mods{maxHp,atk,def,init}` (Mensch, Elf, Zwerg, Ork, Gnom). **Zahlen sind vorläufig** (vom Assistenten gesetzt, nicht vom Nutzer vorgegeben), Feinabstimmung in Schritt 2/4.
-- `classes.<id>`: `name, desc, row (Standardreihe), ranged, base{maxHp,atk,def,init}` (warrior, rogue, priest, mage, ranger). Waldläufer-Werte (24/7/2/6, hinten, Fernkampf) ebenfalls vorläufig.
+- `classes.<id>`: `name, desc, row (Standardreihe), ranged, healer? (Priester: keine Warnung bei Hinterreihe), base{maxHp,atk,def,init}, growth{maxHp,atk,def,init}` (Wachstum in **Zehnteln je Stufe**) (warrior, rogue, priest, mage, ranger). Waldläufer-Werte (24/7/2/6, hinten, Fernkampf) ebenfalls vorläufig.
 - `quickParty[]`: `name, race, cls` (Schnellstart-Gruppe; ergibt exakt die Werte der festen Gruppe aus 0.1.5: Berenn/Sira/Odalys/Ivo, alle Mensch).
-- Kampfwerte eines Helden = `classes.base + races.mods`, Untergrenzen maxHp 1, atk 1, def 0, init 0 (`deriveStats` in logic.js).
-- Held im Spielstand: `id, name, race, cls, role (Berufsname, Anzeige), row, maxHp, atk, def, init, ranged, look (Porträt-Startwert), hp`. Name 1–12 Zeichen, Namen der Gruppe verschieden (ohne Groß/Kleinschreibung).
+- Kampfwerte eines Helden = `classes.base + races.mods + floor((Stufe−1) × growth / 10)`, Untergrenzen maxHp 1, atk 1, def 0, init 0 (`deriveStats(data, race, cls, level)` in logic.js). Stufe 1 ergibt exakt die Werte aus 0.2.0. Die vier Kampfwerte (LP, Angriff, Verteidigung, Initiative) sind die „Attribute“; Mana kommt mit den Runenzaubern (Schritt 5).
+- Held im Spielstand: `id, name, race, cls, role (Berufsname, Anzeige), level (1–10), xp (EP, bei Stufe 10 bei 3200 gedeckelt), row, maxHp, atk, def, init, ranged, look (Porträt-Startwert), hp`. Name 1–12 Zeichen, Namen der Gruppe verschieden (ohne Groß/Kleinschreibung).
 
-**Spielstand (Version 2)**: `{format:'eldermoor-save', v:2, savedAt, state}`; `state` = `rng, levelId, player, heroes, inv, gold, flags, objs, seen, notes, steps` (`combat` wird nie gespeichert).
+**Spielstand (Version 3)**: `{format:'eldermoor-save', v:3, savedAt, state}`; `state` = `rng, levelId, player, heroes, inv, gold, flags, objs, seen, notes, steps` (`combat` wird nie gespeichert).
 Migration: `MIGRATIONS[n]` wandelt Version n → n+1 (`logic.js`); beim Laden wird bis `SAVE_VERSION` verkettet.
 **Migration v1→v2 (erläutert):** v1-Helden hatten nur `role`. Die Migration ergänzt je Held `race: 'human'`, `cls` (Krieger→warrior, Schurke→rogue, Priester→priest, Magier→mage) und `look = Index*7+3` (genau der bisherige Porträt-Startwert, Aussehen bleibt gleich). **Nichts anderes wird verändert**: LP, Kampfwerte, Position, Gold, Inventar, Objekte, Karte, Notizen, Zufallszustand bleiben bitgleich. „Mensch“ hat Modifikatoren 0, die gespeicherten Werte entsprechen daher genau Mensch + Beruf. Unbekannter Beruf in einem v1-Stand → Ladefehler mit Meldung. Die Eingabedatei wird nicht verändert; erst beim nächsten Speichern entsteht v2. v1-Stände bleiben dauerhaft ladbar. Neuere Spielstände werden abgelehnt. Geladene Stände werden validiert (`validateState`).
+**Migration v2→v3 (erläutert):** Helden bekommen `level: 1` und `xp: 0`. Sonst wird nichts verändert (Stufe 1 hat kein Wachstum, die gespeicherten Kampfwerte bleiben genau gleich; LP, Position, Gold, Inventar, Objekte, Karte bleiben bitgleich). v1-Stände laufen die Kette v1→v2→v3. Die Eingabe wird nicht verändert; erst beim nächsten Speichern entsteht v3. Gültigkeit beim Laden: Stufe ganzzahlig 1..10, EP ganzzahlig ≥ 0. **Hinweis:** Der geplante Schritt „Mehrere Gebiete“ braucht damit Spielstand **v4** (Migration v3→v4), nicht v3.
+Erfahrung: Nach einem Sieg bekommt jeder Held mit LP > 0 die EP-Summe der besiegten Gegner (`grantXp`). Bewusstlose gehen leer aus. Aufstieg setzt die Kampfwerte neu; die LP steigen nur um den Zuwachs der Max-LP (keine Vollheilung). Bei Stufe 10 werden EP gedeckelt.
 Slots in IndexedDB: Schlüssel `auto`, `slot1`, `slot2`, `slot3`, `settings`.
 
 ## Kampfregeln (Phase 1)
@@ -74,12 +78,21 @@ Monster-Sprite neu: `genSchrat` erzeugt 160×160 statt 64×64 (Borke, Moos, Gewe
 ## Änderungen 0.1.5
 Neue Einstellung **Bildschärfe**: Scharf (960×540, Texturen auf 128 verdoppelt mit Scale2x + Korn) ist jetzt Standard, Retro (480×270, wie in der Vorgabe) bleibt wählbar. Auf Nutzerwunsch („zu verpixelt“). Technik: `setResolution(r)` ändert die live exportierten `W`/`H` in render.js, `buildRenderer()` in main.js baut Renderer, Texturen, Canvas und ImageData neu; die Bühne bleibt ein ganzzahliges Vielfaches von 480×270. Bei nicht ganzzahligem Verhältnis (z. B. 3×/2 = 1,5) glättet der Browser (`image-rendering:auto`), bei ganzzahligem bleibt es pixelig-scharf. Messung der Renderzeit auf dem Gerät: Debug-Modus.
 
+## Änderungen 0.2.2 (Phase 2, Schritt 2)
+- Stufen 1 bis 10, EP-Tabelle, Wachstum je Beruf (`growth`), `deriveStats` mit Stufe, `grantXp`, EP-Vergabe nach dem Sieg (Moorschrat 120 EP: alle vier Helden steigen auf Stufe 2 auf). Spielstand v3 mit Migration v2→v3 (siehe oben). Charakteransicht zeigt Stufe und „EP x / y“.
+- `BALANCE.md` (erzeugt aus game.json). Alle Zahlen **vorläufig** (vom Assistenten gesetzt, nicht gespielt/gemessen).
+- Kleinigkeiten aus 0.2.1: Priester im Gruppeneditor ohne Hinterreihen-Warnung (`healer`), Werte-Zeile im Editor als Flex-Liste (kein loser Punkt).
+- Nicht geändert: Kampfregeln, Gegnerwerte. Mit Stufe 10 wird die Gruppe sehr stark; das wird in Schritt 3/4 (Gegner, Simulation) angepasst. Im aktuellen Testdungeon gibt es nur einen Gegner, die Stufen wirken dort erst nach dem Sieg.
+- Tests: 35 Node (34 im Selbsttest im Browser, die Dateiprüfungen laufen nur in Node). Neu: Stufen/Wachstum, EP, Sieg bringt EP, Migration v2→v3, BALANCE.md aktuell. `VERSION` 0.2.2.
+- **Nicht auf Gerät getestet.** Testplan: (1) Titel zeigt 0.2.2. (2) „Fortsetzen“ mit altem Stand (v2): Helden unverändert, Charakteransicht zeigt „Stufe 1“, „EP 0 / 100“. (3) Editor: Priester hinten ohne rote Warnung, Krieger hinten mit Warnung. (4) Moorschrat besiegen: Meldungen „Erfahrung: +120“ und vier Aufstiege, danach Stufe 2 in der Charakteransicht, LP-Balken noch nicht voll. (5) Speichern, Laden.
+
 ## Änderungen 0.2.1
 - Gerätetest 0.2.0 (Galaxy S25, 13.11.2026): Update, Schnellstart, Debug-Zeile ohne Überlappung (60 FPS), Laden eines echten v0.1.5-Spielstands (Migration v1→v2, LP erhalten, „Mensch · Beruf“), Selbsttest 29/29, Schrittgeräusche aus, Namenseingabe mit Bildschirmtastatur (Querformat) funktionieren.
 - Fund: Dialoge, die höher als der sichtbare Bereich sind (Einstellungen, Selbsttest, Gruppeneditor), wurden im Browser mit Adressleiste oben abgeschnitten. Änderung: `#modal-box{max-height:100%}` statt `94vh`. Ursache nur vermutet (vh ohne Adressleiste), im Vollbild trat der Fehler nicht auf. Auf dem Gerät noch zu bestätigen.
 - Charakteransicht: Zeilen umbrechen sauber (Rasse · Beruf / Reihe / Angriff / Verteidigung je eigene Zeile), kein loser Punkt mehr.
 - Neu: Knopf „Zufällige Gruppe“ im Editor (`randomParty` in logic.js). Würfelt Rasse und Beruf, behält die Namen, sorgt dafür, dass mindestens ein Held vorn steht. Schnellstart bleibt die feste Menschen-Gruppe.
 - Tests: 30. Keine neuen Dateien. `VERSION` = 0.2.1 in main.js und sw.js.
+- Vorgemerkt am 13.11.2026 (Nutzer stimmte zu), umgesetzt in 0.2.2: Warnung beim Priester entfällt; Werte-Zeile im Editor ohne losen Punkt.
 
 ## Änderungen 0.2.0 (Phase 2, Schritt 0 und 1)
 - Schritt 0: `DEFAULTS.steps = false`. Einstellungen haben jetzt `settingsV` (2): bestehende Einstellungen ohne `settingsV` werden **einmalig** auf `steps=false` gesetzt (sonst bliebe der gespeicherte alte Standard `true`); danach bleibt eine bewusste Wahl erhalten. Debug-Zeile (FPS) liegt jetzt als eigenes Element links unter der Knopfleiste (fest am Bildschirmrand, vierzeilig) statt in der Bühne; in Node/Headless auf Überlappung geprüft (4× und 3×, mit und ohne Kampf).
@@ -108,7 +121,7 @@ Neue Einstellung **Bildschärfe**: Scharf (960×540, Texturen auf 128 verdoppelt
 - **Keine Musik** bleibt (Entscheidung des Nutzers hat Vorrang vor der Gemini-Liste; am 13.11.2026 bestätigt, **vorläufig**, kann später geändert werden). Fokus auf Geräusche (Ambient, später Monsterlaute in der Ferne, Schalter, Wind draußen).
 - Übernommen aus der Ideenliste: „Alle angreifen“ (Schritt 3), Stangenwaffen aus der Hinterreihe über Waffenreichweite (Schritt 5), Automap ohne Geheimnisse mit eigenen Markern (vorhanden; Geheimwände bleiben bis zur Entdeckung Wand), Rätsel nur mit Hinweisen in der Welt (Wandinschriften, Dialoge), Zauberleiste ohne Blättern (Schritt 5), faire Schwierigkeit. Bodengegenstände auf Touch per Antippen statt Ziehen.
 - Gruppe: 4 Helden (`PARTY_SIZE`); bis 6 mit NPC-Rekruten erst Phase 4 (Platz der Heldenkarten in der Leiste vorher prüfen).
-- **Neuer Schritt vor dem Testdungeon: „Mehrere Gebiete“ (vom Nutzer am 13.11.2026 bestätigt).** Grund (aus dem Code belegt): `state.objs`, `state.seen`, `state.notes` gehören heute einem Level, `applyDefeat` kehrt zum Start dieses Levels zurück, `exit` setzt nur ein Flag. Nötig: Übergänge (Treppe/Ausgang → Gebiet + Position), Zustand je Gebiet, Spielstand v3 mit Migration v2→v3 (v1/v2-Stände bleiben ladbar).
+- **Neuer Schritt vor dem Testdungeon: „Mehrere Gebiete“ (vom Nutzer am 13.11.2026 bestätigt).** Grund (aus dem Code belegt): `state.objs`, `state.seen`, `state.notes` gehören heute einem Level, `applyDefeat` kehrt zum Start dieses Levels zurück, `exit` setzt nur ein Flag. Nötig: Übergänge (Treppe/Ausgang → Gebiet + Position), Zustand je Gebiet, Spielstand **v4** mit Migration v3→v4 (v1/v2/v3-Stände bleiben ladbar; v3 ist seit 0.2.2 vergeben).
 - **Kampagnenplan (Vorschlag des Assistenten, Zeiten sind Schätzungen, erst der Testdungeon liefert Messwerte):**
 
 | Kap. | Ort / Biom | Schwerpunkt | Schätzung |
@@ -124,7 +137,7 @@ Neue Einstellung **Bildschärfe**: Scharf (960×540, Texturen auf 128 verdoppelt
 
 ## Nicht enthalten / geplant
 - Charaktereditor, Rassen, Berufe, Attribute, XP/Stufen, Ausrüstung, Runenzauber, Rast/Nahrung → Phase 2
-- Mehrere Gebiete/Stockwerke (Spielstand v3), Hebel, Druckplatten, Teleporter, Geheimwände, Wandinschriften, Bodengegenstände, Dialogfenster, Falle, mehrere Gegnertypen → Phase 3, danach Kapitel 1 (Testdungeon)
+- Mehrere Gebiete/Stockwerke (Spielstand v4), Hebel, Druckplatten, Teleporter, Geheimwände, Wandinschriften, Bodengegenstände, Dialogfenster, Falle, mehrere Gegnertypen → Phase 3, danach Kapitel 1 (Testdungeon)
 - Kapitel 2 bis 5, Außenbiom (Himmel, Bäume), rekrutierbare NPCs, Gruppe bis 6 → Phase 4
 - Gamepad (Einstellung ist nur ein Hinweistext), Fernseher-Optimierung, Performance-Messung auf dem Gerät, Balance-Feinschliff → Phase 5
 - Echte Icons für Buttons (aktuell Textsymbole)
@@ -145,7 +158,7 @@ Neue Einstellung **Bildschärfe**: Scharf (960×540, Texturen auf 128 verdoppelt
 Reihenfolge, jeweils kleiner, einzeln testbarer Schritt mit Testplan für das Smartphone:
 0. **Erledigt (0.2.0)**: `DEFAULTS.steps = false`, Debug-Zeile verschoben. Offen beim Nutzer: GitHub-Version `v0.1.5` als Sicherung anlegen (vor dem Hochladen von 0.2.0; kann der Assistent nicht prüfen).
 1. **Erledigt (0.2.0, nur Node und Desktop-Chrome headless getestet, nicht auf dem Gerät):** `heroes` aus dem Code lösen: Charaktereditor (4 Helden frei, Rasse + Beruf), Rassen- und Berufstabellen in `game.json`, Schnellstart-Gruppe. Spielstand-Migration v1→v2 (Heldenfelder erweitern), ausdrücklich erläutern; alte Stände müssen ladbar bleiben.
-2. Attribute und abgeleitete Kampfwerte, XP/Stufen bis 10, Ausbalancierungstabelle als Datei.
+2. **Erledigt (0.2.2, nur Node/Headless getestet):** Attribute und abgeleitete Kampfwerte, XP/Stufen bis 10, Ausbalancierungstabelle als Datei (`BALANCE.md`).
 3. Kampf erweitern: Spezialfähigkeiten je Beruf mit Mana/Ausdauer, Statuswirkungen (Gift, Betäubung, Schutz, Schwäche), Gegner-Muster mit **angekündigten** Aktionen (z. B. schwerer Schlag; Verteidigen/Betäuben lohnt), einfache Gegner-KI, bis zu 3 Gegner mit Rollen, Schwächen/Resistenzen, transparente Schadensberechnung (Detailansicht), kurze Pause zwischen Zügen, schnelle Doppeltipps ignorieren. Normalangriff schwächer als Fähigkeiten.
 4. Balance messen (Node-Simulation): „nur Angriff“ muss deutlich schlechter abschneiden als kluges Spielen. Aktueller Stand zum Vergleich: nur Angriff 400/400 Siege (zu leicht, Nutzer bestätigt den Eindruck).
 5. Inventar/Ausrüstung, Runenzauber (Runenfolgen, eigenes Namensschema), Rast/Nahrung (mild).
