@@ -24,7 +24,7 @@ button{font:inherit;color:inherit}
 #view.hit{animation:hit .2s ease-out}
 @keyframes hit{0%{filter:brightness(2.4) saturate(1.6)}100%{filter:none}}
 #hud{position:absolute;inset:0;pointer-events:none}
-#fps{position:absolute;left:4px;top:4px;font:11px monospace;background:#000a;padding:2px 5px;border-radius:3px;color:#9f9}
+#fps{position:fixed;left:calc(env(safe-area-inset-left,0px) + 4px);top:calc(env(safe-area-inset-top,0px) + 44px);z-index:7;pointer-events:none;font:10px/1.25 monospace;white-space:pre;background:#000a;padding:2px 5px;border-radius:3px;color:#9f9}
 #enemybox{zoom:var(--hs,1);position:absolute;left:50%;top:calc(44px / var(--hs,1));transform:translateX(-50%);width:min(56%,420px);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:.78rem}
 #enemybox .en{display:flex;gap:8px;align-items:center}
 #enemybox .en .bar{flex:1}
@@ -81,7 +81,13 @@ button{font:inherit;color:inherit}
 #modal-box .muted{opacity:.7;font-size:.85rem}
 #modal-box .grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
 #modal-box .hc{background:#211a11;border:1px solid #4a3c26;border-radius:6px;padding:8px}
-#modal-box select,#modal-box input[type=range]{min-height:36px;background:#2a2116;color:var(--ink);border:1px solid var(--line);border-radius:6px;font:inherit}
+#modal-box select,#modal-box input[type=range],#modal-box input[type=text]{min-height:36px;background:#2a2116;color:var(--ink);border:1px solid var(--line);border-radius:6px;font:inherit}
+#modal-box input[type=text]{width:100%;min-width:0;padding:0 8px;margin-top:4px;-webkit-user-select:text;user-select:text}
+#modal-box .hc .row{padding:4px 0}
+#modal-box .hc .top{display:flex;gap:8px;align-items:center}
+#modal-box .pv{width:56px;height:56px;flex:none;image-rendering:pixelated;border-radius:4px;border:1px solid #4a3c26}
+#modal-box .qp{display:flex;gap:8px;align-items:center;padding:4px 0}
+#modal-box .qp canvas{width:40px;height:40px;flex:none;image-rendering:pixelated;border-radius:3px}
 #modal-box input[type=checkbox]{width:22px;height:22px}
 .ok{color:#8fd48a}.bad{color:#ff8a7a}
 #mapcv{display:block;margin:6px auto;max-width:100%;image-rendering:pixelated;border:1px solid var(--line);background:#0a0806}
@@ -95,7 +101,7 @@ button{font:inherit;color:inherit}
 .clog .cl{padding:3px 0;border-bottom:1px solid #2f2618;line-height:1.35}
 .clog .rd{font-weight:700;color:var(--amber);margin-top:8px;border-bottom:2px solid var(--line)}
 .clog .turn{color:#f0dca8;opacity:.85}
-body.on-title .pad,body.on-title #topbar,body.on-title #hud{visibility:hidden}
+body.on-title .pad,body.on-title #topbar,body.on-title #hud,body.on-title #fps{visibility:hidden}
 @media (orientation:portrait){#portrait-warn{display:flex}}
 @media (max-height:340px){:root{--b:46px}}
 </style>
@@ -104,7 +110,6 @@ body.on-title .pad,body.on-title #topbar,body.on-title #hud{visibility:hidden}
 <div id="stage">
   <canvas id="view" width="480" height="270"></canvas>
   <div id="hud">
-    <div id="fps" hidden></div>
     <div id="enemybox" hidden></div>
     <div id="stack">
       <div id="log"></div>
@@ -122,6 +127,8 @@ body.on-title .pad,body.on-title #topbar,body.on-title #hud{visibility:hidden}
   <button class="tb" data-a="menu">Menü</button>
   <button class="tb" data-a="debug" id="debugbtn" hidden>Debug</button>
 </div>
+
+<div id="fps" hidden></div>
 
 <div id="ctl-left" class="pad">
   <button class="btn" data-a="tl">↶<small>Links drehen</small></button>

@@ -4,7 +4,7 @@
 // Handy:   Einstellungen → Selbsttest (läuft dieselbe Testsuite im Browser)
 
 import * as L from './logic.js';
-import { makeTextures, Raycaster, buildGrid, buildSprites, setResolution, W, H } from './render.js';
+import { makeTextures, Raycaster, buildGrid, buildSprites, setResolution, drawPortrait, W, H } from './render.js';
 
 const FILES = ['index.html', 'main.js', 'render.js', 'logic.js', 'audio.js', 'store.js', 'tests.js', 'game.json', 'sw.js', 'manifest.webmanifest'];
 
@@ -207,8 +207,8 @@ export async function runTests(data, env = {}) {
     assert(threw, 'Spieler in Wand');
   });
 
-  await test('Migration: Kette v1→v2, fehlende Migration wird gemeldet', () => {
-    const save = L.serialize(fresh());
+  await test('Migration: Kette, fehlende Migration und fehlender Versionssprung werden gemeldet', () => {
+    const save = { ...L.serialize(fresh()), v: 1 };
     const mig = { 1: (x) => ({ ...x, v: 2, state: { ...x.state, neuesFeld: 1 } }) };
     const m = L.migrate(save, mig, 2);
     assert(m.v === 2 && m.state.neuesFeld === 1, 'v2');
@@ -216,6 +216,153 @@ export async function runTests(data, env = {}) {
     assert(threw, 'ohne Migration');
     threw = false; try { L.migrate(save, { 1: (x) => x }, 2); } catch { threw = true; }
     assert(threw, 'Migration ohne Versionssprung');
+    assert(L.SAVE_VERSION === 2 && typeof L.MIGRATIONS[1] === 'function', 'echte Migration 1→2 muss vorhanden sein');
+  });
+
+  // ---- Phase 2, Schritt 1: Rassen, Berufe, Gruppe, Migration v1→v2 ----
+  const CUSTOM = [
+    { name: ' Gorm ', race: 'ork', cls: 'warrior' }, { name: 'Lia', race: 'elf', cls: 'ranger' },
+    { name: 'Pip', race: 'gnome', cls: 'mage', row: 'front' }, { name: 'Dura', race: 'dwarf', cls: 'priest' }
+  ];
+  // Echter Spielstand, erzeugt mit dem Code von Version 0.1.5 (Spielstandformat 1): Berenn 30/34 LP, Position 8/3, 20 Gold, 1 Trank, Tür A offen, 1 Notiz
+  const V1_SAVE = '{"format":"eldermoor-save","v":1,"savedAt":"2026-11-12T20:15:00.000Z","state":{"rng":4242,"levelId":"test1","player":{"x":8,"y":3,"dir":1},"heroes":[{"id":"h1","name":"Berenn","role":"Krieger","row":"front","maxHp":34,"atk":8,"def":5,"init":4,"ranged":false,"hp":30},{"id":"h2","name":"Sira","role":"Schurke","row":"front","maxHp":24,"atk":7,"def":3,"init":7,"ranged":false,"hp":24},{"id":"h3","name":"Odalys","role":"Priester","row":"back","maxHp":26,"atk":5,"def":3,"init":3,"ranged":false,"hp":26},{"id":"h4","name":"Ivo","role":"Magier","row":"back","maxHp":18,"atk":8,"def":1,"init":5,"ranged":true,"hp":18}],"inv":{"potion":1},"gold":20,"flags":{},"objs":[{"id":"door_a","type":"door","x":6,"y":3,"locked":false,"open":true},{"id":"chest_a","type":"chest","x":12,"y":1,"loot":[{"item":"iron_key","n":1},{"item":"potion","n":2},{"gold":12}],"open":false},{"id":"door_b","type":"door","x":12,"y":7,"locked":true,"key":"iron_key","open":false},{"id":"en1","type":"enemy","x":16,"y":7,"kind":"schrat","hp":80,"dead":false},{"id":"exit1","type":"exit","x":19,"y":7}],"seen":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"notes":[70],"combat":null,"steps":5}}';
+
+  await test('Rassen und Berufe: Tabellen vollständig, alle 25 Kombinationen gültig', () => {
+    eq(Object.keys(data.races), ['human', 'elf', 'dwarf', 'ork', 'gnome'], 'Rassen');
+    eq(Object.keys(data.classes), ['warrior', 'rogue', 'priest', 'mage', 'ranger'], 'Berufe');
+    assert(!data.heroes, 'game.json darf keine festen Helden mehr enthalten');
+    for (const [k, c] of Object.entries(data.classes)) {
+      assert(c.name && (c.row === 'front' || c.row === 'back') && typeof c.ranged === 'boolean', `Beruf ${k}: Felder`);
+      for (const s of L.STAT_KEYS) assert(Number.isInteger(c.base[s]), `Beruf ${k}: ${s}`);
+    }
+    for (const [k, r] of Object.entries(data.races)) {
+      assert(r.name, `Rasse ${k}: Name`);
+      for (const s of L.STAT_KEYS) assert(Number.isInteger(r.mods[s]), `Rasse ${k}: Modifikator ${s}`);
+    }
+    eq(Object.values(data.races.human.mods), [0, 0, 0, 0], 'Mensch ohne Modifikatoren');
+    let n = 0;
+    for (const r of Object.keys(data.races)) for (const c of Object.keys(data.classes)) {
+      const st = L.deriveStats(data, r, c); n++;
+      assert(st.maxHp >= 1 && st.atk >= 1 && st.def >= 0 && st.init >= 0, `${r}/${c}: ${JSON.stringify(st)}`);
+    }
+    eq(L.deriveStats(data, 'dwarf', 'warrior'), { maxHp: 38, atk: 8, def: 6, init: 3 }, 'Zwerg-Krieger = 34+4, 8+0, 5+1, 4−1');
+    const d2 = L.clone(data); d2.races.elf.mods.def = -10; d2.races.elf.mods.maxHp = -100;
+    eq(L.deriveStats(d2, 'elf', 'mage'), { maxHp: 1, atk: 8, def: 0, init: 7 }, 'Untergrenzen');
+    let threw = false; try { L.deriveStats(data, 'drache', 'mage'); } catch { threw = true; }
+    assert(threw, 'unbekannte Rasse');
+    return `${n} Kombinationen`;
+  });
+
+  await test('Schnellstart-Gruppe entspricht exakt der festen Gruppe aus Version 0.1.5', () => {
+    const old = [['Berenn', 'Krieger', 'front', 34, 8, 5, 4, false], ['Sira', 'Schurke', 'front', 24, 7, 3, 7, false],
+      ['Odalys', 'Priester', 'back', 26, 5, 3, 3, false], ['Ivo', 'Magier', 'back', 18, 8, 1, 5, true]];
+    const s = fresh();
+    eq(s.heroes.length, 4, 'Anzahl');
+    s.heroes.forEach((h, i) => {
+      const o = old[i];
+      eq([h.name, h.role, h.row, h.maxHp, h.atk, h.def, h.init, h.ranged, h.hp], [o[0], o[1], o[2], o[3], o[4], o[5], o[6], o[7], o[3]], `Held ${i + 1}`);
+      eq([h.id, h.race, h.look], ['h' + (i + 1), 'human', i * 7 + 3], `Held ${i + 1}: id/Rasse/Aussehen`);
+    });
+  });
+
+  await test('Gruppe erstellen: eigene Gruppe, Reihe, Namen, Fehlerfälle', () => {
+    const copy = L.clone(CUSTOM);
+    const g = L.newGame(data, 5, CUSTOM);
+    eq(CUSTOM, copy, 'Eingabe darf nicht verändert werden');
+    eq(g.heroes.map((h) => h.name), ['Gorm', 'Lia', 'Pip', 'Dura'], 'Namen (getrimmt)');
+    eq(g.heroes.map((h) => h.role), ['Krieger', 'Waldläufer', 'Magier', 'Priester'], 'Berufsnamen');
+    eq(g.heroes.map((h) => h.row), ['front', 'back', 'front', 'back'], 'Reihen (Standard des Berufs, Pip überschrieben)');
+    eq(g.heroes.map((h) => h.ranged), [false, true, true, false], 'Fernkampf');
+    eq(g.heroes.map((h) => [h.maxHp, h.atk, h.def, h.init]), [[37, 9, 5, 3], [22, 7, 2, 8], [15, 8, 1, 6], [30, 5, 4, 2]], 'Werte = Beruf + Rasse');
+    g.heroes.forEach((h) => assert(h.hp === h.maxHp, 'volle LP'));
+    assert(L.validateParty(data, CUSTOM).length === 0, 'gültig');
+    assert(L.validateParty(data, ['Jörg', 'Åse', 'Zoë', 'Ñuño'].map((name, i) => ({ ...CUSTOM[i], name }))).length === 0, 'Umlaute und Sonderbuchstaben erlaubt');
+    const bad = (mut, re) => {
+      const sp = L.clone(CUSTOM); mut(sp);
+      const e = L.validateParty(data, sp).join(' ');
+      assert(re.test(e), `Fehler nicht erkannt (${re}): „${e}“`);
+      let threw = false; try { L.newGame(data, 1, sp); } catch { threw = true; }
+      assert(threw, 'newGame muss ablehnen');
+    };
+    bad((s) => { s[0].name = '   '; }, /Name fehlt/);
+    bad((s) => { s[0].name = 'x'.repeat(13); }, /länger/);
+    bad((s) => { s[1].name = 'gorm'; }, /doppelt/);
+    bad((s) => { s[0].name = 'A\u0007B'; }, /Steuerzeichen/);
+    bad((s) => { s[2].race = 'drache'; }, /Rasse/);
+    bad((s) => { s[2].cls = 'constructor'; }, /Beruf/);
+    bad((s) => { s[3].row = 'mitte'; }, /Reihe/);
+    bad((s) => { s.pop(); }, /genau 4/);
+  });
+
+  await test('Spielstand v2: eigene Gruppe überlebt Speichern/Laden, ungültige Heldendaten werden abgelehnt', () => {
+    const s = L.newGame(data, 9, CUSTOM);
+    s.heroes[1].hp = 5; s.heroes[0].hp = 0;
+    const save = L.serialize(s);
+    eq(save.v, 2, 'Version');
+    eq(L.deserialize(JSON.stringify(save), data), { ...s, combat: null }, 'Roundtrip');
+    const rej = (mut, label) => {
+      const b = L.serialize(s); mut(b.state.heroes[2]);
+      let threw = false; try { L.deserialize(b, data); } catch { threw = true; }
+      assert(threw, `${label} muss abgelehnt werden`);
+    };
+    rej((h) => { h.race = 'drache'; }, 'unbekannte Rasse');
+    rej((h) => { h.cls = 'toString'; }, 'unbekannter Beruf');
+    rej((h) => { h.row = 'mitte'; }, 'ungültige Reihe');
+    rej((h) => { h.name = ''; }, 'leerer Name');
+    rej((h) => { h.atk = 'viel'; }, 'Angriff kein Zahlenwert');
+    rej((h) => { delete h.look; }, 'fehlendes Aussehen');
+  });
+
+  await test('Migration v1→v2: echter Spielstand aus Version 0.1.5 lädt, nichts geht verloren', () => {
+    const v1 = JSON.parse(V1_SAVE);
+    eq(v1.v, 1, 'Fixture ist v1');
+    assert(!('race' in v1.state.heroes[0]), 'Fixture darf noch keine Rasse haben');
+    const st = L.deserialize(V1_SAVE, data);
+    st.heroes.forEach((h, i) => {
+      const o = v1.state.heroes[i];
+      for (const k of Object.keys(o)) eq(h[k], o[k], `Held ${i + 1}.${k} geändert`);
+      eq([h.race, h.look], ['human', i * 7 + 3], `Held ${i + 1}: neue Felder`);
+      const dv = L.deriveStats(data, h.race, h.cls);
+      eq([h.maxHp, h.atk, h.def, h.init], [dv.maxHp, dv.atk, dv.def, dv.init], `Held ${i + 1}: Werte = Mensch + Beruf`);
+    });
+    eq(st.heroes.map((h) => h.cls), ['warrior', 'rogue', 'priest', 'mage'], 'Berufe');
+    eq(st.heroes[0].hp, 30, 'LP erhalten');
+    const rest = (x) => JSON.stringify({ ...x, heroes: 0, combat: 0 });
+    assert(rest(st) === rest(v1.state), 'übriger Zustand (Position, Gold, Inventar, Objekte, Karte, Notizen, Zufall) unverändert');
+    const obj = JSON.parse(V1_SAVE); L.deserialize(obj, data);
+    assert(obj.v === 1 && !('race' in obj.state.heroes[0]), 'Eingabe wird nicht verändert');
+    assert(L.tryMove(st, data, 'f').moved, 'Spiel läuft weiter');
+    const again = L.serialize(st);
+    eq(again.v, 2, 'neu gespeichert als v2');
+    eq(L.deserialize(JSON.stringify(again), data).player, st.player, 'erneut ladbar');
+  });
+
+  await test('Migration v1→v2: beschädigte v1-Stände werden mit klarer Meldung abgelehnt', () => {
+    const fails = (mut, re) => {
+      const o = JSON.parse(V1_SAVE); mut(o);
+      let msg = ''; try { L.deserialize(o, data); } catch (e) { msg = e.message; }
+      assert(re.test(msg), `erwartet ${re}, erhalten „${msg}“`);
+    };
+    fails((o) => { o.state.heroes[3].role = 'Barde'; }, /unbekannter Beruf/);
+    fails((o) => { delete o.state.heroes; }, /Gruppe fehlt/);
+    fails((o) => { o.state.heroes[0].hp = 99; }, /LP ungültig/);
+    fails((o) => { o.v = 0; }, /Keine Eldermoor-Spielstanddatei/);
+  });
+
+  await test('Porträts: alle Berufe × Rassen zeichnen, Waldläufer und Rassen sind unterscheidbar', () => {
+    const rec = (role, race, seed = 3) => {
+      const calls = [];
+      drawPortrait({ set fillStyle(v) { calls.push('c' + v); }, fillRect(...a) { calls.push(a.join(',')); } }, role, seed, race);
+      return calls.join('|');
+    };
+    const roles = Object.values(data.classes).map((c) => c.name);
+    for (const role of roles) {
+      assert(rec(role).length > 200, `${role}: zu wenig gezeichnet`);
+      assert(rec(role, 'human') === rec(role), `${role}: Mensch muss dem Standard entsprechen`);
+      for (const race of Object.keys(data.races)) if (race !== 'human') assert(rec(role, race) !== rec(role, 'human'), `${role}/${race}: nicht unterscheidbar`);
+    }
+    assert(rec('Waldläufer') !== rec('Magier'), 'Waldläufer darf nicht wie Magier aussehen');
+    assert(new Set(roles.map((r) => rec(r))).size === roles.length, 'jeder Beruf hat ein eigenes Porträt');
   });
 
   await test('Grafik: Texturen gültig, Renderer füllt jedes Pixel (3 Qualitätsstufen)', () => {
@@ -308,6 +455,15 @@ export async function runTests(data, env = {}) {
       if (env.exists) for (const f of list) assert(env.exists(f), `fehlt: ${f}`);
       for (const f of ['index.html', 'main.js', 'render.js', 'logic.js', 'audio.js', 'store.js', 'game.json', 'manifest.webmanifest']) assert(list.includes(f), `${f} fehlt im Cache`);
       return `${list.length} Einträge`;
+    });
+    await test('Einstellungen: Schrittgeräusche standardmäßig aus (Nutzerentscheidung 13.11.2026)', () => {
+      const m = /const DEFAULTS\s*=\s*\{([^}]*)\}/.exec(texts['main.js'] || '');
+      assert(m, 'DEFAULTS nicht gefunden');
+      assert(/steps:\s*false/.test(m[1]), 'DEFAULTS.steps muss false sein');
+      assert(/settingsV:\s*SETTINGS_V/.test(m[1]), 'settingsV fehlt');
+    });
+    await test('Helden kommen nur noch aus game.json (races, classes, quickParty)', () => {
+      for (const f of ['logic.js', 'main.js']) assert(!/data\.heroes/.test(texts[f] || ''), `${f}: Zugriff auf data.heroes`);
     });
     await test('Datenschutz: keine E-Mail-Adressen, Autor eldermoor-dev', () => {
       const mail = new RegExp('[\\w.+-]+' + String.fromCharCode(64) + '[\\w-]+\\.[\\w.]+');

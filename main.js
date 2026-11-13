@@ -2,17 +2,21 @@
 // Autor: eldermoor-dev
 import {
   DIRS, DIR_NAMES, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
-  heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt
+  heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
+  buildParty, deriveStats, validateParty, NAME_MAX
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setResolution, W, H, BASE_W, BASE_H } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.1.5';
+const VERSION = '0.2.0';
 const $ = (s, r = document) => r.querySelector(s);
+const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const DEFAULTS = { volume: 0.7, muted: false, quality: 'medium', vibration: true, fontScale: 1, colorblind: false, debug: false, flicker: 0.35, steps: true, ambient: true, sharp: 'scharf' };
+// settingsV 2 (v0.2.0): Schrittgeräusche standardmäßig aus (Nutzerentscheidung 13.11.2026)
+const SETTINGS_V = 2;
+const DEFAULTS = { volume: 0.7, muted: false, quality: 'medium', vibration: true, fontScale: 1, colorblind: false, debug: false, flicker: 0.35, steps: false, ambient: true, sharp: 'scharf', settingsV: SETTINGS_V };
 const REPEAT = new Set(['fwd', 'back', 'sl', 'sr', 'tl', 'tr']);
 const SLOT_KEYS = ['auto', 'slot1', 'slot2', 'slot3'];
 const SLOT_NAMES = { auto: 'Autosave', slot1: 'Slot 1', slot2: 'Slot 2', slot3: 'Slot 3' };
@@ -21,7 +25,7 @@ const S = {
   data: null, game: null, lvl: null, settings: { ...DEFAULTS }, tex: null, rc: null, ctx: null, img: null,
   sfx: new Sfx(), cam: { x: 0, y: 0, a: 0 }, target: { x: 0, y: 0, a: 0 }, tween: null,
   held: [], queued: null, nextAllowed: 0, lock: false, modal: null, started: false, log: [],
-  debug: { god: false }, itemMode: false, invUse: null, portraits: [], fps: 60, frameMs: 0, lastRender: 0,
+  debug: { god: false }, itemMode: false, invUse: null, draft: null, fps: 60, frameMs: 0, lastRender: 0,
   installEvent: null, loadMs: null, hadController: false
 };
 
@@ -39,17 +43,12 @@ async function boot() {
   await loadSettings();
   buildRenderer();
   applySettings();
-  S.data.heroes.forEach((h, i) => {
-    const cv = document.createElement('canvas'); cv.width = cv.height = 32;
-    drawPortrait(cv.getContext('2d'), h.role, i * 7 + 3);
-    S.portraits.push(cv);
-  });
   bindUI();
   layout();
   window.addEventListener('resize', layout);
   window.addEventListener('orientationchange', layout);
   document.addEventListener('visibilitychange', () => { if (document.hidden) S.sfx.suspend(); else S.sfx.resume(); });
-  document.addEventListener('contextmenu', (e) => e.preventDefault());
+  document.addEventListener('contextmenu', (e) => { if (!e.target.closest || !e.target.closest('input')) e.preventDefault(); });
   document.addEventListener('touchmove', (e) => { if (!e.target.closest('#modal-box')) e.preventDefault(); }, { passive: false });
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); S.installEvent = e; });
   snapCam();
@@ -76,7 +75,14 @@ function startGame(state) {
 
 // ---------------------------------------------------------------- Einstellungen
 async function loadSettings() {
-  try { const s = await store.get('settings'); if (s && typeof s === 'object') S.settings = { ...DEFAULTS, ...s }; } catch { /* Standardwerte */ }
+  try {
+    const s = await store.get('settings');
+    if (s && typeof s === 'object') {
+      S.settings = { ...DEFAULTS, ...s };
+      // Einmalig: bestehende Einstellungen (vor 0.2.0) auf den neuen Standard „Schrittgeräusche aus“ setzen; wieder einschaltbar
+      if (!(s.settingsV >= SETTINGS_V)) { S.settings.steps = false; S.settings.settingsV = SETTINGS_V; saveSettings(); }
+    }
+  } catch { /* Standardwerte */ }
 }
 function saveSettings() { store.set('settings', S.settings); }
 function applySettings() {
@@ -183,7 +189,7 @@ function frame(now) {
   if (S.loadMs == null) S.loadMs = Math.round(performance.now());
   if (S.settings.debug && (Math.floor(now / 500) !== S.lastFpsTick)) {
     S.lastFpsTick = Math.floor(now / 500);
-    $('#fps').textContent = `FPS ${S.fps.toFixed(0)} · Render ${S.frameMs.toFixed(1)} ms · ${S.settings.quality} · Skalierung ${S.scale}× · ${W}×${H} · Start→1. Bild ${S.loadMs} ms`;
+    $('#fps').textContent = `FPS ${S.fps.toFixed(0)}\nRender ${S.frameMs.toFixed(1)} ms\n${S.settings.quality} · ${S.scale}× · ${W}×${H}\nStart→1. Bild ${S.loadMs} ms`;
   }
 }
 
@@ -217,6 +223,7 @@ function bindUI() {
   $('#importfile').addEventListener('change', onImportFile);
   window.addEventListener('keydown', (e) => {
     if (e.repeat) return;
+    if (e.target && e.target.closest && e.target.closest('input,select,textarea')) return; // Tippen in Eingabefeldern (Namen) darf nicht als Steuerung gelten
     const map = { ArrowUp: 'fwd', w: 'fwd', ArrowDown: 'back', s: 'back', ArrowLeft: 'tl', ArrowRight: 'tr', a: 'sl', d: 'sr', q: 'tl', e: 'tr', ' ': 'interact', f: 'attack', Escape: 'menu', i: 'inv', m: 'map' };
     const n = map[e.key]; if (!n) return;
     e.preventDefault(); S.sfx.unlock();
@@ -391,6 +398,11 @@ function openCombatLog() {
 }
 function renderAll() { announceTurn(); renderParty(); renderCombat(); renderLog(); }
 function renderLog() { $('#log').innerHTML = S.log.slice(S.game && S.game.combat ? -2 : -3).map((m) => `<div>${esc(m)}</div>`).join(''); }
+function makePortrait(h) {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 32;
+  drawPortrait(cv.getContext('2d'), h.role, h.look, h.race);
+  return cv;
+}
 function renderParty() {
   const g = S.game, box = $('#party');
   const cur = g.combat && !g.combat.over ? currentActor(g) : null;
@@ -399,7 +411,7 @@ function renderParty() {
     const pct = Math.round(100 * h.hp / h.maxHp);
     const card = document.createElement('div');
     card.className = 'card' + (h.hp <= 0 ? ' dead' : '') + (cur && cur.side === 'h' && cur.idx === i ? ' act' : '');
-    card.append(S.portraits[i]);
+    card.append(makePortrait(h));
     const info = document.createElement('div');
     info.style.cssText = 'flex:1;min-width:0';
     info.innerHTML = `<div class="nm">${esc(h.name)}</div><div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div><div class="hp">${h.hp}/${h.maxHp} <span class="rw">${h.row === 'front' ? '· vorn' : '· hinten'}</span></div>`;
@@ -462,7 +474,7 @@ function helpHtml() {
   <h3>Oben</h3><p>Karte (auf eine erkundete Zelle tippen setzt oder entfernt eine Notiz), Speichern, Laden, Einstellungen, Menü.</p>
   <h3>Kampf</h3><p>Rundenbasiert. Die Zugreihenfolge steht oben. Hinterreihe-Helden ohne Fernkampf treffen nur halb so hart.</p>
   <h3>Ziel des Prototyps</h3><p>Truhe im Nebenraum öffnen, Eisenschlüssel nehmen, die Eisentür aufschließen, den Moorschrat besiegen und den Runenstein erreichen.</p>
-  <p class="muted">Prototyp Phase 1 · Version ${VERSION} · Autor: eldermoor-dev. Alle Grafiken und Geräusche entstehen im Spiel selbst (prozedural). Keine Musik.</p>
+  <p class="muted">Prototyp Phase 2 (in Arbeit) · Version ${VERSION} · Autor: eldermoor-dev. Alle Grafiken und Geräusche entstehen im Spiel selbst (prozedural). Keine Musik.</p>
   <div class="acts">${closeBtn}</div>`;
 }
 function openHelp() { openModal(helpHtml(), 'help'); }
@@ -487,9 +499,9 @@ function openInventory() {
 function openCharacter() {
   const g = S.game;
   openModal(`<h2>Charaktere</h2><div class="grid4">` + g.heroes.map((h) =>
-    `<div class="hc"><b>${esc(h.name)}</b><div class="muted">${esc(h.role)} · ${h.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}</div>
+    `<div class="hc"><b>${esc(h.name)}</b><div class="muted">${esc(raceName(h.race))} · ${esc(h.role)} · ${h.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}</div>
     <div>LP ${h.hp}/${h.maxHp}</div><div>Angriff ${h.atk} · Verteidigung ${h.def}</div><div>Initiative ${h.init}</div><div>${h.ranged ? 'Fernkampf' : 'Nahkampf'}</div></div>`).join('') +
-    `</div><p class="muted">Phase 1: feste Vorgabe-Gruppe. Charaktereditor, Rassen, Attribute und Stufen folgen in Phase 2.</p><div class="acts">${closeBtn}</div>`, 'character');
+    `</div><p class="muted">Attribute, Stufen und Ausrüstung folgen in den nächsten Schritten von Phase 2.</p><div class="acts">${closeBtn}</div>`, 'character');
 }
 
 function openMap() {
@@ -563,6 +575,8 @@ function openSettings() {
   <p class="muted">Version ${VERSION}. Speicher: ${store.persistent ? 'IndexedDB' : 'nur temporär (IndexedDB nicht verfügbar)'}.</p>`, 'settings');
 }
 function onModalInput(e) {
+  const del = e.target.closest('[data-h]');
+  if (del) { onDraftInput(del, e.type); return; }
   const el = e.target.closest('[data-s]');
   if (!el) return;
   const k = el.dataset.s;
@@ -694,6 +708,16 @@ async function onModalClick(e) {
     if (S.installEvent) { S.installEvent.prompt(); S.installEvent = null; }
     else toast('Chrome-Menü (⋮) → „App installieren“ bzw. „Zum Startbildschirm hinzufügen“.', 5000);
   } else if (m === 'selftest') openSelfTest();
+  else if (m === 'party-quick') startNewGame(null);
+  else if (m === 'party-edit' || m === 'party-reset') openPartyEditor(true);
+  else if (m === 'party-back') openNewGame();
+  else if (m === 'party-start') {
+    const specs = (S.draft || []).map((h) => ({ name: h.name, race: h.race, cls: h.cls, row: h.row }));
+    const err = validateParty(S.data, specs);
+    if (err.length) { const pe = $('#party-err'); if (pe) pe.textContent = err.join(' · '); return; }
+    S.draft = null;
+    startNewGame(specs);
+  }
   else if (m.startsWith('save:')) {
     const key = m.slice(5);
     const existing = await store.get(key);
@@ -718,6 +742,66 @@ async function onModalClick(e) {
   else if (m === 'dbg-kill') { g.objs.forEach((o) => { if (o.type === 'enemy') { o.dead = true; o.hp = 0; } }); g.combat = null; renderAll(); toast('Gegner besiegt.'); }
 }
 
+// ---------------------------------------------------------------- Neues Spiel: Schnellstart-Gruppe oder Charaktereditor
+const raceName = (k) => (hasKey(S.data.races, k) ? S.data.races[k].name : k);
+const rowName = (r) => (r === 'front' ? 'Vorderreihe' : 'Hinterreihe');
+function paintCanvases(attr, heroes) {
+  document.querySelectorAll(`#modal-box canvas[${attr}]`).forEach((cv) => {
+    const h = heroes[+cv.getAttribute(attr)];
+    if (h) drawPortrait(cv.getContext('2d'), h.role, h.look, h.race);
+  });
+}
+function startNewGame(specs) {
+  const st = newGame(S.data, (Date.now() ^ Math.floor(Math.random() * 4294967296)) >>> 0, specs);
+  startGame(st);
+  say('Du stehst im Testgewölbe. Vor dir liegt eine Tür. Mit ◉ Interagieren öffnest du sie.');
+}
+function openNewGame() {
+  const party = buildParty(S.data);
+  const rows = party.map((h, i) => `<div class="qp"><canvas data-q="${i}" width="32" height="32"></canvas><div><b>${esc(h.name)}</b><div class="muted">${esc(raceName(h.race))} · ${esc(h.role)} · ${rowName(h.row)} · LP ${h.maxHp}</div></div></div>`).join('');
+  openModal(`<h2>Neues Spiel</h2><h3>Schnellstart-Gruppe</h3>${rows}
+    <div class="acts"><button class="mb primary" data-m="party-quick">Mit dieser Gruppe beginnen</button><button class="mb" data-m="party-edit">Eigene Gruppe erstellen</button><button class="mb" data-m="close">Zurück</button></div>`, 'newgame');
+  paintCanvases('data-q', party);
+}
+function initDraft() {
+  S.draft = S.data.quickParty.map((q) => ({ name: q.name, race: q.race, cls: q.cls, row: S.data.classes[q.cls].row, rowSet: false }));
+}
+function openPartyEditor(reset) {
+  if (reset || !S.draft) initDraft();
+  const d = S.data, box = $('#modal-box'), keep = box.scrollTop;
+  const opt = (obj, sel) => Object.entries(obj).map(([k, v]) => `<option value="${k}" ${k === sel ? 'selected' : ''}>${esc(v.name)}</option>`).join('');
+  const cards = S.draft.map((h, i) => {
+    const st = deriveStats(d, h.race, h.cls), c = d.classes[h.cls], r = d.races[h.race];
+    const warn = h.row === 'back' && !c.ranged ? '<div class="bad">Hinterreihe, Nahkampf: halber Schaden</div>' : '';
+    return `<div class="hc"><div class="top"><canvas class="pv" data-p="${i}" width="32" height="32"></canvas>
+      <div style="flex:1;min-width:0"><b>Held ${i + 1}</b><input type="text" maxlength="${NAME_MAX}" placeholder="Name" autocomplete="off" autocapitalize="words" spellcheck="false" data-h="${i}:name" value="${esc(h.name)}"></div></div>
+      <div class="row"><label>Rasse</label><select data-h="${i}:race">${opt(d.races, h.race)}</select></div>
+      <div class="row"><label>Beruf</label><select data-h="${i}:cls">${opt(d.classes, h.cls)}</select></div>
+      <div class="row"><label>Reihe</label><select data-h="${i}:row"><option value="front" ${h.row === 'front' ? 'selected' : ''}>Vorderreihe</option><option value="back" ${h.row === 'back' ? 'selected' : ''}>Hinterreihe</option></select></div>
+      <div class="muted">${esc(r.desc)} ${esc(c.desc)}</div>
+      <div>LP ${st.maxHp} · Angriff ${st.atk} · Verteidigung ${st.def} · Initiative ${st.init} · ${c.ranged ? 'Fernkampf' : 'Nahkampf'}</div>${warn}</div>`;
+  }).join('');
+  openModal(`<h2>Gruppe erstellen</h2><p class="muted">Vier Helden. Rasse und Beruf bestimmen die Werte (vorläufige Zahlen). Die Reihe folgt dem Beruf, lässt sich aber ändern.</p>
+    <div class="grid4" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">${cards}</div><p class="bad" id="party-err"></p>
+    <div class="acts"><button class="mb primary" data-m="party-start">Spiel starten</button><button class="mb" data-m="party-reset">Schnellstart-Werte laden</button><button class="mb" data-m="party-back">Zurück</button></div>`, 'party');
+  box.scrollTop = keep;
+  paintCanvases('data-p', S.draft.map((h, i) => ({ role: d.classes[h.cls].name, race: h.race, look: i * 7 + 3 })));
+}
+function onDraftInput(el, type) {
+  if (!S.draft) return;
+  const [is, field] = el.dataset.h.split(':');
+  const h = S.draft[+is];
+  if (!h) return;
+  if (field === 'name') { if (type === 'input') h.name = el.value; return; } // Namen nur speichern, nicht neu zeichnen (Tastatur bleibt offen)
+  if (type !== 'change') return;
+  const v = el.value;
+  if (field === 'race' && hasKey(S.data.races, v)) h.race = v;
+  else if (field === 'cls' && hasKey(S.data.classes, v)) { h.cls = v; if (!h.rowSet) h.row = S.data.classes[v].row; }
+  else if (field === 'row' && (v === 'front' || v === 'back')) { h.row = v; h.rowSet = true; }
+  else return;
+  openPartyEditor(false);
+}
+
 // ---------------------------------------------------------------- Titelbild
 async function showTitle() {
   S.started = false;
@@ -725,7 +809,7 @@ async function showTitle() {
   S.held = []; S.queued = null;
   S.game = newGame(S.data, 1);
   S.lvl = getLevel(S.data, S.game);
-  $('#ver').textContent = `Prototyp Phase 1 · Version ${VERSION}`;
+  $('#ver').textContent = `Prototyp Phase 2 (in Arbeit) · Version ${VERSION}`;
   const latest = await latestSave();
   $('#btn-continue').disabled = !latest;
   $('#title').hidden = false;
@@ -746,11 +830,8 @@ async function onTitleClick(e) {
   S.sfx.unlock();
   S.sfx.play('ui');
   const t = b.dataset.t;
-  if (t === 'new') {
-    const st = newGame(S.data, (Date.now() ^ Math.floor(Math.random() * 4294967296)) >>> 0);
-    startGame(st);
-    say('Du stehst im Testgewölbe. Vor dir liegt eine Tür. Mit ◉ Interagieren öffnest du sie.');
-  } else if (t === 'continue') { const l = await latestSave(); if (l) await loadSlot(l.key); }
+  if (t === 'new') openNewGame();
+  else if (t === 'continue') { const l = await latestSave(); if (l) await loadSlot(l.key); }
   else if (t === 'load') { S.started = false; await openSlots('load'); }
   else if (t === 'settings') openSettings();
   else if (t === 'help') openHelp();

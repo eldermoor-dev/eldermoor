@@ -8,11 +8,25 @@
     "potion": { "name": "Heiltrank", "kind": "consumable", "heal": 15, "desc": "Stellt 15 LP wieder her." },
     "iron_key": { "name": "Eiserner Schlüssel", "kind": "quest", "desc": "Schwer und kalt. Passt in ein Eisenschloss. Kann nicht verloren gehen." }
   },
-  "heroes": [
-    { "id": "h1", "name": "Berenn", "role": "Krieger", "row": "front", "maxHp": 34, "atk": 8, "def": 5, "init": 4, "ranged": false },
-    { "id": "h2", "name": "Sira", "role": "Schurke", "row": "front", "maxHp": 24, "atk": 7, "def": 3, "init": 7, "ranged": false },
-    { "id": "h3", "name": "Odalys", "role": "Priester", "row": "back", "maxHp": 26, "atk": 5, "def": 3, "init": 3, "ranged": false },
-    { "id": "h4", "name": "Ivo", "role": "Magier", "row": "back", "maxHp": 18, "atk": 8, "def": 1, "init": 5, "ranged": true }
+  "races": {
+    "human": { "name": "Mensch", "desc": "Ausgewogen, keine Boni oder Abzüge.", "mods": { "maxHp": 0, "atk": 0, "def": 0, "init": 0 } },
+    "elf": { "name": "Elf", "desc": "Flink, aber zart gebaut.", "mods": { "maxHp": -2, "atk": 0, "def": 0, "init": 2 } },
+    "dwarf": { "name": "Zwerg", "desc": "Zäh und standfest, etwas langsam.", "mods": { "maxHp": 4, "atk": 0, "def": 1, "init": -1 } },
+    "ork": { "name": "Ork", "desc": "Kräftig und robust, wenig flink.", "mods": { "maxHp": 3, "atk": 1, "def": 0, "init": -1 } },
+    "gnome": { "name": "Gnom", "desc": "Klein und flink, wenig Ausdauer.", "mods": { "maxHp": -3, "atk": 0, "def": 0, "init": 1 } }
+  },
+  "classes": {
+    "warrior": { "name": "Krieger", "desc": "Hält die Vorderreihe, viel LP und Verteidigung.", "row": "front", "ranged": false, "base": { "maxHp": 34, "atk": 8, "def": 5, "init": 4 } },
+    "rogue": { "name": "Schurke", "desc": "Schnell, zuerst am Zug.", "row": "front", "ranged": false, "base": { "maxHp": 24, "atk": 7, "def": 3, "init": 7 } },
+    "priest": { "name": "Priester", "desc": "Hinterreihe, Heiler der Gruppe.", "row": "back", "ranged": false, "base": { "maxHp": 26, "atk": 5, "def": 3, "init": 3 } },
+    "mage": { "name": "Magier", "desc": "Hinterreihe, Fernkampf, zerbrechlich.", "row": "back", "ranged": true, "base": { "maxHp": 18, "atk": 8, "def": 1, "init": 5 } },
+    "ranger": { "name": "Waldläufer", "desc": "Hinterreihe, Fernkampf mit dem Bogen.", "row": "back", "ranged": true, "base": { "maxHp": 24, "atk": 7, "def": 2, "init": 6 } }
+  },
+  "quickParty": [
+    { "name": "Berenn", "race": "human", "cls": "warrior" },
+    { "name": "Sira", "race": "human", "cls": "rogue" },
+    { "name": "Odalys", "race": "human", "cls": "priest" },
+    { "name": "Ivo", "race": "human", "cls": "mage" }
   ],
   "enemies": {
     "schrat": { "name": "Moorschrat", "hp": 80, "atk": 13, "def": 3, "init": 5, "gold": 15 }

@@ -1,7 +1,7 @@
 // Die Schatten von Eldermoor – Spiellogik (ohne DOM, in Node testbar)
 // Autor: eldermoor-dev
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 export const SAVE_FORMAT = 'eldermoor-save';
 export const DIRS = [
   { dx: 0, dy: -1 }, // 0 Norden
@@ -34,7 +34,66 @@ export function cellChar(lvl, x, y) {
 }
 export const isWallChar = (c) => c !== '.';
 
-export function newGame(data, seed = 20260101) {
+// ---------- Helden: Rasse + Beruf (Werte stehen in game.json → races, classes) ----------
+export const NAME_MAX = 12;       // längster Name im Editor
+const NAME_MAX_LOAD = 24;         // beim Laden großzügiger, damit spätere Änderungen alte Stände nicht ungültig machen
+export const PARTY_SIZE = 4;
+export const STAT_KEYS = ['maxHp', 'atk', 'def', 'init'];
+const STAT_MIN = { maxHp: 1, atk: 1, def: 0, init: 0 };
+const has = (o, k) => !!o && typeof k === 'string' && Object.prototype.hasOwnProperty.call(o, k);
+const BAD_NAME_CHARS = /[\u0000-\u001f\u007f]/;
+
+// Kampfwerte = Berufswerte + Rassenmodifikator, nach unten begrenzt
+export function deriveStats(data, race, cls) {
+  if (!has(data.races, race)) throw new Error(`Unbekannte Rasse: ${race}`);
+  if (!has(data.classes, cls)) throw new Error(`Unbekannter Beruf: ${cls}`);
+  const r = data.races[race], c = data.classes[cls];
+  const out = {};
+  for (const k of STAT_KEYS) out[k] = Math.max(STAT_MIN[k], c.base[k] + ((r.mods && r.mods[k]) || 0));
+  return out;
+}
+
+// spec: { name, race, cls, row? (Standard: Reihe des Berufs), look? (Porträt-Startwert) }
+export function validateParty(data, specs) {
+  if (!Array.isArray(specs) || specs.length !== PARTY_SIZE) return [`Die Gruppe braucht genau ${PARTY_SIZE} Helden`];
+  const err = [];
+  const names = new Set();
+  specs.forEach((s, i) => {
+    const n = `Held ${i + 1}`;
+    if (!s || typeof s !== 'object') { err.push(`${n}: ungültig`); return; }
+    const name = typeof s.name === 'string' ? s.name.trim() : '';
+    if (!name) err.push(`${n}: Name fehlt`);
+    else if (name.length > NAME_MAX) err.push(`${n}: Name länger als ${NAME_MAX} Zeichen`);
+    else if (BAD_NAME_CHARS.test(name)) err.push(`${n}: Name enthält Steuerzeichen`);
+    else {
+      const key = name.toLowerCase();
+      if (names.has(key)) err.push(`${n}: Name „${name}“ ist doppelt`);
+      names.add(key);
+    }
+    if (!has(data.races, s.race)) err.push(`${n}: Rasse unbekannt`);
+    if (!has(data.classes, s.cls)) err.push(`${n}: Beruf unbekannt`);
+    if (s.row != null && s.row !== 'front' && s.row !== 'back') err.push(`${n}: Reihe ungültig`);
+  });
+  return err;
+}
+
+export function createHero(data, spec, index) {
+  const c = data.classes[spec.cls];
+  const st = deriveStats(data, spec.race, spec.cls);
+  return {
+    id: 'h' + (index + 1), name: spec.name.trim(), race: spec.race, cls: spec.cls, role: c.name,
+    row: spec.row || c.row, maxHp: st.maxHp, atk: st.atk, def: st.def, init: st.init, ranged: !!c.ranged,
+    look: Number.isInteger(spec.look) ? spec.look : index * 7 + 3, hp: st.maxHp
+  };
+}
+
+export function buildParty(data, specs = data.quickParty) {
+  const err = validateParty(data, specs);
+  if (err.length) throw new Error('Gruppe ungültig: ' + err.join('; '));
+  return specs.map((s, i) => createHero(data, s, i));
+}
+
+export function newGame(data, seed = 20260101, party = null) {
   const lvl = data.levels[data.startLevel];
   const objs = lvl.objects.map((o) => {
     const c = clone(o);
@@ -48,7 +107,7 @@ export function newGame(data, seed = 20260101) {
     rng: seed >>> 0,
     levelId: data.startLevel,
     player: { x: lvl.start.x, y: lvl.start.y, dir: lvl.start.dir },
-    heroes: data.heroes.map((h2) => ({ ...clone(h2), hp: h2.maxHp })),
+    heroes: buildParty(data, party || data.quickParty),
     inv: clone(data.startInv),
     gold: data.startGold,
     flags: {},
@@ -355,7 +414,21 @@ export function applyDefeat(state, data) {
 }
 
 // ---------- Speichern / Laden ----------
-export const MIGRATIONS = {}; // MIGRATIONS[n]: Spielstand Version n -> n+1 (noch leer, weil es erst Version 1 gibt)
+// MIGRATIONS[n]: Spielstand Version n -> n+1
+// v1 -> v2: Helden bekommen Rasse, Beruf-Schlüssel und Porträt-Wert. Alle Kampfwerte, LP und der übrige Zustand bleiben unverändert.
+// Alle v1-Helden werden zu „Mensch“: dessen Modifikatoren sind 0, die gespeicherten Werte entsprechen also genau Rasse + Beruf.
+const V1_ROLE_TO_CLS = { Krieger: 'warrior', Schurke: 'rogue', Priester: 'priest', Magier: 'mage' };
+export const MIGRATIONS = {
+  1: (save) => {
+    const st = save.state;
+    if (!st || !Array.isArray(st.heroes)) throw new Error('Spielstand v1: Gruppe fehlt');
+    const heroes = st.heroes.map((h, i) => {
+      if (!h || !has(V1_ROLE_TO_CLS, h.role)) throw new Error(`Spielstand v1: unbekannter Beruf „${h && h.role}“`);
+      return { ...h, race: 'human', cls: V1_ROLE_TO_CLS[h.role], look: i * 7 + 3 }; // look = bisheriger Porträt-Startwert (i*7+3)
+    });
+    return { ...save, v: 2, state: { ...st, heroes } };
+  }
+};
 
 export function serialize(state) {
   return { format: SAVE_FORMAT, v: SAVE_VERSION, savedAt: new Date().toISOString(), state: clone(state) };
@@ -383,7 +456,17 @@ export function validateState(state, data) {
   else if (isWallChar(cellChar(lvl, p.x, p.y))) err.push('Spieler steht in einer Wand');
   if (!Array.isArray(state.heroes) || state.heroes.length !== 4) err.push('Gruppe ungültig');
   else state.heroes.forEach((hh, i) => {
-    if (typeof hh.hp !== 'number' || hh.hp < 0 || hh.hp > hh.maxHp) err.push(`Held ${i + 1}: LP ungültig`);
+    const n = `Held ${i + 1}`;
+    if (!hh || typeof hh !== 'object') { err.push(`${n}: ungültig`); return; }
+    if (typeof hh.name !== 'string' || !hh.name.trim() || hh.name.length > NAME_MAX_LOAD) err.push(`${n}: Name ungültig`);
+    if (!has(data.races, hh.race)) err.push(`${n}: Rasse ungültig`);
+    if (!has(data.classes, hh.cls)) err.push(`${n}: Beruf ungültig`);
+    if (typeof hh.role !== 'string') err.push(`${n}: Berufsname ungültig`);
+    if (hh.row !== 'front' && hh.row !== 'back') err.push(`${n}: Reihe ungültig`);
+    if (typeof hh.ranged !== 'boolean') err.push(`${n}: Kampfart ungültig`);
+    for (const k of STAT_KEYS) if (!Number.isInteger(hh[k]) || hh[k] < STAT_MIN[k]) err.push(`${n}: ${k} ungültig`);
+    if (!Number.isInteger(hh.look)) err.push(`${n}: Aussehen ungültig`);
+    if (typeof hh.hp !== 'number' || hh.hp < 0 || hh.hp > hh.maxHp) err.push(`${n}: LP ungültig`);
   });
   if (!state.inv || typeof state.inv !== 'object') err.push('Inventar ungültig');
   else for (const [k, v] of Object.entries(state.inv)) if (!data.items[k] || !Number.isInteger(v) || v < 0) err.push(`Inventar: ${k} ungültig`);
