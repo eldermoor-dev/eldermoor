@@ -3,13 +3,13 @@
 import {
   DIRS, DIR_NAMES, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, validateParty, randomParty, xpForNext, NAME_MAX
+  buildParty, deriveStats, skipStunned, statusOf, validateParty, randomParty, xpForNext, NAME_MAX
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setResolution, W, H, BASE_W, BASE_H } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.3.0';
+const VERSION = '0.3.1';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -332,12 +332,22 @@ async function runEnemyTurns() {
   try {
     while (S.game.combat && !S.game.combat.over) {
       const a = currentActor(S.game);
-      if (!a || a.side === 'h') break;
+      if (!a) break;
+      const sk = statusOf(S.game, a.side, a.idx).stun ? skipStunned(S.game, S.data) : null;
+      if (sk) {
+        await sleep(550);
+        showResult(sk); renderAll();
+        if (sk.over === 'victory') { vib([40, 60, 40]); break; }
+        await sleep(450);
+        continue;
+      }
+      if (a.side === 'h') break;
       await sleep(550);
       const r = enemyStep(S.game, S.data, { god: S.debug.god });
       if (r.error) break;
       showResult(r);
       renderAll();
+      if (r.over === 'victory') { vib([40, 60, 40]); break; }
       if (r.over === 'defeat') { await sleep(500); showGameOver(); break; }
       await sleep(450);
     }
@@ -414,6 +424,7 @@ function makePortrait(h) {
   drawPortrait(cv.getContext('2d'), h.role, h.look, h.race);
   return cv;
 }
+const stIcons = (side, idx) => Object.keys(statusOf(S.game, side, idx)).map((k) => S.data.statuses[k].icon).join('');
 function renderParty() {
   const g = S.game, box = $('#party');
   const cur = g.combat && !g.combat.over ? currentActor(g) : null;
@@ -425,7 +436,7 @@ function renderParty() {
     card.append(makePortrait(h));
     const info = document.createElement('div');
     info.style.cssText = 'flex:1;min-width:0';
-    info.innerHTML = `<div class="nm">${esc(h.name)}</div><div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div><div class="hp">${h.hp}/${h.maxHp} · ${h.mp}/${h.maxMp} ${esc(S.data.classes[h.cls].res.name === 'Mana' ? 'MP' : 'AU')} <span class="rw">${h.row === 'front' ? '· vorn' : '· hinten'}</span></div>`;
+    info.innerHTML = `<div class="nm">${esc(h.name)} <span class="rw">· ${h.row === 'front' ? 'vorn' : 'hinten'}</span> ${stIcons('h', i)}</div><div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div><div class="hp">${h.hp}/${h.maxHp} · ${h.mp}/${h.maxMp} ${esc(S.data.classes[h.cls].res.name === 'Mana' ? 'MP' : 'AU')}</div>`;
     card.append(info);
     box.append(card);
   });
@@ -438,7 +449,7 @@ function renderCombat() {
   const curName = cur ? (cur.side === 'h' ? S.game.heroes[cur.idx].name : c.enemies[cur.idx].name) : '';
   eb.innerHTML = (cur ? `<div class="turnbar ${cur.side === 'h' ? 'hero' : 'foe'}">${cur.side === 'h' ? 'Am Zug: ' + esc(curName) : 'Gegner am Zug: ' + esc(curName)}</div>` : '') + c.enemies.map((e) => {
     const pct = Math.round(100 * e.hp / e.maxHp);
-    return `<div class="en"><b>${esc(e.name)}</b><span>${e.hp}/${e.maxHp} LP</span><div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div></div>`;
+    return `<div class="en"><b>${esc(e.name)} ${stIcons('e', S.game.combat.enemies.indexOf(e))}</b><span>${e.hp}/${e.maxHp} LP</span><div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div></div>`;
   }).join('') + `<div class="order">Runde ${c.round}: ` + c.order.map((o, i) => {
     const nm = o.side === 'h' ? S.game.heroes[o.idx].name : c.enemies[o.idx].name;
     return `<span class="${(i === c.pos ? 'now' : i < c.pos ? 'done' : '') + (o.side === 'e' ? ' foe' : '')}">${esc(nm)}</span>`;
@@ -517,13 +528,18 @@ function xpLine(h) {
   const need = xpForNext(S.data, h);
   return need == null ? `EP ${h.xp} · Höchststufe` : `EP ${h.xp} / ${need}`;
 }
+function charAbility(h) {
+  const c = S.data.classes[h.cls], ab = c.ability;
+  if (!ab) return '';
+  return `<div>${esc(c.res.name)} ${h.mp}/${h.maxMp}</div><div style="margin-top:3px">✦ ${esc(ab.name)} (${ab.cost})</div><div class="muted" style="font-size:.72em">${esc(ab.desc)}</div>`;
+}
 function openCharacter() {
   const g = S.game;
   openModal(`<h2>Charaktere</h2><div class="grid4">` + g.heroes.map((h) =>
     `<div class="hc"><b>${esc(h.name)}</b><div class="muted">${esc(raceName(h.race))} · ${esc(h.role)}</div><div class="muted">${h.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}</div>
     <div>Stufe ${h.level}</div><div class="muted">${xpLine(h)}</div>
-    <div>LP ${h.hp}/${h.maxHp}</div><div>Angriff ${h.atk}</div><div>Verteidigung ${h.def}</div><div>Initiative ${h.init}</div><div>${h.ranged ? 'Fernkampf' : 'Nahkampf'}</div></div>`).join('') +
-    `</div><p class="muted">Ausrüstung und Fähigkeiten folgen in den nächsten Schritten von Phase 2.</p><div class="acts">${closeBtn}</div>`, 'character');
+    <div>LP ${h.hp}/${h.maxHp}</div><div>Angriff ${h.atk}</div><div>Verteidigung ${h.def}</div><div>Initiative ${h.init}</div><div>${h.ranged ? 'Fernkampf' : 'Nahkampf'}</div>${charAbility(h)}</div>`).join('') +
+    `</div><p class="muted">Ausrüstung folgt in einem der nächsten Schritte von Phase 2.</p><div class="acts">${closeBtn}</div>`, 'character');
 }
 
 function openMap() {

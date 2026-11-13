@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Phase 2 Schritt 0 bis 2 auf dem Gerät getestet; Schritt 3a (Mana/Ausdauer, Fähigkeiten) nur Node/Headless getestet, Version 0.3.0
+Autor: eldermoor-dev · Stand: Phase 2 Schritt 0 bis 2 auf dem Gerät getestet; 3a teilweise auf dem Gerät (Laden alter Stände, Anzeige); 3b nur Node/Headless getestet, Version 0.3.1
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -77,6 +77,15 @@ Monster-Sprite neu: `genSchrat` erzeugt 160×160 statt 64×64 (Borke, Moos, Gewe
 
 ## Änderungen 0.1.5
 Neue Einstellung **Bildschärfe**: Scharf (960×540, Texturen auf 128 verdoppelt mit Scale2x + Korn) ist jetzt Standard, Retro (480×270, wie in der Vorgabe) bleibt wählbar. Auf Nutzerwunsch („zu verpixelt“). Technik: `setResolution(r)` ändert die live exportierten `W`/`H` in render.js, `buildRenderer()` in main.js baut Renderer, Texturen, Canvas und ImageData neu; die Bühne bleibt ein ganzzahliges Vielfaches von 480×270. Bei nicht ganzzahligem Verhältnis (z. B. 3×/2 = 1,5) glättet der Browser (`image-rendering:auto`), bei ganzzahligem bleibt es pixelig-scharf. Messung der Renderzeit auf dem Gerät: Debug-Modus.
+
+## Änderungen 0.3.1 (Phase 2, Schritt 3b: Statuswirkungen und Kartenlayout)
+- `data.statuses`: Gift ☠, Betäubt ✸, Schwach ▼. Zustand nur im Kampf in `state.combat.status['h0'|'e0']` (`{poison:{t,p}, stun:{t}, weak:{t}}`), **nicht gespeichert**, Spielstand bleibt v4.
+- Regeln: Gift schadet am **Ende des eigenen Zugs** (Held bleibt dabei mindestens bei 1 LP, Gegner kann sterben → Sieg). Betäubung: nächster Zug entfällt (`skipStunned`, die Oberfläche ruft sie in `runEnemyTurns` auf, auch für Helden). Schwäche: Angriff ×0,75 abgerundet, min. 1. Dauer sinkt am Ende des eigenen Zugs; erneutes Auflegen nimmt die längere Dauer/stärkere Wirkung.
+- Quellen (vorläufig): Wuchtschlag 35 % Betäubung (1 Zug), Hinterhalt Gift 3 Runden à 2, Gezielter Schuss Schwäche 2 Runden, Heilende Hand nimmt Gift, Moorschrat vergiftet getroffene Helden mit 30 % (3 Runden à 2). Daten: `ability.inflict`, `ability.cleanse`, `enemies.<id>.onHit`.
+- **Schutz** ist kein eigener Status: „Verteidigen“ (halber Schaden bis zum nächsten eigenen Zug) deckt das ab. Falls später gewünscht (z. B. Zauber „Schutz“ auf Verbündete), nachziehen.
+- Layout: Heldenkarte zeigt „Name · vorn/hinten“ und Statussymbole in der Namenszeile, darunter nur `LP · Ressource`; Gegnerkarte zeigt Statussymbole neben dem Namen.
+- Charakteransicht zeigt Ressource (x/y) und die Fähigkeit mit Kosten und Beschreibung (auf dem Gerät aufgefallen: fehlte in 0.3.0).
+- Tests: 37 Node (Neu: Statuswirkungen). `VERSION` 0.3.1. Noch **nicht** auf dem Gerät geprüft.
 
 ## Änderungen 0.3.0 (Phase 2, Schritt 3a: Ressource und Fähigkeiten)
 - Schritt 3 wird in Teile geteilt, die einzeln auf dem Handy getestet werden: **3a** Ressource + eine Fähigkeit je Beruf (diese Version), **3b** Statuswirkungen, **3c** bis zu 3 Gegner (Zielwahl, „Alle angreifen“, angekündigte Aktionen, einfache KI, Schadensdetail, neue Gegnertypen), **3d** Pause zwischen Zügen, schnelle Doppeltipps ignorieren.
