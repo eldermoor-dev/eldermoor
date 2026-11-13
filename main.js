@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setReso
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.4.5';
+const VERSION = '0.4.6';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -354,10 +354,12 @@ async function runEnemyTurns() {
       if (r.over === 'defeat') { await sleep(500); showGameOver(); break; }
       await sleep(450);
     }
-  } finally { S.lock = false; renderAll(); }
+  } finally { S.lock = false; S.coolUntil = performance.now() + TAP_COOL; renderAll(); }
 }
+const TAP_COOL = 450; // ms: schnelle Doppeltipps nach einer Aktion werden ignoriert
 async function heroAct(a) {
   if (S.lock || !S.game.combat) return;
+  if (performance.now() < (S.coolUntil || 0)) return;
   if (a.target == null && (a.type === 'attack' || a.type === 'ability')) a.target = S.foe;
   const r = heroAction(S.game, S.data, a);
   if (r.error) {
@@ -365,6 +367,7 @@ async function heroAct(a) {
     if (t) say(t);
     return;
   }
+  S.coolUntil = performance.now() + TAP_COOL;
   S.itemMode = false; S.abMode = false;
   showResult(r);
   renderAll();

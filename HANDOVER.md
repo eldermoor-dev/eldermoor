@@ -204,6 +204,11 @@ Danach Phase 3 (siehe „Designentscheidungen 13.11.2026“). Monster-Verbesseru
 Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätetests meldet der Nutzer.
 
 
+## 0.4.6 (Schritt 3d)
+- Zielwahl auf Gerät bestätigt (13.11.2026, 'Klappt').
+- Doppeltipp-Schutz: nach jeder Heldenaktion und nach jeder Gegnerphase 450 ms Sperre (TAP_COOL, S.coolUntil) für heroAct; Test headless (Doppelklick -> nur 1 Aktion). Pausen zwischen Zügen waren schon da (550/450 ms).
+- Schritt 3 damit abgeschlossen, nächster: Schritt 4 Balance-Simulation.
+
 ## 0.4.5
 - Gegnerfigur im Bild antippen wählt das Ziel (onViewTap, Projektion wie Raycaster).
 
