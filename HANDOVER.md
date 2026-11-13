@@ -202,3 +202,12 @@ Reihenfolge, jeweils kleiner, einzeln testbarer Schritt mit Testplan für das Sm
 6. Tests in `tests.js` erweitern (Zauber, Rast, Status, Migration v1→v2, Balance).
 Danach Phase 3 (siehe „Designentscheidungen 13.11.2026“). Monster-Verbesserung (Animation, Trefferblitz, Varianten) in Phase 3/4.
 Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätetests meldet der Nutzer.
+
+
+## 0.4.3
+- Zielwahl: Gegnerzeilen größer (Tippfläche), Hinweis 'Gegner antippen = Ziel' in der Kopfzeile. Auf dem Gerät meldete der Nutzer, Wechsel per Tippen gehe nicht (Ursache nicht gesichert, Verdacht: zu kleine Tippfläche).
+
+## 0.4.2
+- Fix: Gruppenfiguren zeigen nur lebende Gegner (buildSprites bekommt alive-Map aus dem Kampf).
+- Geräte-Test 0.4.1 (13.11.2026, Nutzer-Screenshots): Bewegung nach Sieg OK, 2er-/3er-Gruppe sichtbar, Zielwahl, Alle 60 %, Rechenweg, Gift OK. Offen: Schwerer Schlag, Betäubung, Schwäche, Entgiftung. Beobachtung: tote Gegner als Figur sichtbar (behoben), Zugreihenfolge-Leiste zeigt evtl. tote Gegner (ungeprüft).
+- Balance-Verdacht: Wölfe 9-10 Schaden/Treffer, Ivo im 2. Kampf bewusstlos -> Schritt 4.

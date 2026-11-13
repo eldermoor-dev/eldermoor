@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setReso
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.4.1';
+const VERSION = '0.4.3';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -183,7 +183,7 @@ function frame(now) {
   }
   const t0 = performance.now();
   const { grid, gw, gh } = buildGrid(S.lvl, S.game.objs);
-  S.rc.render({ px: S.cam.x, py: S.cam.y, angle: S.cam.a, grid, gw, gh, sprites: buildSprites(S.game.objs, S.tex, now / 1000, S.cam.a), time: now / 1000 });
+  S.rc.render({ px: S.cam.x, py: S.cam.y, angle: S.cam.a, grid, gw, gh, sprites: buildSprites(S.game.objs, S.tex, now / 1000, S.cam.a, aliveMap()), time: now / 1000 });
   S.ctx.putImageData(S.img, 0, 0);
   S.frameMs = S.frameMs * 0.9 + (performance.now() - t0) * 0.1;
   if (S.loadMs == null) S.loadMs = Math.round(performance.now());
@@ -451,6 +451,13 @@ function renderParty() {
     box.append(card);
   });
 }
+function aliveMap() {
+  const c = S.game && S.game.combat;
+  if (!c) return null;
+  const m = {};
+  for (const e of c.enemies) m[e.objId] = (m[e.objId] || 0) + (e.hp > 0 ? 1 : 0);
+  return m;
+}
 function renderCombat() {
   const c = S.game.combat, eb = $('#enemybox'), ab = $('#actionbar');
   if (!c) { eb.hidden = true; ab.hidden = true; return; }
@@ -459,7 +466,7 @@ function renderCombat() {
   const curName = cur ? (cur.side === 'h' ? S.game.heroes[cur.idx].name : c.enemies[cur.idx].name) : '';
   if (!c.enemies[S.foe] || c.enemies[S.foe].hp <= 0) S.foe = Math.max(0, c.enemies.findIndex((e) => e.hp > 0));
   const multi = c.enemies.filter((e) => e.hp > 0).length > 1;
-  eb.innerHTML = (cur ? `<div class="turnbar ${cur.side === 'h' ? 'hero' : 'foe'}">${cur.side === 'h' ? 'Am Zug: ' + esc(curName) : 'Gegner am Zug: ' + esc(curName)}</div>` : '') + c.enemies.map((e) => {
+  eb.innerHTML = (cur ? `<div class="turnbar ${cur.side === 'h' ? 'hero' : 'foe'}">${cur.side === 'h' ? 'Am Zug: ' + esc(curName) + (multi ? ' · Gegner antippen = Ziel' : '') : 'Gegner am Zug: ' + esc(curName)}</div>` : '') + c.enemies.map((e) => {
     const pct = Math.round(100 * e.hp / e.maxHp);
     const ei = c.enemies.indexOf(e);
     return `<div class="en${e.hp <= 0 ? ' dead' : ''}${multi && ei === S.foe && e.hp > 0 ? ' sel' : ''}" data-e="${ei}"><b>${esc(e.name)} ${stIcons('e', ei)}</b><span>${e.hp}/${e.maxHp} LP</span><div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div>${e.intent === 'heavy' ? '<em class="warn">⚠ Schwerer Schlag</em>' : ''}</div>`;
