@@ -228,3 +228,12 @@ Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätet
 - Neu: `sim.js` (Node, `node sim.js 3000 --write` erzeugt SIM.md), nutzt die echte Spiellogik. Strategien: "nur Angriff" und "klug". Kein Spielcode geändert, Version bleibt 0.4.6.
 - Ergebnis (3000 Läufe): Einzelkämpfe werden von beiden Strategien zu 100 % gewonnen. Nur Angriff: 0,7-0,9 bewusstlose Helden und 34-45 Schaden pro Kampf; klug: 0,1-0,3 KO und 24-29 Schaden. Kampagne Wölfe -> Gang -> Schrat ohne Rast: nur Angriff schafft 71 % (Gang) bzw. 36 % (Schrat), klug 100 %. Mit Rast schafft auch nur Angriff 100 %.
 - Schluss: Rast/Verpflegung (Schritt 5) ist der eigentliche Balance-Hebel. Werte erst danach anfassen und Simulation wiederholen. Grenzen: nur zwei feste Strategien, kein Fliehen, nur Stufe-1-Start mit natürlichem XP-Gewinn.
+
+
+## 0.5.0 (Schritt 5a: Rast und Proviant)
+- Neu: Item `ration` (Proviant, kind `supply`), Startvorrat 3, +1 in Truhe `chest_a`. `game.json: rest {hungryPct: 30, enemyDistance: 3}`.
+- `restParty(state, data)` (logic.js): nicht im Kampf, nicht bei lebendem Gegner näher als 3 Felder (Chebyshev), nicht bei voller Gruppe. Mit Proviant: alle Helden (auch Bewusstlose) voll LP und Ressource, 1 Proviant weg. Ohne: je Held +30 % LP und Ressource (Bewusstlose stehen auf, mindestens 1 LP). Kein Zeitdruck, kein Hungertimer ("mild").
+- UI: Menü -> "Rasten (Proviant: n)", im Inventar beim Proviant "Rasten", Hilfetext ergänzt.
+- Spielstand: **keine neue Version nötig**: `inv` ist eine Zuordnung, fehlender Proviant zählt als 0 (alte Stände starten ohne Vorrat; hungrige Rast geht immer).
+- Der Sieg-Aufstehen mit 1 LP bleibt als Rückfall bestehen.
+- Tests: 39 (neu: Rast). Simulation: mit Proviant (3) schafft auch "nur Angriff" 100 % (siehe SIM.md). Gerätetest offen.
