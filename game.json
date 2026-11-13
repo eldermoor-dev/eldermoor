@@ -3,52 +3,399 @@
   "title": "Die Schatten von Eldermoor",
   "startLevel": "test1",
   "startGold": 20,
-  "startInv": { "potion": 2 },
+  "startInv": {
+    "potion": 2,
+    "ration": 3
+  },
   "items": {
-    "potion": { "name": "Heiltrank", "kind": "consumable", "heal": 15, "desc": "Stellt 15 LP wieder her." },
-    "iron_key": { "name": "Eiserner Schlüssel", "kind": "quest", "desc": "Schwer und kalt. Passt in ein Eisenschloss. Kann nicht verloren gehen." }
+    "potion": {
+      "name": "Heiltrank",
+      "kind": "consumable",
+      "heal": 15,
+      "desc": "Stellt 15 LP wieder her."
+    },
+    "iron_key": {
+      "name": "Eiserner Schlüssel",
+      "kind": "quest",
+      "desc": "Schwer und kalt. Passt in ein Eisenschloss. Kann nicht verloren gehen."
+    },
+    "ration": {
+      "name": "Proviant",
+      "kind": "supply",
+      "desc": "Eine Mahlzeit für die Rast. Mit Proviant erholt sich die Gruppe vollständig, ohne Proviant nur zu 30 %."
+    }
   },
   "races": {
-    "human": { "name": "Mensch", "desc": "Ausgewogen, keine Boni oder Abzüge.", "mods": { "maxHp": 0, "atk": 0, "def": 0, "init": 0 } },
-    "elf": { "name": "Elf", "desc": "Flink, aber zart gebaut.", "mods": { "maxHp": -2, "atk": 0, "def": 0, "init": 2 } },
-    "dwarf": { "name": "Zwerg", "desc": "Zäh und standfest, etwas langsam.", "mods": { "maxHp": 4, "atk": 0, "def": 1, "init": -1 } },
-    "ork": { "name": "Ork", "desc": "Kräftig und robust, wenig flink.", "mods": { "maxHp": 3, "atk": 1, "def": 0, "init": -1 } },
-    "gnome": { "name": "Gnom", "desc": "Klein und flink, wenig Ausdauer.", "mods": { "maxHp": -3, "atk": 0, "def": 0, "init": 1 } }
+    "human": {
+      "name": "Mensch",
+      "desc": "Ausgewogen, keine Boni oder Abzüge.",
+      "mods": {
+        "maxHp": 0,
+        "atk": 0,
+        "def": 0,
+        "init": 0
+      }
+    },
+    "elf": {
+      "name": "Elf",
+      "desc": "Flink, aber zart gebaut.",
+      "mods": {
+        "maxHp": -2,
+        "atk": 0,
+        "def": 0,
+        "init": 2
+      }
+    },
+    "dwarf": {
+      "name": "Zwerg",
+      "desc": "Zäh und standfest, etwas langsam.",
+      "mods": {
+        "maxHp": 4,
+        "atk": 0,
+        "def": 1,
+        "init": -1
+      }
+    },
+    "ork": {
+      "name": "Ork",
+      "desc": "Kräftig und robust, wenig flink.",
+      "mods": {
+        "maxHp": 3,
+        "atk": 1,
+        "def": 0,
+        "init": -1
+      }
+    },
+    "gnome": {
+      "name": "Gnom",
+      "desc": "Klein und flink, wenig Ausdauer.",
+      "mods": {
+        "maxHp": -3,
+        "atk": 0,
+        "def": 0,
+        "init": 1
+      }
+    }
   },
   "classes": {
-    "warrior": { "name": "Krieger", "desc": "Hält die Vorderreihe, viel LP und Verteidigung.", "row": "front", "ranged": false, "base": { "maxHp": 34, "atk": 8, "def": 5, "init": 4 }, "growth": { "maxHp": 60, "atk": 8, "def": 7, "init": 3 }, "res": { "name": "Ausdauer", "base": 10, "growth": 20 }, "ability": { "id": "smash", "name": "Wuchtschlag", "kind": "damage", "cost": 4, "mult": 160, "inflict": { "status": "stun", "chance": 35, "turns": 1 }, "desc": "160 % Schaden, 35 % Chance auf Betäubung (Gegner setzt 1 Zug aus)." } },
-    "rogue": { "name": "Schurke", "desc": "Schnell, zuerst am Zug.", "row": "front", "ranged": false, "base": { "maxHp": 24, "atk": 7, "def": 3, "init": 7 }, "growth": { "maxHp": 40, "atk": 8, "def": 4, "init": 5 }, "res": { "name": "Ausdauer", "base": 10, "growth": 20 }, "ability": { "id": "ambush", "name": "Hinterhalt", "kind": "damage", "cost": 4, "mult": 140, "sure": true, "inflict": { "status": "poison", "chance": 100, "turns": 3, "power": 2 }, "desc": "Trifft immer, 140 % Schaden, vergiftet 3 Runden (2 Schaden je Runde)." } },
-    "priest": { "name": "Priester", "desc": "Hinterreihe, Heiler der Gruppe.", "row": "back", "ranged": false, "healer": true, "base": { "maxHp": 26, "atk": 5, "def": 3, "init": 3 }, "growth": { "maxHp": 45, "atk": 5, "def": 4, "init": 3 }, "res": { "name": "Mana", "base": 12, "growth": 30 }, "ability": { "id": "heal", "name": "Heilende Hand", "kind": "heal", "cost": 5, "heal": 20, "cleanse": "poison", "desc": "Heilt einen Helden um 20 LP und nimmt Gift." } },
-    "mage": { "name": "Magier", "desc": "Hinterreihe, Fernkampf, zerbrechlich.", "row": "back", "ranged": true, "base": { "maxHp": 18, "atk": 8, "def": 1, "init": 5 }, "growth": { "maxHp": 30, "atk": 9, "def": 2, "init": 4 }, "res": { "name": "Mana", "base": 12, "growth": 30 }, "ability": { "id": "firebolt", "name": "Feuerblitz", "kind": "damage", "cost": 5, "mult": 180, "desc": "Magischer Treffer: 180 % Schaden." } },
-    "ranger": { "name": "Waldläufer", "desc": "Hinterreihe, Fernkampf mit dem Bogen.", "row": "back", "ranged": true, "base": { "maxHp": 24, "atk": 7, "def": 2, "init": 6 }, "growth": { "maxHp": 40, "atk": 8, "def": 3, "init": 5 }, "res": { "name": "Ausdauer", "base": 10, "growth": 20 }, "ability": { "id": "aimed", "name": "Gezielter Schuss", "kind": "damage", "cost": 4, "mult": 150, "sure": true, "inflict": { "status": "weak", "chance": 100, "turns": 2 }, "desc": "Trifft immer, 150 % Schaden, schwächt 2 Runden (−25 % Angriff)." } }
+    "warrior": {
+      "name": "Krieger",
+      "desc": "Hält die Vorderreihe, viel LP und Verteidigung.",
+      "row": "front",
+      "ranged": false,
+      "base": {
+        "maxHp": 34,
+        "atk": 8,
+        "def": 5,
+        "init": 4
+      },
+      "growth": {
+        "maxHp": 60,
+        "atk": 8,
+        "def": 7,
+        "init": 3
+      },
+      "res": {
+        "name": "Ausdauer",
+        "base": 10,
+        "growth": 20
+      },
+      "ability": {
+        "id": "smash",
+        "name": "Wuchtschlag",
+        "kind": "damage",
+        "cost": 4,
+        "mult": 160,
+        "inflict": {
+          "status": "stun",
+          "chance": 35,
+          "turns": 1
+        },
+        "desc": "160 % Schaden, 35 % Chance auf Betäubung (Gegner setzt 1 Zug aus)."
+      }
+    },
+    "rogue": {
+      "name": "Schurke",
+      "desc": "Schnell, zuerst am Zug.",
+      "row": "front",
+      "ranged": false,
+      "base": {
+        "maxHp": 24,
+        "atk": 7,
+        "def": 3,
+        "init": 7
+      },
+      "growth": {
+        "maxHp": 40,
+        "atk": 8,
+        "def": 4,
+        "init": 5
+      },
+      "res": {
+        "name": "Ausdauer",
+        "base": 10,
+        "growth": 20
+      },
+      "ability": {
+        "id": "ambush",
+        "name": "Hinterhalt",
+        "kind": "damage",
+        "cost": 4,
+        "mult": 140,
+        "sure": true,
+        "inflict": {
+          "status": "poison",
+          "chance": 100,
+          "turns": 3,
+          "power": 2
+        },
+        "desc": "Trifft immer, 140 % Schaden, vergiftet 3 Runden (2 Schaden je Runde)."
+      }
+    },
+    "priest": {
+      "name": "Priester",
+      "desc": "Hinterreihe, Heiler der Gruppe.",
+      "row": "back",
+      "ranged": false,
+      "healer": true,
+      "base": {
+        "maxHp": 26,
+        "atk": 5,
+        "def": 3,
+        "init": 3
+      },
+      "growth": {
+        "maxHp": 45,
+        "atk": 5,
+        "def": 4,
+        "init": 3
+      },
+      "res": {
+        "name": "Mana",
+        "base": 12,
+        "growth": 30
+      },
+      "ability": {
+        "id": "heal",
+        "name": "Heilende Hand",
+        "kind": "heal",
+        "cost": 5,
+        "heal": 20,
+        "cleanse": "poison",
+        "desc": "Heilt einen Helden um 20 LP und nimmt Gift."
+      }
+    },
+    "mage": {
+      "name": "Magier",
+      "desc": "Hinterreihe, Fernkampf, zerbrechlich.",
+      "row": "back",
+      "ranged": true,
+      "base": {
+        "maxHp": 18,
+        "atk": 8,
+        "def": 1,
+        "init": 5
+      },
+      "growth": {
+        "maxHp": 30,
+        "atk": 9,
+        "def": 2,
+        "init": 4
+      },
+      "res": {
+        "name": "Mana",
+        "base": 12,
+        "growth": 30
+      },
+      "ability": {
+        "id": "firebolt",
+        "name": "Feuerblitz",
+        "kind": "damage",
+        "cost": 5,
+        "mult": 180,
+        "desc": "Magischer Treffer: 180 % Schaden."
+      }
+    },
+    "ranger": {
+      "name": "Waldläufer",
+      "desc": "Hinterreihe, Fernkampf mit dem Bogen.",
+      "row": "back",
+      "ranged": true,
+      "base": {
+        "maxHp": 24,
+        "atk": 7,
+        "def": 2,
+        "init": 6
+      },
+      "growth": {
+        "maxHp": 40,
+        "atk": 8,
+        "def": 3,
+        "init": 5
+      },
+      "res": {
+        "name": "Ausdauer",
+        "base": 10,
+        "growth": 20
+      },
+      "ability": {
+        "id": "aimed",
+        "name": "Gezielter Schuss",
+        "kind": "damage",
+        "cost": 4,
+        "mult": 150,
+        "sure": true,
+        "inflict": {
+          "status": "weak",
+          "chance": 100,
+          "turns": 2
+        },
+        "desc": "Trifft immer, 150 % Schaden, schwächt 2 Runden (−25 % Angriff)."
+      }
+    }
   },
   "statuses": {
-    "poison": { "name": "Gift", "icon": "☠", "desc": "Schaden am Ende des eigenen Zugs, Held bleibt dabei mindestens bei 1 LP." },
-    "stun": { "name": "Betäubt", "icon": "✸", "desc": "Der nächste Zug entfällt." },
-    "weak": { "name": "Schwach", "icon": "▼", "desc": "Angriff −25 %." }
+    "poison": {
+      "name": "Gift",
+      "icon": "☠",
+      "desc": "Schaden am Ende des eigenen Zugs, Held bleibt dabei mindestens bei 1 LP."
+    },
+    "stun": {
+      "name": "Betäubt",
+      "icon": "✸",
+      "desc": "Der nächste Zug entfällt."
+    },
+    "weak": {
+      "name": "Schwach",
+      "icon": "▼",
+      "desc": "Angriff −25 %."
+    }
   },
-  "progression": { "maxLevel": 10, "xp": [100, 250, 450, 700, 1000, 1400, 1900, 2500, 3200] },
+  "progression": {
+    "maxLevel": 10,
+    "xp": [
+      100,
+      250,
+      450,
+      700,
+      1000,
+      1400,
+      1900,
+      2500,
+      3200
+    ]
+  },
   "quickParty": [
-    { "name": "Berenn", "race": "human", "cls": "warrior" },
-    { "name": "Sira", "race": "human", "cls": "rogue" },
-    { "name": "Odalys", "race": "human", "cls": "priest" },
-    { "name": "Ivo", "race": "human", "cls": "mage" }
+    {
+      "name": "Berenn",
+      "race": "human",
+      "cls": "warrior"
+    },
+    {
+      "name": "Sira",
+      "race": "human",
+      "cls": "rogue"
+    },
+    {
+      "name": "Odalys",
+      "race": "human",
+      "cls": "priest"
+    },
+    {
+      "name": "Ivo",
+      "race": "human",
+      "cls": "mage"
+    }
   ],
   "enemies": {
-    "schrat": { "name": "Moorschrat", "hp": 80, "atk": 13, "def": 3, "init": 5, "gold": 15, "xp": 120, "onHit": { "status": "poison", "chance": 30, "turns": 3, "power": 2 }, "heavy": { "name": "Schweren Schlag", "every": 3, "mult": 170 } },
-    "wolf": { "name": "Sumpfwolf", "hp": 26, "atk": 9, "def": 1, "init": 8, "gold": 6, "xp": 35, "ai": "weakest" },
-    "kultist": { "name": "Moorkultist", "hp": 20, "atk": 7, "def": 2, "init": 4, "gold": 8, "xp": 30, "ai": "backline", "onHit": { "status": "weak", "chance": 35, "turns": 2 } }
+    "schrat": {
+      "name": "Moorschrat",
+      "hp": 80,
+      "atk": 13,
+      "def": 3,
+      "init": 5,
+      "gold": 15,
+      "xp": 120,
+      "onHit": {
+        "status": "poison",
+        "chance": 30,
+        "turns": 3,
+        "power": 2
+      },
+      "heavy": {
+        "name": "Schweren Schlag",
+        "every": 3,
+        "mult": 170
+      }
+    },
+    "wolf": {
+      "name": "Sumpfwolf",
+      "hp": 26,
+      "atk": 9,
+      "def": 1,
+      "init": 8,
+      "gold": 6,
+      "xp": 35,
+      "ai": "weakest"
+    },
+    "kultist": {
+      "name": "Moorkultist",
+      "hp": 20,
+      "atk": 7,
+      "def": 2,
+      "init": 4,
+      "gold": 8,
+      "xp": 30,
+      "ai": "backline",
+      "onHit": {
+        "status": "weak",
+        "chance": 35,
+        "turns": 2
+      }
+    }
   },
   "palettes": {
     "keller": {
-      "stone": [168, 160, 146],
-      "moss": [92, 128, 70],
-      "wood": [150, 104, 62],
-      "iron": [118, 124, 136],
-      "floor": [128, 118, 106],
-      "ceil": [96, 90, 84],
-      "flesh": [112, 132, 96],
-      "glow": [255, 206, 92]
+      "stone": [
+        168,
+        160,
+        146
+      ],
+      "moss": [
+        92,
+        128,
+        70
+      ],
+      "wood": [
+        150,
+        104,
+        62
+      ],
+      "iron": [
+        118,
+        124,
+        136
+      ],
+      "floor": [
+        128,
+        118,
+        106
+      ],
+      "ceil": [
+        96,
+        90,
+        84
+      ],
+      "flesh": [
+        112,
+        132,
+        96
+      ],
+      "glow": [
+        255,
+        206,
+        92
+      ]
     }
   },
   "levels": {
@@ -68,16 +415,91 @@
         "#############.......m#",
         "######################"
       ],
-      "start": { "x": 3, "y": 3, "dir": 1 },
+      "start": {
+        "x": 3,
+        "y": 3,
+        "dir": 1
+      },
       "objects": [
-        { "id": "door_a", "type": "door", "x": 6, "y": 3, "locked": false },
-        { "id": "chest_a", "type": "chest", "x": 12, "y": 1, "loot": [ { "item": "iron_key", "n": 1 }, { "item": "potion", "n": 2 }, { "gold": 12 } ] },
-        { "id": "door_b", "type": "door", "x": 12, "y": 7, "locked": true, "key": "iron_key" },
-        { "id": "en1", "type": "enemy", "x": 16, "y": 7, "kind": "schrat" },
-        { "id": "en2", "type": "enemy", "x": 10, "y": 3, "kind": "wolf", "kinds": ["wolf", "wolf"] },
-        { "id": "en3", "type": "enemy", "x": 9, "y": 7, "kind": "wolf", "kinds": ["wolf", "kultist", "kultist"] },
-        { "id": "exit1", "type": "exit", "x": 19, "y": 7 }
+        {
+          "id": "door_a",
+          "type": "door",
+          "x": 6,
+          "y": 3,
+          "locked": false
+        },
+        {
+          "id": "chest_a",
+          "type": "chest",
+          "x": 12,
+          "y": 1,
+          "loot": [
+            {
+              "item": "iron_key",
+              "n": 1
+            },
+            {
+              "item": "potion",
+              "n": 2
+            },
+            {
+              "gold": 12
+            },
+            {
+              "item": "ration",
+              "n": 1
+            }
+          ]
+        },
+        {
+          "id": "door_b",
+          "type": "door",
+          "x": 12,
+          "y": 7,
+          "locked": true,
+          "key": "iron_key"
+        },
+        {
+          "id": "en1",
+          "type": "enemy",
+          "x": 16,
+          "y": 7,
+          "kind": "schrat"
+        },
+        {
+          "id": "en2",
+          "type": "enemy",
+          "x": 10,
+          "y": 3,
+          "kind": "wolf",
+          "kinds": [
+            "wolf",
+            "wolf"
+          ]
+        },
+        {
+          "id": "en3",
+          "type": "enemy",
+          "x": 9,
+          "y": 7,
+          "kind": "wolf",
+          "kinds": [
+            "wolf",
+            "kultist",
+            "kultist"
+          ]
+        },
+        {
+          "id": "exit1",
+          "type": "exit",
+          "x": 19,
+          "y": 7
+        }
       ]
     }
+  },
+  "rest": {
+    "hungryPct": 30,
+    "enemyDistance": 3
   }
 }
