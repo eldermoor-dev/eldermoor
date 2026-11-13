@@ -204,6 +204,9 @@ Danach Phase 3 (siehe „Designentscheidungen 13.11.2026“). Monster-Verbesseru
 Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätetests meldet der Nutzer.
 
 
+## 0.4.5
+- Gegnerfigur im Bild antippen wählt das Ziel (onViewTap, Projektion wie Raycaster).
+
 ## 0.4.4
 - Gegnerfenster links statt mittig, schmaler, halbtransparent, Zugleiste ohne tote/bewusstlose Teilnehmer (Fenster verdeckte die Gegner, Nutzer 13.11.).
 

@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setReso
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.4.4';
+const VERSION = '0.4.5';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -220,6 +220,7 @@ function bindUI() {
   $('#modal-box').addEventListener('change', onModalInput);
   $('#actionbar').addEventListener('click', onActionBar);
   $('#enemybox').addEventListener('click', onEnemyBox);
+  $('#view').addEventListener('click', onViewTap);
   $('#title').addEventListener('click', onTitleClick);
   $('#importfile').addEventListener('change', onImportFile);
   window.addEventListener('keydown', (e) => {
@@ -369,6 +370,34 @@ async function heroAct(a) {
   renderAll();
   if (r.over === 'victory') { vib([40, 60, 40]); return; }
   await runEnemyTurns();
+}
+// Gegnerfigur im Bild antippen = Ziel (Bildschirmposition wie im Raycaster berechnet)
+function onViewTap(e) {
+  const c = S.game && S.game.combat;
+  if (!c || c.over) return;
+  const alive = c.enemies.map((x, i) => i).filter((i) => c.enemies[i].hp > 0);
+  if (alive.length < 2) return;
+  const r = $('#view').getBoundingClientRect();
+  const fx = (e.clientX - r.left) / r.width;
+  const a = S.cam.a, dirX = Math.sin(a), dirY = -Math.cos(a), plX = Math.cos(a) * 0.8, plY = Math.sin(a) * 0.8;
+  const inv = 1 / (plX * dirY - dirX * plY);
+  const byObj = {};
+  alive.forEach((i) => { (byObj[c.enemies[i].objId] = byObj[c.enemies[i].objId] || []).push(i); });
+  let best = -1, bd = 0.09; // höchstens ~9 % der Bildbreite Abstand
+  for (const id of Object.keys(byObj)) {
+    const o = S.game.objs.find((q) => String(q.id) === id);
+    if (!o) continue;
+    const list = byObj[id], n = list.length;
+    list.forEach((ei, k) => {
+      const off = n > 1 ? (k - (n - 1) / 2) * 0.36 : 0;
+      const sx = o.x + Math.cos(a) * off + 0.5 - S.cam.x, sy = o.y + Math.sin(a) * off + 0.5 - S.cam.y;
+      const tX = inv * (dirY * sx - dirX * sy), tY = inv * (-plY * sx + plX * sy);
+      if (tY <= 0.15) return;
+      const d = Math.abs(0.5 * (1 + tX / tY) - fx);
+      if (d < bd) { bd = d; best = ei; }
+    });
+  }
+  if (best >= 0) { S.foe = best; renderCombat(); }
 }
 function onEnemyBox(e) {
   const row = e.target.closest('[data-e]');
