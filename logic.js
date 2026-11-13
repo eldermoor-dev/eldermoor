@@ -322,6 +322,28 @@ export function useItemOutside(state, data, itemId, heroIdx) {
   return { msg: `${h.name} erhält ${h.hp - before} LP zurück.`, sfx: 'heal' };
 }
 
+// ---------- Rast (Schritt 5a) ----------
+// Mit Proviant: alle Helden (auch bewusstlose) voll bei LP und Ressource, 1 Proviant weg.
+// Ohne Proviant („hungrig“): jeder Held erholt sich nur um data.rest.hungryPct % von LP und Ressource.
+// Nicht im Kampf und nicht, wenn ein lebender Gegner näher als data.rest.enemyDistance Felder ist.
+export function restParty(state, data) {
+  if (state.combat) return { error: 'in-combat' };
+  const cfg = data.rest || { hungryPct: 30, enemyDistance: 3 };
+  const near = state.objs.some((o) => o.type === 'enemy' && !o.dead && Math.max(Math.abs(o.x - state.player.x), Math.abs(o.y - state.player.y)) < cfg.enemyDistance);
+  if (near) return { error: 'enemy-near' };
+  if (state.heroes.every((h) => h.hp >= h.maxHp && h.mp >= h.maxMp)) return { error: 'nothing-to-do' };
+  const fed = (state.inv.ration || 0) > 0;
+  if (fed) state.inv.ration--;
+  for (const h of state.heroes) {
+    if (fed) { h.hp = h.maxHp; h.mp = h.maxMp; }
+    else {
+      h.hp = Math.min(h.maxHp, h.hp + Math.max(1, Math.ceil(h.maxHp * cfg.hungryPct / 100)));
+      h.mp = Math.min(h.maxMp, h.mp + Math.ceil(h.maxMp * cfg.hungryPct / 100));
+    }
+  }
+  return { fed, msg: fed ? `Die Gruppe rastet und isst (Proviant übrig: ${state.inv.ration}). Alle sind wieder bei Kräften.` : `Kein Proviant: Die Gruppe rastet hungrig und erholt sich nur zu ${cfg.hungryPct} %.`, sfx: 'heal' };
+}
+
 // ---------- Kampf ----------
 const combatAlive = (state, e) => e.side === 'h' ? state.heroes[e.idx].hp > 0 : state.combat.enemies[e.idx].hp > 0;
 
