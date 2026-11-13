@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setReso
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.4.3';
+const VERSION = '0.4.4';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

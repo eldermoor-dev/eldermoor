@@ -25,15 +25,15 @@ button{font:inherit;color:inherit}
 @keyframes hit{0%{filter:brightness(2.4) saturate(1.6)}100%{filter:none}}
 #hud{position:absolute;inset:0;pointer-events:none}
 #fps{position:fixed;left:calc(env(safe-area-inset-left,0px) + 4px);top:calc(env(safe-area-inset-top,0px) + 44px);z-index:7;pointer-events:none;font:10px/1.25 monospace;white-space:pre;background:#000a;padding:2px 5px;border-radius:3px;color:#9f9}
-#enemybox{zoom:var(--hs,1);position:absolute;left:50%;top:calc(44px / var(--hs,1));transform:translateX(-50%);width:min(56%,420px);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:.78rem}
+#enemybox{zoom:var(--hs,1);position:absolute;left:6px;top:calc(44px / var(--hs,1));width:min(36%,300px);background:rgba(14,11,8,.62);border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:.78rem}
 #enemybox .en{display:flex;gap:8px;align-items:center}
 #enemybox .en .bar{flex:1}
 #enemybox{pointer-events:auto}
-#enemybox .en{cursor:pointer;padding:7px 6px;min-height:34px;box-sizing:border-box;touch-action:manipulation;border-radius:4px;border:1px solid transparent;flex-wrap:wrap}
+#enemybox .en{cursor:pointer;padding:4px 6px;min-height:30px;box-sizing:border-box;touch-action:manipulation;border-radius:4px;border:1px solid transparent;flex-wrap:wrap}
 #enemybox .en.sel{border-color:var(--amber);background:rgba(217,164,65,.12)}
 #enemybox .en.dead{opacity:.35;text-decoration:line-through;cursor:default}
 #enemybox .en .warn{flex:1 0 100%;font-style:normal;color:#ff9d5c;font-size:.72rem}
-.order{margin-top:3px;display:flex;gap:4px;flex-wrap:wrap;font-size:.72rem}
+.order{margin-top:3px;display:flex;gap:3px;flex-wrap:wrap;font-size:.64rem}
 .order span{padding:1px 6px;border-radius:9px;background:#2a2116;border:1px solid #4a3c26}
 .order span.now{background:var(--amber);color:#1b1208;border-color:var(--amber);font-weight:700}
 .order span.done{opacity:.4}
