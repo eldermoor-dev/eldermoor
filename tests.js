@@ -656,6 +656,96 @@ export async function runTests(data, env = {}) {
     for (const ob of data.levels.test1.objects.filter((x) => x.kinds)) { assert(ob.kinds.length >= 1 && ob.kinds.length <= 3 && ob.kinds.every((k) => data.enemies[k]), `Gruppe ${ob.id}`); assert(ob.kinds[0] === ob.kind, `Gruppe ${ob.id}: kind = erste Art (Sprite)`); }
   });
 
+  // ---- Schritt 6: Regressions- und Zufallstests ----
+  const playFight = (s, objId, seed) => {
+    // zufällige, aber gültige Aktionen; Invarianten nach jedem Schritt
+    const obj = s.objs.find((o) => o.id === objId);
+    L.startCombat(s, data, obj);
+    let guard = 0;
+    while (s.combat && !s.combat.over && guard++ < 500) {
+      const a = L.currentActor(s); if (!a) break;
+      if (L.statusOf(s, a.side, a.idx).stun) { L.skipStunned(s, data); }
+      else if (a.side === 'e') L.enemyStep(s, data, {});
+      else {
+        const h = s.heroes[a.idx], live = s.combat.enemies.map((e, i) => ({ e, i })).filter((x) => x.e.hp > 0);
+        const sp = L.knownSpells(data, h);
+        const r = L.rand(s);
+        const tgt = live[Math.floor(L.rand(s) * live.length)].i;
+        const acts = [{ type: 'attack', target: tgt }, { type: 'defend' }, { type: 'sweep' }, { type: 'item', item: 'potion', hero: a.idx },
+          { type: 'ability', target: tgt, hero: a.idx }, ...sp.slice(1).map((q) => ({ type: 'spell', spell: q.id, target: tgt, hero: a.idx }))];
+        const res = L.heroAction(s, data, acts[Math.floor(r * acts.length)]);
+        if (res.error) L.heroAction(s, data, { type: 'attack', target: tgt });
+      }
+      for (const h of s.heroes) {
+        assert(Number.isFinite(h.hp) && h.hp >= 0 && h.hp <= h.maxHp, `Held ${h.name}: LP ${h.hp}/${h.maxHp}`);
+        assert(Number.isFinite(h.mp) && h.mp >= 0 && h.mp <= h.maxMp, `Held ${h.name}: Mana ${h.mp}/${h.maxMp}`);
+      }
+      if (s.combat) for (const e of s.combat.enemies) assert(Number.isFinite(e.hp) && e.hp >= 0, 'Gegner-LP ungültig');
+    }
+    assert(guard < 500, 'Kampf endet nicht (Endlosschleife)');
+  };
+
+  await test('Zufallskämpfe (Schritt 6): 150 Kämpfe mit zufälligen Aktionen, Invarianten, Ende garantiert', () => {
+    let won = 0;
+    for (let i = 0; i < 150; i++) {
+      const s = fresh(9000 + i); s.heroes.forEach((h) => { h.level = 1 + (i % 4); });
+      const id = ['en2', 'en3', 'en1'][i % 3];
+      playFight(s, id, i);
+      if (s.objs.find((o) => o.id === id).dead) won++;
+    }
+    return `${won}/150 gewonnen, keine Verletzung der Invarianten`;
+  });
+
+  await test('Nach dem Kampf (Schritt 6): Kampf beendet, Bewegung und Drehen möglich, Besiegte stehen mit LP ≥ 1', () => {
+    for (let i = 0; i < 20; i++) {
+      const s = fresh(300 + i);
+      playFight(s, 'en2', i);
+      const obj = s.objs.find((o) => o.id === 'en2');
+      if (!obj.dead) continue;
+      assert(!s.combat || s.combat.over, 'Kampf nach Sieg noch aktiv');
+      s.combat = null;
+      assert(s.heroes.every((h) => h.hp >= 1), 'Held nach Sieg bei 0 LP');
+      const before = JSON.stringify(s.player);
+      L.turn(s, data, 1); L.turn(s, data, -1);
+      assert(JSON.stringify(s.player) === before, 'Drehen hin und zurück ändert Stellung');
+      // irgendeine Richtung muss begehbar sein (Besiegte blockieren nicht)
+      assert(L.blockerAt(s, obj.x, obj.y) == null, 'besiegter Gegner blockiert noch ' + obj.id);
+    }
+  });
+
+  await test('Speichern (Schritt 6): Rundlauf nach Kampf, Ausrüstung und Vorrat bleiben, Kampfzustand nie im Stand', () => {
+    const s = fresh(77);
+    L.equipItem(s, data, 'iron_sword', 0);
+    s.inv.ration = 2;
+    playFight(s, 'en2', 5);
+    const raw = JSON.parse(JSON.stringify(L.serialize(s)));
+    assert(!('combat' in raw), 'Kampfzustand im Speicherstand');
+    const back = L.deserialize(raw, data);
+    const st = back.state || back;
+    eq(st.inv, s.inv, 'Vorrat');
+    eq(st.heroes.map((h) => h.equip || null), s.heroes.map((h) => h.equip || null), 'Ausrüstung');
+    eq(st.heroes.map((h) => [h.hp, h.mp, h.level, h.xp]), s.heroes.map((h) => [h.hp, h.mp, h.level, h.xp]), 'Heldenwerte');
+  });
+
+  await test('Determinismus (Schritt 6): gleicher Startwert und gleiche Aktionen → gleicher Kampfverlauf', () => {
+    const run = () => { const s = fresh(4242); const log = []; L.startCombat(s, data, s.objs.find((o) => o.id === 'en3'));
+      let g = 0; while (s.combat && !s.combat.over && g++ < 300) { const a = L.currentActor(s); if (!a) break;
+        const r = L.statusOf(s, a.side, a.idx).stun ? L.skipStunned(s, data) : a.side === 'h' ? L.heroAction(s, data, { type: 'attack', target: s.combat.enemies.findIndex((e) => e.hp > 0) }) : L.enemyStep(s, data, {});
+        log.push((r.msgs || []).join('|')); }
+      return log.join('\n'); };
+    assert(run() === run(), 'Verlauf unterscheidet sich');
+  });
+
+  await test('Daten-Querverweise (Schritt 6): Start-Inventar, Beute, Ausrüstungsklassen, Resistenzen, Zauber', () => {
+    for (const id of Object.keys(data.startInv || {})) assert(data.items[id], `startInv: ${id}`);
+    for (const [id, it] of Object.entries(data.items)) if (it.kind === 'equip') {
+      assert(data.slots[it.slot], `${id}: Slot`);
+      for (const c of it.classes || []) assert(data.classes[c], `${id}: Klasse ${c}`);
+    }
+    for (const [id, e] of Object.entries(data.enemies)) for (const el of Object.keys(e.resist || {})) assert(data.elements[el], `${id}: Element ${el}`);
+    for (const c of Object.values(data.classes)) for (const q of c.spells || []) assert(data.spells[q.id] && q.level >= 1, `Klasse: Zauber ${q.id}`);
+  });
+
   await test('Migration v1→v2: beschädigte v1-Stände werden mit klarer Meldung abgelehnt', () => {
     const fails = (mut, re) => {
       const o = JSON.parse(V1_SAVE); mut(o);

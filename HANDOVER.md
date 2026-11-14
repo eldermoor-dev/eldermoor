@@ -256,3 +256,7 @@ Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätet
 - sim.js: `decideSmart` nutzt Zauber. SIM.md neu (3000 Läufe).
 - Ungeprüft: Runenzeichen (ᚲᛁᚦᛊᚨ) auf Android-Schrift (evtl. Kästchen).
 - Tests: 41.
+
+## 0.7.1 (Schritt 6: Tests erweitert)
+- Nur tests.js neu (+ Versionsnummer, damit der Service Worker die Datei neu lädt). Spielverhalten unverändert.
+- Neue Tests (46 gesamt): 150 Zufallskämpfe mit Invarianten (LP/Mana in Grenzen, Kampf endet), Zustand nach Kampf (Bewegung, Besiegte blockieren nicht, LP ≥ 1), Speicher-Rundlauf (Ausrüstung, Vorrat, kein Kampfzustand), Determinismus, Daten-Querverweise.
