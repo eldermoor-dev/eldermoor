@@ -165,3 +165,28 @@ Angriff und Verteidigen schenken 1 Punkt Ressource zurück; nach jedem Kampf ist
 | Gnom | Priester | 23/5/3/4 | 63/9/6/6 |
 | Gnom | Magier | 15/8/1/6 | 42/16/2/9 |
 | Gnom | Waldläufer | 21/7/2/7 | 57/14/4/11 |
+
+## Beute
+
+Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Lederharnisch, Kettenhemd. Qualität nach Gewicht; „Boost“ würfelt so oft neu und nimmt die beste.
+
+| Qualität | Gewicht | Anteil | Bonus Hauptwert | Zufallseigenschaften |
+|---|---|---|---|---|
+| Gewöhnlich | 55 | 55 % | +0 | 0 |
+| Gut | 28 | 28 % | +1 | 0 |
+| Selten | 14 | 14 % | +1 | 1 |
+| Episch | 3 | 3 % | +2 | 2 |
+
+| Eigenschaft | Wirkung | Platz |
+|---|---|---|
+| des Wolfs | +1–2 Angriff | Waffe |
+| des Zorns | +1 Angriff | Rüstung |
+| des Falken | +1–2 Initiative | Waffe, Rüstung |
+| des Bären | +1–2 Verteidigung | Rüstung |
+| des Wächters | +1 Verteidigung | Waffe |
+
+| Gegner | Ausrüstung | Unikat |
+|---|---|---|
+| Moorschrat | 100 %, Boost 2 | Schratdorn oder Wurzelstab (100 %, nur einmal) |
+| Sumpfwolf | 15 % | – |
+| Moorkultist | 20 % | – |

@@ -3,13 +3,13 @@
 import {
   DIRS, DIR_NAMES, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, enemyOf, changeArea, knownSpells, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
+  buildParty, deriveStats, skipStunned, restParty, enemyOf, itemDef, qualityOf, changeArea, knownSpells, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setResolution, W, H, BASE_W, BASE_H } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.9.1';
+const VERSION = '0.10.0';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -338,7 +338,7 @@ function startCombatUI(enemyObj) {
   runEnemyTurns();
 }
 function showResult(r) {
-  (r.msgs || []).forEach((m) => { const [t, dt] = m.split(SEP); say(t); clogAdd(dt ? `${t} [${dt}]` : t); });
+  (r.msgs || []).forEach((m) => { const [t, dt] = m.split(SEP); say(t); clogAdd(dt ? `${t} [${dt}]` : t); if (/^Beute von /.test(t)) toast(t, 3600); });
   if (r.sfx) S.sfx.play(r.sfx);
   if (r.sfx === 'hit' || r.sfx === 'hurt') { flash(); vib(r.sfx === 'hurt' ? 60 : 30); }
 }
@@ -622,21 +622,34 @@ function openBestiary() {
 }
 function openHelp() { openModal(helpHtml(), 'help'); }
 
+// Name mit Qualitätsfarbe, z. B. „Eisenschwert des Wolfs [Selten]“
+function qTag(id, it) {
+  const q = qualityOf(S.game, S.data, id);
+  if (!q || q.id === 'common') return esc(it.name);
+  return `<span style="color:${q.color}">${esc(it.name)} [${esc(q.name)}]</span>`;
+}
+// Änderung der Werte gegenüber der aktuell getragenen Ausrüstung im selben Platz, z. B. „ · Angriff +1“
+function gearDelta(h, id) {
+  const g = S.game, it = itemDef(g, S.data, id), cur = h.equip && h.equip[it.slot] ? itemDef(g, S.data, h.equip[it.slot]) : null;
+  const d = [['atk', 'Angriff'], ['def', 'Verteidigung'], ['init', 'Init.']].map(([k, n]) => [(it[k] || 0) - (cur ? (cur[k] || 0) : 0), n]).filter(([v]) => v !== 0);
+  return d.length ? ' · ' + d.map(([v, n]) => `${n} ${v > 0 ? '+' : '−'}${Math.abs(v)}`).join(', ') : ' · gleich';
+}
 function openInventory() {
   const g = S.game, d = S.data;
-  const items = Object.entries(g.inv).filter(([, n]) => n > 0);
+  const rank = { consumable: 0, supply: 1, quest: 2, equip: 3 };
+  const items = Object.entries(g.inv).filter(([, n]) => n > 0).sort((a, b) => (rank[itemDef(g, d, a[0]).kind] - rank[itemDef(g, d, b[0]).kind]) || itemDef(g, d, a[0]).name.localeCompare(itemDef(g, d, b[0]).name, 'de'));
   let html = `<h2>Inventar</h2><p>Gold: <b>${g.gold}</b></p>`;
   html += items.length ? items.map(([id, n]) => {
-    const it = d.items[id];
+    const it = itemDef(g, d, id);
     const use = it.kind === 'consumable' && !g.combat ? `<button class="mb" data-m="use:${id}">Benutzen</button>` : it.kind === 'supply' && !g.combat ? '<button class="mb" data-m="rest">Rasten</button>' : it.kind === 'equip' && !g.combat ? `<button class="mb" data-m="eqsel:${id}">Ausrüsten</button>` : '';
-    return `<div class="row"><div><b>${esc(it.name)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}<div class="muted">${esc(it.desc)}</div></div>${use}</div>`;
+    return `<div class="row"><div><b>${qTag(id, it)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}<div class="muted">${esc(it.desc)}</div></div>${use}</div>`;
   }).join('') : '<p class="muted">Nichts dabei.</p>';
-  if (S.invEquip && d.items[S.invEquip] && (g.inv[S.invEquip] || 0) > 0) {
-    html += `<h3>${esc(d.items[S.invEquip].name)} an wen?</h3><div class="acts">` + g.heroes.map((h, i) =>
-      `<button class="mb" data-m="eq:${i}" ${canEquip(d, h, S.invEquip) ? '' : 'disabled'}>${esc(h.name)} (${esc(h.role)})</button>`).join('') + '</div>';
+  if (S.invEquip && itemDef(g, d, S.invEquip) && (g.inv[S.invEquip] || 0) > 0) {
+    html += `<h3>${esc(itemDef(g, d, S.invEquip).name)} an wen?</h3><div class="acts">` + g.heroes.map((h, i) =>
+      `<button class="mb" data-m="eq:${i}" ${canEquip(d, h, S.invEquip, g) ? '' : 'disabled'}>${esc(h.name)} (${esc(h.role)})${canEquip(d, h, S.invEquip, g) ? esc(gearDelta(h, S.invEquip)) : ''}</button>`).join('') + '</div>';
   }
   if (S.invUse) {
-    html += `<h3>${esc(d.items[S.invUse].name)} an wem anwenden?</h3><div class="acts">` + g.heroes.map((h, i) =>
+    html += `<h3>${esc(itemDef(g, d, S.invUse).name)} an wem anwenden?</h3><div class="acts">` + g.heroes.map((h, i) =>
       `<button class="mb" data-m="heal:${i}" ${h.hp > 0 && h.hp < h.maxHp ? '' : 'disabled'}>${esc(h.name)} (${h.hp}/${h.maxHp})</button>`).join('') + '</div>';
   }
   if (g.combat) html += '<p class="muted">Im Kampf: Gegenstände über den Knopf „Gegenstand“ benutzen.</p>';
@@ -662,8 +675,8 @@ function charAbility(h) {
 const bonusTxt = (n) => (n ? ` <span class="muted">(+${n})</span>` : '');
 function gearLines(h, i) {
   return ['weapon', 'armor'].map((s) => {
-    const id = h.equip && h.equip[s], it = id && S.data.items[id];
-    return `<div class="muted">${S.data.slots[s]}: ${it ? esc(it.name) + ` <button class="mb" data-m="uneq:${i}:${s}" style="padding:1px 6px;min-height:0">Ablegen</button>` : '–'}</div>`;
+    const id = h.equip && h.equip[s], it = id && itemDef(S.game, S.data, id);
+    return `<div class="muted">${S.data.slots[s]}: ${it ? qTag(id, it) + ` <button class="mb" data-m="uneq:${i}:${s}" style="padding:1px 6px;min-height:0">Ablegen</button>` : '–'}</div>`;
   }).join('');
 }
 function openCharacter() {
@@ -671,7 +684,7 @@ function openCharacter() {
   openModal(`<h2>Charaktere</h2><div class="grid4">` + g.heroes.map((h, i) =>
     `<div class="hc"><b>${esc(h.name)}</b><div class="muted">${esc(raceName(h.race))} · ${esc(h.role)}</div><div class="muted">${h.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}</div>
     <div>Stufe ${h.level}</div><div class="muted">${xpLine(h)}</div>
-    <div>LP ${h.hp}/${h.maxHp}</div><div>Angriff ${h.atk}${bonusTxt(gearBonus(S.data, h).atk)}</div><div>Verteidigung ${h.def}${bonusTxt(gearBonus(S.data, h).def)}</div><div>Initiative ${h.init}</div><div>${h.ranged ? 'Fernkampf' : 'Nahkampf'}</div>${gearLines(h, i)}${charAbility(h)}</div>`).join('') +
+    <div>LP ${h.hp}/${h.maxHp}</div><div>Angriff ${h.atk}${bonusTxt(gearBonus(S.data, h, S.game).atk)}</div><div>Verteidigung ${h.def}${bonusTxt(gearBonus(S.data, h, S.game).def)}</div><div>Initiative ${h.init}${bonusTxt(gearBonus(S.data, h, S.game).init)}</div><div>${h.ranged ? 'Fernkampf' : 'Nahkampf'}</div>${gearLines(h, i)}${charAbility(h)}</div>`).join('') +
     `</div><p class="muted">Ausrüstung anlegen: Inventar → Gegenstand → „Ausrüsten“. Ablegen hier.</p><div class="acts">${closeBtn}</div>`, 'character');
 }
 
