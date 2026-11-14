@@ -1127,6 +1127,29 @@ export async function runTests(data, env = {}) {
     L.changeArea(s, data, 'stairs_pfad_west'); eq(s.levelId, 'moorrand', 'zurück in der Siedlung'); eq(s.player.x, 9, 'Ankunft Siedlung');
   });
 
+  await test('Kultgruft (0.14.0): neue Gegner, Boss mit Phasen und Beute, Siegel vor Bosstor, Hin- und Rückweg, alter Ausgang wird ersetzt', () => {
+    for (const k of ['skeleton', 'kultwaechter', 'hauptmann']) { const e = data.enemies[k]; assert(e && e.hp > 0 && e.xp > 0 && e.atk > 0, `Gegner ${k}`); }
+    const hm = data.enemies.hauptmann;
+    assert(hm.boss && hm.phases.length === 2 && hm.phases[0].below > hm.phases[1].below, 'Hauptmann: Phasen absteigend');
+    for (const d of hm.drops) for (const id of d.pick || [d.item]) assert(data.items[id] && data.items[id].q === 'unique', `Beute ${id}`);
+    assert(L.analyzeLevel(data, 'kultgruft').ok && L.analyzeLevel(data, 'moorpfad').ok, 'lösbar');
+    const gl = data.levels.kultgruft;
+    const key = gl.objects.find((o) => o.type === 'chest' && JSON.stringify(o.loot).includes('gruft_siegel'));
+    const door = gl.objects.find((o) => o.id === 'door_boss');
+    assert(key && door && door.locked && door.key === 'gruft_siegel', 'Siegelschloss vor Boss');
+    const s = fresh(65);
+    L.changeArea(s, data, 'stairs_moor'); L.changeArea(s, data, 'stairs_pfad');
+    s.player = { x: 21, y: 4, dir: 1 };
+    const to = s.objs.find((o) => o.id === 'stairs_gruft');
+    assert(to && to.look === 'down', 'Treppe zur Gruft');
+    L.changeArea(s, data, 'stairs_gruft'); eq(s.levelId, 'kultgruft', 'Gruft erreicht');
+    eq(s.player.x, 2, 'Ankunft'); L.changeArea(s, data, 'stairs_gruft_up'); eq(s.levelId, 'moorpfad', 'zurück'); eq(s.player.x, 21, 'Ankunft Moorpfad');
+    // alter Stand aus 0.13.0: Ausgang statt Treppe
+    s.objs = s.objs.filter((o) => o.id !== 'stairs_gruft'); s.objs.push({ id: 'exit_pfad', type: 'exit', x: 22, y: 4 });
+    const back = L.deserialize(JSON.parse(JSON.stringify(L.serialize(s))), data);
+    assert(back.objs.some((o) => o.id === 'stairs_gruft') && !back.objs.some((o) => o.id === 'exit_pfad'), 'Ausgang ersetzt');
+  });
+
   await test('Alte Stände bekommen neue feste Objekte (Treppe, Auftrag), Truhenzustand bleibt', () => {
     const s = fresh(64);
     L.changeArea(s, data, 'stairs_moor'); // Siedlung aktiv

@@ -283,6 +283,73 @@ function genSign(seed) {
   return t;
 }
 
+function genStairs(kind, seed) {
+  const t = mk(255);
+  const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
+  if (kind === 'down') {
+    // Treppenschacht: steinerne Einfassung, dunkle Stufen führen nach unten
+    for (let y = 18; y <= 60; y++) { const w = 15 + Math.round((y - 18) * 0.3); for (let x = 32 - w; x <= 32 + w; x++) set(x, y, P('stone', 3 + hash(x, y, seed) * 1.2 - (y < 24 ? 1 : 0))); }
+    for (let i = 0; i < 8; i++) {
+      const y0 = 24 + i * 4.5, w = 11 + Math.round(i * 1.3);
+      for (let y = Math.round(y0); y < Math.round(y0 + 4.5) && y <= 58; y++) for (let x = 32 - w; x <= 32 + w; x++) {
+        const tread = y - Math.round(y0) < 2;
+        set(x, y, P('stone', Math.max(0, (tread ? 3.2 : 1.2) - (7 - i) * 0.35 + hash(x, y, seed + 1) * 0.6)));
+      }
+    }
+  } else {
+    // Treppe nach oben: Stufen wie eine Pyramide, oben fällt Licht herein
+    for (let y = 12; y <= 22; y++) for (let x = 20; x <= 44; x++) set(x, y, P('glow', 4 + (22 - y) * 0.15 + hash(x, y, seed) * 0.4));
+    for (let i = 0; i < 7; i++) {
+      const w = 26 - i * 3, yb = 58 - i * 5.5;
+      for (let y = Math.round(yb - 5); y <= Math.round(yb); y++) for (let x = 32 - w; x <= 32 + w; x++) {
+        const tread = y <= Math.round(yb - 3);
+        set(x, y, P('stone', (tread ? 5 : 2.5) + hash(x, y, seed + 1) * 0.8 - 0.4 - (x === 32 - w || x === 32 + w ? 1 : 0)));
+      }
+    }
+  }
+  return t;
+}
+
+function genArch(seed) {
+  const t = mk(255);
+  const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
+  for (let y = 18; y <= 60; y++) for (let x = 14; x <= 49; x++) {
+    const post = x <= 19 || x >= 44, lintel = y <= 24;
+    if (post || lintel) set(x, y, P('wood', 2.5 + hash(x, y, seed) * 1.2 - (x >= 44 ? 0.8 : 0) + (y === 18 ? 1 : 0)));
+    else set(x, y, P('ceil', 3 + (y - 24) * 0.04 + hash(x, y, seed + 1) * 0.8));
+  }
+  for (let x = 24; x <= 40; x += 4) for (let y = 40; y <= 60; y++) if (hash(x, y, seed + 2) > 0.6) set(x, y, P('floor', 3));
+  return t;
+}
+
+function genSkeleton(seed) {
+  const t = mk(255);
+  const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
+  const bone = (x, y, s) => P('stone', s + hash(x, y, seed) * 0.8);
+  for (let y = 6; y <= 20; y++) for (let x = 24; x <= 40; x++) { const dx = (x - 32) / 8.5, dy = (y - 13) / 7.5; if (dx * dx + dy * dy <= 1) set(x, y, bone(x, y, 6)); }
+  for (let y = 21; y <= 25; y++) for (let x = 27; x <= 37; x++) set(x, y, bone(x, y, 5));
+  for (const ex of [28, 35]) for (let y = 11; y <= 15; y++) for (let x = ex; x <= ex + 2; x++) set(x, y, P('ceil', 0));
+  for (const ex of [29, 36]) set(ex, 13, P('glow', 6));
+  for (let y = 26; y <= 44; y++) for (let x = 31; x <= 33; x++) set(x, y, bone(x, y, 4.5));
+  for (let i = 0; i < 5; i++) { const y = 28 + i * 3; for (let x = 22; x <= 42; x++) { const k = Math.abs(x - 32); if (k >= 3 && k <= 10 - i) set(x, y, bone(x, y, 4.5 - k * 0.1)); } }
+  for (let y = 45; y <= 60; y++) for (const lx of [27, 36]) for (let x = lx; x <= lx + 2; x++) set(x, y, bone(x, y, 4));
+  for (let y = 28; y <= 52; y++) for (const ax of [20, 43]) for (let x = ax; x <= ax + 2; x++) set(x, y, bone(x, y, 3.5));
+  return t;
+}
+
+function genGuard(seed, boss) {
+  const t = mk(255);
+  const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
+  for (let y = 22; y <= 62; y++) { const w = 8 + Math.round((y - 22) * 0.35); for (let x = 32 - w; x <= 32 + w; x++) set(x, y, P(boss ? 'wood' : 'iron', (boss ? 2.4 : 3.2) + hash(x, y, seed) * 0.9 - (x > 32 ? 0.7 : 0) - (y > 54 ? 0.8 : 0))); }
+  for (let y = 6; y <= 24; y++) { const w = 7 - Math.max(0, 14 - y) * 0.15; for (let x = Math.round(32 - w); x <= 32 + w; x++) set(x, y, P('iron', 4 + hash(x, y, seed + 1) * 0.8 - (x > 32 ? 0.8 : 0))); }
+  for (let y = 13; y <= 15; y++) for (let x = 26; x <= 38; x++) set(x, y, P('ceil', 0));
+  set(29, 14, P('glow', 6)); set(35, 14, P('glow', 6));
+  for (let y = 24; y <= 46; y++) for (let x = 12; x <= 17; x++) set(x, y, P('iron', 3 + hash(x, y, seed + 2) - (x < 14 ? 0.6 : 0)));
+  for (let y = 34; y <= 50; y++) for (let x = 46; x <= 48; x++) set(x, y, P('iron', 5 - (y > 46 ? 1 : 0)));
+  if (boss) for (let y = 26; y <= 32; y++) for (let x = 29; x <= 35; x++) set(x, y, P('glow', 4 + (y === 29 ? 1.5 : 0)));
+  return t;
+}
+
 function genPortal(seed) {
   const t = mk(255);
   for (let y = 0; y < TEX; y++) for (let x = 0; x < TEX; x++) {
@@ -332,7 +399,7 @@ export function makeTextures(detail = 1) {
     wall: { [WALL_STONE]: up(genStone(11), 101), [WALL_MOSS]: up(genMoss(23), 102), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104) },
     floor: up(genFloor(41), 105),
     ceil: up(genCeil(53), 106),
-    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: genSchrat(71), portal: spr(genPortal(81), 109), merchant: spr(genMerchant(91), 110), wisp: genWisp(121), sign: spr(genSign(131), 111) }
+    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: genSchrat(71), portal: spr(genPortal(81), 109), merchant: spr(genMerchant(91), 110), wisp: genWisp(121), skeleton: genSkeleton(171), guard: genGuard(181, false), captain: genGuard(191, true), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: spr(genSign(131), 111) }
   };
 }
 
@@ -488,6 +555,7 @@ export function buildGrid(lvl, objs) {
   for (const o of objs) if (o.type === 'door' && !o.open) grid[o.y * w + o.x] = o.locked ? WALL_DOOR_LOCKED : WALL_DOOR;
   return { grid, gw: w, gh: h };
 }
+const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'hauptmann' ? tex.sprites.captain : tex.sprites.schrat);
 const kindOf = (o, i) => (Array.isArray(o.kinds) ? o.kinds[Math.min(i, o.kinds.length - 1)] : o.kind);
 export function buildSprites(objs, tex, time, angle = 0, alive = null) { // alive: {objId: Anzahl lebender Gegner} im Kampf
   const out = [];
@@ -499,12 +567,13 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null) { // aliv
       const n = alive && alive[o.id] != null ? alive[o.id] : tot; // Gruppe: eine Gestalt je lebendem Gegner, nebeneinander
       for (let i = 0; i < n; i++) {
         const off = n > 1 ? (i - (n - 1) / 2) * 0.36 : 0;
-        out.push({ x: o.x + rx * off, y: o.y + ry * off, tex: (kindOf(o, i) === 'moorlicht' ? tex.sprites.wisp : tex.sprites.schrat), scale: (n > 1 ? 0.62 : 0.85) * (1 + 0.02 * Math.sin(time * 3 + i)) });
+        out.push({ x: o.x + rx * off, y: o.y + ry * off, tex: spriteFor(tex, kindOf(o, i)), scale: (n > 1 ? 0.62 : 0.85) * (1 + 0.02 * Math.sin(time * 3 + i)) });
       }
     }
     else if (o.type === 'sign') out.push({ x: o.x, y: o.y, tex: tex.sprites.sign, scale: 0.55 });
     else if (o.type === 'merchant') out.push({ x: o.x, y: o.y, tex: tex.sprites.merchant, scale: 0.8 });
-    else if (o.type === 'exit' || o.type === 'stairs') out.push({ x: o.x, y: o.y, tex: tex.sprites.portal, scale: 0.9 });
+    else if (o.type === 'stairs') out.push({ x: o.x, y: o.y, tex: o.look === 'down' ? tex.sprites.stairsDown : o.look === 'up' ? tex.sprites.stairsUp : o.look === 'path' ? tex.sprites.arch : tex.sprites.portal, scale: 0.9 });
+    else if (o.type === 'exit') out.push({ x: o.x, y: o.y, tex: tex.sprites.portal, scale: 0.9 });
   }
   return out;
 }

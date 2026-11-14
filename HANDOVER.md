@@ -317,3 +317,12 @@ Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätet
 - logic.js `syncStatic(state, data)` (läuft in `deserialize`): ergänzt fehlende Objekte und gleicht Treppen, Tafeln, Händler und Ausgänge aller bekannten Gebiete mit game.json ab, ohne Speicherversion. Truhen, Türen, Gegner behalten ihren Zustand. Damit bekommen Stände aus 0.12.0 die neue Treppe und den Auftrag.
 - Speicherstand weiter v6.
 - Tests 65.
+
+## 0.14.0 (Inhaltsphase, Schritt 2: Kultgruft, Zwischenboss, neue Treppen)
+- Treppen: `stairs.look` = `down` | `up` | `path` (Abstieg dunkel mit Stufen, Aufstieg hell, Durchgang aus Holz); ohne `look` bleibt das Portal-Bild. Runenstein (`exit`) bleibt das Portal. `render.js`: `genStairs`, `genArch`.
+- Neues Gebiet `kultgruft` (27×13): Eingang mit Treppe (1,6), Gang mit 2 Skeletten, Haupthalle, Kapelle (Tür `door_chapel`, Kultwächter + Kultist, Truhe `chest_g1` mit `gruft_siegel`), Zellen (Tür `door_cells`, 3 Gegner, Beutetruhe), Gang zum Siegeltor `door_boss` (Schlüssel `gruft_siegel`), Boss `en_boss` in 1 Feld breitem Gang, danach Kammer mit Truhe und `exit_gruft` (Meldung: Weg zu den Schratgruben noch eingestürzt; wird in 0.15.0 eine Treppe).
+- Moorpfad: `exit_pfad` ist durch die Treppe `stairs_gruft` (22,4) ersetzt; Rückweg `stairs_gruft_up`.
+- Neue Gegner: `skeleton` (24 LP, Eis +50 % Resist, Feuer −25 %), `kultwaechter` (34 LP, Def 5, Schildstoß alle 4 Züge ×150 %, zielt auf die Hinterreihe), Boss `hauptmann` (130 LP, Def 5, 35 % Schwäche, Richtspruch alle 3 Züge ×160 %; Phase „Kultruf“ ≤ 65 %: Angriff 14, Richtspruch alle 2 Züge; Phase „Letzte Bastion“ ≤ 30 %: Angriff 16, Def 4, Richtspruch ×190 %). Beute: Siegelpanzer (Rüstung +4 Def) oder Nebelmantel (+3 Def, +1 Init), jeweils einmalig, dazu erzeugte Ausrüstung mit Boost 2. Neue Sprites `genSkeleton`, `genGuard` (Wächter und Hauptmann); Hauptmann größer/dunkler.
+- logic.js: `syncStatic` entfernt jetzt auch veraltete feste Objekte (z. B. alten Ausgang) und gleicht `look` ab; alte Stände aus 0.13.0 bekommen die Treppe.
+- Balance (Ad-hoc-Simulation, Stufe 1 Start, nur Moorpfad+Gruft, ohne Ausrüstung, 200 Läufe, **nicht** in SIM.md): „klug“ gewinnt den Boss in 99 % der Läufe, „nur Angriff“ gesamt 68 % (21 % der Läufe scheitern bereits an der Gruppe `en_p3` im Moorpfad). Wirkliche Spielerdaten fehlen noch; Feinabstimmung in 0.17.0.
+- Tests 66. Speicherstand weiter v6.

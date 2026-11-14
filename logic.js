@@ -1063,6 +1063,8 @@ export function syncStatic(state, data) {
   for (const a of areas) {
     const lvl = data.levels[a.id];
     if (!lvl || !Array.isArray(a.objs)) continue;
+    const ids = new Set(lvl.objects.map((o) => o.id));
+    for (let k = a.objs.length - 1; k >= 0; k--) if (a.objs[k] && STATIC_TYPES.has(a.objs[k].type) && !ids.has(a.objs[k].id)) { a.objs.splice(k, 1); n++; } // veraltete feste Objekte (z. B. ersetzter Ausgang)
     for (const o of lvl.objects) {
       const i = a.objs.findIndex((x) => x && x.id === o.id);
       if (i < 0) { a.objs.push(freshObj(data, o)); n++; }

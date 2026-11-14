@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setReso
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.13.0';
+const VERSION = '0.14.0';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -28,7 +28,7 @@ const S = {
   debug: { god: false }, itemMode: false, abMode: false, spMode: false, spSel: 0, foe: 0, invUse: null, draft: null, fps: 60, frameMs: 0, lastRender: 0,
   installEvent: null, loadMs: null, hadController: false
 };
-if (new URLSearchParams(location.search).has('dev')) window.__S = S; // nur für automatische Tests (?dev)
+if (new URLSearchParams(location.search).has('dev')) { window.__S = S; S.snapCam = () => snapCam(); } // nur für automatische Tests (?dev)
 
 // ---------------------------------------------------------------- Fehlerlog
 const ERR = { list: [], saveT: 0 };

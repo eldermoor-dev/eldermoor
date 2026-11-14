@@ -105,6 +105,38 @@
       "kind": "quest",
       "desc": "Ein neuer Schlüssel an einem alten Ring. Passt in das Eisentor am Ende des Moorpfads.",
       "noSell": true
+    },
+    "gruft_siegel": {
+      "name": "Siegel des Kults",
+      "kind": "quest",
+      "desc": "Ein schwerer Siegelring mit dem Zeichen des Kults. Öffnet das Tor zur Halle des Hauptmanns.",
+      "noSell": true
+    },
+    "siegelpanzer": {
+      "name": "Siegelpanzer",
+      "kind": "equip",
+      "slot": "armor",
+      "def": 4,
+      "q": "unique",
+      "classes": [
+        "warrior",
+        "priest",
+        "ranger"
+      ],
+      "desc": "Einzigartige Rüstung. +4 Verteidigung. Der Plattenpanzer des Hauptmanns. Für Krieger, Priester, Waldläufer."
+    },
+    "nebelmantel": {
+      "name": "Nebelmantel",
+      "kind": "equip",
+      "slot": "armor",
+      "def": 3,
+      "init": 1,
+      "q": "unique",
+      "classes": [
+        "rogue",
+        "mage"
+      ],
+      "desc": "Einzigartige Rüstung. +3 Verteidigung, +1 Initiative. Ein Mantel, der nach Nebel riecht. Für Schurke und Magier."
     }
   },
   "races": {
@@ -555,6 +587,112 @@
       "gearDrop": {
         "chance": 10
       }
+    },
+    "skeleton": {
+      "name": "Gruftskelett",
+      "hp": 24,
+      "atk": 9,
+      "def": 2,
+      "init": 6,
+      "gold": 6,
+      "xp": 40,
+      "ai": "weakest",
+      "resist": {
+        "ice": 50,
+        "fire": -25
+      },
+      "gearDrop": {
+        "chance": 15
+      }
+    },
+    "kultwaechter": {
+      "name": "Kultwächter",
+      "hp": 34,
+      "atk": 10,
+      "def": 5,
+      "init": 3,
+      "gold": 14,
+      "xp": 55,
+      "ai": "backline",
+      "heavy": {
+        "name": "Schildstoß",
+        "every": 4,
+        "mult": 150
+      },
+      "resist": {
+        "ice": 25,
+        "lightning": -25
+      },
+      "gearDrop": {
+        "chance": 25
+      }
+    },
+    "hauptmann": {
+      "name": "Kultwächter-Hauptmann",
+      "hp": 130,
+      "atk": 12,
+      "def": 5,
+      "init": 5,
+      "gold": 40,
+      "xp": 220,
+      "ai": "weakest",
+      "onHit": {
+        "status": "weak",
+        "chance": 35,
+        "turns": 2
+      },
+      "heavy": {
+        "name": "Richtspruch",
+        "every": 3,
+        "mult": 160
+      },
+      "resist": {
+        "ice": 25,
+        "fire": -25
+      },
+      "boss": true,
+      "phases": [
+        {
+          "below": 65,
+          "name": "Kultruf",
+          "msg": "Der Hauptmann reißt das Siegel hoch. Die Gruft antwortet mit einem dumpfen Schlag.",
+          "set": {
+            "atk": 14,
+            "heavy": {
+              "name": "Richtspruch",
+              "every": 2,
+              "mult": 160
+            }
+          }
+        },
+        {
+          "below": 30,
+          "name": "Letzte Bastion",
+          "msg": "Der Hauptmann sticht blindlings zu. Er hat nichts mehr zu verlieren.",
+          "set": {
+            "atk": 16,
+            "def": 4,
+            "heavy": {
+              "name": "Richtspruch",
+              "every": 2,
+              "mult": 190
+            }
+          }
+        }
+      ],
+      "gearDrop": {
+        "chance": 100,
+        "boost": 2
+      },
+      "drops": [
+        {
+          "pick": [
+            "siegelpanzer",
+            "nebelmantel"
+          ],
+          "chance": 100
+        }
+      ]
     }
   },
   "palettes": {
@@ -767,7 +905,8 @@
             "x": 2,
             "y": 2,
             "dir": 1
-          }
+          },
+          "look": "down"
         },
         {
           "id": "stairs_moor",
@@ -780,7 +919,8 @@
             "x": 2,
             "y": 2,
             "dir": 1
-          }
+          },
+          "look": "up"
         }
       ]
     },
@@ -813,7 +953,8 @@
             "x": 2,
             "y": 1,
             "dir": 1
-          }
+          },
+          "look": "up"
         },
         {
           "id": "chest_b",
@@ -881,7 +1022,8 @@
             "x": 2,
             "y": 4,
             "dir": 1
-          }
+          },
+          "look": "down"
         },
         {
           "id": "merchant_hedda",
@@ -905,7 +1047,8 @@
             "x": 2,
             "y": 3,
             "dir": 1
-          }
+          },
+          "look": "path"
         }
       ]
     },
@@ -941,7 +1084,8 @@
             "x": 9,
             "y": 3,
             "dir": 3
-          }
+          },
+          "look": "path"
         },
         {
           "id": "sign_pfad1",
@@ -1077,15 +1221,6 @@
           "key": "gruft_key"
         },
         {
-          "id": "exit_pfad",
-          "type": "exit",
-          "x": 22,
-          "y": 4,
-          "say": "Hinter dem Tor führt eine Treppe in die Tiefe, aber sie ist verschüttet.",
-          "title": "Ende des Moorpfads",
-          "text": "Hinter dem Eisentor beginnt die Kultgruft. Der Weg hinab ist noch verschüttet. In der nächsten Version geht es hier weiter."
-        },
-        {
           "id": "chest_p4",
           "type": "chest",
           "x": 22,
@@ -1100,6 +1235,248 @@
               }
             }
           ]
+        },
+        {
+          "id": "stairs_gruft",
+          "type": "stairs",
+          "x": 22,
+          "y": 4,
+          "look": "down",
+          "msg": "Du steigst die Treppe in die Kultgruft hinab.",
+          "to": {
+            "level": "kultgruft",
+            "x": 2,
+            "y": 6,
+            "dir": 1
+          }
+        }
+      ]
+    },
+    "kultgruft": {
+      "id": "kultgruft",
+      "name": "Kultgruft",
+      "palette": "keller",
+      "map": [
+        "###########m###############",
+        "##########......###########",
+        "##########......###########",
+        "##m#######m#.##m########m##",
+        "#.....####......########..#",
+        "m.....m##m......mm######..#",
+        "#.........................m",
+        "m.....###m......m##m####..#",
+        "#.....####......########..#",
+        "####m#######.############m#",
+        "##########......m##########",
+        "#########m......###########",
+        "##############m############"
+      ],
+      "start": {
+        "x": 2,
+        "y": 6,
+        "dir": 1
+      },
+      "objects": [
+        {
+          "id": "stairs_gruft_up",
+          "type": "stairs",
+          "x": 1,
+          "y": 6,
+          "look": "up",
+          "msg": "Du steigst die Treppe hinauf zum Moorpfad.",
+          "to": {
+            "level": "moorpfad",
+            "x": 21,
+            "y": 4,
+            "dir": 3
+          }
+        },
+        {
+          "id": "sign_g1",
+          "type": "sign",
+          "x": 3,
+          "y": 5,
+          "text": "Es riecht nach Kerzenwachs und feuchter Erde. Die alten Zellen werden wieder benutzt."
+        },
+        {
+          "id": "en_g1",
+          "type": "enemy",
+          "x": 8,
+          "y": 6,
+          "kind": "skeleton",
+          "kinds": [
+            "skeleton",
+            "skeleton"
+          ]
+        },
+        {
+          "id": "sign_g2",
+          "type": "sign",
+          "x": 15,
+          "y": 5,
+          "text": "In den Stein geritzt: Nur wer das Siegel des Kults trägt, darf in die Halle des Hauptmanns."
+        },
+        {
+          "id": "en_g2",
+          "type": "enemy",
+          "x": 13,
+          "y": 6,
+          "kind": "kultist",
+          "kinds": [
+            "kultist",
+            "skeleton",
+            "skeleton"
+          ]
+        },
+        {
+          "id": "door_chapel",
+          "type": "door",
+          "x": 12,
+          "y": 3,
+          "locked": false
+        },
+        {
+          "id": "en_g3",
+          "type": "enemy",
+          "x": 12,
+          "y": 2,
+          "kind": "kultwaechter",
+          "kinds": [
+            "kultwaechter",
+            "kultist"
+          ]
+        },
+        {
+          "id": "chest_g1",
+          "type": "chest",
+          "x": 15,
+          "y": 1,
+          "loot": [
+            {
+              "item": "gruft_siegel",
+              "n": 1
+            },
+            {
+              "gold": 20
+            },
+            {
+              "item": "potion",
+              "n": 1
+            }
+          ]
+        },
+        {
+          "id": "door_cells",
+          "type": "door",
+          "x": 12,
+          "y": 9,
+          "locked": false
+        },
+        {
+          "id": "en_g4",
+          "type": "enemy",
+          "x": 12,
+          "y": 10,
+          "kind": "skeleton",
+          "kinds": [
+            "skeleton",
+            "kultwaechter",
+            "skeleton"
+          ]
+        },
+        {
+          "id": "chest_g2",
+          "type": "chest",
+          "x": 15,
+          "y": 11,
+          "loot": [
+            {
+              "item": "potion",
+              "n": 2
+            },
+            {
+              "item": "ration",
+              "n": 1
+            },
+            {
+              "gold": 25
+            },
+            {
+              "gear": {
+                "boost": 1
+              }
+            }
+          ]
+        },
+        {
+          "id": "chest_g4",
+          "type": "chest",
+          "x": 4,
+          "y": 8,
+          "loot": [
+            {
+              "item": "ration",
+              "n": 1
+            },
+            {
+              "gold": 10
+            }
+          ]
+        },
+        {
+          "id": "en_g5",
+          "type": "enemy",
+          "x": 18,
+          "y": 6,
+          "kind": "kultwaechter",
+          "kinds": [
+            "kultwaechter",
+            "kultwaechter"
+          ]
+        },
+        {
+          "id": "door_boss",
+          "type": "door",
+          "x": 20,
+          "y": 6,
+          "locked": true,
+          "key": "gruft_siegel"
+        },
+        {
+          "id": "en_boss",
+          "type": "enemy",
+          "x": 22,
+          "y": 6,
+          "kind": "hauptmann"
+        },
+        {
+          "id": "chest_g3",
+          "type": "chest",
+          "x": 25,
+          "y": 4,
+          "loot": [
+            {
+              "gold": 40
+            },
+            {
+              "item": "potion",
+              "n": 2
+            },
+            {
+              "gear": {
+                "boost": 2
+              }
+            }
+          ]
+        },
+        {
+          "id": "exit_gruft",
+          "type": "exit",
+          "x": 25,
+          "y": 6,
+          "title": "Ende der Kultgruft",
+          "say": "Hinter dem Hauptmann führt ein Gang weiter nach unten, aber er ist eingestürzt.",
+          "text": "Der Hauptmann ist besiegt. Der Gang zu den Schratgruben ist noch eingestürzt. In der nächsten Version geht es hier weiter."
         }
       ]
     }

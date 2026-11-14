@@ -27,6 +27,9 @@ Gegner (EP: jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die vol
 | Sumpfwolf | 26 | 9 | 1 | 8 | 35 | 6 | zielt auf den schwächsten Helden |
 | Moorkultist | 20 | 7 | 2 | 4 | 30 | 8 | zielt auf die Hinterreihe; Treffer: Schwach 35 % |
 | Moorlicht | 18 | 6 | 0 | 10 | 28 | 5 | zielt auf die Hinterreihe; Treffer: Verlangsamt 40 % |
+| Gruftskelett | 24 | 9 | 2 | 6 | 40 | 6 | zielt auf den schwächsten Helden |
+| Kultwächter | 34 | 10 | 5 | 3 | 55 | 14 | zielt auf die Hinterreihe; Schildstoß jeden 4. Zug, angekündigt (150 %) |
+| Kultwächter-Hauptmann | 130 | 12 | 5 | 5 | 220 | 40 | zielt auf den schwächsten Helden; Richtspruch jeden 3. Zug, angekündigt (160 %); Treffer: Schwach 35 %; Boss, Phasen: Kultruf ab ≤ 65 % LP (Angriff 14), Letzte Bastion ab ≤ 30 % LP (Angriff 16) |
 
 ## Rassen (Modifikatoren)
 
@@ -192,3 +195,6 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 | Sumpfwolf | 15 % | – |
 | Moorkultist | 20 % | – |
 | Moorlicht | 10 % | – |
+| Gruftskelett | 15 % | – |
+| Kultwächter | 25 % | – |
+| Kultwächter-Hauptmann | 100 %, Boost 2 | Siegelpanzer oder Nebelmantel (100 %, nur einmal) |
