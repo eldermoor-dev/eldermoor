@@ -3,13 +3,13 @@
 import {
   DIRS, DIR_NAMES, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
+  buildParty, deriveStats, skipStunned, restParty, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setResolution, W, H, BASE_W, BASE_H } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.5.0';
+const VERSION = '0.6.0';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -533,7 +533,7 @@ function openModal(html, kind = 'generic') {
   S.held = [];
   $('#modal-box').scrollTop = 0;
 }
-function closeModal() { $('#modal').hidden = true; $('#modal-box').innerHTML = ''; S.modal = null; S.invUse = null; }
+function closeModal() { $('#modal').hidden = true; $('#modal-box').innerHTML = ''; S.modal = null; S.invUse = null; S.invEquip = null; }
 const closeBtn = '<button class="mb" data-m="close">Schließen</button>';
 
 function openMenu() {
@@ -567,9 +567,13 @@ function openInventory() {
   let html = `<h2>Inventar</h2><p>Gold: <b>${g.gold}</b></p>`;
   html += items.length ? items.map(([id, n]) => {
     const it = d.items[id];
-    const use = it.kind === 'consumable' && !g.combat ? `<button class="mb" data-m="use:${id}">Benutzen</button>` : it.kind === 'supply' && !g.combat ? '<button class="mb" data-m="rest">Rasten</button>' : '';
+    const use = it.kind === 'consumable' && !g.combat ? `<button class="mb" data-m="use:${id}">Benutzen</button>` : it.kind === 'supply' && !g.combat ? '<button class="mb" data-m="rest">Rasten</button>' : it.kind === 'equip' && !g.combat ? `<button class="mb" data-m="eqsel:${id}">Ausrüsten</button>` : '';
     return `<div class="row"><div><b>${esc(it.name)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}<div class="muted">${esc(it.desc)}</div></div>${use}</div>`;
   }).join('') : '<p class="muted">Nichts dabei.</p>';
+  if (S.invEquip && d.items[S.invEquip] && (g.inv[S.invEquip] || 0) > 0) {
+    html += `<h3>${esc(d.items[S.invEquip].name)} an wen?</h3><div class="acts">` + g.heroes.map((h, i) =>
+      `<button class="mb" data-m="eq:${i}" ${canEquip(d, h, S.invEquip) ? '' : 'disabled'}>${esc(h.name)} (${esc(h.role)})</button>`).join('') + '</div>';
+  }
   if (S.invUse) {
     html += `<h3>${esc(d.items[S.invUse].name)} an wem anwenden?</h3><div class="acts">` + g.heroes.map((h, i) =>
       `<button class="mb" data-m="heal:${i}" ${h.hp > 0 && h.hp < h.maxHp ? '' : 'disabled'}>${esc(h.name)} (${h.hp}/${h.maxHp})</button>`).join('') + '</div>';
@@ -587,13 +591,20 @@ function charAbility(h) {
   if (!ab) return '';
   return `<div>${esc(c.res.name)} ${h.mp}/${h.maxMp}</div><div style="margin-top:3px">✦ ${esc(ab.name)} (${ab.cost})</div><div class="muted" style="font-size:.72em">${esc(ab.desc)}</div>`;
 }
+const bonusTxt = (n) => (n ? ` <span class="muted">(+${n})</span>` : '');
+function gearLines(h, i) {
+  return ['weapon', 'armor'].map((s) => {
+    const id = h.equip && h.equip[s], it = id && S.data.items[id];
+    return `<div class="muted">${S.data.slots[s]}: ${it ? esc(it.name) + ` <button class="mb" data-m="uneq:${i}:${s}" style="padding:1px 6px;min-height:0">Ablegen</button>` : '–'}</div>`;
+  }).join('');
+}
 function openCharacter() {
   const g = S.game;
-  openModal(`<h2>Charaktere</h2><div class="grid4">` + g.heroes.map((h) =>
+  openModal(`<h2>Charaktere</h2><div class="grid4">` + g.heroes.map((h, i) =>
     `<div class="hc"><b>${esc(h.name)}</b><div class="muted">${esc(raceName(h.race))} · ${esc(h.role)}</div><div class="muted">${h.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}</div>
     <div>Stufe ${h.level}</div><div class="muted">${xpLine(h)}</div>
-    <div>LP ${h.hp}/${h.maxHp}</div><div>Angriff ${h.atk}</div><div>Verteidigung ${h.def}</div><div>Initiative ${h.init}</div><div>${h.ranged ? 'Fernkampf' : 'Nahkampf'}</div>${charAbility(h)}</div>`).join('') +
-    `</div><p class="muted">Ausrüstung folgt in einem der nächsten Schritte von Phase 2.</p><div class="acts">${closeBtn}</div>`, 'character');
+    <div>LP ${h.hp}/${h.maxHp}</div><div>Angriff ${h.atk}${bonusTxt(gearBonus(S.data, h).atk)}</div><div>Verteidigung ${h.def}${bonusTxt(gearBonus(S.data, h).def)}</div><div>Initiative ${h.init}</div><div>${h.ranged ? 'Fernkampf' : 'Nahkampf'}</div>${gearLines(h, i)}${charAbility(h)}</div>`).join('') +
+    `</div><p class="muted">Ausrüstung anlegen: Inventar → Gegenstand → „Ausrüsten“. Ablegen hier.</p><div class="acts">${closeBtn}</div>`, 'character');
 }
 
 function openMap() {
@@ -829,6 +840,19 @@ async function onModalClick(e) {
     const t = { 'in-combat': 'Im Kampf kann niemand rasten.', 'enemy-near': 'Ein Gegner ist zu nah. So kann die Gruppe nicht rasten.', 'nothing-to-do': 'Alle sind bereits bei Kräften.' }[r.error];
     if (t) { say(t); toast(t); closeModal(); }
     else { say(r.msg); S.sfx.play(r.sfx); toast(r.msg, 3200); closeModal(); renderAll(); }
+  }
+  else if (m.startsWith('eqsel:')) { S.invEquip = m.slice(6); openInventory(); }
+  else if (m.startsWith('eq:')) {
+    const r = equipItem(g, S.data, S.invEquip, +m.slice(3));
+    if (r.msg) { say(r.msg); S.sfx.play('ui'); toast(r.msg); } else toast('Das geht nicht.');
+    if (!(g.inv[S.invEquip] > 0)) S.invEquip = null;
+    renderAll(); openInventory();
+  }
+  else if (m.startsWith('uneq:')) {
+    const [, i, s] = m.split(':');
+    const r = unequipItem(g, S.data, +i, s);
+    if (r.msg) { say(r.msg); toast(r.msg); }
+    renderAll(); openCharacter();
   }
   else if (m.startsWith('use:')) { S.invUse = m.slice(4); openInventory(); }
   else if (m.startsWith('heal:')) {
