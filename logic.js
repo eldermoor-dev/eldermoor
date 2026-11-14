@@ -428,7 +428,7 @@ function buildOrder(state, data) {
   const list = [];
   const slowed = (side, i) => (c.status[side + i] && c.status[side + i].slow ? -100 : 0);
   state.heroes.forEach((h, i) => { if (h.hp > 0) list.push({ side: 'h', idx: i, key: h.init + rand(state) * 4 + 0.5 + slowed('h', i) }); });
-  c.enemies.forEach((e, i) => { if (e.hp > 0) list.push({ side: 'e', idx: i, key: data.enemies[e.kind].init + rand(state) * 4 + slowed('e', i) }); });
+  c.enemies.forEach((e, i) => { if (e.hp > 0) list.push({ side: 'e', idx: i, key: enemyOf(data, e).init + rand(state) * 4 + slowed('e', i) }); });
   list.sort((a, b) => b.key - a.key);
   c.order = list.map(({ side, idx }) => ({ side, idx }));
   c.pos = 0;
@@ -458,11 +458,47 @@ function group(data, obj) {
     return { objId: obj.id, kind: k, name: total[k] > 1 ? `${en.name} ${'ABC'[seen[k] - 1]}` : en.name, hp: kinds.length === 1 ? obj.hp : en.hp, maxHp: en.hp, cd: 0, intent: null };
   });
 }
+// Gegnerwerte mit eingetretenen Bossphasen: phases[i].set überschreibt Felder (atk, def, init, heavy, onHit, ai, resist)
+export function enemyOf(data, e) {
+  const en = data.enemies[e.kind];
+  if (!e.phase || !en.phases) return en;
+  let m = en;
+  for (let i = 0; i < e.phase && i < en.phases.length; i++) m = { ...m, ...(en.phases[i].set || {}) };
+  return m;
+}
+// Bossphasen: unter einer LP-Schwelle (Prozent der Höchst-LP) wechselt der Gegner einmalig in die nächste Phase
+function checkPhases(state, data, msgs) {
+  const c = state.combat;
+  for (const e of c.enemies) {
+    const en = data.enemies[e.kind];
+    if (!en.phases || e.hp <= 0) continue;
+    while ((e.phase || 0) < en.phases.length && e.hp * 100 <= en.phases[e.phase || 0].below * e.maxHp) {
+      const ph = en.phases[e.phase || 0];
+      e.phase = (e.phase || 0) + 1;
+      e.intent = null; e.cd = 0; // neues Angriffsmuster beginnt von vorn
+      msgs.push(`${e.name} – Phase ${e.phase + 1}: ${ph.name}! ${ph.msg || ''}`.trim());
+      noteBestiary(state, e.kind, 'phase', e.phase);
+    }
+  }
+}
+
+// Bestiarium: state.bestiary[art] = { seen, won, phase, heavy, onHit, resist: {element: true} } – fehlende Felder = unbekannt
+function noteBestiary(state, kind, what, val) {
+  const b = (state.bestiary = state.bestiary || {});
+  const r = (b[kind] = b[kind] || { seen: 0, won: 0 });
+  if (what === 'seen') r.seen++;
+  else if (what === 'won') r.won++;
+  else if (what === 'phase') r.phase = Math.max(r.phase || 0, val);
+  else if (what === 'resist') { r.resist = r.resist || {}; r.resist[val] = true; }
+  else r[what] = true;
+}
+
 export function startCombat(state, data, enemyObj) {
   state.combat = {
     enemies: group(data, enemyObj),
     order: [], pos: 0, round: 1, defending: {}, status: {}, over: null
   };
+  for (const e of state.combat.enemies) noteBestiary(state, e.kind, 'seen');
   buildOrder(state, data);
   normalizeTurn(state, data);
   return state.combat;
@@ -537,6 +573,7 @@ export function skipStunned(state, data) {
   delete st.stun;
   const msgs = [`${actorName(state, a.side, a.idx)} ist betäubt und setzt aus.`];
   if (endOfTurn(state, data, a.side, a.idx, msgs)) { finishVictory(state, data, msgs); return { msgs, sfx: 'miss', over: 'victory' }; }
+  checkPhases(state, data, msgs);
   advance(state, data);
   return { msgs, sfx: 'miss', over: null };
 }
@@ -552,6 +589,7 @@ function finishVictory(state, data, msgs) {
   for (const e of c.enemies) {
     gold += data.enemies[e.kind].gold;
     xp += data.enemies[e.kind].xp || 0;
+    noteBestiary(state, e.kind, 'won');
     const obj = state.objs.find((o) => o.id === e.objId);
     if (obj) { obj.dead = true; obj.hp = 0; }
   }
@@ -580,7 +618,7 @@ export function heroAction(state, data, act) {
     if (ti == null || !c.enemies[ti] || c.enemies[ti].hp <= 0) ti = c.enemies.findIndex((e) => e.hp > 0);
     const e = c.enemies[ti];
     const tr = {};
-    const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h)), data.enemies[e.kind].def, { backMelee: h.row === 'back' && !h.ranged, trace: tr });
+    const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h)), enemyOf(data, e).def, { backMelee: h.row === 'back' && !h.ranged, trace: tr });
     if (d === 0) { msgs.push(`${h.name} verfehlt ${e.name}.`); sfx = 'miss'; }
     else {
       e.hp = Math.max(0, e.hp - d);
@@ -627,8 +665,9 @@ export function heroAction(state, data, act) {
       for (const ti of list) {
         const e = c.enemies[ti];
         const tr = {};
-        const el = ab.element ? ((data.enemies[e.kind].resist || {})[ab.element] || 0) : 0;
-        const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h)), data.enemies[e.kind].def, { backMelee: h.row === 'back' && !h.ranged, mult: ab.mult, sure: !!ab.sure, elem: el, elemName: ab.element && data.elements[ab.element].name, trace: tr });
+        const el = ab.element ? ((enemyOf(data, e).resist || {})[ab.element] || 0) : 0;
+        if (el !== 0) noteBestiary(state, e.kind, 'resist', ab.element);
+        const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h)), enemyOf(data, e).def, { backMelee: h.row === 'back' && !h.ranged, mult: ab.mult, sure: !!ab.sure, elem: el, elemName: ab.element && data.elements[ab.element].name, trace: tr });
         if (d === 0) { msgs.push(`${h.name} setzt ${ab.name} ein, verfehlt aber ${e.name}${list.length === 1 ? ` (−${ab.cost} ${rn})` : ''}.`); continue; }
         hit = true;
         e.hp = Math.max(0, e.hp - d);
@@ -646,7 +685,7 @@ export function heroAction(state, data, act) {
     let hit = false;
     for (const e of live) {
       const tr = {};
-      const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h)), data.enemies[e.kind].def, { backMelee: h.row === 'back' && !h.ranged, mult: SWEEP_MULT, trace: tr });
+      const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h)), enemyOf(data, e).def, { backMelee: h.row === 'back' && !h.ranged, mult: SWEEP_MULT, trace: tr });
       if (d === 0) { msgs.push(`${h.name} verfehlt ${e.name}.`); continue; }
       hit = true; e.hp = Math.max(0, e.hp - d);
       msgs.push(`${h.name} trifft ${e.name} für ${d} Schaden.${SEP}${explain(tr)}`);
@@ -672,6 +711,7 @@ export function heroAction(state, data, act) {
     const gold = finishVictory(state, data, msgs);
     return { msgs, sfx, over: 'victory', gold };
   }
+  checkPhases(state, data, msgs);
   endOfTurn(state, data, 'h', a.idx, msgs);
   advance(state, data);
   return { msgs, sfx, over };
@@ -694,7 +734,7 @@ export function enemyStep(state, data, opts = {}) {
   const a = currentActor(state);
   if (!a || a.side !== 'e') return { error: 'not-enemy-turn' };
   const e = c.enemies[a.idx];
-  const en = data.enemies[e.kind];
+  const en = enemyOf(data, e);
   const msgs = [];
   const ti = pickTarget(state, en);
   const t = state.heroes[ti];
@@ -703,7 +743,7 @@ export function enemyStep(state, data, opts = {}) {
   const d = calcDamage(state, effAtk(state, 'e', a.idx, en.atk), heroDef(data, t), { defending: !!c.defending[ti], mult: heavy ? hv.mult : 0, trace: tr });
   let sfx = 'miss';
   const why = `${t.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}${c.defending[ti] ? ', in Deckung: halber Schaden' : ''}`;
-  if (heavy) msgs.push(`${e.name} setzt ${hv.name} ein!`);
+  if (heavy) { msgs.push(`${e.name} setzt ${hv.name} ein!`); noteBestiary(state, e.kind, 'heavy'); }
   if (d === 0) msgs.push(`${e.name} greift ${t.name} an (${why}) und verfehlt.`);
   else if (opts.god) { msgs.push(`${e.name} trifft ${t.name}, doch Debug-Unverwundbarkeit hält.`); sfx = 'hurt'; }
   else {
@@ -711,7 +751,7 @@ export function enemyStep(state, data, opts = {}) {
     msgs.push(`${e.name} trifft ${t.name} für ${d} Schaden (${why}).${SEP}${explain(tr)}`);
     sfx = 'hurt';
     if (t.hp === 0) { msgs.push(`${t.name} sinkt bewusstlos zu Boden.`); delete c.status['h' + ti]; }
-    else addStatus(state, data, 'h', ti, en.onHit, msgs);
+    else { addStatus(state, data, 'h', ti, en.onHit, msgs); if (en.onHit) noteBestiary(state, e.kind, 'onHit'); }
   }
   if (hv) { // angekündigter Schlag: jeder dritte Zug, eine Runde vorher wird er angesagt
     if (heavy) { e.intent = null; e.cd = 0; }
@@ -723,6 +763,7 @@ export function enemyStep(state, data, opts = {}) {
     return { msgs, sfx, over: 'defeat' };
   }
   if (endOfTurn(state, data, 'e', a.idx, msgs)) { const gold = finishVictory(state, data, msgs); return { msgs, sfx, over: 'victory', gold }; }
+  checkPhases(state, data, msgs);
   advance(state, data);
   return { msgs, sfx, over: null };
 }
@@ -841,6 +882,10 @@ export function validateState(state, data) {
   if (!Array.isArray(state.objs)) err.push('Objekte ungültig');
   if (!Array.isArray(state.seen) || state.seen.length !== w * h) err.push('Karte ungültig');
   if (!Number.isInteger(state.rng)) err.push('Zufallszustand ungültig');
+  if (state.bestiary != null) {
+    if (typeof state.bestiary !== 'object' || Array.isArray(state.bestiary)) err.push('Bestiarium ungültig');
+    else for (const [k, v] of Object.entries(state.bestiary)) if (!data.enemies[k] || !v || !Number.isInteger(v.seen) || !Number.isInteger(v.won)) err.push(`Bestiarium: ${k} ungültig`);
+  }
   if (!state.areas || typeof state.areas !== 'object' || Array.isArray(state.areas)) err.push('Gebiete ungültig');
   else for (const [id, a] of Object.entries(state.areas)) {
     const l2 = data.levels[id];
@@ -879,7 +924,7 @@ export function balanceMarkdown(data) {
   for (let lv = 2; lv <= mx; lv++) L.push(`| ${lv} | ${xp[lv - 2]} | ${xp[lv - 2] - (lv > 2 ? xp[lv - 3] : 0)} |`);
   L.push('', 'Gegner (EP: jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die volle Summe):', '', '| Gegner | LP | Angriff | Verteidigung | Initiative | EP | Gold | Verhalten |', '|---|---|---|---|---|---|---|---|');
   const aiName = { weakest: 'zielt auf den schwächsten Helden', backline: 'zielt auf die Hinterreihe' };
-  for (const e of Object.values(data.enemies)) L.push(`| ${e.name} | ${e.hp} | ${e.atk} | ${e.def} | ${e.init} | ${e.xp || 0} | ${e.gold || 0} | ${[aiName[e.ai], e.heavy && `${e.heavy.name} jeden ${e.heavy.every}. Zug, angekündigt (${e.heavy.mult} %)`, e.onHit && `Treffer: ${data.statuses[e.onHit.status].name} ${e.onHit.chance} %`].filter(Boolean).join('; ') || '–'} |`);
+  for (const e of Object.values(data.enemies)) L.push(`| ${e.name} | ${e.hp} | ${e.atk} | ${e.def} | ${e.init} | ${e.xp || 0} | ${e.gold || 0} | ${[aiName[e.ai], e.heavy && `${e.heavy.name} jeden ${e.heavy.every}. Zug, angekündigt (${e.heavy.mult} %)`, e.onHit && `Treffer: ${data.statuses[e.onHit.status].name} ${e.onHit.chance} %`, e.phases && `Boss, Phasen: ${e.phases.map((p) => `${p.name} ab ≤ ${p.below} % LP${p.set && p.set.atk ? ` (Angriff ${p.set.atk})` : ''}`).join(', ')}`].filter(Boolean).join('; ') || '–'} |`);
   L.push('', '## Rassen (Modifikatoren)', '', '| Rasse | LP | Angriff | Verteidigung | Initiative |', '|---|---|---|---|---|');
   for (const r of Object.values(data.races)) L.push(`| ${r.name} | ${sg(r.mods.maxHp)} | ${sg(r.mods.atk)} | ${sg(r.mods.def)} | ${sg(r.mods.init)} |`);
   L.push('', '## Berufe (Basis auf Stufe 1, Wachstum in Zehnteln je Stufe)', '', '| Beruf | Reihe | Fernkampf | LP | Angriff | Verteidigung | Initiative | Wachstum LP/Ang/Vert/Init |', '|---|---|---|---|---|---|---|---|');

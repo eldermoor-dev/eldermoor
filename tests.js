@@ -834,6 +834,81 @@ export async function runTests(data, env = {}) {
     assert(r.ok, 'Untere Gruft nicht lösbar: ' + JSON.stringify(r));
   });
 
+  // ---- Phase 3, Schritt 2: Bossphasen und Bestiarium ----
+  await test('Bossphasen (Phase 3): Daten gültig, Phase tritt einmalig bei der Schwelle ein, Werte und Angriffsmuster wechseln', () => {
+    for (const [id, en] of Object.entries(data.enemies)) if (en.phases) {
+      let last = 101;
+      for (const p of en.phases) { assert(p.name && p.below > 0 && p.below < last, `${id}: Schwellen müssen fallen`); last = p.below; assert(p.set && typeof p.set === 'object', `${id}: set fehlt`); }
+    }
+    const s = fresh(21), boss = data.enemies.schrat;
+    assert(boss.phases && boss.phases.length >= 2, 'Moorschrat hat Phasen');
+    L.startCombat(s, data, s.objs.find((o) => o.id === 'en1'));
+    const e = s.combat.enemies[0];
+    eq(L.enemyOf(data, e).atk, boss.atk, 'Phase 1: Grundwerte');
+    // knapp über der Schwelle: keine Phase
+    e.hp = Math.floor(boss.hp * boss.phases[0].below / 100) + 1;
+    const m0 = []; let guard = 0;
+    while (s.combat && !s.combat.over && guard++ < 40) { const a = L.currentActor(s); if (a.side === 'h') { const r = L.heroAction(s, data, { type: 'defend' }); m0.push(...r.msgs); } else { const r = L.enemyStep(s, data, {}); m0.push(...r.msgs); } if (e.phase) break; if (s.heroes.every((h) => h.hp <= 0)) break; }
+    assert(!e.phase, 'Phase zu früh');
+    // Schwelle unterschreiten durch einen Treffer
+    guard = 0; e.hp = Math.floor(boss.hp * boss.phases[0].below / 100) + 1;
+    while (s.combat && !s.combat.over && guard++ < 40) { const a = L.currentActor(s); if (a.side === 'h') break; L.enemyStep(s, data, {}); }
+    e.hp = Math.floor(boss.hp * boss.phases[0].below / 100); // jetzt exakt auf der Schwelle
+    const msgs = [];
+    guard = 0;
+    while (s.combat && !s.combat.over && guard++ < 40) { const a = L.currentActor(s); const r = a.side === 'h' ? L.heroAction(s, data, { type: 'defend' }) : L.enemyStep(s, data, {}); msgs.push(...r.msgs); if (e.phase) break; }
+    eq(e.phase, 1, 'Phase 2 erreicht');
+    assert(msgs.some((m) => /Phase 2/.test(m) && m.includes(boss.phases[0].name)), 'Ankündigung im Kampflog');
+    eq(L.enemyOf(data, e).atk, boss.phases[0].set.atk, 'Angriff erhöht');
+    eq(L.enemyOf(data, e).heavy.every, boss.phases[0].set.heavy.every, 'Angriffsmuster gewechselt');
+    // keine zweite Auslösung derselben Phase
+    const m2 = []; guard = 0;
+    while (s.combat && !s.combat.over && guard++ < 6 && e.hp > 0) { const a = L.currentActor(s); const r = a.side === 'h' ? L.heroAction(s, data, { type: 'defend' }) : L.enemyStep(s, data, {}); m2.push(...r.msgs); }
+    assert(!m2.some((m) => /Phase 2/.test(m)), 'Phase 2 zweimal angekündigt');
+    // Gegner ohne Phasen bleiben unverändert
+    eq(L.enemyOf(data, { kind: 'wolf', phase: 3 }), data.enemies.wolf, 'Wolf ohne Phasen');
+  });
+
+  await test('Bossphasen (Phase 3): großer Schaden überspringt keine Phase (beide Schwellen werden gemeldet)', () => {
+    const s = fresh(22), boss = data.enemies.schrat;
+    L.startCombat(s, data, s.objs.find((o) => o.id === 'en1'));
+    const e = s.combat.enemies[0];
+    e.hp = 1; // weit unter beiden Schwellen
+    let guard = 0; const msgs = [];
+    while (s.combat && !s.combat.over && guard++ < 10) { const a = L.currentActor(s); if (a.side === 'h') { const r = L.heroAction(s, data, { type: 'defend' }); msgs.push(...r.msgs); } else { const r = L.enemyStep(s, data, {}); msgs.push(...r.msgs); } if (e.phase === boss.phases.length) break; }
+    eq(e.phase, boss.phases.length, 'alle Phasen durchlaufen');
+    assert(msgs.filter((m) => /– Phase \d/.test(m)).length === boss.phases.length, 'jede Phase einmal gemeldet');
+  });
+
+  await test('Bestiarium (Phase 3): Begegnung, Sieg, aufgedeckte Elemente und Besonderheiten werden gemerkt und gespeichert', () => {
+    const s = fresh(23);
+    assert(!s.bestiary || Object.keys(s.bestiary).length === 0, 'zu Beginn leer');
+    s.heroes.forEach((h) => { h.level = 3; h.mp = h.maxMp = 40; });
+    L.startCombat(s, data, s.objs.find((o) => o.id === 'en2')); // zwei Wölfe
+    eq(s.bestiary.wolf.seen, 2, 'zwei Wölfe begegnet');
+    // Frostsplitter gegen Wolf deckt Resistenz auf
+    let guard = 0;
+    while (s.combat && guard++ < 60 && !(s.bestiary.wolf.resist && s.bestiary.wolf.resist.ice)) {
+      const a = L.currentActor(s);
+      if (a.side === 'h') { const h = s.heroes[a.idx]; const r = h.cls === 'mage' ? L.heroAction(s, data, { type: 'spell', spell: 'frost', target: s.combat.enemies.findIndex((x) => x.hp > 0) }) : L.heroAction(s, data, { type: 'defend' }); if (r.error) L.heroAction(s, data, { type: 'defend' }); }
+      else L.enemyStep(s, data, {});
+    }
+    assert(s.bestiary.wolf.resist && s.bestiary.wolf.resist.ice, 'Eis-Resistenz aufgedeckt');
+    assert(!s.bestiary.wolf.resist.fire, 'Feuer nicht aufgedeckt');
+    // Kampf zu Ende spielen
+    guard = 0; while (s.combat && guard++ < 200) { const a = L.currentActor(s); if (a.side === 'h') L.heroAction(s, data, { type: 'attack' }); else L.enemyStep(s, data, {}); if (s.heroes.every((h) => h.hp <= 0)) break; }
+    if (!s.combat) assert(s.bestiary.wolf.won === 2, 'zwei Wölfe besiegt');
+    const back = L.deserialize(JSON.parse(JSON.stringify(L.serialize(s))), data);
+    eq(back.bestiary, s.bestiary, 'Bestiarium überlebt Speichern/Laden');
+    // alter Stand ohne Bestiarium lädt
+    const old = JSON.parse(JSON.stringify(L.serialize(fresh(24)))); delete old.state.bestiary;
+    assert(L.deserialize(old, data), 'Stand ohne Bestiarium lädt');
+    // ungültiges Bestiarium wird abgelehnt
+    const bad = JSON.parse(JSON.stringify(L.serialize(s))); bad.state.bestiary = { drache: { seen: 1, won: 0 } };
+    let threw = false; try { L.deserialize(bad, data); } catch (e) { threw = /Bestiarium/.test(e.message); }
+    assert(threw, 'unbekannte Art nicht abgelehnt');
+  });
+
   await test('Migration v1→v2: beschädigte v1-Stände werden mit klarer Meldung abgelehnt', () => {
     const fails = (mut, re) => {
       const o = JSON.parse(V1_SAVE); mut(o);

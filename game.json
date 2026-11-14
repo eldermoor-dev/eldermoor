@@ -412,7 +412,36 @@
       "resist": {
         "fire": 50,
         "ice": -25
-      }
+      },
+      "boss": true,
+      "phases": [
+        {
+          "below": 60,
+          "name": "Wutrausch",
+          "msg": "Das Moor bebt, die Wurzeln peitschen.",
+          "set": {
+            "atk": 15,
+            "heavy": {
+              "name": "Schweren Schlag",
+              "every": 2,
+              "mult": 170
+            }
+          }
+        },
+        {
+          "below": 25,
+          "name": "Letzte Kraft",
+          "msg": "Der Schrat klammert sich ans Leben.",
+          "set": {
+            "atk": 17,
+            "heavy": {
+              "name": "Wurzelhieb",
+              "every": 2,
+              "mult": 200
+            }
+          }
+        }
+      ]
     },
     "wolf": {
       "name": "Sumpfwolf",
