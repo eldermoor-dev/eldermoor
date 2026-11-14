@@ -857,6 +857,7 @@ export function heroAction(state, data, act) {
     regen(h, msgs);
   } else if (act.type === 'item') {
     const iid = act.item || 'potion', it = data.items[iid];
+    if (it && !it.throw && act.hero !== a.idx) return { error: 'bad-target' }; // Gegenstände nutzt nur der Held, der gerade dran ist, an sich selbst
     if (it && it.cure) { // Gegengift: nimmt einen Status von einem Helden
       const t = state.heroes[act.hero], st = statusOf(state, 'h', act.hero);
       if (!(state.inv[iid] > 0) || !t || t.hp <= 0 || !st[it.cure]) return { error: 'bad-target' };

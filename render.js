@@ -15,12 +15,12 @@ const P = (mat, shade) => M[mat] * 8 + Math.max(0, Math.min(7, Math.round(shade)
 export const WALL_STONE = 1, WALL_MOSS = 2, WALL_DOOR = 3, WALL_DOOR_LOCKED = 4, WALL_TORCH = 5, WALL_ROCK = 6, WALL_LICHEN = 7, WALL_GATE = 8;
 
 // ---------- Palette: 8 Materialien × 8 Helligkeitsstufen = 64 feste Farben ----------
-export function buildPalette(def) {
+export function buildPalette(def, lift = 1) {
   const pal = new Uint32Array(64);
   MATS.forEach((m, mi) => {
     const c = def[m] || [128, 128, 128];
     for (let s = 0; s < 8; s++) {
-      const f = 0.08 + 0.92 * Math.pow(s / 7, 1.15);
+      const f = 0.08 + 0.92 * Math.pow(s / 7, 1.15 / lift);
       const r = Math.round(c[0] * f + 6 * (1 - f));
       const g = Math.round(c[1] * f + 8 * (1 - f));
       const b = Math.round(c[2] * f + 16 * (1 - f));
@@ -394,8 +394,6 @@ function genSign(seed, title) {
         for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) if (g[r][c] === '1') set(x0 + ci * 6 + c, y0 + r, ink);
       });
     });
-    const sy = lines.length > 1 ? 31 : 24;
-    for (let i = 0; i < (lines.length > 1 ? 2 : 3); i++) { const w2 = 30 - i * 5 + Math.floor(hash(i, 9, seed + 4) * 6); for (let x = 10; x < 10 + w2; x++) if (hash(x, i, seed + 6) > 0.15) set(x, sy + i * 4, P('wood', 1.2)); }
     return t;
   }
   // ohne Titel: dunkle Wortblöcke
@@ -672,15 +670,36 @@ function upsample2(t, seed) {
   }
   return { w: o, h: o, data: out, noWrap: t.noWrap };
 }
+// Glättet ein 64er-Sprite auf S-fache Auflösung: Silhouette über bilineare Deckkraft (runde Kanten statt Treppen),
+// Helligkeit je Material bilinear gemischt (weiche Verläufe statt Blöcken). Nur für den Modus „Scharf“.
+function smoothSprite(t, S = 4) {
+  const n = t.w, o = n * S, src = t.data, out = new Uint8Array(o * o).fill(255);
+  for (let oy = 0; oy < o; oy++) for (let ox = 0; ox < o; ox++) {
+    const u = (ox + 0.5) / S - 0.5, v = (oy + 0.5) / S - 0.5, x0 = Math.floor(u), y0 = Math.floor(v), fx = u - x0, fy = v - y0;
+    let alpha = 0, best = -1, bw = 0;
+    const px = [], ws = [];
+    for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) {
+      const xx = Math.max(0, Math.min(n - 1, x0 + i)), yy = Math.max(0, Math.min(n - 1, y0 + j)), p = src[yy * n + xx], w = (i ? fx : 1 - fx) * (j ? fy : 1 - fy);
+      px.push(p); ws.push(w);
+      if (p !== 255) { alpha += w; if (w > bw) { bw = w; best = p; } }
+    }
+    if (alpha < 0.5 || best < 0) continue;
+    const mat = best >> 3; let sh = 0, wt = 0;
+    for (let q = 0; q < 4; q++) if (px[q] !== 255 && (px[q] >> 3) === mat) { sh += (px[q] & 7) * ws[q]; wt += ws[q]; }
+    out[oy * o + ox] = (mat << 3) | Math.max(0, Math.min(7, Math.round(sh / wt)));
+  }
+  return { w: o, h: o, data: out, noWrap: true };
+}
 export function makeTextures(detail = 1) {
   const up = (t, s) => (detail > 1 ? upsample2(t, s) : t);
   const spr = (t, s) => { t.noWrap = true; return up(t, s); };
+  const sm = (t) => { t.noWrap = true; return detail > 1 ? smoothSprite(t, 4) : t; }; // Monster und Händler: im Modus Scharf geglättet
   const n = TEX * (detail > 1 ? 4 : 1), nf = TEX * (detail > 1 ? 2 : 1); // Wände 256, Boden/Decke 128: Eigenauflösung statt hochskaliert (Potenzen von 2 wegen Maskierung)
   return {
     wall: { [WALL_STONE]: genStone(11, n), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
     ceil: genCeil(53, nf),
-    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: genSchrat(71), portal: spr(genPortal(81), 109), merchant: spr(genMerchant(91), 110), wisp: genWisp(121), skeleton: genSkeleton(171), guard: genGuard(181, false), captain: genGuard(191, true), kaefer: genKaefer(201), schratBoss: genSchratBoss(221), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: genSchrat(71), portal: spr(genPortal(81), 109), merchant: sm(genMerchant(91)), wisp: sm(genWisp(121)), skeleton: sm(genSkeleton(171)), guard: sm(genGuard(181, false)), captain: sm(genGuard(191, true)), kaefer: sm(genKaefer(201)), schratBoss: genSchratBoss(221), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
@@ -692,16 +711,19 @@ export class Raycaster {
     this.tex = textures;
     this.quality = 'medium'; // low | medium | high
     this.flicker = 0.35; // Fackelflackern: 0 = aus, 1 = voll
+    this.bright = 1; // Helligkeit: 1 = original dunkel, >1 hellere Umgebung (weniger Nebel, Mindesthelligkeit)
     this.planeLen = 0.8;
     this.focal = (W / 2) / this.planeLen;
     this.setPalette(paletteDef);
   }
   setPalette(def) {
-    this.pal = buildPalette(def);
+    if (def) this.palDef = def; else def = this.palDef;
+    const bt = this.bright || 1, minS = bt >= 1.8 ? 2 : bt >= 1.35 ? 1 : 0;
+    this.pal = buildPalette(def, bt);
     this.shadeTbl = [];
     for (let d = 0; d < 8; d++) {
       const t = new Uint32Array(64);
-      for (let i = 0; i < 64; i++) t[i] = (i >> 3) === M.glow && d < 7 ? this.pal[(i & ~7) | Math.max(2, (i & 7) - (d >> 1))] : this.pal[(i & ~7) | Math.max(0, (i & 7) - d)];
+      for (let i = 0; i < 64; i++) t[i] = (i >> 3) === M.glow && d < 7 ? this.pal[(i & ~7) | Math.max(2, (i & 7) - (d >> 1))] : this.pal[(i & ~7) | Math.max(Math.min(i & 7, minS), (i & 7) - d)];
       this.shadeTbl.push(t);
     }
   }
@@ -716,7 +738,7 @@ export class Raycaster {
     const t = view.time || 0;
     const amp = q === 'low' ? 0 : this.flicker;
     const fl = 1 + amp * (0.07 * Math.sin(t * 11.3) + 0.05 * Math.sin(t * 5.1 + 1.3) + 0.03 * Math.sin(t * 23.7));
-    const fogK = 0.85;
+    const fogK = 0.85 / (this.bright || 1);
     const dropFor = (dist) => Math.min(7, Math.floor(dist * fogK / fl));
 
     // Decke und Boden
@@ -843,7 +865,7 @@ const kindOf = (o, i) => (Array.isArray(o.kinds) ? o.kinds[Math.min(i, o.kinds.l
 function signTex(tex, o) { // ein Schild-Sprite je Titel, einmal erzeugt
   const key = o.title || '';
   const c = tex.signs || (tex.signs = {});
-  return c[key] || (c[key] = key ? genSign(131, key) : tex.sprites.sign);
+  return c[key] || (c[key] = key ? (() => { const t = genSign(131, key); t.noWrap = true; return smoothSprite(t, 4); })() : tex.sprites.sign);
 }
 export function buildSprites(objs, tex, time, angle = 0, alive = null) { // alive: {objId: Arten (Liste) oder Anzahl der lebenden Gegner} im Kampf
   const out = [];

@@ -9,14 +9,14 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setReso
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.15.5';
+const VERSION = '0.15.12';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 // settingsV 2 (v0.2.0): Schrittgeräusche standardmäßig aus (Nutzerentscheidung 13.11.2026)
 const SETTINGS_V = 2;
-const DEFAULTS = { volume: 0.7, muted: false, quality: 'medium', vibration: true, fontScale: 1, colorblind: false, debug: false, flicker: 0.35, steps: false, ambient: true, sharp: 'scharf', settingsV: SETTINGS_V };
+const DEFAULTS = { volume: 0.7, muted: false, quality: 'medium', vibration: true, fontScale: 1, colorblind: false, debug: false, flicker: 0.35, bright: 1.35, steps: false, ambient: true, sharp: 'scharf', settingsV: SETTINGS_V };
 const REPEAT = new Set(['fwd', 'back', 'sl', 'sr', 'tl', 'tr']);
 const SLOT_KEYS = ['auto', 'slot1', 'slot2', 'slot3'];
 const SLOT_NAMES = { auto: 'Autosave', slot1: 'Slot 1', slot2: 'Slot 2', slot3: 'Slot 3' };
@@ -110,6 +110,7 @@ function applySettings() {
   if (S.rc) { buildRenderer(); }
   S.rc.quality = s.quality;
   S.rc.flicker = s.flicker;
+  if (S.rc.bright !== s.bright) { S.rc.bright = s.bright; S.rc.setPalette(S.data.palettes[S.lvl.palette]); }
   document.documentElement.style.setProperty('--fs', String(s.fontScale));
   document.body.classList.toggle('cb', !!s.colorblind);
   $('#fps').hidden = !s.debug;
@@ -131,6 +132,7 @@ function buildRenderer() {
   S.tex = makeTextures(res);
   S.rc = new Raycaster(S.tex, S.data.palettes[S.lvl.palette]);
   if (old) { S.rc.quality = old.quality; S.rc.flicker = old.flicker; }
+  S.rc.bright = S.settings.bright || 1; S.rc.setPalette(S.data.palettes[S.lvl.palette]);
   const cv = $('#view'); cv.width = W; cv.height = H;
   S.img = new ImageData(new Uint8ClampedArray(S.rc.buf.buffer), W, H);
   layout();
@@ -651,8 +653,8 @@ function renderCombat() {
   if (S.itemMode) {
     const inv = S.game.inv, rows = [];
     const row = (n, mk) => { const bs = mk(); if (n > 0 && bs.some((x) => x.ok)) rows.push(bs.map((x) => `<button class="ab" data-c="${x.c}" ${x.ok ? '' : 'disabled'}>${x.t}</button>`).join('')); }; // nur Zeilen zeigen, in denen etwas geht
-    row(inv.potion, () => S.game.heroes.map((h, i) => ({ c: `heal:${i}`, ok: h.hp > 0 && h.hp < h.maxHp, t: `Heiltrank (${inv.potion}) → ${esc(h.name)}` })));
-    row(inv.gegengift, () => S.game.heroes.map((h, i) => ({ c: `cure:${i}`, ok: h.hp > 0 && !!statusOf(S.game, 'h', i).poison, t: `Gegengift (${inv.gegengift}) → ${esc(h.name)}` })));
+    row(inv.potion, () => [{ c: `heal:${a.idx}`, ok: ch.hp > 0 && ch.hp < ch.maxHp, t: `Heiltrank (${inv.potion}) trinken` }]);
+    row(inv.gegengift, () => [{ c: `cure:${a.idx}`, ok: ch.hp > 0 && !!statusOf(S.game, 'h', a.idx).poison, t: `Gegengift (${inv.gegengift}) nehmen` }]);
     row(inv.oelflasche, () => S.game.combat.enemies.map((e, i) => ({ c: `throw:${i}`, ok: e.hp > 0, t: `Ölflasche (${inv.oelflasche}) → ${esc(e.name)}` })));
     html += rows.map((r) => `<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">${r}</div>`).join('');
   }
@@ -719,11 +721,15 @@ async function copyErrorLog() {
     toast(ok ? 'Fehlerlog kopiert.' : 'Kopieren nicht möglich.');
   } catch { toast('Kopieren nicht möglich.'); }
 }
+function speechHtml(t) { // Sprechender Charakter: Name + große, mittige Rede
+  const m = /^([^:]{1,24}):\s*([\s\S]*)$/.exec(t || '');
+  return `<div class="speech">${m ? `<b>${esc(m[1])}</b>` : ''}<p>„${esc(m ? m[2] : t)}“</p></div>`;
+}
 function openShop(shopId, greet) {
   const g = S.game, d = S.data, sh = d.shops[shopId];
   S.shopId = shopId;
   const tab = S.shopTab || 'buy';
-  let html = `<h2>${esc(sh.name)}</h2>${greet ? `<p class="muted">${esc(sh.greeting)}</p>` : ''}${greet && S.shopTalk ? `<p>${esc(S.shopTalk)}</p>` : ''}<p>Gold: <b>${g.gold}</b></p>
+  let html = `<h2>${esc(sh.name)}</h2>${greet && S.shopTalk ? speechHtml(S.shopTalk) : ''}${greet ? `<p class="muted">${esc(sh.greeting)}</p>` : ''}<p>Gold: <b>${g.gold}</b></p>
     <div class="acts" style="margin-top:0"><button class="mb${tab === 'buy' ? ' primary' : ''}" data-m="shopbuy">Kaufen</button><button class="mb${tab === 'sell' ? ' primary' : ''}" data-m="shopsellTab">Verkaufen</button></div>`;
   if (tab === 'buy') {
     html += shopStock(d, shopId).map((e) => {
@@ -836,8 +842,8 @@ function openCharacter() {
 function openMap() {
   const w = S.lvl.map[0].length, h = S.lvl.map.length;
   const cs = Math.max(8, Math.min(Math.floor(560 / w), Math.floor(230 / h)));
-  openModal(`<h2>Karte – ${esc(S.lvl.name)}</h2><canvas id="mapcv" width="${cs * w}" height="${cs * h}"></canvas>
-  <p class="muted">Blickrichtung: ${DIR_NAMES[S.game.player.dir]}. Auf eine erkundete Zelle tippen setzt oder löscht eine Notiz (◆).</p><div class="acts">${closeBtn}</div>`, 'map');
+  openModal(`<h2 style="margin:0 0 4px">Karte – ${esc(S.lvl.name)}</h2><canvas id="mapcv" width="${cs * w}" height="${cs * h}"></canvas>
+  <div class="acts mapbar"><span class="muted">Blick: ${DIR_NAMES[S.game.player.dir]} · Zelle tippen = Notiz ◆</span>${closeBtn}</div>`, 'map');
   const cv = $('#mapcv');
   cv.dataset.cs = cs;
   drawMap();
@@ -868,7 +874,13 @@ function drawMap() {
   for (const o of g.objs) {
     if (!seen(o.x, o.y)) continue;
     const cx = o.x * cs + cs / 2, cy = o.y * cs + cs / 2;
-    if (o.type === 'door') { c.fillStyle = o.open ? '#6b5a3a' : (o.locked ? '#b8472f' : '#a0703a'); c.fillRect(o.x * cs + 2, o.y * cs + 2, cs - 4, cs - 4); }
+    if (o.type === 'door') { // Tür als Balken quer zum Gang (Wände links/rechts → waagerecht), Farbe: zu / verschlossen / offen
+      const horiz = cellChar(lvl, o.x - 1, o.y) !== '.' && cellChar(lvl, o.x + 1, o.y) !== '.', t = Math.max(3, Math.round(cs * 0.3)), x0 = o.x * cs, y0 = o.y * cs;
+      const bar = (a, b, l, d) => horiz ? c.fillRect(x0 + a, cy - t / 2 + b, l, t + d) : c.fillRect(cx - t / 2 + b, y0 + a, t + d, l);
+      c.fillStyle = o.open ? '#9fb86a' : (o.locked ? '#d9503a' : '#e8a24a');
+      if (o.open) { bar(0, 0, cs * 0.28, 0); bar(cs * 0.72, 0, cs * 0.28, 0); } // offen: nur zwei Stummel, Durchgang frei
+      else { bar(0, 0, cs, 0); c.fillStyle = '#1a120a'; c.beginPath(); c.arc(cx, cy, Math.max(1.5, cs * 0.1), 0, 7); c.fill(); } // Griff/Schloss
+    }
     else if (o.type === 'chest') { c.fillStyle = o.open ? '#7a6a3a' : '#e0b040'; c.fillRect(cx - cs * 0.25, cy - cs * 0.2, cs * 0.5, cs * 0.4); }
     else if (o.type === 'stairs') { c.fillStyle = '#7fd4ff'; c.beginPath(); c.moveTo(cx - cs * 0.3, cy - cs * 0.25); c.lineTo(cx + cs * 0.3, cy - cs * 0.25); c.lineTo(cx, cy + cs * 0.3); c.fill(); }
     else if (o.type === 'exit') { c.strokeStyle = '#7fd4ff'; c.lineWidth = 2; c.beginPath(); c.arc(cx, cy, cs * 0.3, 0, 7); c.stroke(); }
@@ -899,6 +911,7 @@ function openSettings() {
   <div class="row"><label>Hintergrundgeräusche (Wind, Tropfen, Fackel)</label>${chk('ambient')}</div>
   <div class="row"><label>Grafikqualität</label>${sel('quality', [['low', 'Niedrig'], ['medium', 'Mittel'], ['high', 'Hoch']])}</div>
   <div class="row"><label>Bildschärfe</label>${sel('sharp', [['scharf', 'Scharf (960×540)'], ['retro', 'Retro (480×270)']])}</div>
+  <div class="row"><label>Helligkeit der Umgebung</label>${sel('bright', [[1, 'Original (dunkel)'], [1.35, 'Hell'], [1.8, 'Sehr hell']])}</div>
   <div class="row"><label>Fackelflackern</label>${sel('flicker', [[0, 'Aus'], [0.35, 'Schwach'], [1, 'Normal']])}</div>
   <div class="row"><label>Vibration</label>${chk('vibration')}</div>
   <div class="row"><label>Schriftgröße</label>${sel('fontScale', [[0.9, 'Klein'], [1, 'Normal'], [1.15, 'Groß'], [1.3, 'Sehr groß']])}</div>
@@ -914,7 +927,7 @@ function onModalInput(e) {
   const el = e.target.closest('[data-s]');
   if (!el) return;
   const k = el.dataset.s;
-  const v = el.type === 'checkbox' ? el.checked : (el.type === 'range' || k === 'fontScale' || k === 'flicker') ? parseFloat(el.value) : el.value;
+  const v = el.type === 'checkbox' ? el.checked : (el.type === 'range' || k === 'fontScale' || k === 'flicker' || k === 'bright') ? parseFloat(el.value) : el.value;
   S.settings[k] = v;
   applySettings();
   saveSettings();

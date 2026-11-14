@@ -392,3 +392,24 @@ Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätet
 
 ## 0.15.5
 - Schilder tragen lesbare Titel: `sign.title` (Zeilen mit `|` getrennt, max. 2 Zeilen à 8 Zeichen, Großbuchstaben, Ziffern, `.:!?-→`, Ä Ö Ü) wird mit einer 5×7-Pixelschrift (`FONT`, `genSign(seed, title)`) auf das Schild gezeichnet, darunter angedeutete Textzeilen; ein Sprite je Titel (`signTex`, Cache in `tex.signs`). Ohne `title` bleiben die dunklen Wortblöcke. Volltext weiter per Tippen/◉. Alle 10 Schilder haben Titel.
+
+## 0.15.6
+- Monster-Sprites (Skelett, Wächter, Hauptmann, Irrlicht, Erzkäfer) und Händler: im Modus „Scharf“ per `smoothSprite` (bilinear, 64→256) geglättet statt roher 64-px-Blöcke. Retro-Modus unverändert.
+
+## 0.15.7
+- Karte passt ohne Scrollen: Canvas begrenzt auf Viewporthöhe (max-height 100dvh-120px), Hinweistext und Schließen-Knopf in einer Zeile.
+
+## 0.15.8
+- Sprechende NPCs: Rede im Händlerfenster als große, mittige Sprechblase mit Name (speechHtml), Begrüßung darunter klein.
+
+## 0.15.9
+- Schilder: Platzhalter-Linien unter dem Titel entfernt; Schrift per smoothSprite (64→256) geglättet statt grober Pixelblöcke.
+
+## 0.15.10
+- Kampf: Gegenstände (Heiltrank, Gegengift) nutzt nur der Held, der gerade dran ist, nur an sich selbst (Logik erzwingt es, UI zeigt je einen Knopf). Ölflasche wirft weiter auf Gegner. Zauber (Priester-Heilung) unverändert.
+
+## 0.15.11
+- Einstellung „Helligkeit der Umgebung“ (settings.bright: 1 Original / 1.35 Hell = neuer Standard / 1.8 Sehr hell): weniger Distanznebel (fogK/bright), Paletten-Anhebung (buildPalette lift) und Mindesthelligkeit je Material. Raycaster.bright, setPalette() ohne Argument nutzt letzte Palette.
+
+## 0.15.12
+- Karte: Türen als Balken quer zum Gang (orange = zu, rot = verschlossen, grün mit Lücke = offen) statt brauner Quadrate (Verwechslung mit Truhe).

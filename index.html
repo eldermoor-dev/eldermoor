@@ -104,6 +104,10 @@ button{font:inherit;color:inherit}
 #modal-box .hc{background:#211a11;border:1px solid #4a3c26;border-radius:6px;padding:8px}
 #modal-box select,#modal-box input[type=range],#modal-box input[type=text]{min-height:36px;background:#2a2116;color:var(--ink);border:1px solid var(--line);border-radius:6px;font:inherit}
 #modal-box input[type=text]{width:100%;min-width:0;padding:0 8px;margin-top:4px;-webkit-user-select:text;user-select:text}
+#modal-box .mapbar{margin-top:4px;flex-wrap:nowrap;align-items:center;justify-content:space-between}
+#modal-box .speech{text-align:center;margin:4px 0 10px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#211a11}
+#modal-box .speech b{display:block;color:var(--amber);font:700 1.05rem Georgia,serif;letter-spacing:.05em;margin-bottom:4px}
+#modal-box .speech p{margin:0;font:italic 1.2rem/1.4 Georgia,serif;color:#f0dca8}
 #modal-box .row.nw{flex-wrap:nowrap}
 #modal-box .row.nw>div:first-child{flex:1 1 auto;min-width:0}
 #modal-box .row.nw>button{flex:none;white-space:nowrap;min-width:8.5em}
@@ -116,7 +120,7 @@ button{font:inherit;color:inherit}
 #modal-box .qp canvas{width:40px;height:40px;flex:none;image-rendering:pixelated;border-radius:3px}
 #modal-box input[type=checkbox]{width:22px;height:22px}
 .ok{color:#8fd48a}.bad{color:#ff8a7a}
-#mapcv{display:block;margin:6px auto;max-width:100%;image-rendering:pixelated;border:1px solid var(--line);background:#0a0806}
+#mapcv{display:block;margin:4px auto;width:auto;height:auto;max-width:100%;max-height:calc(100dvh - 120px);image-rendering:pixelated;border:1px solid var(--line);background:#0a0806}
 #banner{position:fixed;top:0;left:0;right:0;z-index:40;background:#4a3410;padding:8px;display:flex;gap:10px;justify-content:center;align-items:center;font-size:.85rem}
 #toast{position:fixed;left:50%;top:48px;transform:translateX(-50%);z-index:45;background:rgba(0,0,0,.85);border:1px solid var(--amber);border-radius:8px;padding:8px 14px;max-width:80vw;text-align:center;font-size:.88rem}
 #portrait-warn{display:none;position:fixed;inset:0;z-index:60;background:#000;align-items:center;justify-content:center;text-align:center;padding:24px;font-size:1.1rem}

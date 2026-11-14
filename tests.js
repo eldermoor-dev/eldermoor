@@ -1405,10 +1405,13 @@ export async function runTests(data, env = {}) {
     assert(!r.error && s.inv.oelflasche === 1 && e0.hp < hp0, 'Ölflasche trifft: ' + JSON.stringify(r));
     assert(/wirft Ölflasche/.test(r.msgs.join(' ')), 'Meldung');
     toHero();
-    assert(L.heroAction(s, data, { type: 'item', item: 'gegengift', hero: 0 }).error === 'bad-target', 'Gegengift ohne Gift abgelehnt');
-    s.combat.status.h0 = { poison: { t: 3, p: 2 } };
-    r = L.heroAction(s, data, { type: 'item', item: 'gegengift', hero: 0 });
-    assert(!r.error && s.inv.gegengift === 0 && !L.statusOf(s, 'h', 0).poison, 'Gift genommen');
+    const me = L.currentActor(s).idx, other = me === 0 ? 1 : 0;
+    assert(L.heroAction(s, data, { type: 'item', item: 'gegengift', hero: me }).error === 'bad-target', 'Gegengift ohne Gift abgelehnt');
+    s.combat.status['h' + other] = { poison: { t: 3, p: 2 } };
+    assert(L.heroAction(s, data, { type: 'item', item: 'gegengift', hero: other }).error === 'bad-target' && s.inv.gegengift === 1, 'Gegenstand nur an sich selbst, nicht an andere Helden');
+    s.combat.status['h' + me] = { poison: { t: 3, p: 2 } };
+    r = L.heroAction(s, data, { type: 'item', item: 'gegengift', hero: me });
+    assert(!r.error && s.inv.gegengift === 0 && !L.statusOf(s, 'h', me).poison, 'Gift genommen');
     assert(L.useItemOutside(s, data, 'oelflasche', 0).error, 'außerhalb des Kampfes nicht benutzbar');
     assert(data.shops.moorrand.stock.some((x) => x.item === 'oelflasche') && data.shops.moorrand.stock.some((x) => x.item === 'gegengift'), 'Hedda verkauft beides');
   });
