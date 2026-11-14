@@ -322,6 +322,45 @@ export function useItemOutside(state, data, itemId, heroIdx) {
   return { msg: `${h.name} erhält ${h.hp - before} LP zurück.`, sfx: 'heal' };
 }
 
+// ---------- Ausrüstung (Schritt 5b) ----------
+// hero.equip = { weapon: itemId|null, armor: itemId|null } (optional; fehlt es, ist nichts angelegt).
+// Die gespeicherten Werte atk/def bleiben die Grundwerte; Boni werden beim Rechnen addiert.
+export const SLOTS = ['weapon', 'armor'];
+export function gearBonus(data, h) {
+  const b = { atk: 0, def: 0 };
+  for (const s of SLOTS) { const it = h.equip && data.items[h.equip[s]]; if (it && it.kind === 'equip') { b.atk += it.atk || 0; b.def += it.def || 0; } }
+  return b;
+}
+export const heroAtk = (data, h) => h.atk + gearBonus(data, h).atk;
+export const heroDef = (data, h) => h.def + gearBonus(data, h).def;
+export function canEquip(data, h, itemId) {
+  const it = data.items[itemId];
+  return !!it && it.kind === 'equip' && SLOTS.includes(it.slot) && (!it.classes || it.classes.includes(h.cls));
+}
+export function equipItem(state, data, itemId, heroIdx) {
+  if (state.combat) return { error: 'in-combat' };
+  const h = state.heroes[heroIdx];
+  if (!h || !(state.inv[itemId] > 0)) return { error: 'no-item' };
+  if (!canEquip(data, h, itemId)) return { error: 'not-allowed' };
+  const it = data.items[itemId];
+  h.equip = h.equip || { weapon: null, armor: null };
+  const old = h.equip[it.slot];
+  state.inv[itemId]--;
+  if (old) state.inv[old] = (state.inv[old] || 0) + 1;
+  h.equip[it.slot] = itemId;
+  for (const k of Object.keys(state.inv)) if (state.inv[k] === 0 && data.items[k].kind === 'equip') delete state.inv[k];
+  return { msg: `${h.name} legt ${it.name} an${old ? ` (${data.items[old].name} zurück ins Inventar)` : ''}.`, sfx: 'ui' };
+}
+export function unequipItem(state, data, heroIdx, slot) {
+  if (state.combat) return { error: 'in-combat' };
+  const h = state.heroes[heroIdx];
+  if (!h || !SLOTS.includes(slot) || !h.equip || !h.equip[slot]) return { error: 'empty' };
+  const id = h.equip[slot];
+  state.inv[id] = (state.inv[id] || 0) + 1;
+  h.equip[slot] = null;
+  return { msg: `${h.name} legt ${data.items[id].name} ab.`, sfx: 'ui' };
+}
+
 // ---------- Rast (Schritt 5a) ----------
 // Mit Proviant: alle Helden (auch bewusstlose) voll bei LP und Ressource, 1 Proviant weg.
 // Ohne Proviant („hungrig“): jeder Held erholt sich nur um data.rest.hungryPct % von LP und Ressource.
@@ -501,7 +540,7 @@ export function heroAction(state, data, act) {
     if (ti == null || !c.enemies[ti] || c.enemies[ti].hp <= 0) ti = c.enemies.findIndex((e) => e.hp > 0);
     const e = c.enemies[ti];
     const tr = {};
-    const d = calcDamage(state, effAtk(state, 'h', a.idx, h.atk), data.enemies[e.kind].def, { backMelee: h.row === 'back' && !h.ranged, trace: tr });
+    const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h)), data.enemies[e.kind].def, { backMelee: h.row === 'back' && !h.ranged, trace: tr });
     if (d === 0) { msgs.push(`${h.name} verfehlt ${e.name}.`); sfx = 'miss'; }
     else {
       e.hp = Math.max(0, e.hp - d);
@@ -531,7 +570,7 @@ export function heroAction(state, data, act) {
       const e = c.enemies[ti];
       h.mp -= ab.cost;
       const tr = {};
-      const d = calcDamage(state, effAtk(state, 'h', a.idx, h.atk), data.enemies[e.kind].def, { backMelee: h.row === 'back' && !h.ranged, mult: ab.mult, sure: !!ab.sure, trace: tr });
+      const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h)), data.enemies[e.kind].def, { backMelee: h.row === 'back' && !h.ranged, mult: ab.mult, sure: !!ab.sure, trace: tr });
       if (d === 0) { msgs.push(`${h.name} setzt ${ab.name} ein, verfehlt aber ${e.name} (−${ab.cost} ${rn}).`); sfx = 'miss'; }
       else {
         e.hp = Math.max(0, e.hp - d);
@@ -547,7 +586,7 @@ export function heroAction(state, data, act) {
     let hit = false;
     for (const e of live) {
       const tr = {};
-      const d = calcDamage(state, effAtk(state, 'h', a.idx, h.atk), data.enemies[e.kind].def, { backMelee: h.row === 'back' && !h.ranged, mult: SWEEP_MULT, trace: tr });
+      const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h)), data.enemies[e.kind].def, { backMelee: h.row === 'back' && !h.ranged, mult: SWEEP_MULT, trace: tr });
       if (d === 0) { msgs.push(`${h.name} verfehlt ${e.name}.`); continue; }
       hit = true; e.hp = Math.max(0, e.hp - d);
       msgs.push(`${h.name} trifft ${e.name} für ${d} Schaden.${SEP}${explain(tr)}`);
@@ -601,7 +640,7 @@ export function enemyStep(state, data, opts = {}) {
   const t = state.heroes[ti];
   const hv = en.heavy, heavy = !!hv && e.intent === 'heavy';
   const tr = {};
-  const d = calcDamage(state, effAtk(state, 'e', a.idx, en.atk), t.def, { defending: !!c.defending[ti], mult: heavy ? hv.mult : 0, trace: tr });
+  const d = calcDamage(state, effAtk(state, 'e', a.idx, en.atk), heroDef(data, t), { defending: !!c.defending[ti], mult: heavy ? hv.mult : 0, trace: tr });
   let sfx = 'miss';
   const why = `${t.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}${c.defending[ti] ? ', in Deckung: halber Schaden' : ''}`;
   if (heavy) msgs.push(`${e.name} setzt ${hv.name} ein!`);
@@ -721,6 +760,10 @@ export function validateState(state, data) {
     if (!Number.isInteger(hh.maxMp) || hh.maxMp < 0) err.push(`${n}: Max-Ressource ungültig`);
     else if (!Number.isInteger(hh.mp) || hh.mp < 0 || hh.mp > hh.maxMp) err.push(`${n}: Ressource ungültig`);
     if (typeof hh.hp !== 'number' || hh.hp < 0 || hh.hp > hh.maxHp) err.push(`${n}: LP ungültig`);
+    if (hh.equip != null) {
+      if (typeof hh.equip !== 'object') err.push(`${n}: Ausrüstung ungültig`);
+      else for (const s of SLOTS) { const id = hh.equip[s]; if (id != null && !(data.items[id] && data.items[id].kind === 'equip' && data.items[id].slot === s)) err.push(`${n}: Ausrüstung ${s} ungültig`); }
+    }
   });
   if (!state.inv || typeof state.inv !== 'object') err.push('Inventar ungültig');
   else for (const [k, v] of Object.entries(state.inv)) if (!data.items[k] || !Number.isInteger(v) || v < 0) err.push(`Inventar: ${k} ungültig`);

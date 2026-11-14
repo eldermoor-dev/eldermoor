@@ -486,6 +486,40 @@ export async function runTests(data, env = {}) {
     assert(data.items.ration && data.items.ration.kind === 'supply', 'Datenpunkt Proviant');
     const sv = L.deserialize(L.serialize(s), data); assert(sv.inv.ration === 0, 'Proviant im Spielstand');
   });
+  await test('Ausrüstung (5b): Boni, Berufsbeschränkung, Tausch, Ablegen, Kampfwirkung, Speichern', () => {
+    const s = fresh(6);
+    ['iron_sword', 'oak_staff', 'leather_armor', 'chain_mail'].forEach((k) => { s.inv[k] = 1; });
+    const [bere, sira, odal, ivo] = s.heroes;
+    assert(L.heroAtk(data, bere) === bere.atk && L.heroDef(data, bere) === bere.def, 'ohne Ausrüstung = Grundwerte');
+    assert(L.equipItem(s, data, 'oak_staff', 0).error === 'not-allowed', 'Krieger darf keinen Stab');
+    assert(L.equipItem(s, data, 'chain_mail', 1).error === 'not-allowed', 'Schurke darf kein Kettenhemd');
+    assert(L.equipItem(s, data, 'iron_sword', 0).msg && s.inv.iron_sword === undefined, 'Schwert angelegt, aus dem Inventar');
+    assert(L.heroAtk(data, bere) === bere.atk + 2 && bere.atk === L.buildParty(data)[0].atk, 'Bonus +2, Grundwert unverändert');
+    assert(L.equipItem(s, data, 'chain_mail', 0).msg && L.heroDef(data, bere) === bere.def + 2, 'Kettenhemd +2');
+    assert(L.equipItem(s, data, 'leather_armor', 0).msg && s.inv.chain_mail === 1 && L.heroDef(data, bere) === bere.def + 1, 'Tausch: altes Stück zurück ins Inventar');
+    assert(L.equipItem(s, data, 'iron_sword', 2).error === 'no-item', 'Schwert gibt es nur einmal');
+    assert(L.unequipItem(s, data, 0, 'weapon').msg && s.inv.iron_sword === 1 && L.heroAtk(data, bere) === bere.atk, 'Ablegen');
+    assert(L.unequipItem(s, data, 0, 'weapon').error === 'empty', 'Ablegen ohne Stück');
+    assert(L.equipItem(s, data, 'oak_staff', 3).msg && L.equipItem(s, data, 'iron_sword', 0).msg, 'Magier Stab, Krieger Schwert');
+    // Kampfwirkung: Schaden mit Schwert >= ohne (gleiche Zufallsfolge), Rüstung senkt Gegnerschaden
+    const dmg = (equipped) => {
+      const q = fresh(77); if (equipped) { q.inv.iron_sword = 1; L.equipItem(q, data, 'iron_sword', 0); }
+      q.heroes[0].row = 'front'; const o = q.objs.find((x) => x.id === 'en2'); L.startCombat(q, data, o);
+      const hp0 = q.combat.enemies[0].hp; let g = 0;
+      while (L.currentActor(q) && L.currentActor(q).side !== 'h' && g++ < 9) L.enemyStep(q, data, {});
+      const a = L.currentActor(q); const act = q.heroes[a.idx];
+      return { atk: L.heroAtk(data, act), idx: a.idx };
+    };
+    assert(dmg(true).atk >= dmg(false).atk, 'Kampf nutzt effektiven Angriff');
+    const sv = L.deserialize(L.serialize(s), data);
+    assert(sv.heroes[0].equip.weapon === 'iron_sword' && sv.heroes[3].equip.weapon === 'oak_staff', 'Ausrüstung im Spielstand');
+    const bad = JSON.parse(JSON.stringify(L.serialize(s))); bad.state.heroes[0].equip.weapon = 'leather_armor';
+    let threw = false; try { L.deserialize(JSON.stringify(bad), data); } catch { threw = true; }
+    assert(threw, 'falscher Slot im Spielstand wird abgelehnt');
+    const q2 = fresh(8); q2.inv.iron_sword = 1; L.startCombat(q2, data, q2.objs.find((o) => o.type === 'enemy'));
+    assert(L.equipItem(q2, data, 'iron_sword', 0).error === 'in-combat', 'im Kampf nicht wechseln');
+    for (const [k, it] of Object.entries(data.items)) if (it.kind === 'equip') assert(it.slot && (it.atk || it.def) && it.desc, `Item ${k} vollständig`);
+  });
   await test('Mehrere Gegner (3c): Gruppen, Zielwahl, Alle angreifen, Schwerer Schlag, KI, Aufstehen, Rechenweg', () => {
     const enemyObj = (id) => { const s = L.newGame(data, 31); return [s, s.objs.find((o) => o.id === id)]; };
     // Gruppen

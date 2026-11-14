@@ -237,3 +237,13 @@ Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätet
 - Spielstand: **keine neue Version nötig**: `inv` ist eine Zuordnung, fehlender Proviant zählt als 0 (alte Stände starten ohne Vorrat; hungrige Rast geht immer).
 - Der Sieg-Aufstehen mit 1 LP bleibt als Rückfall bestehen.
 - Tests: 39 (neu: Rast). Simulation: mit Proviant (3) schafft auch "nur Angriff" 100 % (siehe SIM.md). Gerätetest offen.
+
+
+## 0.6.0 (Schritt 5b: Ausrüstung)
+- Geräte-Test 0.5.0 (14.11.2026, Screenshots): Rast mit Proviant (3 -> 2, alle voll, Bewusstloser steht auf), "Alle sind bereits bei Kräften", "Ein Gegner ist zu nah" bestätigt.
+- Neu: 2 Plätze je Held (`data.slots`: weapon, armor). Items `kind: equip` mit `slot`, `atk`/`def`, optional `classes`. Vorhanden: Eisenschwert (+2 Angriff; Krieger, Schurke, Waldläufer), Eichenstab (+2; Magier, Priester), Lederharnisch (+1 Vert.; alle), Kettenhemd (+2; Krieger, Priester, Waldläufer). Alle vier liegen in Truhe `chest_a`.
+- `hero.equip = {weapon, armor}` optional; gespeicherte `atk`/`def` bleiben Grundwerte (Stufenaufstieg überschreibt sie), Boni addieren `heroAtk`/`heroDef`/`gearBonus` (logic.js) beim Rechnen. Funktionen: `equipItem`, `unequipItem`, `canEquip`. Nicht im Kampf. Tausch legt altes Stück ins Inventar zurück.
+- Spielstand: **keine neue Version** (fehlendes `equip` = nichts angelegt); `validateState` prüft Slot und Item-Art. v5 bleibt für "Mehrere Gebiete" reserviert.
+- UI: Inventar -> "Ausrüsten" -> Held wählen (nicht erlaubte ausgegraut); Charakteransicht zeigt Waffe/Rüstung, Bonus "(+2)", "Ablegen".
+- Noch offen in 5b-Umfang: Qualitätsstufen, Zufallseigenschaften, Einzigartiges, Spezialeffekte (kommt mit Beutesystem, Phase 3); Gegner-Beute.
+- Tests: 40. Gerätetest offen.

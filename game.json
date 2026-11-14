@@ -23,6 +23,48 @@
       "name": "Proviant",
       "kind": "supply",
       "desc": "Eine Mahlzeit für die Rast. Mit Proviant erholt sich die Gruppe vollständig, ohne Proviant nur zu 30 %."
+    },
+    "iron_sword": {
+      "name": "Eisenschwert",
+      "kind": "equip",
+      "slot": "weapon",
+      "atk": 2,
+      "classes": [
+        "warrior",
+        "rogue",
+        "ranger"
+      ],
+      "desc": "Waffe. +2 Angriff. Für Krieger, Schurke, Waldläufer."
+    },
+    "oak_staff": {
+      "name": "Eichenstab",
+      "kind": "equip",
+      "slot": "weapon",
+      "atk": 2,
+      "classes": [
+        "mage",
+        "priest"
+      ],
+      "desc": "Waffe. +2 Angriff. Für Magier und Priester."
+    },
+    "leather_armor": {
+      "name": "Lederharnisch",
+      "kind": "equip",
+      "slot": "armor",
+      "def": 1,
+      "desc": "Rüstung. +1 Verteidigung. Für alle Berufe."
+    },
+    "chain_mail": {
+      "name": "Kettenhemd",
+      "kind": "equip",
+      "slot": "armor",
+      "def": 2,
+      "classes": [
+        "warrior",
+        "priest",
+        "ranger"
+      ],
+      "desc": "Rüstung. +2 Verteidigung. Für Krieger, Priester, Waldläufer."
     }
   },
   "races": {
@@ -448,6 +490,22 @@
             {
               "item": "ration",
               "n": 1
+            },
+            {
+              "item": "iron_sword",
+              "n": 1
+            },
+            {
+              "item": "oak_staff",
+              "n": 1
+            },
+            {
+              "item": "leather_armor",
+              "n": 1
+            },
+            {
+              "item": "chain_mail",
+              "n": 1
             }
           ]
         },
@@ -501,5 +559,9 @@
   "rest": {
     "hungryPct": 30,
     "enemyDistance": 3
+  },
+  "slots": {
+    "weapon": "Waffe",
+    "armor": "Rüstung"
   }
 }
