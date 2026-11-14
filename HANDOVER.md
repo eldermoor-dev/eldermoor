@@ -279,3 +279,9 @@ Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätet
 - validateState prüft `bestiary` (optional).
 - BALANCE.md zeigt Bossphasen. SIM.md neu (3000 Läufe): Schrat „nur Angriff“ 97 %, „klug“ 100 % – Boss ist mit Stufe-1-Gruppe weiterhin leicht (vorläufig, nicht angepasst).
 - Tests: 54.
+
+## 0.9.1 (Warnung vor Schwerem Schlag)
+- Auslöser: Nutzer verlor gegen den Boss, weil die Ankündigung „Schwerer Schlag“ übersehen wurde (nur Protokoll/kleine Zeile).
+- main.js `renderCombat`: roter, pulsierender Warnbalken im Gegnerfenster, Knopf „Verteidigen“ leuchtet (`.pulse`), Warnton (`audio.js` Fall `warn`) und Vibration [90,60,90] einmal je Ankündigung (`S.warnKey`). Name des Angriffs über `enemyOf` (Phasen können ihn ändern).
+- index.html: CSS `.heavywarn`, `.ab.pulse`; bei „reduzierte Bewegung“ ohne Animation.
+- Spielwerte unverändert. Tests 54 (reine Anzeige, per Headless-Browser geprüft).

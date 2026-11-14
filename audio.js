@@ -97,6 +97,7 @@ export class Sfx {
         break;
       case 'heal': this._tone({ dur: 0.4, f: 420, fTo: 900, gain: 0.12 }); break;
       case 'defend': this._noise({ dur: 0.1, f: 1200, q: 3, gain: 0.2 }); this._tone({ dur: 0.12, type: 'square', f: 180, gain: 0.06 }); break;
+      case 'warn': this._tone({ dur: 0.14, type: 'square', f: 640, gain: 0.12 }); this._tone({ t: 0.2, dur: 0.14, type: 'square', f: 640, gain: 0.12 }); this._tone({ t: 0.4, dur: 0.3, type: 'square', f: 440, fTo: 330, gain: 0.12 }); break;
       case 'defeat': this._tone({ dur: 1.0, f: 120, fTo: 38, gain: 0.3 }); break;
       case 'ui': this._noise({ dur: 0.025, type: 'highpass', f: 2500, gain: 0.15 }); break;
       default: break;

@@ -3,13 +3,13 @@
 import {
   DIRS, DIR_NAMES, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, changeArea, knownSpells, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
+  buildParty, deriveStats, skipStunned, restParty, enemyOf, changeArea, knownSpells, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setResolution, W, H, BASE_W, BASE_H } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.9.0';
+const VERSION = '0.9.1';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -528,7 +528,12 @@ function renderCombat() {
   const curName = cur ? (cur.side === 'h' ? S.game.heroes[cur.idx].name : c.enemies[cur.idx].name) : '';
   if (!c.enemies[S.foe] || c.enemies[S.foe].hp <= 0) S.foe = Math.max(0, c.enemies.findIndex((e) => e.hp > 0));
   const multi = c.enemies.filter((e) => e.hp > 0).length > 1;
-  eb.innerHTML = (cur ? `<div class="turnbar ${cur.side === 'h' ? 'hero' : 'foe'}">${cur.side === 'h' ? 'Am Zug: ' + esc(curName) + (multi ? ' · Gegner antippen = Ziel' : '') : 'Gegner am Zug: ' + esc(curName)}</div>` : '') + c.enemies.map((e) => {
+  const heavyNow = !c.over && c.enemies.filter((e) => e.hp > 0 && e.intent === 'heavy');
+  const warnKey = heavyNow.length ? c.round + ':' + heavyNow.map((e) => e.name).join(',') : null;
+  if (warnKey && S.warnKey !== warnKey) { S.sfx.play('warn'); vib([90, 60, 90]); }
+  S.warnKey = warnKey;
+  const warnBar = heavyNow.length ? `<div class="heavywarn">⚠ ${esc(heavyNow[0].name)}: ${esc(enemyOf(S.data, heavyNow[0]).heavy.name)}! Jetzt verteidigen</div>` : '';
+  eb.innerHTML = warnBar + (cur ? `<div class="turnbar ${cur.side === 'h' ? 'hero' : 'foe'}">${cur.side === 'h' ? 'Am Zug: ' + esc(curName) + (multi ? ' · Gegner antippen = Ziel' : '') : 'Gegner am Zug: ' + esc(curName)}</div>` : '') + c.enemies.map((e) => {
     const pct = Math.round(100 * e.hp / e.maxHp);
     const ei = c.enemies.indexOf(e);
     return `<div class="en${e.hp <= 0 ? ' dead' : ''}${multi && ei === S.foe && e.hp > 0 ? ' sel' : ''}" data-e="${ei}"><b>${esc(e.name)} ${stIcons('e', ei)}</b><span>${e.hp}/${e.maxHp} LP</span><div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div>${e.intent === 'heavy' ? '<em class="warn">⚠ Schwerer Schlag</em>' : ''}</div>`;
@@ -544,7 +549,7 @@ function renderCombat() {
   const ch = S.game.heroes[a.idx], cab = S.data.classes[ch.cls].ability, cres = S.data.classes[ch.cls].res;
   const known = knownSpells(S.data, ch);
   const abBtn = known.length > 1 ? `<button class="ab" data-c="spells">✦ Zauber (${known.length})${S.spMode ? ' ▴' : ' ▾'}</button>` : cab ? `<button class="ab" data-c="sp:0" ${ch.mp >= cab.cost ? '' : 'disabled'}>✦ ${esc(cab.name)} (${cab.cost} ${esc(cres.name)})</button>` : '';
-  let html = `<button class="ab" data-c="attack">⚔ Angriff</button><button class="ab" data-c="defend">⛨ Verteidigen</button><button class="ab" data-c="item" ${potions ? '' : 'disabled'}>Gegenstand (${potions})</button>${abBtn}${multi ? `<button class="ab" data-c="sweep">⚔ Alle (${SWEEP_MULT} %)</button>` : ''}<button class="ab" data-c="log">Protokoll</button>`;
+  let html = `<button class="ab" data-c="attack">⚔ Angriff</button><button class="ab${heavyNow.length ? ' pulse' : ''}" data-c="defend">⛨ Verteidigen</button><button class="ab" data-c="item" ${potions ? '' : 'disabled'}>Gegenstand (${potions})</button>${abBtn}${multi ? `<button class="ab" data-c="sweep">⚔ Alle (${SWEEP_MULT} %)</button>` : ''}<button class="ab" data-c="log">Protokoll</button>`;
   if (S.itemMode) {
     html += '<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">' + S.game.heroes.map((h, i) =>
       `<button class="ab" data-c="heal:${i}" ${h.hp > 0 && h.hp < h.maxHp ? '' : 'disabled'}>Heiltrank → ${esc(h.name)}</button>`).join('') + '</div>';
