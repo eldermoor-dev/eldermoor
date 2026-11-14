@@ -216,7 +216,7 @@ export async function runTests(data, env = {}) {
     assert(threw, 'ohne Migration');
     threw = false; try { L.migrate(save, { 1: (x) => x }, 2); } catch { threw = true; }
     assert(threw, 'Migration ohne Versionssprung');
-    assert(L.SAVE_VERSION === 4 && [1, 2, 3].every((n) => typeof L.MIGRATIONS[n] === 'function'), 'echte Migrationen 1→2, 2→3 und 3→4 müssen vorhanden sein');
+    assert(L.SAVE_VERSION === 5 && [1, 2, 3, 4].every((n) => typeof L.MIGRATIONS[n] === 'function'), 'echte Migrationen 1→2 bis 4→5 müssen vorhanden sein');
   });
 
   // ---- Phase 2, Schritt 1: Rassen, Berufe, Gruppe, Migration v1→v2 ----
@@ -317,7 +317,7 @@ export async function runTests(data, env = {}) {
     const s = L.newGame(data, 9, CUSTOM);
     s.heroes[1].hp = 5; s.heroes[0].hp = 0;
     const save = L.serialize(s);
-    eq(save.v, 4, 'Version');
+    eq(save.v, 5, 'Version');
     eq(L.deserialize(JSON.stringify(save), data), { ...s, combat: null }, 'Roundtrip');
     const rej = (mut, label) => {
       const b = L.serialize(s); mut(b.state.heroes[2]);
@@ -347,13 +347,15 @@ export async function runTests(data, env = {}) {
     });
     eq(st.heroes.map((h) => h.cls), ['warrior', 'rogue', 'priest', 'mage'], 'Berufe');
     eq(st.heroes[0].hp, 30, 'LP erhalten');
-    const rest = (x) => JSON.stringify({ ...x, heroes: 0, combat: 0 });
+    const rest = (x) => { const y = { ...x, heroes: 0, combat: 0, areas: 0, objs: x.objs.filter((o) => v1.state.objs.some((q) => q.id === o.id)) }; return JSON.stringify(Object.keys(y).sort().map((k) => [k, y[k]])); }; // v5 ergänzt fehlende feste Objekte (Treppen, später eingebaute Gegner) und Gebiete
+    assert(st.objs.some((o) => o.id === 'stairs_down') && JSON.stringify(st.areas) === '{}', 'v5: neue Treppe ergänzt, Gebiete leer');
+    assert(st.objs.filter((o) => v1.state.objs.some((q) => q.id === o.id)).every((o) => JSON.stringify(o) === JSON.stringify(v1.state.objs.find((q) => q.id === o.id))), 'vorhandene Objekte unverändert');
     assert(rest(st) === rest(v1.state), 'übriger Zustand (Position, Gold, Inventar, Objekte, Karte, Notizen, Zufall) unverändert');
     const obj = JSON.parse(V1_SAVE); L.deserialize(obj, data);
     assert(obj.v === 1 && !('race' in obj.state.heroes[0]), 'Eingabe wird nicht verändert');
     assert(L.tryMove(st, data, 'f').moved, 'Spiel läuft weiter');
     const again = L.serialize(st);
-    eq(again.v, 4, 'neu gespeichert als v4');
+    eq(again.v, 5, 'neu gespeichert als v5');
     eq(L.deserialize(JSON.stringify(again), data).player, st.player, 'erneut ladbar');
   });
 
@@ -744,6 +746,92 @@ export async function runTests(data, env = {}) {
     }
     for (const [id, e] of Object.entries(data.enemies)) for (const el of Object.keys(e.resist || {})) assert(data.elements[el], `${id}: Element ${el}`);
     for (const c of Object.values(data.classes)) for (const q of c.spells || []) assert(data.spells[q.id] && q.level >= 1, `Klasse: Zauber ${q.id}`);
+  });
+
+  // ---- Phase 3, Schritt 1: mehrere Gebiete ----
+  await test('Gebiete (Phase 3): Treppen-Daten, Gegenstück, Zielfeld begehbar, Objekt-IDs über alle Gebiete eindeutig', () => {
+    const ids = new Set();
+    let n = 0;
+    for (const [lid, lvl] of Object.entries(data.levels)) for (const o of lvl.objects) {
+      assert(!ids.has(o.id), `Objekt-ID ${o.id} kommt in mehreren Gebieten vor (Flags sind global)`); ids.add(o.id);
+      if (o.type !== 'stairs') continue;
+      n++;
+      const to = o.to, tl = data.levels[to && to.level];
+      assert(tl, `${o.id}: Zielgebiet fehlt`);
+      assert(L.cellChar(tl, to.x, to.y) === '.', `${o.id}: Zielfeld ist keine Bodenzelle`);
+      assert(Number.isInteger(to.dir) && to.dir >= 0 && to.dir <= 3, `${o.id}: Blickrichtung`);
+      assert(!tl.objects.some((q) => q.x === to.x && q.y === to.y && q.type !== 'stairs' && q.type !== 'exit'), `${o.id}: Zielfeld ist belegt`);
+      assert(tl.objects.some((q) => q.type === 'stairs' && q.to.level === lid), `${o.id}: keine Treppe zurück nach ${lid}`);
+    }
+    assert(n >= 2, 'mindestens zwei Treppen');
+    return `${n} Treppen geprüft`;
+  });
+
+  await test('Gebiete (Phase 3): Wechsel hin und zurück, Zustand beider Gebiete bleibt (Truhe, Karte, Notizen)', () => {
+    const s = fresh(5);
+    put(s, 2, 1, 3); // neben der Treppe, Blick nach Westen
+    const m = L.tryMove(s, data, 'f');
+    assert(m.moved && m.events.some((e) => e.type === 'stairs' && e.id === 'stairs_down'), 'Treppe löst Ereignis aus');
+    assert(!m.encounter, 'kein Kampf beim Gebietswechsel');
+    const seenA = s.seen.slice(), cnt = seenA.reduce((a, b) => a + b, 0);
+    s.notes.push(5);
+    const c = L.changeArea(s, data, 'stairs_down');
+    assert(c.ok && s.levelId === 'test2' && s.player.x === 2 && s.player.y === 2 && s.player.dir === 1, 'Ankunft in Untere Gruft');
+    assert(s.objs.some((o) => o.id === 'chest_b') && !s.objs.some((o) => o.id === 'chest_a'), 'Objekte des neuen Gebiets');
+    eq(s.notes, [], 'Notizen des neuen Gebiets leer');
+    assert(s.seen.length === data.levels.test2.map[0].length * data.levels.test2.map.length && s.seen.some((v) => v), 'Karte des neuen Gebiets');
+    s.objs.find((o) => o.id === 'chest_b').open = true; s.notes.push(9);
+    // Speichern/Laden mitten im zweiten Gebiet
+    const back = L.deserialize(JSON.parse(JSON.stringify(L.serialize(s))), data);
+    eq(back.levelId, 'test2', 'geladen im zweiten Gebiet');
+    assert(back.areas.test1 && back.areas.test1.notes.includes(5), 'erstes Gebiet gesichert');
+    // zurück
+    const c2 = L.changeArea(back, data, 'stairs_up');
+    assert(c2.ok && back.levelId === 'test1' && back.player.x === 2 && back.player.y === 1, 'Rückkehr');
+    eq(back.seen.reduce((a, b) => a + b, 0) >= cnt, true, 'Erkundung des ersten Gebiets erhalten');
+    eq(back.notes, [5], 'Notizen des ersten Gebiets erhalten');
+    // wieder hinunter: Truhe bleibt offen
+    L.changeArea(back, data, 'stairs_down');
+    assert(back.objs.find((o) => o.id === 'chest_b').open === true, 'geöffnete Truhe bleibt offen');
+    eq(back.notes, [9], 'Notizen des zweiten Gebiets erhalten');
+    assert(!('test2' in back.areas) && 'test1' in back.areas, 'nur inaktive Gebiete liegen in areas');
+    assert(L.changeArea(back, data, 'gibt_es_nicht').ok === false, 'unbekannte Treppe wird abgelehnt');
+  });
+
+  await test('Gebiete (Phase 3): Gegner und Kämpfe im zweiten Gebiet, Besiegte bleiben besiegt', () => {
+    const s = fresh(6);
+    L.changeArea(s, data, 'stairs_down');
+    const en = s.objs.find((o) => o.id === 'en21');
+    playFight(s, 'en21', 3);
+    if (!en.dead) return 'Kampf verloren (zufällig), Rest nicht prüfbar';
+    L.changeArea(s, data, 'stairs_up'); L.changeArea(s, data, 'stairs_down');
+    assert(s.objs.find((o) => o.id === 'en21').dead === true, 'Gegner steht wieder auf');
+  });
+
+  await test('Gebiete (Phase 3): Spielstand v4 (ohne Gebiete) wird zu v5, Treppe wird ergänzt, alles andere bleibt', () => {
+    const s = fresh(8);
+    L.tryMove(s, data, 'f'); s.gold = 77; s.inv.potion = 5; s.notes.push(3);
+    const raw = JSON.parse(JSON.stringify(L.serialize(s)));
+    raw.v = 4; delete raw.state.areas; raw.state.objs = raw.state.objs.filter((o) => o.type !== 'stairs');
+    const st = L.deserialize(raw, data);
+    eq(st.areas, {}, 'areas leer');
+    assert(st.objs.some((o) => o.id === 'stairs_down'), 'Treppe ergänzt');
+    eq([st.gold, st.inv.potion, st.notes, st.player], [77, 5, [3], s.player], 'Zustand erhalten');
+    assert(L.serialize(st).v === 5, 'neu als v5');
+    // Spielstand mit ungültigen Gebieten wird abgelehnt
+    const bad = JSON.parse(JSON.stringify(L.serialize(s)));
+    bad.state.areas = { nirgendwo: { objs: [], seen: [], notes: [] } };
+    let threw = false; try { L.deserialize(bad, data); } catch (e) { threw = /Gebiet/.test(e.message); }
+    assert(threw, 'unbekanntes Gebiet nicht abgelehnt');
+    const bad2 = JSON.parse(JSON.stringify(L.serialize(s)));
+    bad2.state.areas = { test2: { objs: [], seen: [1, 2], notes: [] } };
+    threw = false; try { L.deserialize(bad2, data); } catch (e) { threw = /Karte ungültig/.test(e.message); }
+    assert(threw, 'falsche Kartengröße nicht abgelehnt');
+  });
+
+  await test('Gebiete (Phase 3): Softlock-Prüfung gilt auch für Untere Gruft (Treppe zählt als Ausgang)', () => {
+    const r = L.analyzeLevel(data, 'test2');
+    assert(r.ok, 'Untere Gruft nicht lösbar: ' + JSON.stringify(r));
   });
 
   await test('Migration v1→v2: beschädigte v1-Stände werden mit klarer Meldung abgelehnt', () => {

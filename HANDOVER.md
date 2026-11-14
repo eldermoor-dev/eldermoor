@@ -260,3 +260,14 @@ Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätet
 ## 0.7.1 (Schritt 6: Tests erweitert)
 - Nur tests.js neu (+ Versionsnummer, damit der Service Worker die Datei neu lädt). Spielverhalten unverändert.
 - Neue Tests (46 gesamt): 150 Zufallskämpfe mit Invarianten (LP/Mana in Grenzen, Kampf endet), Zustand nach Kampf (Bewegung, Besiegte blockieren nicht, LP ≥ 1), Speicher-Rundlauf (Ausrüstung, Vorrat, kein Kampfzustand), Determinismus, Daten-Querverweise.
+
+## 0.8.0 (Phase 3, Schritt 1: mehrere Gebiete, Speicherstand v5)
+- `SAVE_VERSION = 5`. Neu im Stand: `areas` = { Gebiets-ID: { objs, seen, notes } } nur für besuchte, gerade INAKTIVE Gebiete. Aktives Gebiet bleibt wie bisher in `state.objs/seen/notes` (so änderte sich fast kein Code).
+- Migration 4→5 (`MIGRATIONS[4]`, braucht data): `areas: {}`, ergänzt feste Objekte des aktuellen Gebiets, die der alte Stand nicht kennt (z. B. neue Treppe), vorhandene Objekte bleiben unverändert.
+- Neues Objekt `type: "stairs"` mit `to: {level, x, y, dir}` und optional `msg`. Betreten löst Ereignis `stairs` aus (tryMove), main.js ruft `changeArea(state, data, id)`: Zustand des alten Gebiets wird gesichert, neues geladen (oder frisch erzeugt), Palette gewechselt, Autosave.
+- Objekt-IDs müssen über ALLE Gebiete eindeutig sein (Flags sind global); Test prüft das. Jede Treppe braucht ein Gegenstück zurück; Zielfeld muss Boden und frei sein.
+- `analyzeLevel`: Treppe zählt wie Runenstein als Ausgang.
+- game.json: Treppe `stairs_down` in test1 bei (1,1); neues Gebiet `test2` „Untere Gruft“ (Truhe, 2 Kultisten, Treppe `stairs_up`).
+- Darstellung: Treppe = Portal-Sprite (vorläufig), Karte: blaues Dreieck. Kartennotizen und Erkundung gelten je Gebiet.
+- Debug-Teleportliste ist noch auf test1 fest verdrahtet.
+- Tests: 51 (5 neue: Treppendaten, Wechsel hin/zurück mit Zustand, Kampf im 2. Gebiet, Migration v4→v5 und Ablehnung ungültiger Gebiete, Softlock test2).

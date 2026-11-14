@@ -603,6 +603,82 @@
           "type": "exit",
           "x": 19,
           "y": 7
+        },
+        {
+          "id": "stairs_down",
+          "type": "stairs",
+          "x": 1,
+          "y": 1,
+          "msg": "Du steigst die Treppe hinab in die Untere Gruft.",
+          "to": {
+            "level": "test2",
+            "x": 2,
+            "y": 2,
+            "dir": 1
+          }
+        }
+      ]
+    },
+    "test2": {
+      "id": "test2",
+      "name": "Untere Gruft",
+      "palette": "keller",
+      "map": [
+        "##############",
+        "#.....#......#",
+        "#.....m......#",
+        "#............#",
+        "#.....#......#",
+        "##############"
+      ],
+      "start": {
+        "x": 2,
+        "y": 2,
+        "dir": 1
+      },
+      "objects": [
+        {
+          "id": "stairs_up",
+          "type": "stairs",
+          "x": 1,
+          "y": 2,
+          "msg": "Du steigst die Treppe hinauf ins Testgewölbe.",
+          "to": {
+            "level": "test1",
+            "x": 2,
+            "y": 1,
+            "dir": 1
+          }
+        },
+        {
+          "id": "chest_b",
+          "type": "chest",
+          "x": 12,
+          "y": 3,
+          "loot": [
+            {
+              "item": "potion",
+              "n": 1
+            },
+            {
+              "item": "ration",
+              "n": 1
+            },
+            {
+              "gold": 15
+            }
+          ]
+        },
+        {
+          "id": "en21",
+          "type": "enemy",
+          "x": 9,
+          "y": 2,
+          "kind": "kultist",
+          "kinds": [
+            "kultist",
+            "kultist"
+          ]
         }
       ]
     }

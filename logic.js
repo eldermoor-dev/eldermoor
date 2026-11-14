@@ -1,7 +1,7 @@
 // Die Schatten von Eldermoor – Spiellogik (ohne DOM, in Node testbar)
 // Autor: eldermoor-dev
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 export const SAVE_FORMAT = 'eldermoor-save';
 export const DIRS = [
   { dx: 0, dy: -1 }, // 0 Norden
@@ -164,16 +164,23 @@ export function buildParty(data, specs = data.quickParty) {
   return specs.map((s, i) => createHero(data, s, i));
 }
 
+// Frischer Zustand eines Gebiets (Objekte, Erkundung, Notizen)
+function freshObj(data, o) {
+  const c = clone(o);
+  if (o.type === 'door') c.open = false;
+  if (o.type === 'chest') c.open = false;
+  if (o.type === 'enemy') { c.hp = data.enemies[o.kind].hp; c.dead = false; }
+  return c;
+}
+function freshArea(data, levelId) {
+  const lvl = data.levels[levelId];
+  const objs = lvl.objects.map((o) => freshObj(data, o));
+  return { objs, seen: new Array(lvl.map[0].length * lvl.map.length).fill(0), notes: [] };
+}
+
 export function newGame(data, seed = 20260101, party = null) {
   const lvl = data.levels[data.startLevel];
-  const objs = lvl.objects.map((o) => {
-    const c = clone(o);
-    if (o.type === 'door') c.open = false;
-    if (o.type === 'chest') c.open = false;
-    if (o.type === 'enemy') { c.hp = data.enemies[o.kind].hp; c.dead = false; }
-    return c;
-  });
-  const w = lvl.map[0].length, h = lvl.map.length;
+  const a = freshArea(data, data.startLevel);
   const state = {
     rng: seed >>> 0,
     levelId: data.startLevel,
@@ -182,14 +189,33 @@ export function newGame(data, seed = 20260101, party = null) {
     inv: clone(data.startInv),
     gold: data.startGold,
     flags: {},
-    objs,
-    seen: new Array(w * h).fill(0),
-    notes: [],
+    objs: a.objs,
+    seen: a.seen,
+    notes: a.notes,
+    areas: {}, // besuchte, aktuell nicht aktive Gebiete: { id: { objs, seen, notes } }
     combat: null,
     steps: 0
   };
   markSeen(state, data);
   return state;
+}
+
+// Gebietswechsel über ein Treppen-Objekt (type 'stairs', to: {level, x, y, dir}) im aktuellen Gebiet
+export function changeArea(state, data, stairsId) {
+  const st = state.objs.find((o) => o.id === stairsId && o.type === 'stairs');
+  if (!st || !st.to) return { ok: false, msg: 'Hier führt nichts weiter.' };
+  const to = st.to, target = data.levels[to.level];
+  if (!target) return { ok: false, msg: 'Das Ziel ist unbekannt.' };
+  if (cellChar(target, to.x, to.y) !== '.') return { ok: false, msg: 'Der Weg ist versperrt.' };
+  state.areas = state.areas || {};
+  state.areas[state.levelId] = { objs: state.objs, seen: state.seen, notes: state.notes };
+  const a = state.areas[to.level] || freshArea(data, to.level);
+  delete state.areas[to.level];
+  state.levelId = to.level;
+  state.objs = a.objs; state.seen = a.seen; state.notes = a.notes || [];
+  state.player = { x: to.x, y: to.y, dir: to.dir };
+  markSeen(state, data);
+  return { ok: true, msg: st.msg || `Du erreichst: ${target.name}.`, levelName: target.name };
 }
 
 export function blockerAt(state, x, y) {
@@ -256,6 +282,8 @@ export function tryMove(state, data, rel) {
     state.flags[ex.id] = true;
     res.events.push({ type: 'exit', id: ex.id });
   }
+  const stairs = state.objs.find((o) => o.type === 'stairs' && o.x === nx && o.y === ny);
+  if (stairs) { res.events.push({ type: 'stairs', id: stairs.id }); return res; }
   res.encounter = enemyInFront(state);
   return res;
 }
@@ -748,6 +776,16 @@ export const MIGRATIONS = {
       const m = deriveMp(data, h.cls, Number.isInteger(h.level) ? h.level : 1);
       return { ...h, maxMp: m, mp: m };
     }) } };
+  },
+  // v4 -> v5: Mehrere Gebiete. Bisher gab es nur das aktuelle Gebiet; besuchte andere Gebiete (areas) beginnen leer.
+  // Neue feste Objekte des aktuellen Gebiets (z. B. Treppen), die der alte Stand nicht kennt, werden ergänzt; vorhandene bleiben unverändert.
+  4: (save, data) => {
+    const st = save.state;
+    if (!st || typeof st !== 'object' || !Array.isArray(st.objs)) throw new Error('Spielstand v4: Zustand fehlt');
+    const lvl = data && data.levels[st.levelId];
+    const have = new Set(st.objs.map((o) => o && o.id));
+    const added = lvl ? lvl.objects.filter((o) => !have.has(o.id)).map((o) => freshObj(data, o)) : [];
+    return { ...save, v: 5, state: { ...st, objs: [...st.objs, ...added], areas: {}, notes: Array.isArray(st.notes) ? st.notes : [] } };
   }
 };
 
@@ -803,6 +841,15 @@ export function validateState(state, data) {
   if (!Array.isArray(state.objs)) err.push('Objekte ungültig');
   if (!Array.isArray(state.seen) || state.seen.length !== w * h) err.push('Karte ungültig');
   if (!Number.isInteger(state.rng)) err.push('Zufallszustand ungültig');
+  if (!state.areas || typeof state.areas !== 'object' || Array.isArray(state.areas)) err.push('Gebiete ungültig');
+  else for (const [id, a] of Object.entries(state.areas)) {
+    const l2 = data.levels[id];
+    if (!l2) { err.push(`Gebiet ${id}: unbekannt`); continue; }
+    if (id === state.levelId) err.push(`Gebiet ${id}: doppelt (aktiv und gespeichert)`);
+    if (!a || !Array.isArray(a.objs)) err.push(`Gebiet ${id}: Objekte ungültig`);
+    if (!a || !Array.isArray(a.seen) || a.seen.length !== l2.map[0].length * l2.map.length) err.push(`Gebiet ${id}: Karte ungültig`);
+    if (!a || !Array.isArray(a.notes)) err.push(`Gebiet ${id}: Notizen ungültig`);
+  }
   return err;
 }
 
@@ -859,7 +906,7 @@ export function analyzeLevel(data, levelId) {
   const lvl = data.levels[levelId];
   const doors = lvl.objects.filter((o) => o.type === 'door');
   const chests = lvl.objects.filter((o) => o.type === 'chest');
-  const exits = lvl.objects.filter((o) => o.type === 'exit');
+  const exits = lvl.objects.filter((o) => o.type === 'exit' || o.type === 'stairs'); // Ausgang = Runenstein oder Treppe
   const have = new Set();
   const opened = new Set();
   const bfs = () => {
