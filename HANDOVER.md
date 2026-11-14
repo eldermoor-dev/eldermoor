@@ -300,3 +300,10 @@ Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätet
 - Fehlerlog (Menü → Fehlerlog (n)): `window.onerror`/`unhandledrejection` und die Fehler beim Laden/Importieren landen via `logError` in `ERR.list` (max. 40, gleiche Fehler werden gezählt), gespeichert unter dem Schlüssel `errlog` in IndexedDB. Anzeige mit lokaler Zeit, Version, Gebiet/Position/Kampf-Kontext; Knöpfe Kopieren (Zwischenablage, Rückfall `execCommand`), Leeren. Reine Logik: `pushError`, `formatErrorLog`, `ERRLOG_MAX` in logic.js. Kein Spielstand-Bestandteil.
 - Verkaufen (Inventar → „Verkaufen (n G)“ mit Rückfrage): `itemWorth`/`sellPrice`/`sellItem` in logic.js. `items.<id>.value` in game.json; erzeugte Ausrüstung: Wert × (1 + 0,5 je Qualitätsstufe) + 4 je Punkt Zufallseigenschaft; Verkaufspreis = Hälfte, min. 1. Nicht verkäuflich: Quest, Unikate (`q: unique`), `noSell`. Nicht im Kampf. Getragene Ausrüstung muss erst abgelegt werden. Verkauf überall möglich (Händler folgt später; dessen Kaufpreis = voller Wert).
 - Speicherstand weiter v6. Tests 61.
+
+## 0.12.0 (Phase 3, Schritt 5: Händlerin und Siedlung am Moorrand)
+- game.json: `shops.<id> = {name, owner, greeting, stock:[{item}]}` (feste, unbegrenzte Ware); neues Gebiet `moorrand` („Siedlung am Moorrand“, 12×6) mit Händlerin `merchant_hedda` (Objekt `type: "merchant"`, `shop`) und Treppe `stairs_back`; in `test1` neue Treppe `stairs_moor` bei (1,4). Ware: Heiltrank, Proviant, Eisenschwert, Eichenstab, Lederharnisch, Kettenhemd.
+- logic.js: `merchant` blockiert wie eine Truhe, `interact` liefert `{shop}`; `shopStock`, `buyPrice` (voller Wert), `buyItem`. Verkaufen (`sellItem`, halber Wert) ist in der UI jetzt nur noch im Handelsfenster; die Logik selbst prüft keinen Händler (UI-Regel).
+- main.js: `openShop` (Reiter Kaufen/Verkaufen, seltene und epische Ausrüstung verlangt zweiten Tipp), Inventar ohne Verkaufsknopf (Hinweis „Verkaufen kannst du bei einer Händlerin“), Kartensymbol „$“.
+- render.js: Händlerin-Sprite `genMerchant` (vorläufig, prozedural; Stand durch die Bildschirmleiste teils verdeckt).
+- Speicherstand weiter v6. Tests 63.

@@ -235,6 +235,31 @@ function genSchrat(seed) {
   }
   return t;
 }
+// Händlerin: Gestalt mit Kapuze hinter einem Holzstand, Laterne rechts
+function genMerchant(seed) {
+  const t = mk(255);
+  const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
+  for (let y = 10; y <= 56; y++) for (let x = 12; x <= 52; x++) {
+    const cx = (x - 32) / (y < 26 ? 9.5 : 9.5 + (y - 26) * 0.55), cy = y < 26 ? (y - 17) / 8.5 : 0;
+    if (cx * cx + cy * cy <= 1) {
+      const l = (x - 32) / 18;
+      let v = P('moss', 2.6 - l * 1.3 + (hash(x, y, seed) - 0.5) * 0.8 + (Math.sin(x * 0.7 + y * 0.2) > 0.5 ? -0.6 : 0));
+      if (y >= 12 && y <= 24 && Math.abs(x - 32) <= 5 && (y - 18) * (y - 18) / 30 + (x - 32) * (x - 32) / 26 <= 1) v = P('flesh', 3.6 + (hash(x, y, seed + 1) - 0.5) * 0.6);
+      if ((y === 18 || y === 19) && (x === 29 || x === 35)) v = P('iron', 0);
+      set(x, y, v);
+    }
+  }
+  for (let y = 44; y <= 58; y++) for (let x = 8; x <= 56; x++) {
+    let sh = 3 + hash(x, y, seed + 2) * 1.2 - 0.6 + (y === 44 ? 1.2 : 0) - (y >= 57 ? 1 : 0);
+    if (x === 8 || x === 56) sh -= 1;
+    set(x, y, P('wood', sh));
+  }
+  for (let y = 34; y <= 43; y++) for (let x = 47; x <= 53; x++) {
+    const edge = x === 47 || x === 53 || y === 34;
+    set(x, y, edge ? P('iron', 2) : P('glow', 5 - (y - 34) * 0.25 + hash(x, y, seed + 3) * 0.6));
+  }
+  return t;
+}
 function genPortal(seed) {
   const t = mk(255);
   for (let y = 0; y < TEX; y++) for (let x = 0; x < TEX; x++) {
@@ -284,7 +309,7 @@ export function makeTextures(detail = 1) {
     wall: { [WALL_STONE]: up(genStone(11), 101), [WALL_MOSS]: up(genMoss(23), 102), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104) },
     floor: up(genFloor(41), 105),
     ceil: up(genCeil(53), 106),
-    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: genSchrat(71), portal: spr(genPortal(81), 109) }
+    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: genSchrat(71), portal: spr(genPortal(81), 109), merchant: spr(genMerchant(91), 110) }
   };
 }
 
@@ -453,6 +478,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null) { // aliv
         out.push({ x: o.x + rx * off, y: o.y + ry * off, tex: tex.sprites.schrat, scale: (n > 1 ? 0.62 : 0.85) * (1 + 0.02 * Math.sin(time * 3 + i)) });
       }
     }
+    else if (o.type === 'merchant') out.push({ x: o.x, y: o.y, tex: tex.sprites.merchant, scale: 0.8 });
     else if (o.type === 'exit' || o.type === 'stairs') out.push({ x: o.x, y: o.y, tex: tex.sprites.portal, scale: 0.9 });
   }
   return out;

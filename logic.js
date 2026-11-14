@@ -225,6 +225,7 @@ export function blockerAt(state, x, y) {
     if (o.x !== x || o.y !== y) continue;
     if (o.type === 'door' && !o.open) return o;
     if (o.type === 'chest') return o;
+    if (o.type === 'merchant') return o;
     if (o.type === 'enemy' && !o.dead) return o;
   }
   return null;
@@ -260,6 +261,7 @@ export function markSeen(state, data) {
 function blockedText(b) {
   if (b.type === 'door') return b.locked ? 'Die Tür ist verschlossen.' : 'Die Tür ist geschlossen.';
   if (b.type === 'chest') return 'Eine Truhe versperrt den Weg.';
+  if (b.type === 'merchant') return 'Der Stand der Händlerin versperrt den Weg.';
   return 'Ein Gegner steht im Weg.';
 }
 
@@ -325,6 +327,7 @@ export function interact(state, data) {
     return { msg: 'Hier gibt es nichts zu tun.' };
   }
   if (o.type === 'enemy') return { encounter: o };
+  if (o.type === 'merchant') return { shop: o.shop, merchant: o.id };
   if (o.type === 'door') {
     if (o.locked) {
       if ((state.inv[o.key] || 0) > 0) {
@@ -496,6 +499,21 @@ export function sellItem(state, data, id) {
   if (state.inv[id] === 0) { delete state.inv[id]; if (state.gear && state.gear[id]) delete state.gear[id]; }
   state.gold += p;
   return { msg: `${it.name} verkauft: +${p} Gold.`, price: p, sfx: 'chest' };
+}
+
+// ---------- Handel (Phase 3, Schritt 5) ----------
+// data.shops.<id> = { name, owner, greeting, stock: [{ item }] } (feste Ware, unbegrenzt). Kaufpreis = voller Wert, Verkauf = Hälfte (siehe sellPrice).
+export const shopStock = (data, shopId) => ((data.shops && data.shops[shopId] && data.shops[shopId].stock) || []).filter((e) => data.items[e.item]);
+export const buyPrice = (state, data, id) => itemWorth(state, data, id);
+export function buyItem(state, data, shopId, itemId) {
+  if (state.combat) return { error: 'in-combat' };
+  if (!shopStock(data, shopId).some((e) => e.item === itemId)) return { error: 'not-in-stock' };
+  const p = buyPrice(state, data, itemId), it = data.items[itemId];
+  if (p == null) return { error: 'not-for-sale' };
+  if (state.gold < p) return { error: 'no-gold', price: p };
+  state.gold -= p;
+  state.inv[itemId] = (state.inv[itemId] || 0) + 1;
+  return { msg: `${it.name} gekauft: −${p} Gold.`, price: p, sfx: 'chest' };
 }
 
 // ---------- Fehlerlog (Phase 3, Schritt 4; rein, damit testbar) ----------

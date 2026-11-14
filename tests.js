@@ -1063,6 +1063,39 @@ export async function runTests(data, env = {}) {
     const e = L.pushError([], {}); eq(e[0].msg, 'Unbekannter Fehler', 'leere Meldung');
   });
 
+  // ---- Phase 3, Schritt 5: Händler ----
+  await test('Händler (Phase 3): Daten gültig, Händler blockiert und öffnet das Handelsfenster, Gebiet erreichbar', () => {
+    for (const [lid, lvl] of Object.entries(data.levels)) for (const o of lvl.objects) if (o.type === 'merchant') {
+      const sh = data.shops[o.shop]; assert(sh && sh.name && sh.greeting && sh.stock.length, `${o.id}: Handel ${o.shop}`);
+      for (const e of sh.stock) { assert(data.items[e.item], `Ware ${e.item}`); assert(L.itemWorth(null, data, e.item) > 0, `Ware ${e.item} ohne Preis`); assert(data.items[e.item].q !== 'unique' && data.items[e.item].kind !== 'quest', `Ware ${e.item} darf nicht handelbar sein`); }
+      assert(L.analyzeLevel(data, lid).ok, `${lid} nicht lösbar`);
+    }
+    const s = fresh(61); L.changeArea(s, data, 'stairs_moor');
+    eq(s.levelId, 'moorrand', 'Siedlung erreicht');
+    s.player = { x: 8, y: 2, dir: 1 };
+    const m = L.tryMove(s, data, 'f');
+    assert(!m.moved && /Händlerin/.test(m.msg), 'Händlerin blockiert: ' + JSON.stringify(m));
+    const r = L.interact(s, data);
+    eq(r.shop, 'moorrand', 'Interaktion öffnet den Handel');
+    assert(!r.encounter, 'kein Kampf');
+  });
+
+  await test('Händler (Phase 3): Kaufen – Gold und Bestand, zu wenig Gold, nicht im Kampf, nur Ware des Händlers; Kauf und Verkauf sind verlustig', () => {
+    const s = fresh(62);
+    const g0 = s.gold, n0 = s.inv.potion;
+    const r = L.buyItem(s, data, 'moorrand', 'potion');
+    assert(r.msg && s.gold === g0 - 10 && s.inv.potion === n0 + 1, 'Heiltrank gekauft');
+    s.gold = 5;
+    eq(L.buyItem(s, data, 'moorrand', 'potion').error, 'no-gold', 'zu wenig Gold'); eq(s.gold, 5, 'Gold unverändert');
+    eq(L.buyItem(s, data, 'moorrand', 'schratdorn').error, 'not-in-stock', 'nicht im Sortiment');
+    eq(L.buyItem(s, data, 'gibtsnicht', 'potion').error, 'not-in-stock', 'unbekannter Händler');
+    s.gold = 100; const b = L.buyItem(s, data, 'moorrand', 'chain_mail'); assert(b.msg && s.inv.chain_mail === 1 && s.gold === 70, 'Kettenhemd gekauft');
+    // kein Gewinn durch Kaufen und sofortiges Verkaufen
+    for (const e of L.shopStock(data, 'moorrand')) assert(L.sellPrice(s, data, e.item) < L.buyPrice(s, data, e.item), `${e.item}: Verkauf ≥ Kauf`);
+    L.startCombat(s, data, s.objs.find((o) => o.id === 'en2'));
+    eq(L.buyItem(s, data, 'moorrand', 'potion').error, 'in-combat', 'nicht im Kampf');
+  });
+
   await test('Migration v1→v2: beschädigte v1-Stände werden mit klarer Meldung abgelehnt', () => {
     const fails = (mut, re) => {
       const o = JSON.parse(V1_SAVE); mut(o);

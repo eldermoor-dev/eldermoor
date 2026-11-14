@@ -3,13 +3,13 @@
 import {
   DIRS, DIR_NAMES, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, pushError, formatErrorLog, itemDef, qualityOf, changeArea, knownSpells, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
+  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, knownSpells, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setResolution, W, H, BASE_W, BASE_H } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.11.0';
+const VERSION = '0.12.0';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -275,6 +275,7 @@ function act(name) {
       if (g.combat) { say('Im Kampf stehen die Aktionsknöpfe zur Verfügung.'); break; }
       const r = interact(g, S.data);
       if (r.encounter) { startCombatUI(r.encounter); break; }
+      if (r.shop) { S.held = []; S.shopTab = 'buy'; S.shopSure = null; openShop(r.shop, true); break; }
       say(r.msg); if (r.sfx) S.sfx.play(r.sfx);
       if (r.changed) vib(20);
       renderAll();
@@ -589,7 +590,7 @@ function openModal(html, kind = 'generic') {
   S.held = [];
   $('#modal-box').scrollTop = 0;
 }
-function closeModal() { $('#modal').hidden = true; $('#modal-box').innerHTML = ''; S.modal = null; S.invUse = null; S.invEquip = null; S.invSell = null; }
+function closeModal() { $('#modal').hidden = true; $('#modal-box').innerHTML = ''; S.modal = null; S.invUse = null; S.invEquip = null; S.invSell = null; S.shopId = null; S.shopSure = null; }
 const closeBtn = '<button class="mb" data-m="close">Schließen</button>';
 
 function openMenu() {
@@ -630,6 +631,27 @@ async function copyErrorLog() {
     const ok = document.execCommand('copy'); ta.remove();
     toast(ok ? 'Fehlerlog kopiert.' : 'Kopieren nicht möglich.');
   } catch { toast('Kopieren nicht möglich.'); }
+}
+function openShop(shopId, greet) {
+  const g = S.game, d = S.data, sh = d.shops[shopId];
+  S.shopId = shopId;
+  const tab = S.shopTab || 'buy';
+  let html = `<h2>${esc(sh.name)}</h2>${greet ? `<p class="muted">${esc(sh.greeting)}</p>` : ''}<p>Gold: <b>${g.gold}</b></p>
+    <div class="acts" style="margin-top:0"><button class="mb${tab === 'buy' ? ' primary' : ''}" data-m="shopbuy">Kaufen</button><button class="mb${tab === 'sell' ? ' primary' : ''}" data-m="shopsellTab">Verkaufen</button></div>`;
+  if (tab === 'buy') {
+    html += shopStock(d, shopId).map((e) => {
+      const it = d.items[e.item], p = buyPrice(g, d, e.item), have = g.inv[e.item] || 0;
+      return `<div class="row"><div><b>${esc(it.name)}</b>${have ? ` <span class="muted">(im Beutel: ${have})</span>` : ''}<div class="muted">${esc(it.desc)}</div></div><button class="mb" data-m="buy:${e.item}" ${g.gold >= p ? '' : 'disabled'}>Kaufen (${p} G)</button></div>`;
+    }).join('');
+  } else {
+    const rows = Object.entries(g.inv).filter(([id, n]) => n > 0 && sellPrice(g, d, id) != null);
+    html += rows.length ? rows.map(([id, n]) => {
+      const it = itemDef(g, d, id), p = sellPrice(g, d, id), sure = S.shopSure === id;
+      return `<div class="row"><div><b>${qTag(id, it)}</b> × ${n}<div class="muted">${esc(it.desc)}</div></div><button class="mb${sure ? ' primary' : ''}" data-m="shopsell:${id}">${sure ? 'Wirklich verkaufen' : 'Verkaufen'} (${p} G)</button></div>`;
+    }).join('') : '<p class="muted">Du hast nichts, was sie kaufen würde. Getragene Ausrüstung musst du erst ablegen.</p>';
+  }
+  html += `<div class="acts">${closeBtn}</div>`;
+  openModal(html, 'shop');
 }
 function openBestiary() {
   const g = S.game, d = S.data, b = g.bestiary || {};
@@ -672,22 +694,18 @@ function openInventory() {
   html += items.length ? items.map(([id, n]) => {
     const it = itemDef(g, d, id);
     const use = it.kind === 'consumable' && !g.combat ? `<button class="mb" data-m="use:${id}">Benutzen</button>` : it.kind === 'supply' && !g.combat ? '<button class="mb" data-m="rest">Rasten</button>' : it.kind === 'equip' && !g.combat ? `<button class="mb" data-m="eqsel:${id}">Ausrüsten</button>` : '';
-    const sp = !g.combat ? sellPrice(g, d, id) : null;
-    const sell = sp != null ? `<button class="mb" data-m="sellask:${id}">Verkaufen (${sp} G)</button>` : '';
-    return `<div class="row"><div><b>${qTag(id, it)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}<div class="muted">${esc(it.desc)}</div></div><div style="display:flex;flex-direction:column;gap:4px">${use}${sell}</div></div>`;
+    return `<div class="row"><div><b>${qTag(id, it)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}<div class="muted">${esc(it.desc)}</div></div>${use}</div>`;
   }).join('') : '<p class="muted">Nichts dabei.</p>';
   if (S.invEquip && itemDef(g, d, S.invEquip) && (g.inv[S.invEquip] || 0) > 0) {
     html += `<h3>${esc(itemDef(g, d, S.invEquip).name)} an wen?</h3><div class="acts">` + g.heroes.map((h, i) =>
       `<button class="mb" data-m="eq:${i}" ${canEquip(d, h, S.invEquip, g) ? '' : 'disabled'}>${esc(h.name)} (${esc(h.role)})${canEquip(d, h, S.invEquip, g) ? esc(gearDelta(h, S.invEquip)) : ''}</button>`).join('') + '</div>';
-  }
-  if (S.invSell && (g.inv[S.invSell] || 0) > 0 && sellPrice(g, d, S.invSell) != null) {
-    html += `<h3>${esc(itemDef(g, d, S.invSell).name)} verkaufen für ${sellPrice(g, d, S.invSell)} Gold?</h3><div class="acts"><button class="mb primary" data-m="sell">Ja, verkaufen</button><button class="mb" data-m="sellno">Nein</button></div>`;
   }
   if (S.invUse) {
     html += `<h3>${esc(itemDef(g, d, S.invUse).name)} an wem anwenden?</h3><div class="acts">` + g.heroes.map((h, i) =>
       `<button class="mb" data-m="heal:${i}" ${h.hp > 0 && h.hp < h.maxHp ? '' : 'disabled'}>${esc(h.name)} (${h.hp}/${h.maxHp})</button>`).join('') + '</div>';
   }
   if (g.combat) html += '<p class="muted">Im Kampf: Gegenstände über den Knopf „Gegenstand“ benutzen.</p>';
+  else if (items.some(([id]) => sellPrice(g, d, id) != null)) html += '<p class="muted">Verkaufen kannst du bei einer Händlerin.</p>';
   html += `<div class="acts">${closeBtn}</div>`;
   openModal(html, 'inventory');
 }
@@ -762,6 +780,7 @@ function drawMap() {
     else if (o.type === 'chest') { c.fillStyle = o.open ? '#7a6a3a' : '#e0b040'; c.fillRect(cx - cs * 0.25, cy - cs * 0.2, cs * 0.5, cs * 0.4); }
     else if (o.type === 'stairs') { c.fillStyle = '#7fd4ff'; c.beginPath(); c.moveTo(cx - cs * 0.3, cy - cs * 0.25); c.lineTo(cx + cs * 0.3, cy - cs * 0.25); c.lineTo(cx, cy + cs * 0.3); c.fill(); }
     else if (o.type === 'exit') { c.strokeStyle = '#7fd4ff'; c.lineWidth = 2; c.beginPath(); c.arc(cx, cy, cs * 0.3, 0, 7); c.stroke(); }
+    else if (o.type === 'merchant') { c.fillStyle = '#e0b040'; c.font = `bold ${cs}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('$', cx, cy); }
     else if (o.type === 'enemy' && !o.dead) { c.fillStyle = '#d05040'; c.font = `bold ${cs}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('×', cx, cy); }
   }
   c.fillStyle = '#ffe066';
@@ -963,13 +982,20 @@ async function onModalClick(e) {
     if (t) { say(t); toast(t); closeModal(); }
     else { say(r.msg); S.sfx.play(r.sfx); toast(r.msg, 3200); closeModal(); renderAll(); }
   }
-  else if (m.startsWith('sellask:')) { S.invSell = m.slice(8); S.invEquip = null; S.invUse = null; openInventory(); }
-  else if (m === 'sellno') { S.invSell = null; openInventory(); }
-  else if (m === 'sell') {
-    const r = sellItem(g, S.data, S.invSell);
+  else if (m === 'shopbuy' || m === 'shopsellTab') { S.shopTab = m === 'shopbuy' ? 'buy' : 'sell'; S.shopSure = null; openShop(S.shopId); }
+  else if (m.startsWith('buy:')) {
+    const r = buyItem(g, S.data, S.shopId, m.slice(4));
+    if (r.msg) { say(r.msg); S.sfx.play(r.sfx); toast(r.msg); } else toast(r.error === 'no-gold' ? `Zu wenig Gold (${r.price} nötig).` : 'Das geht nicht.');
+    renderAll(); openShop(S.shopId);
+  }
+  else if (m.startsWith('shopsell:')) {
+    const id = m.slice(9), it = itemDef(g, S.data, id), q = qualityOf(g, S.data, id);
+    const dear = it && it.kind === 'equip' && q && (q.id === 'rare' || q.id === 'epic');
+    if (dear && S.shopSure !== id) { S.shopSure = id; openShop(S.shopId); return; } // seltene Ausrüstung: zweiter Tipp bestätigt
+    S.shopSure = null;
+    const r = sellItem(g, S.data, id);
     if (r.msg) { say(r.msg); S.sfx.play(r.sfx); toast(r.msg); } else toast('Das geht nicht.');
-    if (!(g.inv[S.invSell] > 0)) S.invSell = null;
-    renderAll(); openInventory();
+    renderAll(); openShop(S.shopId);
   }
   else if (m.startsWith('eqsel:')) { S.invEquip = m.slice(6); openInventory(); }
   else if (m.startsWith('eq:')) {

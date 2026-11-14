@@ -698,6 +698,19 @@
             "y": 2,
             "dir": 1
           }
+        },
+        {
+          "id": "stairs_moor",
+          "type": "stairs",
+          "x": 1,
+          "y": 4,
+          "msg": "Du steigst hinauf in die Siedlung am Moorrand.",
+          "to": {
+            "level": "moorrand",
+            "x": 2,
+            "y": 2,
+            "dir": 1
+          }
         }
       ]
     },
@@ -766,6 +779,46 @@
             "kultist",
             "kultist"
           ]
+        }
+      ]
+    },
+    "moorrand": {
+      "id": "moorrand",
+      "name": "Siedlung am Moorrand",
+      "palette": "keller",
+      "map": [
+        "############",
+        "#.....m....#",
+        "#..........#",
+        "#..........#",
+        "#....m.....#",
+        "############"
+      ],
+      "start": {
+        "x": 2,
+        "y": 2,
+        "dir": 1
+      },
+      "objects": [
+        {
+          "id": "stairs_back",
+          "type": "stairs",
+          "x": 1,
+          "y": 2,
+          "msg": "Du steigst hinab ins Testgewölbe.",
+          "to": {
+            "level": "test1",
+            "x": 2,
+            "y": 4,
+            "dir": 1
+          }
+        },
+        {
+          "id": "merchant_hedda",
+          "type": "merchant",
+          "x": 9,
+          "y": 2,
+          "shop": "moorrand"
         }
       ]
     }
@@ -952,5 +1005,32 @@
         "weapon"
       ]
     }
-  ]
+  ],
+  "shops": {
+    "moorrand": {
+      "name": "Heddas Stand",
+      "owner": "Hedda",
+      "greeting": "Hedda mustert euch über ihre Laterne: „Wer aus dem Moor kommt, braucht Proviant. Und Heiltränke.“",
+      "stock": [
+        {
+          "item": "potion"
+        },
+        {
+          "item": "ration"
+        },
+        {
+          "item": "iron_sword"
+        },
+        {
+          "item": "oak_staff"
+        },
+        {
+          "item": "leather_armor"
+        },
+        {
+          "item": "chain_mail"
+        }
+      ]
+    }
+  }
 }
