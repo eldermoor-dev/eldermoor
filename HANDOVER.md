@@ -354,3 +354,28 @@ Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätet
 - Palette `moor`: `glow` jetzt warm (255,200,110) statt grünlich; Moorlicht-Kern nutzt `flesh` (bleibt grün).
 - Texturerzeugung ~150 ms in Node (Startzeit auf dem Handy messen: Einstellungen → Debug → „Start→1. Bild“).
 - Das globale „Fackelflackern“ (Einstellung) bleibt unverändert und betrifft nur die Helligkeit der ganzen Szene.
+
+## 0.14.7
+- Treppen-Sprites neu (`genStairs`): Steinbogen wie beim Pfad, darin Treppe (hoch: Stufen mit Licht oben, runter: Stufen verschwinden im Schwarz). Nur render.js; Logik unverändert.
+
+## 0.14.8
+- Pfeil im Schlussstein entfernt (Nutzer: unnötig). Sonst wie 0.14.7.
+
+## 0.15.0
+- Bedienung: Top-Leiste entfernt. Feld 6 des rechten Blocks = „Menü“ (☰); das Menü-Fenster enthält jetzt auch „Karte“ (und „Debug“ bei aktivem Debug-Modus). Kompass (`#compass`, Overlay oben rechts im Bild, Zifferblatt dreht sich mit der Blickrichtung; `renderCompass`, aufgerufen in `renderAll` und `doTurn`). Knopfbeschriftung 8 px, damit „Interagieren“ passt.
+- Geöffnete Truhen sind begehbar (`blockerAt`: nur `!o.open`).
+- Text vereinheitlicht: „X verteidigt.“, „½ Verteidigung“, „verteidigt: halber Schaden“.
+- Boss-Balance: Hauptmann 160 LP, Angriff 13 (Vorschlag war 180; Simulation: bei reinem Angriff 44 % statt 18 % Siegquote, klug 97 %). Neuer Boss `grubenschrat` (Name „Moorschrat“, 190 LP, 200 EP, 40 Gold, Phasen wie `schrat`); `schrat` (80 LP) bleibt der Test-Boss in test1.
+- Neues Level `schratgruben` (35×15, Palette `grube`, Wandzeichen `r` = Höhlenfels, `o` = Fels mit Flechten, `#`/`T` Mauer/Fackel am Eingang). Treppe `stairs_gruft_down` in der Kultgruft (ersetzt das Portal `exit_gruft`) ↔ `stairs_gruben_up`. Schlüssel `gruben_schluessel` in `chest_s_key` (Südhöhle, bewacht von en_s3), Tor `door_grube` (27,7), Boss `en_sboss` im Lager, `exit_gruben` als Platzhalter (Nebelturm folgt in 0.16).
+- Neuer Gegner `erzkaefer` (34 LP, Angriff 11, Vert. 4, Feuer −25 %, Blitz +25 %) mit eigenem Sprite (`genKaefer`).
+- Render: `genRock` (Voronoi-Felsbrocken, optional Flechten), `WALL_ROCK = 6`, `WALL_LICHEN = 7`.
+- Simulation (camp.mjs, nicht im Repo): klug ≈ 97 % Boss-Siege, Stufe vor Schratgruben-Boss Ø 6,7; reines Angreifen Ø 5,9.
+- Offen: „Rasten“-Knopf als eigene Taste entfällt, Rasten steht im Menü.
+
+## 0.15.1
+- Auftritt: neues Overlay `#event` (Titel + Satz, 3,4 s, blockiert keine Eingaben), Funktion `showEvent`/`introOnce` in main.js; Marke im Spielstand `flags['intro:<objId>']` (Boss) bzw. `flags['area:<levelId>']` (Gebiet), also nur beim ersten Mal. Daten: `enemies.<id>.intro {title,text}` (hauptmann, grubenschrat, schrat), `levels.<id>.intro` (moorpfad, kultgruft, schratgruben). Neuer Sound `sting` (audio.js). Beim Boss ersetzt er den „miss“-Ton beim Kampfbeginn.
+- Neue Objekte: `gate` (Fallgitter, `open`, optional `hint`, Wandtextur `WALL_GATE = 8`, `buildGrid`, Karte) und `lever` (Wandhebel, `gate` = Gitter-Id, `used`, Sprites `leverUp/leverDown`). Beide sind Blocker; `freshObj` setzt `open=false`/`used=false`; `analyzeLevel` öffnet Gitter, wenn ein Hebel erreichbar ist.
+- Schratgruben: Nordstollen (Halle B, Gitter `gate_s1` bei (21,4)) mit en_s4 und `chest_s2` ist optional; Hebel `lever_s1` am Westende der Südhöhle (16,12); Hinweise: Gitter selbst, Schild `sign_s5`, Meldung beim Gitter. Karte: Nordhöhle und Nordosthöhle sind bei x=17 durch Fels getrennt.
+- Neue Gegenstände: `oelflasche` (`throw`: 14 Feuerschaden, trifft immer, Elementfaktor wie bei Zaubern, 60 % Brennen) und `gegengift` (`cure: poison`), nur im Kampf (`heroAction`, type `item`, Parameter `target` bzw. `hero`). Kampfleiste: Zeilen nur, wenn etwas geht. Hedda verkauft beide; Beute in chest_s1 / chest_s2. `useItemOutside` heilt nur Gegenstände mit `heal`.
+- `?dev`: `S.fn.startCombatUI`, `S.fn.showEvent` für Tests.
+- Nicht umgesetzt (bewusst): Geheimräume, Schurken-Schlösser, Rollenlabel im Bestiarium. Simulation (camp.mjs) kennt die neuen Gegenstände nicht.

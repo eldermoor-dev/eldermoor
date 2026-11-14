@@ -81,7 +81,9 @@ export async function runTests(data, env = {}) {
     put(s, 12, 2, 0);
     r = L.interact(s, data);
     assert(r.sfx === 'chest' && s.inv.iron_key === 1 && s.inv.potion === 4 && s.gold === 32, 'Truhenbeute: ' + JSON.stringify([s.inv, s.gold]));
-    assert(/leer/.test(L.interact(s, data).msg), 'zweites Öffnen leer');
+    assert(L.interact(s, data).sfx !== 'chest' && s.inv.potion === 4, 'zweites Öffnen bringt nichts');
+    assert(L.tryMove(s, data, 'f').moved, 'geöffnete Truhe ist begehbar');
+    put(s, 12, 2, 0);
     put(s, 11, 7, 1);
     r = L.interact(s, data);
     assert(r.sfx === 'unlock' && s.objs.find((o) => o.id === 'door_b').open, 'Tür öffnet mit Schlüssel');
@@ -1354,6 +1356,66 @@ export async function runTests(data, env = {}) {
     const after = buildSprites([o], tex, 0, 0, { x: ['skeleton', 'skeleton'] });
     eq(after.length, 2, 'zwei Gestalten'); assert(after.every((s) => s.tex === tex.sprites.skeleton), 'nur noch Skelette');
     eq(buildSprites([o], tex, 0, 0, { x: 2 }).length, 2, 'Zahl funktioniert weiter');
+  });
+
+  await test('Schratgruben (0.15): Treppe hin und zurück, Schlüsseltruhe vor dem Tor, Boss, Gegner bekannt', () => {
+    const lv = data.levels.schratgruben, kg = data.levels.kultgruft;
+    assert(lv && lv.palette === 'grube' && data.palettes.grube, 'Level und Palette');
+    const down = kg.objects.find((o) => o.id === 'stairs_gruft_down'), up = lv.objects.find((o) => o.id === 'stairs_gruben_up');
+    assert(down && down.to.level === 'schratgruben' && up && up.to.level === 'kultgruft', 'Treppen verbinden die Gebiete');
+    assert(!kg.objects.some((o) => o.id === 'exit_gruft'), 'Platzhalter-Portal entfernt');
+    const door = lv.objects.find((o) => o.id === 'door_grube'), key = lv.objects.find((o) => o.id === 'chest_s_key');
+    assert(door.locked && door.key === 'gruben_schluessel' && key.loot.some((l) => l.item === 'gruben_schluessel'), 'Schlüssel liegt in der Südhöhle');
+    assert(key.x < door.x, 'Schlüsseltruhe liegt vor dem Tor');
+    for (const o of lv.objects.filter((x) => x.type === 'enemy')) for (const k of (o.kinds || [o.kind])) assert(data.enemies[k], 'Gegnerart ' + k);
+    assert(data.enemies.grubenschrat.hp === 190 && data.enemies.hauptmann.hp === 160 && data.enemies.hauptmann.atk === 13, 'Boss-Werte');
+    assert(data.enemies.schrat.hp === 80, 'Test-Boss unverändert');
+  });
+
+  await test('Fallgitter und Hebel (0.15.1): Gitter sperrt, Hebel öffnet, Analyse, Karte', () => {
+    const s = L.newGame(data, 5);
+    s.levelId = 'schratgruben'; s.objs = JSON.parse(JSON.stringify(data.levels.schratgruben.objects));
+    for (const o of s.objs) { if (o.type === 'gate') o.open = false; if (o.type === 'lever') o.used = false; if (o.type === 'chest' || o.type === 'door') o.open = false; if (o.type === 'enemy') { o.hp = 1; o.dead = false; } }
+    s.seen = new Array(data.levels.schratgruben.map[0].length * data.levels.schratgruben.map.length).fill(0);
+    s.player = { x: 21, y: 5, dir: 0 };
+    let r = L.tryMove(s, data, 'f');
+    assert(!r.moved && /Fallgitter/.test(r.msg), 'Gitter sperrt');
+    assert(/Mechanismus/.test(L.interact(s, data).msg), 'Hinweis am Gitter');
+    s.player = { x: 16, y: 13, dir: 0 };
+    r = L.interact(s, data);
+    assert(r.sfx === 'door' && r.changed && s.objs.find((o) => o.id === 'gate_s1').open, 'Hebel öffnet das Gitter');
+    assert(/schon umgelegt/.test(L.interact(s, data).msg), 'Hebel nur einmal');
+    s.player = { x: 21, y: 5, dir: 0 };
+    assert(L.tryMove(s, data, 'f').moved, 'offenes Gitter ist passierbar');
+    const a = L.analyzeLevel(data, 'schratgruben');
+    assert(a.ok && !a.unreachableChests.length, 'Analyse: Nordstollen-Truhe über den Hebel erreichbar: ' + JSON.stringify(a));
+    const lv2 = JSON.parse(JSON.stringify(data)); lv2.levels.schratgruben.objects = lv2.levels.schratgruben.objects.filter((o) => o.type !== 'lever');
+    assert(L.analyzeLevel(lv2, 'schratgruben').unreachableChests.includes('chest_s2'), 'Ohne Hebel bleibt die Truhe unerreichbar (Gegenprobe)');
+  });
+
+  await test('Ölflasche und Gegengift (0.15.1): Wurf mit Elementfaktor, Gift nehmen, nur im Kampf, Vorrat sinkt', () => {
+    const s = L.newGame(data, 11);
+    s.inv.oelflasche = 2; s.inv.gegengift = 1;
+    const eo = s.objs.find((o) => o.type === 'enemy');
+    L.startCombat(s, data, eo);
+    const toHero = () => { let g = 0; while (L.currentActor(s) && L.currentActor(s).side === 'e' && g++ < 20) L.enemyStep(s, data, {}); };
+    toHero();
+    const e0 = s.combat.enemies[0], hp0 = e0.hp;
+    let r = L.heroAction(s, data, { type: 'item', item: 'oelflasche', target: 0 });
+    assert(!r.error && s.inv.oelflasche === 1 && e0.hp < hp0, 'Ölflasche trifft: ' + JSON.stringify(r));
+    assert(/wirft Ölflasche/.test(r.msgs.join(' ')), 'Meldung');
+    toHero();
+    assert(L.heroAction(s, data, { type: 'item', item: 'gegengift', hero: 0 }).error === 'bad-target', 'Gegengift ohne Gift abgelehnt');
+    s.combat.status.h0 = { poison: { t: 3, p: 2 } };
+    r = L.heroAction(s, data, { type: 'item', item: 'gegengift', hero: 0 });
+    assert(!r.error && s.inv.gegengift === 0 && !L.statusOf(s, 'h', 0).poison, 'Gift genommen');
+    assert(L.useItemOutside(s, data, 'oelflasche', 0).error, 'außerhalb des Kampfes nicht benutzbar');
+    assert(data.shops.moorrand.stock.some((x) => x.item === 'oelflasche') && data.shops.moorrand.stock.some((x) => x.item === 'gegengift'), 'Hedda verkauft beides');
+  });
+
+  await test('Auftritt (0.15.1): Bosse und neue Gebiete haben Titel und Text', () => {
+    for (const k of ['hauptmann', 'grubenschrat', 'schrat']) assert(data.enemies[k].intro && data.enemies[k].intro.title && data.enemies[k].intro.text, 'Boss-Auftritt ' + k);
+    for (const id of ['moorpfad', 'kultgruft', 'schratgruben']) assert(data.levels[id].intro && data.levels[id].intro.title, 'Gebiets-Auftritt ' + id);
   });
 
   await test('Fackelwand: Kartenzeichen T wird zur Fackel-Textur und blockiert wie eine Wand', () => {

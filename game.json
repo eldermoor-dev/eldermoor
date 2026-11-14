@@ -137,6 +137,35 @@
         "mage"
       ],
       "desc": "Einzigartige Rüstung. +3 Verteidigung, +1 Initiative. Ein Mantel, der nach Nebel riecht. Für Schurke und Magier."
+    },
+    "gruben_schluessel": {
+      "name": "Grubenschlüssel",
+      "kind": "quest",
+      "desc": "Ein verrosteter Schlüssel mit einem Kerbenmuster. Passt in das Holztor der Schratgruben.",
+      "noSell": true
+    },
+    "oelflasche": {
+      "name": "Ölflasche",
+      "kind": "consumable",
+      "throw": {
+        "atk": 14,
+        "element": "fire",
+        "inflict": {
+          "status": "burn",
+          "chance": 60,
+          "turns": 3,
+          "power": 3
+        }
+      },
+      "desc": "Nur im Kampf: wird auf einen Gegner geworfen. 14 Feuerschaden, trifft immer, 60 % Chance auf Brennen.",
+      "value": 12
+    },
+    "gegengift": {
+      "name": "Gegengift",
+      "kind": "consumable",
+      "cure": "poison",
+      "desc": "Nur im Kampf: nimmt einem Helden das Gift.",
+      "value": 8
     }
   },
   "races": {
@@ -526,7 +555,11 @@
           ],
           "chance": 100
         }
-      ]
+      ],
+      "intro": {
+        "title": "Der Moorschrat",
+        "text": "Das Moor bewegt sich. Das war kein Wind."
+      }
     },
     "wolf": {
       "name": "Sumpfwolf",
@@ -629,8 +662,8 @@
     },
     "hauptmann": {
       "name": "Kultwächter-Hauptmann",
-      "hp": 130,
-      "atk": 12,
+      "hp": 160,
+      "atk": 13,
       "def": 5,
       "init": 5,
       "gold": 40,
@@ -692,7 +725,94 @@
           ],
           "chance": 100
         }
-      ]
+      ],
+      "intro": {
+        "title": "Kultwächter-Hauptmann",
+        "text": "Er hebt das Siegel. Die Gruft hält den Atem an."
+      }
+    },
+    "erzkaefer": {
+      "name": "Erzkäfer",
+      "hp": 34,
+      "atk": 11,
+      "def": 4,
+      "init": 7,
+      "gold": 7,
+      "xp": 45,
+      "resist": {
+        "fire": -25,
+        "lightning": 25
+      }
+    },
+    "grubenschrat": {
+      "name": "Moorschrat",
+      "hp": 190,
+      "atk": 13,
+      "def": 3,
+      "init": 5,
+      "gold": 40,
+      "xp": 200,
+      "onHit": {
+        "status": "poison",
+        "chance": 30,
+        "turns": 3,
+        "power": 2
+      },
+      "heavy": {
+        "name": "Schweren Schlag",
+        "every": 3,
+        "mult": 170
+      },
+      "resist": {
+        "fire": 50,
+        "ice": -25
+      },
+      "boss": true,
+      "phases": [
+        {
+          "below": 60,
+          "name": "Wutrausch",
+          "msg": "Das Moor bebt, die Wurzeln peitschen.",
+          "set": {
+            "atk": 15,
+            "heavy": {
+              "name": "Schweren Schlag",
+              "every": 2,
+              "mult": 170
+            }
+          }
+        },
+        {
+          "below": 25,
+          "name": "Letzte Kraft",
+          "msg": "Der Schrat klammert sich ans Leben.",
+          "set": {
+            "atk": 17,
+            "heavy": {
+              "name": "Wurzelhieb",
+              "every": 2,
+              "mult": 200
+            }
+          }
+        }
+      ],
+      "gearDrop": {
+        "chance": 100,
+        "boost": 2
+      },
+      "drops": [
+        {
+          "pick": [
+            "schratdorn",
+            "wurzelstab"
+          ],
+          "chance": 100
+        }
+      ],
+      "intro": {
+        "title": "Der Moorschrat",
+        "text": "Wurzeln brechen aus dem Fels. Er hat euch erwartet."
+      }
     }
   },
   "palettes": {
@@ -778,6 +898,48 @@
         255,
         200,
         110
+      ]
+    },
+    "grube": {
+      "stone": [
+        158,
+        116,
+        82
+      ],
+      "moss": [
+        214,
+        140,
+        56
+      ],
+      "wood": [
+        118,
+        84,
+        50
+      ],
+      "iron": [
+        120,
+        124,
+        134
+      ],
+      "floor": [
+        122,
+        98,
+        72
+      ],
+      "ceil": [
+        92,
+        72,
+        56
+      ],
+      "flesh": [
+        112,
+        132,
+        96
+      ],
+      "glow": [
+        255,
+        196,
+        104
       ]
     }
   },
@@ -1250,7 +1412,11 @@
             "dir": 1
           }
         }
-      ]
+      ],
+      "intro": {
+        "title": "Moorpfad",
+        "text": "Nebel kriecht über den Weg. Irgendwo tropft es."
+      }
     },
     "kultgruft": {
       "id": "kultgruft",
@@ -1470,15 +1636,280 @@
           ]
         },
         {
-          "id": "exit_gruft",
-          "type": "exit",
+          "id": "stairs_gruft_down",
+          "type": "stairs",
           "x": 25,
           "y": 6,
-          "title": "Ende der Kultgruft",
-          "say": "Hinter dem Hauptmann führt ein Gang weiter nach unten, aber er ist eingestürzt.",
-          "text": "Der Hauptmann ist besiegt. Der Gang zu den Schratgruben ist noch eingestürzt. In der nächsten Version geht es hier weiter."
+          "look": "down",
+          "msg": "Du steigst hinab in die Schratgruben.",
+          "to": {
+            "level": "schratgruben",
+            "x": 2,
+            "y": 7,
+            "dir": 1
+          }
         }
-      ]
+      ],
+      "intro": {
+        "title": "Kultgruft",
+        "text": "Kalte Luft. Wer hier liegt, liegt nicht still."
+      }
+    },
+    "schratgruben": {
+      "id": "schratgruben",
+      "name": "Schratgruben",
+      "palette": "grube",
+      "map": [
+        "rororrororoorrorrrrrrorroorrrrrrroo",
+        "rrrrrrrr.........r.........rrrrrrrr",
+        "orrororr.........r.........rrrrrrrr",
+        "rrrorrrrrrro.rroororr.rorrrrrrrrrro",
+        "rrrrrrorrrrr.rrrorrrr.rroroo.....rr",
+        "r##T###rro.....rrro.....rrrr.....oo",
+        "r.....#ror.....roro.....rrrr.....rr",
+        "r................................rr",
+        "r#....#rrr.....rrrr.....oorr.....rr",
+        "r####T#rrr.....rrrr.....rorr.....rr",
+        "rrrrrrrrrrroorrorrrrr.oorrrr.....rr",
+        "rrrrrrrrorrrrrrrrrror.rorrrrrrrrror",
+        "rrrrrrrrrrrrrrrr...........rrrrrrro",
+        "orororrrorrorrrr...........rrrrrrrr",
+        "rrrorrorrrorrrororrorrrrorrroorrorr"
+      ],
+      "start": {
+        "x": 2,
+        "y": 7,
+        "dir": 1
+      },
+      "objects": [
+        {
+          "id": "stairs_gruben_up",
+          "type": "stairs",
+          "x": 1,
+          "y": 7,
+          "look": "up",
+          "msg": "Du steigst die Treppe hinauf zur Kultgruft.",
+          "to": {
+            "level": "kultgruft",
+            "x": 24,
+            "y": 6,
+            "dir": 3
+          }
+        },
+        {
+          "id": "sign_s1",
+          "type": "sign",
+          "x": 3,
+          "y": 6,
+          "text": "Schratgruben. Betreten auf eigene Gefahr. Die Gefahr ist eigen, die Haftung nicht."
+        },
+        {
+          "id": "en_s1",
+          "type": "enemy",
+          "x": 12,
+          "y": 7,
+          "kind": "erzkaefer",
+          "kinds": [
+            "erzkaefer",
+            "erzkaefer"
+          ]
+        },
+        {
+          "id": "sign_s2",
+          "type": "sign",
+          "x": 14,
+          "y": 5,
+          "text": "Stollen 2: Erz. Stollen 3: mehr Erz. Stollen 4: der Grund, warum es keinen Stollen 5 gibt."
+        },
+        {
+          "id": "chest_s1",
+          "type": "chest",
+          "x": 9,
+          "y": 1,
+          "loot": [
+            {
+              "gold": 30
+            },
+            {
+              "item": "potion",
+              "n": 2
+            },
+            {
+              "item": "gegengift",
+              "n": 1
+            }
+          ]
+        },
+        {
+          "id": "en_s5",
+          "type": "enemy",
+          "x": 13,
+          "y": 1,
+          "kind": "skeleton",
+          "kinds": [
+            "skeleton",
+            "skeleton"
+          ]
+        },
+        {
+          "id": "en_s2",
+          "type": "enemy",
+          "x": 21,
+          "y": 7,
+          "kind": "skeleton",
+          "kinds": [
+            "skeleton",
+            "erzkaefer",
+            "skeleton"
+          ]
+        },
+        {
+          "id": "sign_s3",
+          "type": "sign",
+          "x": 19,
+          "y": 9,
+          "text": "Wer den Schlüssel will, geht nach Süden. Wer überleben will, geht nach Süden mit Plan."
+        },
+        {
+          "id": "en_s3",
+          "type": "enemy",
+          "x": 21,
+          "y": 12,
+          "kind": "kultwaechter",
+          "kinds": [
+            "kultwaechter",
+            "erzkaefer"
+          ]
+        },
+        {
+          "id": "chest_s_key",
+          "type": "chest",
+          "x": 25,
+          "y": 13,
+          "loot": [
+            {
+              "item": "gruben_schluessel",
+              "n": 1
+            },
+            {
+              "gold": 15
+            }
+          ]
+        },
+        {
+          "id": "en_s4",
+          "type": "enemy",
+          "x": 21,
+          "y": 2,
+          "kind": "moorlicht",
+          "kinds": [
+            "moorlicht",
+            "moorlicht",
+            "erzkaefer"
+          ]
+        },
+        {
+          "id": "chest_s2",
+          "type": "chest",
+          "x": 26,
+          "y": 1,
+          "loot": [
+            {
+              "item": "ration",
+              "n": 1
+            },
+            {
+              "gold": 25
+            },
+            {
+              "gear": {
+                "boost": 1
+              }
+            },
+            {
+              "item": "oelflasche",
+              "n": 2
+            }
+          ]
+        },
+        {
+          "id": "door_grube",
+          "type": "door",
+          "x": 27,
+          "y": 7,
+          "locked": true,
+          "key": "gruben_schluessel"
+        },
+        {
+          "id": "sign_s4",
+          "type": "sign",
+          "x": 23,
+          "y": 5,
+          "text": "Hier wohnt der Schrat. Bitte klopfen. Er antwortet nicht, aber er hört zu."
+        },
+        {
+          "id": "en_sboss",
+          "type": "enemy",
+          "x": 30,
+          "y": 7,
+          "kind": "grubenschrat"
+        },
+        {
+          "id": "chest_s_boss",
+          "type": "chest",
+          "x": 32,
+          "y": 5,
+          "loot": [
+            {
+              "gold": 60
+            },
+            {
+              "item": "potion",
+              "n": 3
+            },
+            {
+              "gear": {
+                "boost": 2
+              }
+            }
+          ]
+        },
+        {
+          "id": "exit_gruben",
+          "type": "exit",
+          "x": 32,
+          "y": 9,
+          "title": "Ende der Schratgruben",
+          "say": "Hinter dem Lager führt ein Gang nach oben ins Nebelland, aber Nebel und Geröll versperren ihn.",
+          "text": "Der Moorschrat ist besiegt. Der Weg zum Nebelturm ist noch von Geröll und Nebel versperrt. In der nächsten Version geht es hier weiter."
+        },
+        {
+          "id": "gate_s1",
+          "type": "gate",
+          "x": 21,
+          "y": 4,
+          "hint": "Das Gitter sitzt fest. Der Mechanismus liegt auf der anderen Seite des Berges."
+        },
+        {
+          "id": "lever_s1",
+          "type": "lever",
+          "x": 16,
+          "y": 12,
+          "gate": "gate_s1",
+          "msg": "Der Hebel rastet ein. Weit entfernt rasselt eine Kette."
+        },
+        {
+          "id": "sign_s5",
+          "type": "sign",
+          "x": 22,
+          "y": 5,
+          "text": "Nordstollen. Gesperrt. Der Hebel steht, wie üblich, ganz woanders."
+        }
+      ],
+      "intro": {
+        "title": "Schratgruben",
+        "text": "Erz, Staub und Holz, das knarrt, ohne dass jemand es berührt."
+      }
     }
   },
   "rest": {
@@ -1672,6 +2103,12 @@
       "stock": [
         {
           "item": "potion"
+        },
+        {
+          "item": "gegengift"
+        },
+        {
+          "item": "oelflasche"
         },
         {
           "item": "ration"

@@ -12,7 +12,7 @@ const M = { stone: 0, moss: 1, wood: 2, iron: 3, floor: 4, ceil: 5, flesh: 6, gl
 const P = (mat, shade) => M[mat] * 8 + Math.max(0, Math.min(7, Math.round(shade)));
 
 // Wandtextur-IDs im Raster: 0 = frei, 1 Stein, 2 Moos, 3 Tür, 4 verschlossene Tür
-export const WALL_STONE = 1, WALL_MOSS = 2, WALL_DOOR = 3, WALL_DOOR_LOCKED = 4, WALL_TORCH = 5;
+export const WALL_STONE = 1, WALL_MOSS = 2, WALL_DOOR = 3, WALL_DOOR_LOCKED = 4, WALL_TORCH = 5, WALL_ROCK = 6, WALL_LICHEN = 7, WALL_GATE = 8;
 
 // ---------- Palette: 8 Materialien × 8 Helligkeitsstufen = 64 feste Farben ----------
 export function buildPalette(def) {
@@ -93,6 +93,47 @@ function genMoss(seed, n = TEX) {
       const base = t.data[y * n + x] & 7;
       t.data[y * n + x] = P('moss', Math.min(4.6, 1.2 + e * 7 + grain(x, y, seed + 12, n > TEX ? 0.3 : 0.7)) + (base > 3 ? 0.3 : 0));
     }
+  }
+  return t;
+}
+// Höhlenfels: unregelmäßige Felsbrocken (Voronoi-Zellen, kachelbar), dunkle Spalten dazwischen, Licht von links oben; optional Flechten
+function genRock(seed, n = TEX, lichen = false) {
+  const t = { w: n, h: n, data: new Uint8Array(n * n) };
+  const k = n / TEX, G = 6, cs = TEX / G, pts = [];
+  for (let j = 0; j < G; j++) for (let i = 0; i < G; i++) pts.push({ x: (i + 0.2 + 0.6 * hash(i, j, seed + 1)) * cs, y: (j + 0.2 + 0.6 * hash(i, j, seed + 2)) * cs, b: hash(i, j, seed + 3) });
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const u = x / k, v = y / k, gi = Math.floor(u / cs), gj = Math.floor(v / cs);
+    let d1 = 1e9, d2 = 1e9, best = null, bx = 0, by = 0;
+    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+      const ci = gi + di, cj = gj + dj, wi = ((ci % G) + G) % G, wj = ((cj % G) + G) % G, p = pts[wj * G + wi];
+      const px = p.x + (ci - wi) * cs, py = p.y + (cj - wj) * cs, d = Math.hypot(u - px, v - py);
+      if (d < d1) { d2 = d1; d1 = d; best = p; bx = px; by = py; } else if (d < d2) d2 = d;
+    }
+    const e = d2 - d1, dx = (u - bx) / cs, dy = (v - by) / cs;
+    let sh = 2.7 + (best.b - 0.5) * 1.3 - (dx * 0.55 + dy * 0.85) * 1.1 + (vnoise(u, v, 8, seed + 4) - 0.5) * 1.1 + (vnoise(u, v, 3, seed + 5) - 0.5) * 0.6 + grain(x, y, seed + 6, n > TEX ? 0.35 : 0.8);
+    if (e < 1.6) sh -= (1.6 - e) * 1.25; // Spalte zwischen den Brocken
+    let m = 'stone';
+    if (lichen) {
+      const c = vnoise(u, v, 10, seed + 9) * 0.7 + vnoise(u, v, 4, seed + 11) * 0.3 + Math.max(0, 1 - v / 30) * 0.12 - 0.62;
+      if (c > 0 && e > 0.9) { m = 'moss'; sh = Math.min(5, 1.8 + c * 6 + sh * 0.25); }
+    }
+    t.data[y * n + x] = P(m, sh);
+  }
+  return t;
+}
+// Fallgitter: Eisenstäbe vor dunklem Schacht, oben und unten Querbalken
+function genGate(seed, n = TEX) {
+  const t = { w: n, h: n, data: new Uint8Array(n * n) };
+  const k = n / TEX;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const u = x / k, v = y / k;
+    let idx = P('ceil', 0.3 + grain(x, y, seed, 0.6) + 0.4);
+    const bar = (u % 10) < 3.4, beam = v < 5 || (v > 30 && v < 34) || v > 59;
+    if (bar || beam) {
+      const lit = (bar ? 4.4 - ((u % 10) / 3.4) * 1.6 : 4) - (beam && v > 59 ? 1 : 0) + grain(x, y, seed + 1, 0.5);
+      idx = P('iron', Math.max(0.5, lit));
+    }
+    t.data[y * n + x] = idx;
   }
   return t;
 }
@@ -338,29 +379,29 @@ function genSign(seed) {
 }
 
 function genStairs(kind, seed) {
+  // Steinbogen wie beim Pfad, darin eine gut lesbare Treppe
   const t = mk(255);
   const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
-  if (kind === 'down') {
-    // Treppenschacht von oben gesehen: heller Rand, helle Trittflächen, dunkle Kanten, nach hinten immer dunkler
-    for (let y = 12; y <= 62; y++) { const w = 17 + Math.round((y - 12) * 0.22); for (let x = 32 - w; x <= 32 + w; x++) set(x, y, P('stone', 4.2 + hash(x, y, seed) * 1.0 - (x > 32 ? 0.6 : 0))); }
-    for (let y = 22; y <= 56; y++) {
-      const w = 12 + Math.round((y - 22) * 0.28), band = Math.floor((y - 22) / 6), pos = (y - 22) % 6, depth = (56 - y) / 34;
-      for (let x = 32 - w; x <= 32 + w; x++) {
-        const tread = pos >= 2;
-        set(x, y, P('stone', Math.max(0, (tread ? 5 - depth * 4.2 : 0.2) + (tread ? hash(x, y, seed + 1) * 0.6 : 0))));
-      }
-    }
-    for (let x = 12; x <= 52; x++) set(x, 59, P('stone', 6.5));
-  } else {
-    // Treppe nach oben: Stufen mit hellen Trittflächen, oben ein dunkler Durchgang
-    for (let y = 5; y <= 26; y++) for (let x = 21; x <= 43; x++) set(x, y, P('stone', 3.6 + hash(x, y, seed) * 0.7));
-    for (let y = 9; y <= 26; y++) for (let x = 25; x <= 39; x++) set(x, y, P('stone', 0));
-    for (let i = 0; i < 7; i++) {
-      const w = 27 - i * 3, yb = 61 - i * 5.5;
-      for (let y = Math.round(yb - 5); y <= Math.round(yb); y++) for (let x = 32 - w; x <= 32 + w; x++) {
-        const tread = y <= Math.round(yb - 3);
-        set(x, y, P('stone', (tread ? 6.2 - i * 0.2 : 2.4) + hash(x, y, seed + 1) * 0.7 - (x <= 32 - w + 1 || x >= 32 + w - 1 ? 0.8 : 0)));
-      }
+  const up = kind === 'up';
+  for (let y = 6; y <= 62; y++) for (let x = 5; x <= 59; x++) {
+    const dx = x - 32, dy = y - 34, top = y <= 34, ro = Math.hypot(dx, dy);
+    const outer = top ? ro <= 27 : Math.abs(dx) <= 27, inner = top ? ro <= 18 : Math.abs(dx) <= 18;
+    if (!outer) continue;
+    if (!inner) { set(x, y, P('stone', 3.4 + hash(x >> 1, y >> 1, seed) * 1.3 - (dx > 0 ? 0.5 : 0))); continue; }
+    const k = up ? Math.floor((61 - y) / 6) : Math.floor((y - 20) / 6), pos = up ? (61 - y) % 6 : (y - 20) % 6;
+    const tread = pos < 3;
+    if (up) {
+      // aufwärts: Stufen werden nach oben schmaler und hell, oben fällt Licht ein
+      const narrow = Math.abs(dx) > 18 - k * 1.2;
+      if (narrow) { set(x, y, P('ceil', 0.4)); continue; }
+      const lightTop = 1 - Math.min(1, (y - 14) / 30);
+      set(x, y, tread ? P('stone', 5.8 - k * 0.15 + hash(x, y, seed + 1) * 0.5) : P('stone', 1.6 + lightTop * 1.2));
+      if (y < 24) set(x, y, P('glow', 4.5 + (1 - (y - 14) / 10) * 2));
+    } else {
+      // abwärts: Stufen werden nach unten dunkler und enden im Schwarz
+      const fade = Math.max(0, 1 - k / 5.5);
+      if (k > 5) { set(x, y, P('ceil', 0)); continue; }
+      set(x, y, tread ? P('stone', 0.4 + fade * 5.2 + hash(x, y, seed + 1) * 0.4) : P('stone', 0.2 + fade * 1.4));
     }
   }
   return t;
@@ -378,6 +419,43 @@ function genArch(seed) {
     else { const d = Math.min(1, Math.hypot(dx * 1.1, (y - 44) * 0.8) / 17); set(x, y, P('ceil', 0.6 + (1 - d) * 3.4 + hash(x, y, seed + 1) * 0.5)); }
   }
   for (let k = 0; k < 14; k++) { const x = 20 + Math.floor(hash(k, 3, seed) * 24), y = 52 + Math.floor(hash(k, 4, seed) * 9); set(x, y, P('floor', 3)); set(x + 1, y, P('floor', 3)); }
+  return t;
+}
+
+function genKaefer(seed) {
+  // Erzkäfer: breiter Panzer mit Rückenkiel, Kopf mit Zangen, sechs Beine, schwach glühende Augen
+  const t = mk(255);
+  const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
+  for (let y = 24; y <= 56; y++) for (let x = 6; x <= 58; x++) {
+    const dx = (x - 32) / 25, dy = (y - 42) / 15;
+    if (dx * dx + dy * dy > 1) continue;
+    const lit = 4.6 - dy * 2.2 - Math.abs(dx) * 1.4 + hash(x, y, seed) * 0.5;
+    set(x, y, P('iron', Math.max(0.6, lit - (Math.abs(x - 32) < 1 ? -0.9 : 0) - (((y - 24) % 7) === 0 && Math.abs(dx) < 0.85 ? 1.3 : 0))));
+  }
+  for (let y = 36; y <= 50; y++) for (let x = 26; x <= 38; x++) { const dx = (x - 32) / 6.5, dy = (y - 43) / 7; if (dx * dx + dy * dy <= 1) set(x, y, P('iron', 5.4 - dy * 1.2 + hash(x, y, seed + 1) * 0.5)); }
+  for (let y = 26; y <= 38; y++) for (let x = 24; x <= 40; x++) { const dx = (x - 32) / 8, dy = (y - 33) / 6; if (dx * dx + dy * dy <= 1) set(x, y, P('stone', 3.2 - dy * 1.4 + hash(x, y, seed + 2) * 0.5)); }
+  for (const s of [-1, 1]) {
+    for (let i = 0; i < 7; i++) { set(32 + s * (5 + i), 40 + i, P('stone', 1.5)); set(32 + s * (5 + i), 41 + i, P('stone', 1)); }
+    for (let i = 0; i < 6; i++) { set(32 + s * (3 + Math.round(i * 0.5)), 38 + i, P('stone', 6)); set(32 + s * (3 + Math.round(i * 0.5)) + s, 38 + i, P('stone', 5)); }
+    set(32 + s * 4, 31, P('glow', 7)); set(32 + s * 4 + s, 31, P('glow', 6));
+    for (let j = 0; j < 3; j++) { const ly = 46 + j * 5; for (let i = 0; i < 12; i++) { const lx = 32 + s * (14 + i), lyy = ly + Math.round(i * (j + 0.5) * 0.7); set(lx, lyy, P('stone', 4.2)); set(lx, lyy + 1, P('stone', 3)); set(lx + s, lyy, P('stone', 4.2)); } }
+    for (let i = 0; i < 8; i++) { set(32 + s * (5 + i), 27 - i, P('stone', 4.5)); set(32 + s * (5 + i) + s, 27 - i, P('stone', 3.5)); }
+  }
+  return t;
+}
+
+function genLever(used, seed) {
+  // Wandhebel auf Steinsockel: Griff oben (bereit) oder unten (umgelegt)
+  const t = mk(255);
+  const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
+  for (let y = 34; y <= 62; y++) for (let x = 18; x <= 46; x++) { const edge = x < 20 || y < 36; set(x, y, P('stone', 3.6 + hash(x >> 1, y >> 1, seed) * 1.1 + (edge ? 0.8 : 0) - (x > 43 ? 0.8 : 0))); }
+  for (let y = 40; y <= 56; y++) for (let x = 29; x <= 35; x++) set(x, y, P('iron', 2 + hash(x, y, seed + 1) * 0.6)); // Schlitz/Platte
+  for (let i = 0; i < 24; i++) { // Stange
+    const y = used ? 48 + i * 0.6 : 48 - i * 1.0, x = 32 + (used ? 0 : 0);
+    for (let w = -1; w <= 1; w++) set(x + w, Math.round(y), P('iron', 5 - Math.abs(w) * 1.2));
+  }
+  const ky = used ? 63 : 22, kx = 32;
+  for (let y = -3; y <= 3; y++) for (let x = -4; x <= 4; x++) if (x * x + y * y <= 14) set(kx + x, Math.min(63, ky + y), P('wood', 5 - (x + y) * 0.2));
   return t;
 }
 
@@ -456,10 +534,10 @@ export function makeTextures(detail = 1) {
   const spr = (t, s) => { t.noWrap = true; return up(t, s); };
   const n = TEX * (detail > 1 ? 4 : 1), nf = TEX * (detail > 1 ? 2 : 1); // Wände 256, Boden/Decke 128: Eigenauflösung statt hochskaliert (Potenzen von 2 wegen Maskierung)
   return {
-    wall: { [WALL_STONE]: genStone(11, n), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n) },
+    wall: { [WALL_STONE]: genStone(11, n), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
     ceil: genCeil(53, nf),
-    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: genSchrat(71), portal: spr(genPortal(81), 109), merchant: spr(genMerchant(91), 110), wisp: genWisp(121), skeleton: genSkeleton(171), guard: genGuard(181, false), captain: genGuard(191, true), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: genSchrat(71), portal: spr(genPortal(81), 109), merchant: spr(genMerchant(91), 110), wisp: genWisp(121), skeleton: genSkeleton(171), guard: genGuard(181, false), captain: genGuard(191, true), kaefer: genKaefer(201), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
@@ -610,12 +688,13 @@ export function buildGrid(lvl, objs) {
   const grid = new Uint8Array(w * h);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const c = lvl.map[y][x];
-    grid[y * w + x] = c === '#' ? WALL_STONE : c === 'm' ? WALL_MOSS : c === 'T' ? WALL_TORCH : 0;
+    grid[y * w + x] = c === '#' ? WALL_STONE : c === 'm' ? WALL_MOSS : c === 'T' ? WALL_TORCH : c === 'r' ? WALL_ROCK : c === 'o' ? WALL_LICHEN : 0;
   }
   for (const o of objs) if (o.type === 'door' && !o.open) grid[o.y * w + o.x] = o.locked ? WALL_DOOR_LOCKED : WALL_DOOR;
+  for (const o of objs) if (o.type === 'gate' && !o.open) grid[o.y * w + o.x] = WALL_GATE;
   return { grid, gw: w, gh: h };
 }
-const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'hauptmann' ? tex.sprites.captain : tex.sprites.schrat);
+const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : tex.sprites.schrat);
 const kindOf = (o, i) => (Array.isArray(o.kinds) ? o.kinds[Math.min(i, o.kinds.length - 1)] : o.kind);
 export function buildSprites(objs, tex, time, angle = 0, alive = null) { // alive: {objId: Arten (Liste) oder Anzahl der lebenden Gegner} im Kampf
   const out = [];
@@ -631,6 +710,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null) { // aliv
         out.push({ x: o.x + rx * off, y: o.y + ry * off, tex: spriteFor(tex, kindList ? kindList[i] : kindOf(o, i)), scale: (n > 1 ? 0.62 : 0.85) * (1 + 0.02 * Math.sin(time * 3 + i)) });
       }
     }
+    else if (o.type === 'lever') out.push({ x: o.x, y: o.y, tex: o.used ? tex.sprites.leverDown : tex.sprites.leverUp, scale: 0.75 });
     else if (o.type === 'sign') out.push({ x: o.x, y: o.y, tex: tex.sprites.sign, scale: 0.7 });
     else if (o.type === 'merchant') out.push({ x: o.x, y: o.y, tex: tex.sprites.merchant, scale: 0.8 });
     else if (o.type === 'stairs') out.push({ x: o.x, y: o.y, tex: o.look === 'down' ? tex.sprites.stairsDown : o.look === 'up' ? tex.sprites.stairsUp : o.look === 'path' ? tex.sprites.arch : tex.sprites.portal, scale: 0.9 });

@@ -169,6 +169,8 @@ function freshObj(data, o) {
   const c = clone(o);
   if (o.type === 'door') c.open = false;
   if (o.type === 'chest') c.open = false;
+  if (o.type === 'gate') c.open = false;
+  if (o.type === 'lever') c.used = false;
   if (o.type === 'enemy') { c.hp = data.enemies[o.kind].hp; c.dead = false; }
   return c;
 }
@@ -224,7 +226,9 @@ export function blockerAt(state, x, y) {
   for (const o of state.objs) {
     if (o.x !== x || o.y !== y) continue;
     if (o.type === 'door' && !o.open) return o;
-    if (o.type === 'chest') return o;
+    if (o.type === 'chest' && !o.open) return o; // geöffnete Truhen sind begehbar
+    if (o.type === 'gate' && !o.open) return o;
+    if (o.type === 'lever') return o;
     if (o.type === 'merchant' || o.type === 'sign') return o;
     if (o.type === 'enemy' && !o.dead) return o;
   }
@@ -263,6 +267,8 @@ function blockedText(b) {
   if (b.type === 'chest') return 'Eine Truhe versperrt den Weg.';
   if (b.type === 'merchant') return 'Der Stand der Händlerin versperrt den Weg.';
   if (b.type === 'sign') return 'Eine Hinweistafel steht im Weg.';
+  if (b.type === 'gate') return 'Ein Fallgitter versperrt den Weg.';
+  if (b.type === 'lever') return 'Ein Wandhebel steht im Weg.';
   return 'Ein Gegner steht im Weg.';
 }
 
@@ -346,6 +352,14 @@ export function interact(state, data) {
     o.open = true;
     return { msg: 'Die Tür öffnet sich knarrend.', sfx: 'door', changed: true };
   }
+  if (o.type === 'gate') return { msg: o.hint || 'Das Gitter sitzt fest. Es muss einen Hebel geben.', sfx: 'bump' };
+  if (o.type === 'lever') {
+    const gate = state.objs.find((x) => x.id === o.gate);
+    if (o.used) return { msg: 'Der Hebel ist schon umgelegt.', sfx: 'ui' };
+    o.used = true;
+    if (gate) gate.open = true;
+    return { msg: o.msg || 'Der Hebel rastet ein. Irgendwo rasselt eine Kette.', sfx: 'door', changed: true };
+  }
   if (o.type === 'chest') {
     if (o.open) return { msg: 'Die Truhe ist leer.' };
     o.open = true;
@@ -358,7 +372,7 @@ export function interact(state, data) {
 export function useItemOutside(state, data, itemId, heroIdx) {
   const it = data.items[itemId];
   const h = state.heroes[heroIdx];
-  if (!it || it.kind !== 'consumable' || !(state.inv[itemId] > 0)) return { error: 'no-item' };
+  if (!it || it.kind !== 'consumable' || !it.heal || !(state.inv[itemId] > 0)) return { error: 'no-item' };
   if (!h || h.hp <= 0) return { error: 'bad-target' };
   if (h.hp >= h.maxHp) return { error: 'full-hp' };
   const before = h.hp;
@@ -668,7 +682,7 @@ export function calcDamage(state, atk, def, opts = {}) {
   return d;
 }
 export function explain(tr) {
-  return `Angriff ${tr.atk} + Wurf ${tr.roll} − Rüstung ${tr.red}${tr.mult ? ` · ${tr.mult} %` : ''}${tr.elem ? ` · ${tr.elemName} ${tr.elem > 0 ? '+' : ''}${tr.elem} %` : ''}${tr.back ? ' · ½ Hinterreihe' : ''}${tr.def ? ' · ½ Deckung' : ''} = ${tr.total}`;
+  return `Angriff ${tr.atk} + Wurf ${tr.roll} − Rüstung ${tr.red}${tr.mult ? ` · ${tr.mult} %` : ''}${tr.elem ? ` · ${tr.elemName} ${tr.elem > 0 ? '+' : ''}${tr.elem} %` : ''}${tr.back ? ' · ½ Hinterreihe' : ''}${tr.def ? ' · ½ Verteidigung' : ''} = ${tr.total}`;
 }
 
 // ---------- Statuswirkungen (nur im Kampf, werden nicht gespeichert) ----------
@@ -838,14 +852,34 @@ export function heroAction(state, data, act) {
     regen(h, msgs);
   } else if (act.type === 'defend') {
     c.defending[a.idx] = true;
-    msgs.push(`${h.name} geht in Deckung.`);
+    msgs.push(`${h.name} verteidigt.`);
     sfx = 'defend';
     regen(h, msgs);
   } else if (act.type === 'item') {
-    const r = useItemOutside(state, data, act.item || 'potion', act.hero);
-    if (r.error) return r;
-    msgs.push(r.msg);
-    sfx = 'heal';
+    const iid = act.item || 'potion', it = data.items[iid];
+    if (it && it.cure) { // Gegengift: nimmt einen Status von einem Helden
+      const t = state.heroes[act.hero], st = statusOf(state, 'h', act.hero);
+      if (!(state.inv[iid] > 0) || !t || t.hp <= 0 || !st[it.cure]) return { error: 'bad-target' };
+      delete st[it.cure]; state.inv[iid]--;
+      msgs.push(`${t.name} nimmt ${it.name}: ${data.statuses[it.cure].name} wird genommen.`);
+      sfx = 'heal';
+    } else if (it && it.throw) { // Wurfgegenstand: trifft immer, Elementfaktor wie bei Zaubern
+      const ti = act.target, e = c.enemies[ti];
+      if (!(state.inv[iid] > 0) || !e || e.hp <= 0) return { error: 'bad-target' };
+      const el = it.throw.element ? ((enemyOf(data, e).resist || {})[it.throw.element] || 0) : 0;
+      if (el !== 0) noteBestiary(state, e.kind, 'resist', it.throw.element);
+      const tr = {};
+      const d = calcDamage(state, it.throw.atk, 0, { sure: true, elem: el, elemName: it.throw.element && data.elements[it.throw.element].name, trace: tr });
+      state.inv[iid]--; e.hp = Math.max(0, e.hp - d);
+      msgs.push(`${h.name} wirft ${it.name}: ${d} Schaden an ${e.name}.${el > 0 ? ' Anfällig!' : el < 0 ? ' Resistent.' : ''}${SEP}${explain(tr)}`);
+      if (e.hp === 0) msgs.push(`${e.name} bricht zusammen.`); else addStatus(state, data, 'e', ti, it.throw.inflict, msgs);
+      sfx = 'hit';
+    } else {
+      const r = useItemOutside(state, data, iid, act.hero);
+      if (r.error) return r;
+      msgs.push(r.msg);
+      sfx = 'heal';
+    }
   } else {
     return { error: 'not-available' };
   }
@@ -885,7 +919,7 @@ export function enemyStep(state, data, opts = {}) {
   const tr = {};
   const d = calcDamage(state, effAtk(state, 'e', a.idx, en.atk), heroDef(data, t, state), { defending: !!c.defending[ti], mult: heavy ? hv.mult : 0, trace: tr });
   let sfx = 'miss';
-  const why = `${t.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}${c.defending[ti] ? ', in Deckung: halber Schaden' : ''}`;
+  const why = `${t.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}${c.defending[ti] ? ', verteidigt: halber Schaden' : ''}`;
   if (heavy) { msgs.push(`${e.name} setzt ${hv.name} ein!`); noteBestiary(state, e.kind, 'heavy'); }
   if (d === 0) msgs.push(`${e.name} greift ${t.name} an (${why}) und verfehlt.`);
   else if (opts.god) { msgs.push(`${e.name} trifft ${t.name}, doch Debug-Unverwundbarkeit hält.`); sfx = 'hurt'; }
@@ -1144,6 +1178,7 @@ export function analyzeLevel(data, levelId) {
   const exits = lvl.objects.filter((o) => o.type === 'exit' || o.type === 'stairs'); // Ausgang = Runenstein oder Treppe
   const have = new Set();
   const opened = new Set();
+  const gatesOpen = new Set(); // Gitter, deren Hebel erreichbar ist
   const bfs = () => {
     const seen = new Set([`${lvl.start.x},${lvl.start.y}`]);
     const q = [[lvl.start.x, lvl.start.y]];
@@ -1155,6 +1190,7 @@ export function analyzeLevel(data, levelId) {
         const door = doors.find((o) => o.x === nx && o.y === ny);
         if (door && door.locked && !have.has(door.key)) continue;
         if (chests.some((o) => o.x === nx && o.y === ny)) continue;
+        if (lvl.objects.some((o) => (o.type === 'lever' || (o.type === 'gate' && !gatesOpen.has(o.id))) && o.x === nx && o.y === ny)) continue;
         seen.add(k); q.push([nx, ny]);
       }
     }
@@ -1164,6 +1200,9 @@ export function analyzeLevel(data, levelId) {
   while (changed) {
     changed = false;
     const reach = bfs();
+    for (const lv of lvl.objects.filter((o) => o.type === 'lever')) {
+      if (!gatesOpen.has(lv.gate) && DIRS.some((d) => reach.has(`${lv.x + d.dx},${lv.y + d.dy}`))) { gatesOpen.add(lv.gate); changed = true; }
+    }
     for (const c of chests) {
       if (opened.has(c.id)) continue;
       if (DIRS.some((d) => reach.has(`${c.x + d.dx},${c.y + d.dy}`))) {

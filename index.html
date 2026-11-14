@@ -66,11 +66,22 @@ button{font:inherit;color:inherit}
 #ctl-right{right:calc(env(safe-area-inset-right,0px) + 6px)}
 .btn{background:rgba(20,15,10,.62);border:1.5px solid rgba(217,164,65,.7);border-radius:10px;display:flex;flex-direction:column;
   align-items:center;justify-content:center;font-size:20px;line-height:1;touch-action:none;padding:0}
-.btn small{font-size:calc(9px*var(--fs));margin-top:3px;opacity:.9;letter-spacing:.02em}
+.btn small{font-size:calc(8px*var(--fs));white-space:nowrap;margin-top:3px;opacity:.9;letter-spacing:0}
 .btn.down{background:rgba(217,164,65,.5)}
-#topbar{position:fixed;top:calc(env(safe-area-inset-top,0px) + 4px);left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:6}
-.tb{height:36px;min-width:44px;padding:0 10px;border-radius:8px;background:rgba(20,15,10,.7);border:1px solid rgba(217,164,65,.6);font-size:.8rem;touch-action:none}
-.tb.down{background:rgba(217,164,65,.5)}
+#event{position:fixed;left:0;right:0;top:22%;z-index:9;text-align:center;padding:10px 12px;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(8,6,4,.82) 18%,rgba(8,6,4,.82) 82%,transparent)}
+#event b{display:block;font-size:calc(22px*var(--fs));letter-spacing:.08em;color:var(--amber);text-transform:uppercase}
+#event span{display:block;margin-top:4px;font-size:calc(13px*var(--fs));font-style:italic;color:var(--ink)}
+#event.show{animation:evt 3.4s ease-out forwards}
+@keyframes evt{0%{opacity:0;transform:scaleY(.6)}12%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
+#event[hidden]{display:none}
+#compass{position:absolute;right:6px;top:6px;width:44px;height:44px;border-radius:50%;background:rgba(14,11,8,.6);border:1.5px solid rgba(217,164,65,.7);overflow:hidden;pointer-events:none}
+#compass-dial{position:absolute;inset:0;transition:transform .25s ease-out}
+#compass-dial b{transition:transform .25s ease-out;position:absolute;font-size:11px;color:var(--ink);width:14px;text-align:center;left:15px;top:15px;font-weight:600}
+#compass-dial b.n{transform:translateY(-14px) rotate(var(--cr,0deg));color:#e0604c}
+#compass-dial b.o{transform:translateX(14px) rotate(var(--cr,0deg))}
+#compass-dial b.s{transform:translateY(14px) rotate(var(--cr,0deg))}
+#compass-dial b.w{transform:translateX(-14px) rotate(var(--cr,0deg))}
+#compass i{position:absolute;left:50%;top:1px;margin-left:-4px;border:4px solid transparent;border-top:6px solid var(--amber);border-bottom:0}
 #title{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
   background:radial-gradient(ellipse at center,rgba(0,0,0,.3),rgba(0,0,0,.88));text-align:center;padding:8px}
 #title h1{margin:0;font:700 clamp(1.5rem,8vh,2.8rem) Georgia,"Times New Roman",serif;letter-spacing:.08em;color:#f0dca8;text-shadow:0 0 14px #a5651a,0 2px 3px #000}
@@ -112,7 +123,7 @@ button{font:inherit;color:inherit}
 .clog .cl{padding:3px 0;border-bottom:1px solid #2f2618;line-height:1.35}
 .clog .rd{font-weight:700;color:var(--amber);margin-top:8px;border-bottom:2px solid var(--line)}
 .clog .turn{color:#f0dca8;opacity:.85}
-body.on-title .pad,body.on-title #topbar,body.on-title #hud,body.on-title #fps{visibility:hidden}
+body.on-title .pad,body.on-title #hud,body.on-title #fps{visibility:hidden}
 @media (orientation:portrait){#portrait-warn{display:flex}}
 @media (max-height:340px){:root{--b:46px}}
 </style>
@@ -121,6 +132,7 @@ body.on-title .pad,body.on-title #topbar,body.on-title #hud,body.on-title #fps{v
 <div id="stage">
   <canvas id="view" width="480" height="270"></canvas>
   <div id="hud">
+    <div id="compass" aria-hidden="true"><div id="compass-dial"><b class="n">N</b><b class="o">O</b><b class="s">S</b><b class="w">W</b></div><i></i></div>
     <div id="enemybox" hidden></div>
     <div id="stack">
       <div id="log"></div>
@@ -130,14 +142,6 @@ body.on-title .pad,body.on-title #topbar,body.on-title #hud,body.on-title #fps{v
   </div>
 </div>
 
-<div id="topbar">
-  <button class="tb" data-a="map">Karte</button>
-  <button class="tb" data-a="save">Speichern</button>
-  <button class="tb" data-a="load">Laden</button>
-  <button class="tb" data-a="settings">Einstellungen</button>
-  <button class="tb" data-a="menu">Menü</button>
-  <button class="tb" data-a="debug" id="debugbtn" hidden>Debug</button>
-</div>
 
 <div id="fps" hidden></div>
 
@@ -155,6 +159,7 @@ body.on-title .pad,body.on-title #topbar,body.on-title #hud,body.on-title #fps{v
   <button class="btn" data-a="interact">◉<small>Interagieren</small></button>
   <button class="btn" data-a="inv">▣<small>Inventar</small></button>
   <button class="btn" data-a="char">☻<small>Charakter</small></button>
+  <button class="btn" data-a="menu">☰<small>Menü</small></button>
 </div>
 
 <div id="title" hidden>
@@ -170,6 +175,7 @@ body.on-title .pad,body.on-title #topbar,body.on-title #hud,body.on-title #fps{v
 </div>
 
 <div id="modal" hidden><div id="modal-box"></div></div>
+<div id="event" hidden><b></b><span></span></div>
 <div id="banner" hidden></div>
 <div id="toast" hidden></div>
 <div id="portrait-warn">Bitte das Gerät ins Querformat drehen.</div>

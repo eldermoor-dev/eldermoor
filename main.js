@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setReso
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.14.6';
+const VERSION = '0.15.1';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -28,7 +28,7 @@ const S = {
   debug: { god: false }, itemMode: false, abMode: false, spMode: false, spSel: 0, foe: 0, invUse: null, draft: null, fps: 60, frameMs: 0, lastRender: 0,
   installEvent: null, loadMs: null, hadController: false
 };
-if (new URLSearchParams(location.search).has('dev')) { window.__S = S; S.snapCam = () => snapCam(); } // nur für automatische Tests (?dev)
+if (new URLSearchParams(location.search).has('dev')) { window.__S = S; S.snapCam = () => snapCam(); S.fn = { startCombatUI: (o) => startCombatUI(o), showEvent: (a, b) => showEvent(a, b) }; } // nur für automatische Tests (?dev)
 
 // ---------------------------------------------------------------- Fehlerlog
 const ERR = { list: [], saveT: 0 };
@@ -112,7 +112,6 @@ function applySettings() {
   S.rc.flicker = s.flicker;
   document.documentElement.style.setProperty('--fs', String(s.fontScale));
   document.body.classList.toggle('cb', !!s.colorblind);
-  $('#debugbtn').hidden = !s.debug;
   $('#fps').hidden = !s.debug;
 }
 function vib(ms) {
@@ -316,6 +315,7 @@ function doTurn(d) {
   const g = S.game;
   if (g.combat) { say('Im Kampf kannst du dich nicht drehen.'); S.held = []; return; }
   const r = turn(g, S.data, d);
+  renderCompass();
   S.target.a += d * Math.PI / 2;
   beginTween(170);
   S.sfx.play('step');
@@ -331,6 +331,7 @@ async function onEvent(ev) {
     snapCam();
     say(r.msg);
     renderAll();
+    introOnce('area:' + S.game.levelId, S.lvl.intro);
     await saveSlot('auto', true);
     return;
   }
@@ -343,6 +344,17 @@ async function onEvent(ev) {
 }
 
 // ---------------------------------------------------------------- Kampf
+function showEvent(title, text, ms = 3400) {
+  const e = $('#event'); if (!e) return;
+  e.querySelector('b').textContent = title; e.querySelector('span').textContent = text || '';
+  e.hidden = false; e.classList.remove('show'); void e.offsetWidth; e.classList.add('show');
+  clearTimeout(showEvent.h); showEvent.h = setTimeout(() => { e.hidden = true; }, ms);
+}
+function introOnce(key, intro) { // Auftritt nur beim ersten Mal (Marke im Spielstand)
+  const g = S.game;
+  if (!intro || g.flags[key]) return false;
+  g.flags[key] = true; showEvent(intro.title, intro.text); S.sfx.play('sting'); return true;
+}
 function startCombatUI(enemyObj) {
   if (S.game.combat) return;
   S.held = []; S.queued = null;
@@ -351,7 +363,8 @@ function startCombatUI(enemyObj) {
   S.foe = 0;
   const name = S.game.combat.enemies.map((e) => e.name).join(', ');
   say(`${name} ${S.game.combat.enemies.length > 1 ? 'greifen' : 'greift'} an!`);
-  S.sfx.play('miss'); vib(40);
+  if (!introOnce('intro:' + enemyObj.id, S.data.enemies[enemyObj.kind] && S.data.enemies[enemyObj.kind].intro)) S.sfx.play('miss');
+  vib(40);
   renderAll();
   runEnemyTurns();
 }
@@ -483,6 +496,8 @@ function onActionBar(e) {
   else if (c.startsWith('abheal:')) { S.abMode = false; S.spMode = false; heroAct({ ...spellAct(S.spSel), target: +c.slice(7) }); }
   else if (c === 'log') openCombatLog();
   else if (c.startsWith('heal:')) heroAct({ type: 'item', item: 'potion', hero: +c.slice(5) });
+  else if (c.startsWith('cure:')) heroAct({ type: 'item', item: 'gegengift', hero: +c.slice(5) });
+  else if (c.startsWith('throw:')) heroAct({ type: 'item', item: 'oelflasche', target: +c.slice(6) });
 }
 // Zauberliste des Helden am Zug (Index 0 = Berufsfähigkeit), siehe knownSpells in logic.js
 function curKnown() {
@@ -536,7 +551,9 @@ function openCombatLog() {
   openModal(`<h2>Kampfprotokoll</h2><div class="clog">${rows}</div><div class="acts">${closeBtn}</div>`, 'clog');
   const box = $('#modal-box .clog'); if (box) box.scrollTop = box.scrollHeight;
 }
-function renderAll() { announceTurn(); renderParty(); renderCombat(); renderLog(); }
+function renderCompass() { const d = $('#compass-dial'); if (d && S.game) { S.compassTurns = nearestTurns(S.compassTurns || 0, S.game.player.dir); d.style.transform = `rotate(${-S.compassTurns * 90}deg)`; d.style.setProperty('--cr', `${S.compassTurns * 90}deg`); } }
+function nearestTurns(prev, dir) { const base = Math.round(prev / 4) * 4; let best = base + dir, bd = Math.abs(best - prev); for (const c of [base - 4 + dir, base + 4 + dir]) if (Math.abs(c - prev) < bd) { best = c; bd = Math.abs(c - prev); } return best; }
+function renderAll() { renderCompass(); announceTurn(); renderParty(); renderCombat(); renderLog(); }
 function renderLog() { $('#log').innerHTML = S.log.slice(S.game && S.game.combat ? -2 : -3).map((m) => `<div>${esc(m)}</div>`).join(''); }
 function makePortrait(h) {
   const cv = document.createElement('canvas'); cv.width = cv.height = 32;
@@ -592,14 +609,18 @@ function renderCombat() {
   const a = currentActor(S.game);
   if (c.over || !a) { ab.hidden = true; return; }
   if (a.side !== 'h' || S.lock) { ab.innerHTML = `<div class="wait">${a.side === 'h' ? esc(S.game.heroes[a.idx].name) + ' ist gleich dran …' : 'Gegner ist am Zug …'}</div><button class="ab" data-c="log" style="flex:0 0 auto">Protokoll</button>`; return; }
-  const potions = S.game.inv.potion || 0;
+  const potions = (S.game.inv.potion || 0) + (S.game.inv.gegengift || 0) + (S.game.inv.oelflasche || 0);
   const ch = S.game.heroes[a.idx], cab = S.data.classes[ch.cls].ability, cres = S.data.classes[ch.cls].res;
   const known = knownSpells(S.data, ch);
   const abBtn = known.length > 1 ? `<button class="ab" data-c="spells">✦ Zauber (${known.length})${S.spMode ? ' ▴' : ' ▾'}</button>` : cab ? `<button class="ab" data-c="sp:0" ${ch.mp >= cab.cost ? '' : 'disabled'}>✦ ${esc(cab.name)} (${cab.cost} ${esc(cres.name)})</button>` : '';
   let html = `<button class="ab" data-c="attack">⚔ Angriff</button><button class="ab${heavyNow.length ? ' pulse' : ''}" data-c="defend">⛨ Verteidigen</button><button class="ab" data-c="item" ${potions ? '' : 'disabled'}>Gegenstand (${potions})</button>${abBtn}${multi ? `<button class="ab" data-c="sweep">⚔ Alle (${SWEEP_MULT} %)</button>` : ''}<button class="ab" data-c="log">Protokoll</button>`;
   if (S.itemMode) {
-    html += '<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">' + S.game.heroes.map((h, i) =>
-      `<button class="ab" data-c="heal:${i}" ${h.hp > 0 && h.hp < h.maxHp ? '' : 'disabled'}>Heiltrank → ${esc(h.name)}</button>`).join('') + '</div>';
+    const inv = S.game.inv, rows = [];
+    const row = (n, mk) => { const bs = mk(); if (n > 0 && bs.some((x) => x.ok)) rows.push(bs.map((x) => `<button class="ab" data-c="${x.c}" ${x.ok ? '' : 'disabled'}>${x.t}</button>`).join('')); }; // nur Zeilen zeigen, in denen etwas geht
+    row(inv.potion, () => S.game.heroes.map((h, i) => ({ c: `heal:${i}`, ok: h.hp > 0 && h.hp < h.maxHp, t: `Heiltrank (${inv.potion}) → ${esc(h.name)}` })));
+    row(inv.gegengift, () => S.game.heroes.map((h, i) => ({ c: `cure:${i}`, ok: h.hp > 0 && !!statusOf(S.game, 'h', i).poison, t: `Gegengift (${inv.gegengift}) → ${esc(h.name)}` })));
+    row(inv.oelflasche, () => S.game.combat.enemies.map((e, i) => ({ c: `throw:${i}`, ok: e.hp > 0, t: `Ölflasche (${inv.oelflasche}) → ${esc(e.name)}` })));
+    html += rows.map((r) => `<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">${r}</div>`).join('');
   }
   if (S.spMode && known.length > 1) {
     html += '<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">' + known.map((sp, i) =>
@@ -627,6 +648,7 @@ const closeBtn = '<button class="mb" data-m="close">Schließen</button>';
 function openMenu() {
   openModal(`<h2>Menü</h2><div class="acts" style="flex-direction:column;align-items:stretch">
     <button class="mb primary" data-m="close">Weiterspielen</button>
+    <button class="mb" data-m="map">Karte</button>
     <button class="mb" data-m="rest">Rasten (Proviant: ${S.game ? (S.game.inv.ration || 0) : 0})</button>
     <button class="mb" data-m="bestiary">Bestiarium</button>
     <button class="mb" data-m="errlog">Fehlerlog (${ERR.list.length})</button>
@@ -636,13 +658,13 @@ function openMenu() {
     <button class="mb" data-m="import">Spielstand importieren (Datei)</button>
     <button class="mb" data-m="settings">Einstellungen</button>
     <button class="mb" data-m="help">Steuerung &amp; Info</button>
-    <button class="mb" data-m="title">Zum Titelbild</button></div>`, 'menu');
+    <button class="mb" data-m="title">Zum Titelbild</button>${S.settings.debug ? '<button class="mb" data-m="debug">Debug</button>' : ''}</div>`, 'menu');
 }
 function helpHtml() {
   return `<h2>Steuerung &amp; Info</h2>
   <h3>Links: Bewegung</h3><p>↑ Vor, ↓ Zurück, ← → seitwärts, ↶ ↷ um 90° drehen. Gedrückt halten wiederholt die Bewegung.</p>
   <h3>Rechts: Aktionen</h3><p>◉ Interagieren (Türen, Truhen, Gegner ansprechen), ⚔ Angriff, ✦ Fähigkeit (nur im Kampf, kostet Mana oder Ausdauer). Bei mehreren Gegnern: Gegner antippen = Ziel wählen, „Alle“ trifft jeden Gegner mit 60 % Schaden, ▣ Inventar, ☻ Charakter.</p>
-  <h3>Oben</h3><p>Karte (auf eine erkundete Zelle tippen setzt oder entfernt eine Notiz), Speichern, Laden, Einstellungen, Menü.</p>
+  <h3>Menü (☰ rechts unten)</h3><p>Karte (auf eine erkundete Zelle tippen setzt oder entfernt eine Notiz), Rasten, Speichern, Laden, Einstellungen. Oben rechts zeigt der Kompass die Blickrichtung.</p>
   <h3>Kampf</h3><p>Rundenbasiert. Die Zugreihenfolge steht oben. Hinterreihe-Helden ohne Fernkampf treffen nur halb so hart.</p>
   <h3>Rast</h3><p>Menü → Rasten (oder im Inventar beim Proviant). Mit Proviant erholt sich die Gruppe vollständig, auch Bewusstlose. Ohne Proviant nur zu 30 %. Nicht im Kampf und nicht, wenn ein Gegner nahe ist.</p>
   <h3>Ziel des Prototyps</h3><p>Truhe im Nebenraum öffnen, Eisenschlüssel nehmen, die Eisentür aufschließen, den Moorschrat besiegen und den Runenstein erreichen.</p>
@@ -724,7 +746,7 @@ function openInventory() {
   let html = `<h2>Inventar</h2><p>Gold: <b>${g.gold}</b></p>`;
   html += items.length ? items.map(([id, n]) => {
     const it = itemDef(g, d, id);
-    const use = it.kind === 'consumable' && !g.combat ? `<button class="mb" data-m="use:${id}">Benutzen</button>` : it.kind === 'supply' && !g.combat ? '<button class="mb" data-m="rest">Rasten</button>' : it.kind === 'equip' && !g.combat ? `<button class="mb" data-m="eqsel:${id}">Ausrüsten</button>` : '';
+    const use = it.kind === 'consumable' && it.heal && !g.combat ? `<button class="mb" data-m="use:${id}">Benutzen</button>` : it.kind === 'supply' && !g.combat ? '<button class="mb" data-m="rest">Rasten</button>' : it.kind === 'equip' && !g.combat ? `<button class="mb" data-m="eqsel:${id}">Ausrüsten</button>` : '';
     return `<div class="row"><div><b>${qTag(id, it)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}<div class="muted">${esc(it.desc)}</div></div>${use}</div>`;
   }).join('') : '<p class="muted">Nichts dabei.</p>';
   if (S.invEquip && itemDef(g, d, S.invEquip) && (g.inv[S.invEquip] || 0) > 0) {
@@ -811,6 +833,8 @@ function drawMap() {
     else if (o.type === 'chest') { c.fillStyle = o.open ? '#7a6a3a' : '#e0b040'; c.fillRect(cx - cs * 0.25, cy - cs * 0.2, cs * 0.5, cs * 0.4); }
     else if (o.type === 'stairs') { c.fillStyle = '#7fd4ff'; c.beginPath(); c.moveTo(cx - cs * 0.3, cy - cs * 0.25); c.lineTo(cx + cs * 0.3, cy - cs * 0.25); c.lineTo(cx, cy + cs * 0.3); c.fill(); }
     else if (o.type === 'exit') { c.strokeStyle = '#7fd4ff'; c.lineWidth = 2; c.beginPath(); c.arc(cx, cy, cs * 0.3, 0, 7); c.stroke(); }
+    else if (o.type === 'gate') { c.strokeStyle = o.open ? '#6b5a3a' : '#9aa4b4'; c.lineWidth = 2; for (let i = 1; i < 4; i++) { c.beginPath(); c.moveTo(o.x * cs + i * cs / 4, o.y * cs + 2); c.lineTo(o.x * cs + i * cs / 4, o.y * cs + cs - 2); c.stroke(); } }
+    else if (o.type === 'lever') { c.fillStyle = o.used ? '#6b5a3a' : '#d9a441'; c.fillRect(cx - 2, cy - cs * 0.3, 4, cs * 0.6); }
     else if (o.type === 'sign') { c.fillStyle = '#c89a5a'; c.fillRect(cx - cs * 0.25, cy - cs * 0.2, cs * 0.5, cs * 0.3); }
     else if (o.type === 'merchant') { c.fillStyle = '#e0b040'; c.font = `bold ${cs}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('$', cx, cy); }
     else if (o.type === 'enemy' && !o.dead) { c.fillStyle = '#d05040'; c.font = `bold ${cs}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('×', cx, cy); }
@@ -966,6 +990,8 @@ async function onModalClick(e) {
   if (m === 'close') closeModal();
   else if (m === 'title-close') { closeModal(); }
   else if (m === 'title') { if (S.started && !confirm('Zum Titelbild? Nicht gespeicherter Fortschritt geht verloren.')) return; closeModal(); await showTitle(); }
+  else if (m === 'map') openMap();
+  else if (m === 'debug') openDebug();
   else if (m === 'save') openSlots('save');
   else if (m === 'load') openSlots('load');
   else if (m === 'settings') openSettings();
