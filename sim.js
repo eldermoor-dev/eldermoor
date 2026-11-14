@@ -25,7 +25,19 @@ function decideSmart(s, data) {
   }
   if ((s.inv.potion || 0) > 0 && needy[0] && needy[0].x.hp / needy[0].x.maxHp <= 0.3 && needy[0].x.hp < needy[0].x.maxHp) return { type: 'item', item: 'potion', hero: needy[0].i };
   if (c.enemies.some((e) => e.hp > 0 && e.intent === 'heavy') && h.row === 'front') return { type: 'defend' };
-  if (ab && ab.kind === 'damage' && h.mp >= ab.cost) return { type: 'ability', target: weakest(c) };
+  // Zauber: bester bezahlbarer Schadenszauber (Elementschwäche und Flächenwirkung zählen), Lichtwelle bei mehreren Verletzten
+  const spells = L.knownSpells(data, h);
+  const hurt = s.heroes.filter((x) => x.hp > 0 && x.hp / x.maxHp <= 0.6).length;
+  const gh = spells.find((q) => q.kind === 'heal' && q.all && h.mp >= q.cost);
+  if (gh && hurt >= 2) return { type: 'spell', spell: gh.id };
+  let best = null, bv = 0;
+  for (const sp of spells) {
+    if (sp.kind !== 'damage' || h.mp < sp.cost) continue;
+    const targets = sp.all ? liveEnemies(c) : [liveEnemies(c).find((x) => x.i === weakest(c))];
+    const v = targets.reduce((n, x) => n + (sp.mult || 100) * (100 + (sp.element ? ((data.enemies[x.e.kind].resist || {})[sp.element] || 0) : 0)) / 100, 0) / sp.cost ** 0.5;
+    if (v > bv) { bv = v; best = sp; }
+  }
+  if (best) return best === spells[0] ? { type: 'ability', target: weakest(c) } : { type: 'spell', spell: best.id, target: weakest(c) };
   if (liveEnemies(c).length >= 3) return { type: 'sweep' };
   return { type: 'attack', target: weakest(c) };
 }

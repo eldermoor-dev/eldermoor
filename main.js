@@ -3,13 +3,13 @@
 import {
   DIRS, DIR_NAMES, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
+  buildParty, deriveStats, skipStunned, restParty, knownSpells, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setResolution, W, H, BASE_W, BASE_H } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.6.0';
+const VERSION = '0.7.0';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -25,9 +25,10 @@ const S = {
   data: null, game: null, lvl: null, settings: { ...DEFAULTS }, tex: null, rc: null, ctx: null, img: null,
   sfx: new Sfx(), cam: { x: 0, y: 0, a: 0 }, target: { x: 0, y: 0, a: 0 }, tween: null,
   held: [], queued: null, nextAllowed: 0, lock: false, modal: null, started: false, log: [],
-  debug: { god: false }, itemMode: false, abMode: false, foe: 0, invUse: null, draft: null, fps: 60, frameMs: 0, lastRender: 0,
+  debug: { god: false }, itemMode: false, abMode: false, spMode: false, spSel: 0, foe: 0, invUse: null, draft: null, fps: 60, frameMs: 0, lastRender: 0,
   installEvent: null, loadMs: null, hadController: false
 };
+if (new URLSearchParams(location.search).has('dev')) window.__S = S; // nur für automatische Tests (?dev)
 
 // ---------------------------------------------------------------- Start
 async function boot() {
@@ -62,7 +63,7 @@ function startGame(state) {
   S.game = state;
   S.lvl = getLevel(S.data, state);
   S.rc.setPalette(S.data.palettes[S.lvl.palette]);
-  S.held = []; S.queued = null; S.lock = false; S.itemMode = false; S.abMode = false; S.log = [];
+  S.held = []; S.queued = null; S.lock = false; S.itemMode = false; S.abMode = false; S.spMode = false; S.log = [];
   S.started = true;
   snapCam();
   closeModal();
@@ -360,7 +361,7 @@ const TAP_COOL = 450; // ms: schnelle Doppeltipps nach einer Aktion werden ignor
 async function heroAct(a) {
   if (S.lock || !S.game.combat) return;
   if (performance.now() < (S.coolUntil || 0)) return;
-  if (a.target == null && (a.type === 'attack' || a.type === 'ability')) a.target = S.foe;
+  if (a.target == null && (a.type === 'attack' || a.type === 'ability' || a.type === 'spell')) a.target = S.foe;
   const r = heroAction(S.game, S.data, a);
   if (r.error) {
     const t = { 'full-hp': 'Dieser Held hat volle LP.', 'no-item': 'Kein Heiltrank mehr.', 'bad-target': 'Das Ziel kann nicht geheilt werden.', 'not-available': 'Noch nicht verfügbar.', 'no-mp': 'Zu wenig Mana oder Ausdauer.', 'no-ability': 'Dieser Held hat keine Fähigkeit.' }[r.error];
@@ -368,7 +369,7 @@ async function heroAct(a) {
     return;
   }
   S.coolUntil = performance.now() + TAP_COOL;
-  S.itemMode = false; S.abMode = false;
+  S.itemMode = false; S.abMode = false; S.spMode = false;
   showResult(r);
   renderAll();
   if (r.over === 'victory') { vib([40, 60, 40]); return; }
@@ -415,22 +416,39 @@ function onActionBar(e) {
   const c = b.dataset.c;
   if (c === 'attack') heroAct({ type: 'attack' });
   else if (c === 'defend') heroAct({ type: 'defend' });
-  else if (c === 'item') { S.itemMode = !S.itemMode; S.abMode = false; renderCombat(); }
+  else if (c === 'item') { S.itemMode = !S.itemMode; S.abMode = false; S.spMode = false; renderCombat(); }
+  else if (c === 'spells') { S.spMode = !S.spMode; S.abMode = false; S.itemMode = false; renderCombat(); }
+  else if (c.startsWith('sp:')) castKnown(+c.slice(3));
   else if (c === 'spell') useAbility();
   else if (c === 'sweep') heroAct({ type: 'sweep' });
-  else if (c.startsWith('abheal:')) { S.abMode = false; heroAct({ type: 'ability', target: +c.slice(7) }); }
+  else if (c.startsWith('abheal:')) { S.abMode = false; S.spMode = false; heroAct({ ...spellAct(S.spSel), target: +c.slice(7) }); }
   else if (c === 'log') openCombatLog();
   else if (c.startsWith('heal:')) heroAct({ type: 'item', item: 'potion', hero: +c.slice(5) });
 }
-// Fähigkeit des Helden am Zug: Schadensfähigkeit wirkt sofort, Heilung fragt nach dem Ziel
-function useAbility() {
+// Zauberliste des Helden am Zug (Index 0 = Berufsfähigkeit), siehe knownSpells in logic.js
+function curKnown() {
   const a = currentActor(S.game);
-  if (!a || a.side !== 'h') return;
-  const h = S.game.heroes[a.idx], ab = S.data.classes[h.cls].ability;
-  if (!ab) return;
-  if (h.mp < ab.cost) { say(`Zu wenig ${S.data.classes[h.cls].res.name} (${h.mp}/${ab.cost}).`); return; }
-  if (ab.kind === 'heal') { S.abMode = !S.abMode; S.itemMode = false; renderCombat(); }
-  else heroAct({ type: 'ability' });
+  return a && a.side === 'h' ? knownSpells(S.data, S.game.heroes[a.idx]) : [];
+}
+function spellAct(i) {
+  const sp = curKnown()[i];
+  return i === 0 || !sp ? { type: 'ability' } : { type: 'spell', spell: sp.id };
+}
+function castKnown(i) {
+  const a = currentActor(S.game), list = curKnown(), sp = list[i];
+  if (!a || a.side !== 'h' || !sp) return;
+  const h = S.game.heroes[a.idx];
+  if (h.mp < sp.cost) { say(`Zu wenig ${S.data.classes[h.cls].res.name} (${h.mp}/${sp.cost}).`); return; }
+  S.spSel = i;
+  if (sp.kind === 'heal' && !sp.all) { S.abMode = true; S.itemMode = false; renderCombat(); }
+  else { S.spMode = false; heroAct(spellAct(i)); }
+}
+// Knopf „Fähigkeit“/„Zauber“: bei mehreren Zaubern Liste auf-/zuklappen, sonst die einzige Fähigkeit wirken
+function useAbility() {
+  const list = curKnown();
+  if (!list.length) return;
+  if (list.length > 1) { S.spMode = !S.spMode; S.abMode = false; S.itemMode = false; renderCombat(); }
+  else castKnown(0);
 }
 function showGameOver() {
   S.sfx.play('defeat');
@@ -512,15 +530,21 @@ function renderCombat() {
   if (a.side !== 'h' || S.lock) { ab.innerHTML = `<div class="wait">${a.side === 'h' ? esc(S.game.heroes[a.idx].name) + ' ist gleich dran …' : 'Gegner ist am Zug …'}</div><button class="ab" data-c="log" style="flex:0 0 auto">Protokoll</button>`; return; }
   const potions = S.game.inv.potion || 0;
   const ch = S.game.heroes[a.idx], cab = S.data.classes[ch.cls].ability, cres = S.data.classes[ch.cls].res;
-  const abBtn = cab ? `<button class="ab" data-c="spell" ${ch.mp >= cab.cost ? '' : 'disabled'}>✦ ${esc(cab.name)} (${cab.cost} ${esc(cres.name)})</button>` : '';
+  const known = knownSpells(S.data, ch);
+  const abBtn = known.length > 1 ? `<button class="ab" data-c="spells">✦ Zauber (${known.length})${S.spMode ? ' ▴' : ' ▾'}</button>` : cab ? `<button class="ab" data-c="sp:0" ${ch.mp >= cab.cost ? '' : 'disabled'}>✦ ${esc(cab.name)} (${cab.cost} ${esc(cres.name)})</button>` : '';
   let html = `<button class="ab" data-c="attack">⚔ Angriff</button><button class="ab" data-c="defend">⛨ Verteidigen</button><button class="ab" data-c="item" ${potions ? '' : 'disabled'}>Gegenstand (${potions})</button>${abBtn}${multi ? `<button class="ab" data-c="sweep">⚔ Alle (${SWEEP_MULT} %)</button>` : ''}<button class="ab" data-c="log">Protokoll</button>`;
   if (S.itemMode) {
     html += '<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">' + S.game.heroes.map((h, i) =>
       `<button class="ab" data-c="heal:${i}" ${h.hp > 0 && h.hp < h.maxHp ? '' : 'disabled'}>Heiltrank → ${esc(h.name)}</button>`).join('') + '</div>';
   }
-  if (S.abMode && cab && cab.kind === 'heal') {
+  if (S.spMode && known.length > 1) {
+    html += '<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">' + known.map((sp, i) =>
+      `<button class="ab" data-c="sp:${i}" ${ch.mp >= sp.cost ? '' : 'disabled'}>${esc(sp.name)} (${sp.cost} ${esc(cres.name)})${sp.all ? ' · alle' : ''}</button>`).join('') + '</div>';
+  }
+  const sel = known[S.spSel];
+  if (S.abMode && sel && sel.kind === 'heal' && !sel.all) {
     html += '<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">' + S.game.heroes.map((h, i) =>
-      `<button class="ab" data-c="abheal:${i}" ${h.hp > 0 && (h.hp < h.maxHp || (cab.cleanse && statusOf(S.game, 'h', i)[cab.cleanse])) ? '' : 'disabled'}>${esc(cab.name)} → ${esc(h.name)}</button>`).join('') + '</div>';
+      `<button class="ab" data-c="abheal:${i}" ${h.hp > 0 && (h.hp < h.maxHp || (sel.cleanse && statusOf(S.game, 'h', i)[sel.cleanse])) ? '' : 'disabled'}>${esc(sel.name)} → ${esc(h.name)}</button>`).join('') + '</div>';
   }
   ab.innerHTML = html;
 }
@@ -586,10 +610,17 @@ function xpLine(h) {
   const need = xpForNext(S.data, h);
   return need == null ? `EP ${h.xp} · Höchststufe` : `EP ${h.xp} / ${need}`;
 }
+function runeTxt(sp) {
+  return (sp.runes || []).map((r) => (S.data.runes[r] ? S.data.runes[r].glyph : '')).join('') + ((sp.runes || []).length ? ' ' + sp.runes.map((r) => S.data.runes[r].name).join('·') : '');
+}
 function charAbility(h) {
-  const c = S.data.classes[h.cls], ab = c.ability;
-  if (!ab) return '';
-  return `<div>${esc(c.res.name)} ${h.mp}/${h.maxMp}</div><div style="margin-top:3px">✦ ${esc(ab.name)} (${ab.cost})</div><div class="muted" style="font-size:.72em">${esc(ab.desc)}</div>`;
+  const c = S.data.classes[h.cls];
+  if (!c.ability) return '';
+  const known = knownSpells(S.data, h);
+  const el = (sp) => (sp.element ? ` · ${esc(S.data.elements[sp.element].name)}` : '');
+  const lines = known.map((sp) => `<div style="margin-top:3px">✦ ${esc(sp.name)} (${sp.cost})${el(sp)}${sp.all ? ' · alle' : ''}</div><div class="muted" style="font-size:.72em">${esc(runeTxt(sp))}</div><div class="muted" style="font-size:.72em">${esc(sp.desc)}</div>`).join('');
+  const next = (c.spells || []).filter((s) => s.level > h.level && S.data.spells[s.id]).sort((p, q) => p.level - q.level)[0];
+  return `<div>${esc(c.res.name)} ${h.mp}/${h.maxMp}</div>${lines}${next ? `<div class="muted" style="font-size:.72em;margin-top:3px">Stufe ${next.level}: ${esc(S.data.spells[next.id].name)}</div>` : ''}`;
 }
 const bonusTxt = (n) => (n ? ` <span class="muted">(+${n})</span>` : '');
 function gearLines(h, i) {

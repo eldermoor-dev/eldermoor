@@ -247,3 +247,12 @@ Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätet
 - UI: Inventar -> "Ausrüsten" -> Held wählen (nicht erlaubte ausgegraut); Charakteransicht zeigt Waffe/Rüstung, Bonus "(+2)", "Ablegen".
 - Noch offen in 5b-Umfang: Qualitätsstufen, Zufallseigenschaften, Einzigartiges, Spezialeffekte (kommt mit Beutesystem, Phase 3); Gegner-Beute.
 - Tests: 40. Gerätetest offen.
+
+## 0.7.0 (Schritt 5c: Runenzauber)
+- game.json: `statuses.burn/slow`, `elements`, `runes`, `spells` (frost, bolt, group_heal), `classes.mage/priest.spells`, `enemies.*.resist`.
+- logic.js: `knownSpells(data,h)` (Klassenfähigkeit = Index 0, dazu `data.spells` nach Stufe); Zauber mit `all` treffen alle; Element-Schwäche/Resistenz als Prozent nach `mult`, Meldung „Schwäche!“/„Resistent.“; Brennen (Schaden/Runde wie Gift, Held min. 1 LP), Verlangsamt (handelt nächste Runde zuletzt).
+- Wichtig: Mana wird nach Sieg NICHT mehr aufgefüllt (nur Rast). Speicherversion bleibt 4.
+- main.js: Aktionsleiste „✦ Zauber (n)“, Zauberliste, Runen im Charakterbild. `window.__S` nur mit `?dev`.
+- sim.js: `decideSmart` nutzt Zauber. SIM.md neu (3000 Läufe).
+- Ungeprüft: Runenzeichen (ᚲᛁᚦᛊᚨ) auf Android-Schrift (evtl. Kästchen).
+- Tests: 41.
