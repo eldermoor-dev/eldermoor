@@ -295,3 +295,8 @@ Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätet
 - UI: Inventar sortiert (Verbrauchbares, Vorrat, Quest, Ausrüstung), Qualitätsfarben, Vergleich „· Angriff +1“ beim Ausrüsten, Initiativebonus im Charakterbild, Toast bei „Beute von …“.
 - Nicht enthalten: Handel/Verkaufen, Ausrüstung wegwerfen (Inventar wächst), maxHP-Eigenschaften, Elementeigenschaften.
 - BALANCE.md hat Abschnitt „Beute“. Tests 59.
+
+## 0.11.0 (Phase 3, Schritt 4: Fehlerlog und Verkaufen)
+- Fehlerlog (Menü → Fehlerlog (n)): `window.onerror`/`unhandledrejection` und die Fehler beim Laden/Importieren landen via `logError` in `ERR.list` (max. 40, gleiche Fehler werden gezählt), gespeichert unter dem Schlüssel `errlog` in IndexedDB. Anzeige mit lokaler Zeit, Version, Gebiet/Position/Kampf-Kontext; Knöpfe Kopieren (Zwischenablage, Rückfall `execCommand`), Leeren. Reine Logik: `pushError`, `formatErrorLog`, `ERRLOG_MAX` in logic.js. Kein Spielstand-Bestandteil.
+- Verkaufen (Inventar → „Verkaufen (n G)“ mit Rückfrage): `itemWorth`/`sellPrice`/`sellItem` in logic.js. `items.<id>.value` in game.json; erzeugte Ausrüstung: Wert × (1 + 0,5 je Qualitätsstufe) + 4 je Punkt Zufallseigenschaft; Verkaufspreis = Hälfte, min. 1. Nicht verkäuflich: Quest, Unikate (`q: unique`), `noSell`. Nicht im Kampf. Getragene Ausrüstung muss erst abgelegt werden. Verkauf überall möglich (Händler folgt später; dessen Kaufpreis = voller Wert).
+- Speicherstand weiter v6. Tests 61.

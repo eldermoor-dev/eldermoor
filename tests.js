@@ -1018,6 +1018,51 @@ export async function runTests(data, env = {}) {
     for (let i = 0; i < 60; i++) { const q = fresh(500 + i); q.heroes.forEach((h) => { h.level = 4; }); playFight(q, 'en2', i); const back = L.deserialize(JSON.parse(JSON.stringify(L.serialize(q))), data); eq(back.gear, q.gear, 'Rundlauf'); }
   });
 
+  // ---- Phase 3, Schritt 4: Verkaufen und Fehlerlog ----
+  await test('Verkaufen (Phase 3): Preise nach Qualität, nicht verkäuflich (Quest, Unikat), Gold und Bestand, nicht im Kampf', () => {
+    const s = fresh(51);
+    eq(L.sellPrice(s, data, 'potion'), 5, 'Heiltrank 10 → 5');
+    assert(L.sellPrice(s, data, 'iron_key') === null && L.sellPrice(s, data, 'schratdorn') === null, 'Quest/Unikat');
+    for (const [id, it] of Object.entries(data.items)) if (it.kind === 'equip' && it.q !== 'unique') assert(it.value > 0, `${id}: value fehlt`);
+    // erzeugte Ausrüstung: Preis steigt mit Qualität und Eigenschaften
+    const mk = (q, atk, init) => ({ kind: 'equip', base: 'iron_sword', slot: 'weapon', q, atk, def: 0, init, classes: ['warrior'], name: 'Eisenschwert', affixes: [], desc: 'x' });
+    const ids = { common: L.addGear(s, data, mk('common', 2, 0)), fine: L.addGear(s, data, mk('fine', 3, 0)), rare: L.addGear(s, data, mk('rare', 4, 1)), epic: L.addGear(s, data, mk('epic', 6, 2)) };
+    const p = Object.fromEntries(Object.entries(ids).map(([k, id]) => [k, L.sellPrice(s, data, id)]));
+    assert(p.common < p.fine && p.fine < p.rare && p.rare < p.epic, 'Preise steigen: ' + JSON.stringify(p));
+    eq(p.common, 12, 'gewöhnliches Schwert: 24 → 12');
+    const gold = s.gold, r = L.sellItem(s, data, ids.rare);
+    assert(r.price === p.rare && s.gold === gold + p.rare && !s.inv[ids.rare] && !s.gear[ids.rare], 'verkauft und entfernt');
+    // Stapel: nur einer pro Verkauf
+    s.inv.potion = 3; L.sellItem(s, data, 'potion'); eq(s.inv.potion, 2, 'ein Heiltrank');
+    s.inv.iron_key = 1; assert(L.sellItem(s, data, 'iron_key').error === 'not-sellable', 'Schlüssel');
+    assert(L.sellItem(s, data, 'g999').error === 'no-item', 'nicht vorhanden');
+    // getragene Ausrüstung liegt nicht im Inventar und lässt sich nicht verkaufen
+    s.inv.iron_sword = 1; L.equipItem(s, data, 'iron_sword', 0);
+    assert(L.sellItem(s, data, 'iron_sword').error === 'no-item', 'getragen');
+    L.startCombat(s, data, s.objs.find((o) => o.id === 'en2'));
+    assert(L.sellItem(s, data, 'potion').error === 'in-combat', 'nicht im Kampf');
+    // Rundlauf: gesamte erzeugte Ausrüstung ist verkäuflich, Preis ≥ 1
+    const s2 = fresh(52);
+    for (let i = 0; i < 300; i++) { const g = L.rollGear(s2, data, {}), id = L.addGear(s2, data, g); const pr = L.sellPrice(s2, data, id); assert(pr >= 1 && pr <= 60, `Preis ${pr} für ${g.name} ${g.q}`); }
+  });
+
+  await test('Fehlerlog (Phase 3): gleiche Fehler werden gezählt, Höchstzahl, Format, Kürzung', () => {
+    const list = [];
+    L.pushError(list, { v: '1', where: 'A', msg: 'kaputt', t: '2026-11-14T01:00:00Z' });
+    L.pushError(list, { v: '1', where: 'A', msg: 'kaputt', t: '2026-11-14T01:00:05Z' });
+    eq(list.length, 1, 'gleicher Fehler zusammengefasst'); eq(list[0].n, 2, 'gezählt'); eq(list[0].t, '2026-11-14T01:00:05Z', 'letzte Zeit');
+    L.pushError(list, { v: '1', where: 'B', msg: 'kaputt' });
+    eq(list.length, 2, 'anderer Ort = neuer Eintrag');
+    for (let i = 0; i < 100; i++) L.pushError(list, { v: '1', where: 'X', msg: 'Fehler ' + i });
+    eq(list.length, L.ERRLOG_MAX, 'Höchstzahl');
+    assert(list[list.length - 1].msg === 'Fehler 99' && list[0].msg !== 'kaputt', 'älteste fliegen raus');
+    const big = []; L.pushError(big, { where: 'W'.repeat(200), msg: 'm'.repeat(1000), stack: 's'.repeat(5000) });
+    assert(big[0].where.length <= 60 && big[0].msg.length <= 300 && big[0].stack.length <= 700, 'Kürzung');
+    const txt = L.formatErrorLog([{ t: 'T1', v: '0.11.0', where: 'Laden', msg: 'Datei kaputt', n: 3, stack: 'Zeile1' }, { t: 'T2', v: '0.11.0', where: 'Import', msg: 'zweiter', n: 1 }], 'Test');
+    assert(/2 Einträge/.test(txt) && txt.indexOf('zweiter') < txt.indexOf('Datei kaputt') && /×3/.test(txt) && /Zeile1/.test(txt), 'Format: neueste zuerst');
+    const e = L.pushError([], {}); eq(e[0].msg, 'Unbekannter Fehler', 'leere Meldung');
+  });
+
   await test('Migration v1→v2: beschädigte v1-Stände werden mit klarer Meldung abgelehnt', () => {
     const fails = (mut, re) => {
       const o = JSON.parse(V1_SAVE); mut(o);

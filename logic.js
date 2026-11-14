@@ -472,6 +472,49 @@ function rollDrops(state, data, enemies, msgs) {
   }
 }
 
+// ---------- Verkaufen (Phase 3, Schritt 4) ----------
+// Wert = data.items[grundgegenstand].value, erzeugte Ausrüstung: × (1 + 0,5 je Qualitätsstufe) + 4 je Punkt Zufallseigenschaft.
+// Verkaufspreis = Hälfte des Werts (mindestens 1). Questgegenstände, Unikate und Gegenstände ohne value sind nicht verkäuflich.
+export function itemWorth(state, data, id) {
+  const it = itemDef(state, data, id);
+  if (!it || it.kind === 'quest' || it.q === 'unique' || it.noSell) return null;
+  const base = it.base ? data.items[it.base] : it;
+  if (!base || !(base.value > 0)) return null;
+  if (!it.base) return base.value;
+  const qi = Math.max(0, data.quality.findIndex((q) => q.id === it.q)), q = data.quality[qi];
+  const extra = Math.max(0, (it.atk || 0) + (it.def || 0) + (it.init || 0) - (base.atk || 0) - (base.def || 0) - (q ? q.statBonus : 0));
+  return Math.floor(base.value * (1 + 0.5 * qi)) + 4 * extra;
+}
+export const sellPrice = (state, data, id) => { const w = itemWorth(state, data, id); return w == null ? null : Math.max(1, Math.floor(w / 2)); };
+export function sellItem(state, data, id) {
+  if (state.combat) return { error: 'in-combat' };
+  if (!(state.inv[id] > 0)) return { error: 'no-item' };
+  const p = sellPrice(state, data, id);
+  if (p == null) return { error: 'not-sellable' };
+  const it = itemDef(state, data, id);
+  state.inv[id]--;
+  if (state.inv[id] === 0) { delete state.inv[id]; if (state.gear && state.gear[id]) delete state.gear[id]; }
+  state.gold += p;
+  return { msg: `${it.name} verkauft: +${p} Gold.`, price: p, sfx: 'chest' };
+}
+
+// ---------- Fehlerlog (Phase 3, Schritt 4; rein, damit testbar) ----------
+// Einträge { t: ISO-Zeit, v: Version, where, msg, stack?, n } – gleiche aufeinanderfolgende Fehler werden gezählt statt wiederholt.
+export const ERRLOG_MAX = 40;
+export function pushError(list, e, max = ERRLOG_MAX) {
+  const entry = { t: e.t || new Date().toISOString(), v: e.v || '', where: String(e.where || '').slice(0, 60), msg: String(e.msg || 'Unbekannter Fehler').slice(0, 300), n: 1 };
+  if (e.stack) entry.stack = String(e.stack).slice(0, 700);
+  const last = list[list.length - 1];
+  if (last && last.msg === entry.msg && last.where === entry.where) { last.n = (last.n || 1) + 1; last.t = entry.t; return list; }
+  list.push(entry);
+  while (list.length > max) list.shift();
+  return list;
+}
+export function formatErrorLog(list, meta = '') {
+  const head = `Eldermoor Fehlerlog${meta ? ' – ' + meta : ''} (${list.length} Einträge)`;
+  return [head, ...list.slice().reverse().map((e) => `[${e.t}] v${e.v} ${e.where}${e.n > 1 ? ` (×${e.n})` : ''}: ${e.msg}${e.stack ? '\n' + e.stack : ''}`)].join('\n\n');
+}
+
 // ---------- Rast (Schritt 5a) ----------
 // Mit Proviant: alle Helden (auch bewusstlose) voll bei LP und Ressource, 1 Proviant weg.
 // Ohne Proviant („hungrig“): jeder Held erholt sich nur um data.rest.hungryPct % von LP und Ressource.

@@ -3,13 +3,13 @@
 import {
   DIRS, DIR_NAMES, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, enemyOf, itemDef, qualityOf, changeArea, knownSpells, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
+  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, pushError, formatErrorLog, itemDef, qualityOf, changeArea, knownSpells, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setResolution, W, H, BASE_W, BASE_H } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.10.0';
+const VERSION = '0.11.0';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -29,6 +29,20 @@ const S = {
   installEvent: null, loadMs: null, hadController: false
 };
 if (new URLSearchParams(location.search).has('dev')) window.__S = S; // nur für automatische Tests (?dev)
+
+// ---------------------------------------------------------------- Fehlerlog
+const ERR = { list: [], saveT: 0 };
+function logError(where, err, extra) {
+  try {
+    const msg = err && err.message ? err.message : String(err);
+    const g = S.game, ctx = g ? ` [Gebiet ${g.levelId}, Pos ${g.player.x}/${g.player.y}${g.combat ? ', im Kampf' : ''}]` : '';
+    pushError(ERR.list, { v: VERSION, where, msg: msg + ctx + (extra ? ' ' + extra : ''), stack: err && err.stack });
+    clearTimeout(ERR.saveT);
+    ERR.saveT = setTimeout(() => { try { store.set('errlog', ERR.list); } catch { /* Log ist best effort */ } }, 300);
+  } catch { /* nie selbst Fehler werfen */ }
+}
+window.addEventListener('error', (e) => logError('Fenster', e.error || e.message, e.filename ? `(${String(e.filename).split('/').pop()}:${e.lineno})` : ''));
+window.addEventListener('unhandledrejection', (e) => logError('Versprechen', e.reason));
 
 // ---------------------------------------------------------------- Start
 async function boot() {
@@ -77,6 +91,7 @@ function startGame(state) {
 // ---------------------------------------------------------------- Einstellungen
 async function loadSettings() {
   try {
+    try { const el = await store.get('errlog'); if (Array.isArray(el)) ERR.list = el.concat(ERR.list).slice(-40); } catch { /* ohne alten Log */ }
     const s = await store.get('settings');
     if (s && typeof s === 'object') {
       S.settings = { ...DEFAULTS, ...s };
@@ -574,7 +589,7 @@ function openModal(html, kind = 'generic') {
   S.held = [];
   $('#modal-box').scrollTop = 0;
 }
-function closeModal() { $('#modal').hidden = true; $('#modal-box').innerHTML = ''; S.modal = null; S.invUse = null; S.invEquip = null; }
+function closeModal() { $('#modal').hidden = true; $('#modal-box').innerHTML = ''; S.modal = null; S.invUse = null; S.invEquip = null; S.invSell = null; }
 const closeBtn = '<button class="mb" data-m="close">Schließen</button>';
 
 function openMenu() {
@@ -582,6 +597,7 @@ function openMenu() {
     <button class="mb primary" data-m="close">Weiterspielen</button>
     <button class="mb" data-m="rest">Rasten (Proviant: ${S.game ? (S.game.inv.ration || 0) : 0})</button>
     <button class="mb" data-m="bestiary">Bestiarium</button>
+    <button class="mb" data-m="errlog">Fehlerlog (${ERR.list.length})</button>
     <button class="mb" data-m="save">Speichern</button>
     <button class="mb" data-m="load">Laden</button>
     <button class="mb" data-m="export">Spielstand exportieren (Datei)</button>
@@ -600,6 +616,20 @@ function helpHtml() {
   <h3>Ziel des Prototyps</h3><p>Truhe im Nebenraum öffnen, Eisenschlüssel nehmen, die Eisentür aufschließen, den Moorschrat besiegen und den Runenstein erreichen.</p>
   <p class="muted">Prototyp Phase 2 (in Arbeit) · Version ${VERSION} · Autor: eldermoor-dev. Alle Grafiken und Geräusche entstehen im Spiel selbst (prozedural). Keine Musik.</p>
   <div class="acts">${closeBtn}</div>`;
+}
+function openErrorLog() {
+  const rows = ERR.list.slice().reverse().map((e) => `<div style="border-bottom:1px solid #3a2f20;padding:6px 0"><div class="muted" style="font-size:.72em">${esc(new Date(e.t).toLocaleString('de-DE'))} · v${esc(e.v)} · ${esc(e.where)}${e.n > 1 ? ` · ${e.n}×` : ''}</div><div>${esc(e.msg)}</div>${e.stack ? `<div class="muted" style="font-size:.66em;white-space:pre-wrap;word-break:break-all">${esc(e.stack.split('\n').slice(0, 3).join('\n'))}</div>` : ''}</div>`).join('');
+  openModal(`<h2>Fehlerlog</h2><p class="muted">Hier landen Fehler, die das Spiel selbst bemerkt. „Kopieren“ legt den Text in die Zwischenablage, zum Einfügen in eine Nachricht.</p>${rows || '<p>Keine Fehler aufgezeichnet.</p>'}<div class="acts"><button class="mb" data-m="errcopy" ${ERR.list.length ? '' : 'disabled'}>Kopieren</button><button class="mb" data-m="errclear" ${ERR.list.length ? '' : 'disabled'}>Leeren</button><button class="mb" data-m="menu">Zurück</button></div>`, 'errlog');
+}
+async function copyErrorLog() {
+  const text = formatErrorLog(ERR.list, `Version ${VERSION}, ${navigator.userAgent}`);
+  try { await navigator.clipboard.writeText(text); toast('Fehlerlog kopiert.'); return; } catch { /* Rückfall */ }
+  try {
+    const ta = document.createElement('textarea'); ta.value = text; ta.style.cssText = 'position:fixed;left:0;top:0;opacity:0';
+    document.body.append(ta); ta.focus(); ta.select();
+    const ok = document.execCommand('copy'); ta.remove();
+    toast(ok ? 'Fehlerlog kopiert.' : 'Kopieren nicht möglich.');
+  } catch { toast('Kopieren nicht möglich.'); }
 }
 function openBestiary() {
   const g = S.game, d = S.data, b = g.bestiary || {};
@@ -642,11 +672,16 @@ function openInventory() {
   html += items.length ? items.map(([id, n]) => {
     const it = itemDef(g, d, id);
     const use = it.kind === 'consumable' && !g.combat ? `<button class="mb" data-m="use:${id}">Benutzen</button>` : it.kind === 'supply' && !g.combat ? '<button class="mb" data-m="rest">Rasten</button>' : it.kind === 'equip' && !g.combat ? `<button class="mb" data-m="eqsel:${id}">Ausrüsten</button>` : '';
-    return `<div class="row"><div><b>${qTag(id, it)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}<div class="muted">${esc(it.desc)}</div></div>${use}</div>`;
+    const sp = !g.combat ? sellPrice(g, d, id) : null;
+    const sell = sp != null ? `<button class="mb" data-m="sellask:${id}">Verkaufen (${sp} G)</button>` : '';
+    return `<div class="row"><div><b>${qTag(id, it)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}<div class="muted">${esc(it.desc)}</div></div><div style="display:flex;flex-direction:column;gap:4px">${use}${sell}</div></div>`;
   }).join('') : '<p class="muted">Nichts dabei.</p>';
   if (S.invEquip && itemDef(g, d, S.invEquip) && (g.inv[S.invEquip] || 0) > 0) {
     html += `<h3>${esc(itemDef(g, d, S.invEquip).name)} an wen?</h3><div class="acts">` + g.heroes.map((h, i) =>
       `<button class="mb" data-m="eq:${i}" ${canEquip(d, h, S.invEquip, g) ? '' : 'disabled'}>${esc(h.name)} (${esc(h.role)})${canEquip(d, h, S.invEquip, g) ? esc(gearDelta(h, S.invEquip)) : ''}</button>`).join('') + '</div>';
+  }
+  if (S.invSell && (g.inv[S.invSell] || 0) > 0 && sellPrice(g, d, S.invSell) != null) {
+    html += `<h3>${esc(itemDef(g, d, S.invSell).name)} verkaufen für ${sellPrice(g, d, S.invSell)} Gold?</h3><div class="acts"><button class="mb primary" data-m="sell">Ja, verkaufen</button><button class="mb" data-m="sellno">Nein</button></div>`;
   }
   if (S.invUse) {
     html += `<h3>${esc(itemDef(g, d, S.invUse).name)} an wem anwenden?</h3><div class="acts">` + g.heroes.map((h, i) =>
@@ -802,7 +837,7 @@ async function loadSlot(key) {
   const raw = await store.get(key);
   if (!raw) { toast('Slot ist leer.'); return; }
   try { startGame(deserialize(raw, S.data)); say('Spielstand geladen.'); }
-  catch (e) { toast('Laden fehlgeschlagen: ' + e.message, 4500); }
+  catch (e) { logError('Laden', e); toast('Laden fehlgeschlagen: ' + e.message, 4500); }
 }
 function exportSave() {
   if (S.game.combat) { toast('Im Kampf kann nicht exportiert werden.'); return; }
@@ -820,7 +855,7 @@ async function onImportFile(e) {
   e.target.value = '';
   if (!f) return;
   try { startGame(deserialize(await f.text(), S.data)); say('Spielstand importiert. Zum Behalten in einem Slot speichern.'); toast('Spielstand importiert.'); }
-  catch (err) { toast('Import fehlgeschlagen: ' + err.message, 4500); }
+  catch (err) { logError('Import', err); toast('Import fehlgeschlagen: ' + err.message, 4500); }
 }
 
 // ---------------------------------------------------------------- Debug und Selbsttest
@@ -885,6 +920,9 @@ async function onModalClick(e) {
   else if (m === 'settings') openSettings();
   else if (m === 'help') openHelp();
   else if (m === 'bestiary') openBestiary();
+  else if (m === 'errlog') openErrorLog();
+  else if (m === 'errcopy') copyErrorLog();
+  else if (m === 'errclear') { ERR.list = []; store.set('errlog', []); openErrorLog(); }
   else if (m === 'menu') openMenu();
   else if (m === 'export') exportSave();
   else if (m === 'import') $('#importfile').click();
@@ -924,6 +962,14 @@ async function onModalClick(e) {
     const t = { 'in-combat': 'Im Kampf kann niemand rasten.', 'enemy-near': 'Ein Gegner ist zu nah. So kann die Gruppe nicht rasten.', 'nothing-to-do': 'Alle sind bereits bei Kräften.' }[r.error];
     if (t) { say(t); toast(t); closeModal(); }
     else { say(r.msg); S.sfx.play(r.sfx); toast(r.msg, 3200); closeModal(); renderAll(); }
+  }
+  else if (m.startsWith('sellask:')) { S.invSell = m.slice(8); S.invEquip = null; S.invUse = null; openInventory(); }
+  else if (m === 'sellno') { S.invSell = null; openInventory(); }
+  else if (m === 'sell') {
+    const r = sellItem(g, S.data, S.invSell);
+    if (r.msg) { say(r.msg); S.sfx.play(r.sfx); toast(r.msg); } else toast('Das geht nicht.');
+    if (!(g.inv[S.invSell] > 0)) S.invSell = null;
+    renderAll(); openInventory();
   }
   else if (m.startsWith('eqsel:')) { S.invEquip = m.slice(6); openInventory(); }
   else if (m.startsWith('eq:')) {

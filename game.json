@@ -12,17 +12,20 @@
       "name": "Heiltrank",
       "kind": "consumable",
       "heal": 15,
-      "desc": "Stellt 15 LP wieder her."
+      "desc": "Stellt 15 LP wieder her.",
+      "value": 10
     },
     "iron_key": {
       "name": "Eiserner Schlüssel",
       "kind": "quest",
-      "desc": "Schwer und kalt. Passt in ein Eisenschloss. Kann nicht verloren gehen."
+      "desc": "Schwer und kalt. Passt in ein Eisenschloss. Kann nicht verloren gehen.",
+      "noSell": true
     },
     "ration": {
       "name": "Proviant",
       "kind": "supply",
-      "desc": "Eine Mahlzeit für die Rast. Mit Proviant erholt sich die Gruppe vollständig, ohne Proviant nur zu 30 %."
+      "desc": "Eine Mahlzeit für die Rast. Mit Proviant erholt sich die Gruppe vollständig, ohne Proviant nur zu 30 %.",
+      "value": 6
     },
     "iron_sword": {
       "name": "Eisenschwert",
@@ -34,7 +37,8 @@
         "rogue",
         "ranger"
       ],
-      "desc": "Waffe. +2 Angriff. Für Krieger, Schurke, Waldläufer."
+      "desc": "Waffe. +2 Angriff. Für Krieger, Schurke, Waldläufer.",
+      "value": 24
     },
     "oak_staff": {
       "name": "Eichenstab",
@@ -45,14 +49,16 @@
         "mage",
         "priest"
       ],
-      "desc": "Waffe. +2 Angriff. Für Magier und Priester."
+      "desc": "Waffe. +2 Angriff. Für Magier und Priester.",
+      "value": 24
     },
     "leather_armor": {
       "name": "Lederharnisch",
       "kind": "equip",
       "slot": "armor",
       "def": 1,
-      "desc": "Rüstung. +1 Verteidigung. Für alle Berufe."
+      "desc": "Rüstung. +1 Verteidigung. Für alle Berufe.",
+      "value": 14
     },
     "chain_mail": {
       "name": "Kettenhemd",
@@ -64,7 +70,8 @@
         "priest",
         "ranger"
       ],
-      "desc": "Rüstung. +2 Verteidigung. Für Krieger, Priester, Waldläufer."
+      "desc": "Rüstung. +2 Verteidigung. Für Krieger, Priester, Waldläufer.",
+      "value": 30
     },
     "schratdorn": {
       "name": "Schratdorn",
