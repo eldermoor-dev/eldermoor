@@ -322,6 +322,15 @@ export function useItemOutside(state, data, itemId, heroIdx) {
   return { msg: `${h.name} erhält ${h.hp - before} LP zurück.`, sfx: 'heal' };
 }
 
+// ---------- Zauber (Schritt 5c) ----------
+// Bekannte Zauber eines Helden: die Berufsfähigkeit (ab Stufe 1) plus data.spells nach classes.<id>.spells[{id, level}].
+export function knownSpells(data, h) {
+  const c = data.classes[h.cls], out = [];
+  if (c.ability) out.push({ ...c.ability, level: 1 });
+  for (const s of c.spells || []) if (h.level >= s.level && data.spells[s.id]) out.push({ id: s.id, level: s.level, ...data.spells[s.id] });
+  return out;
+}
+
 // ---------- Ausrüstung (Schritt 5b) ----------
 // hero.equip = { weapon: itemId|null, armor: itemId|null } (optional; fehlt es, ist nichts angelegt).
 // Die gespeicherten Werte atk/def bleiben die Grundwerte; Boni werden beim Rechnen addiert.
@@ -389,8 +398,9 @@ const combatAlive = (state, e) => e.side === 'h' ? state.heroes[e.idx].hp > 0 : 
 function buildOrder(state, data) {
   const c = state.combat;
   const list = [];
-  state.heroes.forEach((h, i) => { if (h.hp > 0) list.push({ side: 'h', idx: i, key: h.init + rand(state) * 4 + 0.5 }); });
-  c.enemies.forEach((e, i) => { if (e.hp > 0) list.push({ side: 'e', idx: i, key: data.enemies[e.kind].init + rand(state) * 4 }); });
+  const slowed = (side, i) => (c.status[side + i] && c.status[side + i].slow ? -100 : 0);
+  state.heroes.forEach((h, i) => { if (h.hp > 0) list.push({ side: 'h', idx: i, key: h.init + rand(state) * 4 + 0.5 + slowed('h', i) }); });
+  c.enemies.forEach((e, i) => { if (e.hp > 0) list.push({ side: 'e', idx: i, key: data.enemies[e.kind].init + rand(state) * 4 + slowed('e', i) }); });
   list.sort((a, b) => b.key - a.key);
   c.order = list.map(({ side, idx }) => ({ side, idx }));
   c.pos = 0;
@@ -445,13 +455,14 @@ export function calcDamage(state, atk, def, opts = {}) {
   const r = randInt(state, 0, 2), red = Math.floor(def / 2);
   let d = Math.max(1, atk + r - red);
   if (opts.mult) d = Math.max(1, Math.floor((d * opts.mult) / 100));
+  if (opts.elem) d = Math.max(1, Math.floor((d * (100 + opts.elem)) / 100));
   if (opts.backMelee) d = Math.ceil(d / 2);
   if (opts.defending) d = Math.max(1, Math.floor(d / 2));
-  if (opts.trace) Object.assign(opts.trace, { atk, roll: r, red, mult: opts.mult || 0, back: !!opts.backMelee, def: !!opts.defending, total: d });
+  if (opts.trace) Object.assign(opts.trace, { atk, roll: r, red, mult: opts.mult || 0, elem: opts.elem || 0, elemName: opts.elemName || '', back: !!opts.backMelee, def: !!opts.defending, total: d });
   return d;
 }
 export function explain(tr) {
-  return `Angriff ${tr.atk} + Wurf ${tr.roll} − Rüstung ${tr.red}${tr.mult ? ` · ${tr.mult} %` : ''}${tr.back ? ' · ½ Hinterreihe' : ''}${tr.def ? ' · ½ Deckung' : ''} = ${tr.total}`;
+  return `Angriff ${tr.atk} + Wurf ${tr.roll} − Rüstung ${tr.red}${tr.mult ? ` · ${tr.mult} %` : ''}${tr.elem ? ` · ${tr.elemName} ${tr.elem > 0 ? '+' : ''}${tr.elem} %` : ''}${tr.back ? ' · ½ Hinterreihe' : ''}${tr.def ? ' · ½ Deckung' : ''} = ${tr.total}`;
 }
 
 // ---------- Statuswirkungen (nur im Kampf, werden nicht gespeichert) ----------
@@ -467,7 +478,7 @@ function addStatus(state, data, side, idx, inf, msgs) {
   const cur = st[inf.status];
   st[inf.status] = { t: Math.max(cur ? cur.t : 0, inf.turns), p: Math.max(cur ? cur.p || 0 : 0, inf.power || 0) };
   const nm = data.statuses[inf.status].name;
-  msgs.push(`${actorName(state, side, idx)}: ${nm}${inf.status === 'poison' ? ` (${inf.turns} Runden, ${inf.power} Schaden je Runde)` : inf.status === 'weak' ? ` (${inf.turns} Runden)` : ''}.`);
+  msgs.push(`${actorName(state, side, idx)}: ${nm}${(inf.status === 'poison' || inf.status === 'burn') ? ` (${inf.turns} Runden, ${inf.power} Schaden je Runde)` : (inf.status === 'weak' || inf.status === 'slow') ? ` (${inf.turns} Runden)` : ''}.`);
 }
 const effAtk = (state, side, idx, atk) => (statusOf(state, side, idx).weak ? Math.max(1, Math.floor((atk * 3) / 4)) : atk);
 
@@ -476,14 +487,16 @@ function endOfTurn(state, data, side, idx, msgs) {
   const c = state.combat, k = skey(side, idx), st = c.status[k];
   if (!st) return false;
   const tgt = side === 'h' ? state.heroes[idx] : c.enemies[idx];
-  if (st.poison && tgt.hp > 0) {
-    const before = tgt.hp;
-    tgt.hp = Math.max(side === 'h' ? 1 : 0, tgt.hp - st.poison.p);
-    const lost = before - tgt.hp;
-    if (lost > 0) msgs.push(`${tgt.name} erleidet ${lost} Giftschaden.`);
-    if (side === 'e' && tgt.hp === 0) msgs.push(`${tgt.name} bricht zusammen.`);
+  for (const [n, label] of [['poison', 'Giftschaden'], ['burn', 'Brandschaden']]) {
+    if (st[n] && tgt.hp > 0) {
+      const before = tgt.hp;
+      tgt.hp = Math.max(side === 'h' ? 1 : 0, tgt.hp - st[n].p);
+      const lost = before - tgt.hp;
+      if (lost > 0) msgs.push(`${tgt.name} erleidet ${lost} ${label}.`);
+      if (side === 'e' && tgt.hp === 0) msgs.push(`${tgt.name} bricht zusammen.`);
+    }
   }
-  for (const n of ['poison', 'weak']) if (st[n] && --st[n].t <= 0) { delete st[n]; msgs.push(`${tgt.name}: ${data.statuses[n].name} klingt ab.`); }
+  for (const n of ['poison', 'burn', 'weak', 'slow']) if (st[n] && --st[n].t <= 0) { delete st[n]; msgs.push(`${tgt.name}: ${data.statuses[n].name} klingt ab.`); }
   return c.enemies.every((e) => e.hp <= 0);
 }
 
@@ -515,7 +528,6 @@ function finishVictory(state, data, msgs) {
     if (obj) { obj.dead = true; obj.hp = 0; }
   }
   state.gold += gold;
-  for (const h of state.heroes) h.mp = h.maxMp; // vorläufig: Ressource nach dem Kampf voll (Rast folgt in Schritt 5)
   msgs.push(`Sieg! Beute: ${gold} Gold.`);
   if (xp > 0) { msgs.push(`Erfahrung: +${xp} EP für jeden Helden, der noch steht.`); grantXp(state, data, xp, msgs); }
   for (const h of state.heroes) if (h.hp <= 0) { h.hp = 1; msgs.push(`${h.name} kommt mit 1 LP wieder zu sich.`); } // vorläufig, bis die Rast kommt (Schritt 5)
@@ -550,35 +562,55 @@ export function heroAction(state, data, act) {
       if (e.hp === 0) msgs.push(`${e.name} bricht zusammen.`);
     }
     regen(h, msgs);
-  } else if (act.type === 'ability') {
-    const ab = data.classes[h.cls].ability;
+  } else if (act.type === 'ability' || act.type === 'spell') {
+    const ab = act.type === 'spell' ? knownSpells(data, h).find((s) => s.id === act.spell) : data.classes[h.cls].ability;
     if (!ab) return { error: 'no-ability' };
     if (h.mp < ab.cost) return { error: 'no-mp' };
     const rn = data.classes[h.cls].res.name;
     if (ab.kind === 'heal') {
-      const t = state.heroes[act.target];
-      const stT = c.status['h' + act.target];
-      if (!t || t.hp <= 0 || (t.hp >= t.maxHp && !(ab.cleanse && stT && stT[ab.cleanse]))) return { error: 'bad-target' };
-      const gain = Math.min(ab.heal, t.maxHp - t.hp);
-      t.hp += gain; h.mp -= ab.cost;
-      if (ab.cleanse && stT && stT[ab.cleanse]) { delete stT[ab.cleanse]; msgs.push(`${t.name}: ${data.statuses[ab.cleanse].name} wird genommen.`); }
-      msgs.push(`${h.name} wirkt ${ab.name}: ${t.name}${gain > 0 ? ` +${gain} LP` : ''} (−${ab.cost} ${rn}).`);
+      const targets = ab.all ? state.heroes.map((x, i) => i).filter((i) => state.heroes[i].hp > 0 && state.heroes[i].hp < state.heroes[i].maxHp) : [act.target];
+      if (ab.all) { if (!targets.length) return { error: 'full-hp' }; }
+      else {
+        const t = state.heroes[act.target];
+        const stT = c.status['h' + act.target];
+        if (!t || t.hp <= 0 || (t.hp >= t.maxHp && !(ab.cleanse && stT && stT[ab.cleanse]))) return { error: 'bad-target' };
+      }
+      h.mp -= ab.cost;
+      const parts = [];
+      for (const ti of targets) {
+        const t = state.heroes[ti], stT = c.status['h' + ti];
+        const gain = Math.min(ab.heal, t.maxHp - t.hp);
+        t.hp += gain;
+        parts.push(`${t.name}${gain > 0 ? ` +${gain}` : ''}`);
+        if (ab.cleanse && stT && stT[ab.cleanse]) { delete stT[ab.cleanse]; msgs.push(`${t.name}: ${data.statuses[ab.cleanse].name} wird genommen.`); }
+      }
+      msgs.push(`${h.name} wirkt ${ab.name}: ${parts.join(', ')} LP (−${ab.cost} ${rn}).`);
       sfx = 'heal';
     } else {
-      let ti = act.target;
-      if (ti == null || !c.enemies[ti] || c.enemies[ti].hp <= 0) ti = c.enemies.findIndex((e) => e.hp > 0);
-      const e = c.enemies[ti];
-      h.mp -= ab.cost;
-      const tr = {};
-      const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h)), data.enemies[e.kind].def, { backMelee: h.row === 'back' && !h.ranged, mult: ab.mult, sure: !!ab.sure, trace: tr });
-      if (d === 0) { msgs.push(`${h.name} setzt ${ab.name} ein, verfehlt aber ${e.name} (−${ab.cost} ${rn}).`); sfx = 'miss'; }
+      let list;
+      if (ab.all) list = c.enemies.map((e, i) => i).filter((i) => c.enemies[i].hp > 0);
       else {
+        let ti = act.target;
+        if (ti == null || !c.enemies[ti] || c.enemies[ti].hp <= 0) ti = c.enemies.findIndex((e) => e.hp > 0);
+        list = [ti];
+      }
+      h.mp -= ab.cost;
+      let hit = false;
+      for (const ti of list) {
+        const e = c.enemies[ti];
+        const tr = {};
+        const el = ab.element ? ((data.enemies[e.kind].resist || {})[ab.element] || 0) : 0;
+        const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h)), data.enemies[e.kind].def, { backMelee: h.row === 'back' && !h.ranged, mult: ab.mult, sure: !!ab.sure, elem: el, elemName: ab.element && data.elements[ab.element].name, trace: tr });
+        if (d === 0) { msgs.push(`${h.name} setzt ${ab.name} ein, verfehlt aber ${e.name}${list.length === 1 ? ` (−${ab.cost} ${rn})` : ''}.`); continue; }
+        hit = true;
         e.hp = Math.max(0, e.hp - d);
-        msgs.push(`${h.name} setzt ${ab.name} ein: ${d} Schaden an ${e.name} (−${ab.cost} ${rn}).${SEP}${explain(tr)}`);
-        sfx = 'hit';
+        const note = el > 0 ? ' Schwäche!' : el < 0 ? ' Resistent.' : '';
+        msgs.push(`${h.name} setzt ${ab.name} ein: ${d} Schaden an ${e.name}${list.length === 1 ? ` (−${ab.cost} ${rn})` : ''}.${note}${SEP}${explain(tr)}`);
         if (e.hp === 0) msgs.push(`${e.name} bricht zusammen.`);
         else addStatus(state, data, 'e', ti, ab.inflict, msgs);
       }
+      if (list.length > 1) msgs.push(`(−${ab.cost} ${rn})`);
+      sfx = hit ? 'hit' : 'miss';
     }
   } else if (act.type === 'sweep') {
     const live = c.enemies.filter((e) => e.hp > 0);

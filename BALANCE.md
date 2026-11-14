@@ -56,7 +56,7 @@ Angriff und Verteidigen schenken 1 Punkt Ressource zurück; nach jedem Kampf ist
 | Krieger | Ausdauer 10 / 28 | Wuchtschlag | 4 | 160 % Schaden, 35 % Chance auf Betäubung (Gegner setzt 1 Zug aus). |
 | Schurke | Ausdauer 10 / 28 | Hinterhalt | 4 | Trifft immer, 140 % Schaden, vergiftet 3 Runden (2 Schaden je Runde). |
 | Priester | Mana 12 / 39 | Heilende Hand | 5 | Heilt einen Helden um 20 LP und nimmt Gift. |
-| Magier | Mana 12 / 39 | Feuerblitz | 5 | Magischer Treffer: 180 % Schaden. |
+| Magier | Mana 12 / 39 | Feuerblitz | 5 | Magischer Treffer: 180 % Schaden. 40 % Chance auf Brennen (3 Runden, 3 Schaden je Runde). |
 | Waldläufer | Ausdauer 10 / 28 | Gezielter Schuss | 4 | Trifft immer, 150 % Schaden, schwächt 2 Runden (−25 % Angriff). |
 
 ## Werte je Stufe (Mensch, keine Rassenmodifikatoren)

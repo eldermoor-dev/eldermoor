@@ -224,8 +224,17 @@
         "cost": 5,
         "heal": 20,
         "cleanse": "poison",
-        "desc": "Heilt einen Helden um 20 LP und nimmt Gift."
-      }
+        "desc": "Heilt einen Helden um 20 LP und nimmt Gift.",
+        "runes": [
+          "sowilo"
+        ]
+      },
+      "spells": [
+        {
+          "id": "group_heal",
+          "level": 3
+        }
+      ]
     },
     "mage": {
       "name": "Magier",
@@ -255,8 +264,29 @@
         "kind": "damage",
         "cost": 5,
         "mult": 180,
-        "desc": "Magischer Treffer: 180 % Schaden."
-      }
+        "desc": "Magischer Treffer: 180 % Schaden. 40 % Chance auf Brennen (3 Runden, 3 Schaden je Runde).",
+        "runes": [
+          "kaun",
+          "ansuz"
+        ],
+        "element": "fire",
+        "inflict": {
+          "status": "burn",
+          "chance": 40,
+          "turns": 3,
+          "power": 3
+        }
+      },
+      "spells": [
+        {
+          "id": "frost",
+          "level": 2
+        },
+        {
+          "id": "bolt",
+          "level": 3
+        }
+      ]
     },
     "ranger": {
       "name": "Waldläufer",
@@ -311,6 +341,16 @@
       "name": "Schwach",
       "icon": "▼",
       "desc": "Angriff −25 %."
+    },
+    "burn": {
+      "name": "Brennen",
+      "icon": "♨",
+      "desc": "Schaden am Ende des eigenen Zugs, Held bleibt dabei mindestens bei 1 LP."
+    },
+    "slow": {
+      "name": "Verlangsamt",
+      "icon": "⌛",
+      "desc": "Handelt in der nächsten Runde als Letzter."
     }
   },
   "progression": {
@@ -368,6 +408,10 @@
         "name": "Schweren Schlag",
         "every": 3,
         "mult": 170
+      },
+      "resist": {
+        "fire": 50,
+        "ice": -25
       }
     },
     "wolf": {
@@ -378,7 +422,10 @@
       "init": 8,
       "gold": 6,
       "xp": 35,
-      "ai": "weakest"
+      "ai": "weakest",
+      "resist": {
+        "ice": 25
+      }
     },
     "kultist": {
       "name": "Moorkultist",
@@ -393,6 +440,10 @@
         "status": "weak",
         "chance": 35,
         "turns": 2
+      },
+      "resist": {
+        "lightning": 25,
+        "fire": -25
       }
     }
   },
@@ -563,5 +614,87 @@
   "slots": {
     "weapon": "Waffe",
     "armor": "Rüstung"
+  },
+  "elements": {
+    "fire": {
+      "name": "Feuer"
+    },
+    "ice": {
+      "name": "Eis"
+    },
+    "lightning": {
+      "name": "Blitz"
+    }
+  },
+  "runes": {
+    "kaun": {
+      "name": "Kaun",
+      "glyph": "ᚲ",
+      "meaning": "Feuer"
+    },
+    "isa": {
+      "name": "Isa",
+      "glyph": "ᛁ",
+      "meaning": "Eis"
+    },
+    "thurs": {
+      "name": "Thurs",
+      "glyph": "ᚦ",
+      "meaning": "Blitz"
+    },
+    "sowilo": {
+      "name": "Sowilo",
+      "glyph": "ᛊ",
+      "meaning": "Licht"
+    },
+    "ansuz": {
+      "name": "Ansuz",
+      "glyph": "ᚨ",
+      "meaning": "Wort"
+    }
+  },
+  "spells": {
+    "frost": {
+      "name": "Frostsplitter",
+      "runes": [
+        "isa",
+        "ansuz"
+      ],
+      "element": "ice",
+      "kind": "damage",
+      "cost": 4,
+      "mult": 140,
+      "inflict": {
+        "status": "slow",
+        "chance": 60,
+        "turns": 2
+      },
+      "desc": "140 % Eisschaden, 60 % Chance auf Verlangsamung (Gegner handelt 2 Runden als Letzter)."
+    },
+    "bolt": {
+      "name": "Kettenblitz",
+      "runes": [
+        "thurs",
+        "ansuz"
+      ],
+      "element": "lightning",
+      "kind": "damage",
+      "all": true,
+      "cost": 7,
+      "mult": 100,
+      "desc": "100 % Blitzschaden gegen alle Gegner."
+    },
+    "group_heal": {
+      "name": "Lichtwelle",
+      "runes": [
+        "sowilo",
+        "ansuz"
+      ],
+      "kind": "heal",
+      "all": true,
+      "cost": 8,
+      "heal": 10,
+      "desc": "Heilt alle Helden um 10 LP."
+    }
   }
 }

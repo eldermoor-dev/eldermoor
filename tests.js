@@ -390,11 +390,11 @@ export async function runTests(data, env = {}) {
     const pi = L.currentActor(s3).idx; s3.heroes[0].hp = 3; const mp0 = s3.heroes[pi].mp;
     const hr = L.heroAction(s3, data, { type: 'ability', target: 0 });
     assert(!hr.error && s3.heroes[0].hp === 23 && s3.heroes[pi].mp === mp0 - 5, 'Heilung +20, Kosten 5: ' + JSON.stringify(hr));
-    // Sieg füllt Ressource wieder auf
+    // Sieg füllt die Ressource nicht mehr auf (seit 0.7.0, Rast übernimmt)
     s3.heroes.forEach((x) => { x.mp = 0; }); s3.combat.enemies[0].hp = 1;
     let g2 = 0;
     while (s3.combat && g2++ < 30) { const a = L.currentActor(s3); if (a.side === 'h') L.heroAction(s3, data, { type: 'attack', target: 0 }); else L.enemyStep(s3, data, { god: true }); }
-    assert(s3.heroes.every((x) => x.mp === x.maxMp), 'Ressource nach Sieg voll');
+    assert(s3.heroes.every((x) => x.mp < x.maxMp), 'Ressource nach Sieg nicht aufgefüllt (die Rast füllt auf)');
     // Migration v3 -> v4 mit Stufe 5
     const old = L.serialize(L.newGame(data, 7)); old.v = 3;
     old.state.heroes.forEach((x) => { delete x.maxMp; delete x.mp; });
@@ -485,6 +485,67 @@ export async function runTests(data, env = {}) {
     assert(L.restParty(q, data).error === 'in-combat', 'im Kampf keine Rast');
     assert(data.items.ration && data.items.ration.kind === 'supply', 'Datenpunkt Proviant');
     const sv = L.deserialize(L.serialize(s), data); assert(sv.inv.ration === 0, 'Proviant im Spielstand');
+  });
+  await test('Zauber (5c): Elemente, Brennen, Verlangsamung, Flächenzauber, Lichtwelle, Freischaltung', () => {
+    const mage = (lv) => { const q = fresh(11); q.heroes.forEach((x) => { x.level = lv; }); return q; };
+    const k1 = L.knownSpells(data, mage(1).heroes[3]).map((s) => s.id), k2 = L.knownSpells(data, mage(2).heroes[3]).map((s) => s.id), k3 = L.knownSpells(data, mage(3).heroes[3]).map((s) => s.id);
+    assert(k1.join() === 'firebolt' && k2.join() === 'firebolt,frost' && k3.join() === 'firebolt,frost,bolt', 'Freischaltung nach Stufe: ' + [k1, k2, k3].join(' | '));
+    assert(L.knownSpells(data, mage(3).heroes[2]).map((s) => s.id).join() === 'heal,group_heal', 'Priester: Lichtwelle ab Stufe 3');
+    for (const [id, sp] of Object.entries({ ...Object.fromEntries(Object.values(data.classes).filter((c) => c.ability).map((c) => [c.ability.id, c.ability])), ...data.spells })) {
+      assert(sp.cost > 0 && sp.name && sp.desc, `Zauber ${id} vollständig`);
+      if (sp.element) assert(data.elements[sp.element], `Zauber ${id}: Element`);
+      for (const r of sp.runes || []) assert(data.runes[r], `Zauber ${id}: Rune ${r}`);
+      if (sp.inflict) assert(data.statuses[sp.inflict.status], `Zauber ${id}: Status`);
+    }
+    // Feuer gegen Schrat (+50 %) schlägt Feuer gegen Wolf (0 %) und Kultist (−25 %) bei gleichem Wurf
+    const hit = (kind, el, spellId) => {
+      const q = fresh(3); q.heroes.forEach((x) => { x.level = 3; }); const m = q.heroes[3]; m.row = 'front'; m.mp = 20; m.maxMp = 20;
+      L.startCombat(q, data, { id: 'x', kind, kinds: [kind], hp: data.enemies[kind].hp });
+      let g = 0; while (L.currentActor(q).idx !== 3 || L.currentActor(q).side !== 'h') { const a = L.currentActor(q); if (a.side === 'h') L.heroAction(q, data, { type: 'defend' }); else L.enemyStep(q, data, { god: true }); if (g++ > 20) break; }
+      q.rng = 4242; const hp0 = q.combat.enemies[0].hp;
+      const r = L.heroAction(q, data, spellId ? { type: 'spell', spell: spellId, target: 0 } : { type: 'ability', target: 0 });
+      return { dmg: hp0 - q.combat.enemies[0].hp, r, q };
+    };
+    const fs = hit('schrat'), fw = hit('wolf'), fk = hit('kultist');
+    assert(fs.dmg > 0 && fw.dmg > 0, 'Feuerblitz trifft (Wurf fest)');
+    assert(/Schwäche/.test(fs.r.msgs.join(' ')) && /Feuer \+50 %/.test(fs.r.msgs.join(' ')), 'Rechenweg zeigt Feuer +50 %');
+    assert(/Resistent/.test(fk.r.msgs.join(' ')), 'Resistenz gemeldet');
+    // Frost: Verlangsamung, Brennen tickt, Kettenblitz trifft alle
+    const q = fresh(5); q.heroes.forEach((x) => { x.level = 3; x.mp = x.maxMp = 30; });
+    L.startCombat(q, data, { id: 'g', kind: 'wolf', kinds: ['wolf', 'wolf', 'kultist'], hp: 1 });
+    let g = 0; const advanceToHero = (idx) => { while (!(L.currentActor(q).side === 'h' && L.currentActor(q).idx === idx) && g++ < 60) { const a = L.currentActor(q); if (a.side === 'h') L.heroAction(q, data, { type: 'defend' }); else L.enemyStep(q, data, { god: true }); } };
+    advanceToHero(3);
+    const hp = q.combat.enemies.map((e) => e.hp);
+    const mp0 = q.heroes[3].mp;
+    const b = L.heroAction(q, data, { type: 'spell', spell: 'bolt' });
+    assert(!b.error && q.heroes[3].mp === mp0 - 7, 'Kettenblitz kostet 7: ' + JSON.stringify(b.error));
+    const after = q.combat.enemies.map((e) => e.hp);
+    assert(after.filter((v, i) => v < hp[i]).length >= 2, 'Kettenblitz trifft mehrere Gegner (90 % je Treffer): ' + hp + ' -> ' + after);
+    advanceToHero(3);
+    q.combat.enemies.forEach((e) => { e.hp = e.maxHp; });
+    let slowed = false;
+    for (let i = 0; i < 12 && !slowed; i++) { q.heroes[3].mp = 30; advanceToHero(3); L.heroAction(q, data, { type: 'spell', spell: 'frost', target: 0 }); slowed = !!(q.combat.status.e0 && q.combat.status.e0.slow); if (!slowed) q.combat.enemies[0].hp = q.combat.enemies[0].maxHp; }
+    assert(slowed, 'Frostsplitter verlangsamt');
+    // Verlangsamter handelt in der nächsten Runde zuletzt
+    const sq = fresh(6); L.startCombat(sq, data, { id: 'g', kind: 'wolf', kinds: ['wolf', 'wolf'], hp: 1 });
+    sq.combat.status.e0 = { slow: { t: 5, p: 0 } };
+    let rounds = 0, lastIsSlow = 0, sg = 0;
+    while (rounds < 4 && sg++ < 200) { const a = L.currentActor(sq); const r0 = sq.combat.round; if (a.side === 'h') L.heroAction(sq, data, { type: 'defend' }); else L.enemyStep(sq, data, { god: true }); if (sq.combat.round !== r0) { rounds++; const wolfs = sq.combat.order.filter((o) => o.side === 'e'); if (wolfs.length === 2 && sq.combat.order[sq.combat.order.length - 1].side === 'e' && sq.combat.order[sq.combat.order.length - 1].idx === 0) lastIsSlow++; } }
+    assert(lastIsSlow === rounds && rounds > 0, `Verlangsamter Gegner handelt zuletzt (${lastIsSlow}/${rounds} Runden)`);
+    // Brennen: Schaden am Ende des Zugs, Held bleibt bei 1 LP
+    const bq = fresh(7); L.startCombat(bq, data, { id: 'b', kind: 'wolf', kinds: ['wolf'], hp: 26 });
+    bq.combat.status.h0 = { burn: { t: 2, p: 5 } }; bq.heroes[0].hp = 3;
+    let guard = 0; while (!(L.currentActor(bq).side === 'h' && L.currentActor(bq).idx === 0) && guard++ < 20) { const a = L.currentActor(bq); if (a.side === 'h') L.heroAction(bq, data, { type: 'defend' }); else L.enemyStep(bq, data, { god: true }); }
+    L.heroAction(bq, data, { type: 'defend' });
+    assert(bq.heroes[0].hp === 1, 'Brennen tötet Helden nie (bleibt bei 1 LP)');
+    // Lichtwelle heilt alle
+    const wq = fresh(9); wq.heroes.forEach((x) => { x.level = 3; x.mp = x.maxMp; x.hp = Math.max(1, x.maxHp - 12); });
+    L.startCombat(wq, data, { id: 'w', kind: 'wolf', kinds: ['wolf'], hp: 26 });
+    let g3 = 0; while (!(L.currentActor(wq).side === 'h' && L.currentActor(wq).idx === 2) && g3++ < 20) { const a = L.currentActor(wq); if (a.side === 'h') L.heroAction(wq, data, { type: 'defend' }); else L.enemyStep(wq, data, { god: true }); }
+    const lo = wq.heroes.map((x) => x.hp), pm = wq.heroes[2].mp;
+    const wr = L.heroAction(wq, data, { type: 'spell', spell: 'group_heal' });
+    assert(!wr.error && wq.heroes.every((x, i) => x.hp === Math.min(x.maxHp, lo[i] + 10)) && wq.heroes[2].mp === pm - 8, 'Lichtwelle +10 für alle, Kosten 8');
+    assert(L.heroAction(fresh(1), data, { type: 'spell', spell: 'bolt' }).error, 'ohne Kampf kein Zauber');
   });
   await test('Ausrüstung (5b): Boni, Berufsbeschränkung, Tausch, Ablegen, Kampfwirkung, Speichern', () => {
     const s = fresh(6);
