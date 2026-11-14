@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setReso
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.12.0';
+const VERSION = '0.13.0';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -275,8 +275,9 @@ function act(name) {
       if (g.combat) { say('Im Kampf stehen die Aktionsknöpfe zur Verfügung.'); break; }
       const r = interact(g, S.data);
       if (r.encounter) { startCombatUI(r.encounter); break; }
-      if (r.shop) { S.held = []; S.shopTab = 'buy'; S.shopSure = null; openShop(r.shop, true); break; }
+      if (r.shop) { if (r.msg) say(r.msg); S.shopTalk = r.msg || null; S.held = []; S.shopTab = 'buy'; S.shopSure = null; openShop(r.shop, true); break; }
       say(r.msg); if (r.sfx) S.sfx.play(r.sfx);
+      if (r.long) toast(r.msg, 8000);
       if (r.changed) vib(20);
       renderAll();
       break;
@@ -334,10 +335,11 @@ async function onEvent(ev) {
     return;
   }
   if (ev.type !== 'exit') return;
-  say('Ein Runenstein glimmt auf. Das Zielgebiet des Prototyps ist erreicht.');
+  const exo = S.game.objs.find((o) => o.id === ev.id) || {};
+  say(exo.say || 'Ein Runenstein glimmt auf. Das Zielgebiet des Prototyps ist erreicht.');
   S.held = [];
   await saveSlot('auto', true);
-  openModal(`<h2>Gebiet abgeschlossen</h2><p>Du hast den Runenstein am Ende des Testgewölbes erreicht. Das ist das Ziel von Phase 1.</p><p class="muted">Autosave wurde angelegt (Gebietswechsel).</p><div class="acts"><button class="mb primary" data-m="close">Weiterspielen</button><button class="mb" data-m="title">Zum Titel</button></div>`, 'exit');
+  openModal(`<h2>${esc(exo.title || 'Gebiet abgeschlossen')}</h2><p>${esc(exo.text || 'Du hast den Runenstein am Ende des Testgewölbes erreicht. Das ist das Ziel von Phase 1.')}</p><p class="muted">Autosave wurde angelegt (Gebietswechsel).</p><div class="acts"><button class="mb primary" data-m="close">Weiterspielen</button><button class="mb" data-m="title">Zum Titel</button></div>`, 'exit');
 }
 
 // ---------------------------------------------------------------- Kampf
@@ -636,7 +638,7 @@ function openShop(shopId, greet) {
   const g = S.game, d = S.data, sh = d.shops[shopId];
   S.shopId = shopId;
   const tab = S.shopTab || 'buy';
-  let html = `<h2>${esc(sh.name)}</h2>${greet ? `<p class="muted">${esc(sh.greeting)}</p>` : ''}<p>Gold: <b>${g.gold}</b></p>
+  let html = `<h2>${esc(sh.name)}</h2>${greet ? `<p class="muted">${esc(sh.greeting)}</p>` : ''}${greet && S.shopTalk ? `<p>${esc(S.shopTalk)}</p>` : ''}<p>Gold: <b>${g.gold}</b></p>
     <div class="acts" style="margin-top:0"><button class="mb${tab === 'buy' ? ' primary' : ''}" data-m="shopbuy">Kaufen</button><button class="mb${tab === 'sell' ? ' primary' : ''}" data-m="shopsellTab">Verkaufen</button></div>`;
   if (tab === 'buy') {
     html += shopStock(d, shopId).map((e) => {
@@ -780,6 +782,7 @@ function drawMap() {
     else if (o.type === 'chest') { c.fillStyle = o.open ? '#7a6a3a' : '#e0b040'; c.fillRect(cx - cs * 0.25, cy - cs * 0.2, cs * 0.5, cs * 0.4); }
     else if (o.type === 'stairs') { c.fillStyle = '#7fd4ff'; c.beginPath(); c.moveTo(cx - cs * 0.3, cy - cs * 0.25); c.lineTo(cx + cs * 0.3, cy - cs * 0.25); c.lineTo(cx, cy + cs * 0.3); c.fill(); }
     else if (o.type === 'exit') { c.strokeStyle = '#7fd4ff'; c.lineWidth = 2; c.beginPath(); c.arc(cx, cy, cs * 0.3, 0, 7); c.stroke(); }
+    else if (o.type === 'sign') { c.fillStyle = '#c89a5a'; c.fillRect(cx - cs * 0.25, cy - cs * 0.2, cs * 0.5, cs * 0.3); }
     else if (o.type === 'merchant') { c.fillStyle = '#e0b040'; c.font = `bold ${cs}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('$', cx, cy); }
     else if (o.type === 'enemy' && !o.dead) { c.fillStyle = '#d05040'; c.font = `bold ${cs}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('×', cx, cy); }
   }

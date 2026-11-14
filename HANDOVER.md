@@ -307,3 +307,13 @@ Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätet
 - main.js: `openShop` (Reiter Kaufen/Verkaufen, seltene und epische Ausrüstung verlangt zweiten Tipp), Inventar ohne Verkaufsknopf (Hinweis „Verkaufen kannst du bei einer Händlerin“), Kartensymbol „$“.
 - render.js: Händlerin-Sprite `genMerchant` (vorläufig, prozedural; Stand durch die Bildschirmleiste teils verdeckt).
 - Speicherstand weiter v6. Tests 63.
+
+## 0.13.0 (Inhaltsphase, Schritt 1: Moorpfad, Hinweistafeln, Moorlicht, Auftrag)
+- Plan der Inhaltsphase (Vorschlag, Namen/Story vom Assistenten): Siedlung → Moorpfad (0.13) → Kultgruft mit Zwischenboss (0.14) → Schratgruben (0.15) → Nebelturm mit Endboss „Nebelhüter“ (0.16) → Balance über das ganze Spiel (0.17). Startgebiet bleibt vorerst `test1` (Debug-/Testgewölbe); Umstellung auf die Siedlung als Start erst später.
+- game.json: neues Gebiet `moorpfad` (24×9, Palette `moor`, 3 Hinweistafeln, 4 Kampfgruppen, 4 Truhen, Schlüsseltruhe `chest_pfad_key` vor dem Tor `door_gruft`, Ende `exit_pfad`), Treppe `stairs_pfad` in der Siedlung (10,3) und `stairs_pfad_west` im Moorpfad. Neue Palette `moor` (Siedlung nutzt sie jetzt auch), neuer Gegner `moorlicht` (18 LP, Initiative 10, zielt auf die Hinterreihe, 40 % Verlangsamung, Feuer +50 % Resist, Blitz −50 %), Questgegenstand `gruft_key`.
+- logic.js: Objekttyp `sign {text}` (blockiert wie eine Truhe, `interact` liefert `{msg, long}`); `merchant.talk {flag, text}` liefert beim ersten Gespräch den Auftragstext (Flag `talk_hedda`).
+- main.js: lange Texte als Toast, Auftragstext im Handelsfenster; `exit`-Objekte können `say`, `title`, `text` mitbringen (bisher fest „Testgewölbe“); Kartensymbol für Tafeln.
+- render.js: Sprites `wisp` (Moorlicht, je Gruppenmitglied nach `kinds[i]`) und `sign` (Tafel). Alle anderen Gegner nutzen weiter das vorläufige Schrat-Bild.
+- logic.js `syncStatic(state, data)` (läuft in `deserialize`): ergänzt fehlende Objekte und gleicht Treppen, Tafeln, Händler und Ausgänge aller bekannten Gebiete mit game.json ab, ohne Speicherversion. Truhen, Türen, Gegner behalten ihren Zustand. Damit bekommen Stände aus 0.12.0 die neue Treppe und den Auftrag.
+- Speicherstand weiter v6.
+- Tests 65.

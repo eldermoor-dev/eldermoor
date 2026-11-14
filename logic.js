@@ -225,7 +225,7 @@ export function blockerAt(state, x, y) {
     if (o.x !== x || o.y !== y) continue;
     if (o.type === 'door' && !o.open) return o;
     if (o.type === 'chest') return o;
-    if (o.type === 'merchant') return o;
+    if (o.type === 'merchant' || o.type === 'sign') return o;
     if (o.type === 'enemy' && !o.dead) return o;
   }
   return null;
@@ -262,6 +262,7 @@ function blockedText(b) {
   if (b.type === 'door') return b.locked ? 'Die Tür ist verschlossen.' : 'Die Tür ist geschlossen.';
   if (b.type === 'chest') return 'Eine Truhe versperrt den Weg.';
   if (b.type === 'merchant') return 'Der Stand der Händlerin versperrt den Weg.';
+  if (b.type === 'sign') return 'Eine Hinweistafel steht im Weg.';
   return 'Ein Gegner steht im Weg.';
 }
 
@@ -327,7 +328,12 @@ export function interact(state, data) {
     return { msg: 'Hier gibt es nichts zu tun.' };
   }
   if (o.type === 'enemy') return { encounter: o };
-  if (o.type === 'merchant') return { shop: o.shop, merchant: o.id };
+  if (o.type === 'sign') return { msg: o.text, sfx: 'ui', long: true };
+  if (o.type === 'merchant') {
+    const r = { shop: o.shop, merchant: o.id };
+    if (o.talk && !state.flags[o.talk.flag]) { state.flags[o.talk.flag] = true; r.msg = o.talk.text; r.changed = true; }
+    return r;
+  }
   if (o.type === 'door') {
     if (o.locked) {
       if ((state.inv[o.key] || 0) > 0) {
@@ -1048,6 +1054,24 @@ export function validateState(state, data) {
   return err;
 }
 
+// Gleicht feste Objekte (Treppen, Tafeln, Händler, Ausgänge) und neu hinzugekommene Objekte aller bekannten Gebiete mit game.json ab.
+// So bekommen alte Spielstände Neuerungen (z. B. eine neue Treppe) ohne neue Speicherversion. Truhen, Türen und Gegner behalten ihren Zustand.
+const STATIC_TYPES = new Set(['stairs', 'sign', 'merchant', 'exit']);
+export function syncStatic(state, data) {
+  const areas = [{ id: state.levelId, objs: state.objs }, ...Object.entries(state.areas || {}).map(([id, a]) => ({ id, objs: a.objs }))];
+  let n = 0;
+  for (const a of areas) {
+    const lvl = data.levels[a.id];
+    if (!lvl || !Array.isArray(a.objs)) continue;
+    for (const o of lvl.objects) {
+      const i = a.objs.findIndex((x) => x && x.id === o.id);
+      if (i < 0) { a.objs.push(freshObj(data, o)); n++; }
+      else if (STATIC_TYPES.has(o.type) && a.objs[i].type === o.type && JSON.stringify(a.objs[i]) !== JSON.stringify(o)) { a.objs[i] = clone(o); n++; }
+    }
+  }
+  return n;
+}
+
 export function deserialize(input, data, migrations = MIGRATIONS) {
   let save = input;
   if (typeof input === 'string') {
@@ -1058,6 +1082,7 @@ export function deserialize(input, data, migrations = MIGRATIONS) {
   const m = migrate(save, migrations, SAVE_VERSION, data);
   const errors = validateState(m.state, data);
   if (errors.length) throw new Error('Spielstand ungültig: ' + errors.join('; '));
+  syncStatic(m.state, data);
   m.state.combat = null; // Kämpfe werden nie mitten im Kampf gespeichert/geladen
   return m.state;
 }

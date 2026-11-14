@@ -99,6 +99,12 @@
         "priest"
       ],
       "desc": "Einzigartige Waffe. +4 Angriff, +1 Initiative. Eine Wurzel, die noch Magie des Moors trägt. Für Magier und Priester."
+    },
+    "gruft_key": {
+      "name": "Gruftschlüssel",
+      "kind": "quest",
+      "desc": "Ein neuer Schlüssel an einem alten Ring. Passt in das Eisentor am Ende des Moorpfads.",
+      "noSell": true
     }
   },
   "races": {
@@ -527,6 +533,28 @@
       "gearDrop": {
         "chance": 20
       }
+    },
+    "moorlicht": {
+      "name": "Moorlicht",
+      "hp": 18,
+      "atk": 6,
+      "def": 0,
+      "init": 10,
+      "gold": 5,
+      "xp": 28,
+      "ai": "backline",
+      "onHit": {
+        "status": "slow",
+        "chance": 40,
+        "turns": 1
+      },
+      "resist": {
+        "fire": 50,
+        "lightning": -50
+      },
+      "gearDrop": {
+        "chance": 10
+      }
     }
   },
   "palettes": {
@@ -570,6 +598,48 @@
         255,
         206,
         92
+      ]
+    },
+    "moor": {
+      "stone": [
+        104,
+        112,
+        100
+      ],
+      "moss": [
+        74,
+        116,
+        62
+      ],
+      "wood": [
+        132,
+        98,
+        58
+      ],
+      "iron": [
+        112,
+        120,
+        130
+      ],
+      "floor": [
+        96,
+        90,
+        62
+      ],
+      "ceil": [
+        84,
+        98,
+        98
+      ],
+      "flesh": [
+        110,
+        150,
+        110
+      ],
+      "glow": [
+        200,
+        236,
+        160
       ]
     }
   },
@@ -785,7 +855,7 @@
     "moorrand": {
       "id": "moorrand",
       "name": "Siedlung am Moorrand",
-      "palette": "keller",
+      "palette": "moor",
       "map": [
         "############",
         "#.....m....#",
@@ -818,7 +888,218 @@
           "type": "merchant",
           "x": 9,
           "y": 2,
-          "shop": "moorrand"
+          "shop": "moorrand",
+          "talk": {
+            "flag": "talk_hedda",
+            "text": "Hedda: Seit Wochen steigt Nebel aus dem Moor. Die Kultisten graben im Osten bei der alten Gruft. Geht den Moorpfad entlang, findet den Gruftschlüssel und kommt lebend zurück."
+          }
+        },
+        {
+          "id": "stairs_pfad",
+          "type": "stairs",
+          "x": 10,
+          "y": 3,
+          "msg": "Du folgst dem Moorpfad nach Osten.",
+          "to": {
+            "level": "moorpfad",
+            "x": 2,
+            "y": 3,
+            "dir": 1
+          }
+        }
+      ]
+    },
+    "moorpfad": {
+      "id": "moorpfad",
+      "name": "Moorpfad",
+      "palette": "moor",
+      "map": [
+        "########################",
+        "#.....m#.......m.#..#..#",
+        "#.......m..##.......#..#",
+        "#..###..#..#m...##..#..#",
+        "#..#m#......#...#m.....#",
+        "#..#.#..###.....#...#..#",
+        "#.......#m#..####...#..#",
+        "#.....m.#...........#..#",
+        "########################"
+      ],
+      "start": {
+        "x": 2,
+        "y": 3,
+        "dir": 1
+      },
+      "objects": [
+        {
+          "id": "stairs_pfad_west",
+          "type": "stairs",
+          "x": 1,
+          "y": 3,
+          "msg": "Du gehst zurück zur Siedlung am Moorrand.",
+          "to": {
+            "level": "moorrand",
+            "x": 9,
+            "y": 3,
+            "dir": 3
+          }
+        },
+        {
+          "id": "sign_pfad1",
+          "type": "sign",
+          "x": 3,
+          "y": 2,
+          "text": "Moorpfad. Nach Osten liegt die alte Kultgruft. Wer nachts allein geht, folgt keinem Licht."
+        },
+        {
+          "id": "en_p1",
+          "type": "enemy",
+          "x": 7,
+          "y": 3,
+          "kind": "wolf"
+        },
+        {
+          "id": "en_p2",
+          "type": "enemy",
+          "x": 8,
+          "y": 4,
+          "kind": "moorlicht",
+          "kinds": [
+            "moorlicht",
+            "moorlicht"
+          ]
+        },
+        {
+          "id": "sign_pfad2",
+          "type": "sign",
+          "x": 9,
+          "y": 3,
+          "text": "Kratzspuren am Pfahl. Darunter hat jemand geschrieben: Irrlichter meiden Eisen, nicht Feuer."
+        },
+        {
+          "id": "chest_p1",
+          "type": "chest",
+          "x": 12,
+          "y": 1,
+          "loot": [
+            {
+              "item": "potion",
+              "n": 2
+            }
+          ]
+        },
+        {
+          "id": "chest_p2",
+          "type": "chest",
+          "x": 14,
+          "y": 5,
+          "loot": [
+            {
+              "item": "potion",
+              "n": 1
+            },
+            {
+              "gold": 10
+            },
+            {
+              "gear": {
+                "boost": 0
+              }
+            }
+          ]
+        },
+        {
+          "id": "en_p3",
+          "type": "enemy",
+          "x": 16,
+          "y": 2,
+          "kind": "wolf",
+          "kinds": [
+            "wolf",
+            "moorlicht",
+            "wolf"
+          ]
+        },
+        {
+          "id": "chest_pfad_key",
+          "type": "chest",
+          "x": 19,
+          "y": 1,
+          "loot": [
+            {
+              "item": "gruft_key",
+              "n": 1
+            },
+            {
+              "gold": 12
+            }
+          ]
+        },
+        {
+          "id": "en_p4",
+          "type": "enemy",
+          "x": 18,
+          "y": 4,
+          "kind": "kultist",
+          "kinds": [
+            "kultist",
+            "kultist",
+            "moorlicht"
+          ]
+        },
+        {
+          "id": "sign_pfad3",
+          "type": "sign",
+          "x": 19,
+          "y": 5,
+          "text": "Das Eisentor der Kultgruft. Das Schloss ist neu, der Rost drumherum alt."
+        },
+        {
+          "id": "chest_p3",
+          "type": "chest",
+          "x": 3,
+          "y": 7,
+          "loot": [
+            {
+              "item": "ration",
+              "n": 1
+            },
+            {
+              "gold": 8
+            }
+          ]
+        },
+        {
+          "id": "door_gruft",
+          "type": "door",
+          "x": 20,
+          "y": 4,
+          "locked": true,
+          "key": "gruft_key"
+        },
+        {
+          "id": "exit_pfad",
+          "type": "exit",
+          "x": 22,
+          "y": 4,
+          "say": "Hinter dem Tor führt eine Treppe in die Tiefe, aber sie ist verschüttet.",
+          "title": "Ende des Moorpfads",
+          "text": "Hinter dem Eisentor beginnt die Kultgruft. Der Weg hinab ist noch verschüttet. In der nächsten Version geht es hier weiter."
+        },
+        {
+          "id": "chest_p4",
+          "type": "chest",
+          "x": 22,
+          "y": 6,
+          "loot": [
+            {
+              "gold": 15
+            },
+            {
+              "gear": {
+                "boost": 1
+              }
+            }
+          ]
         }
       ]
     }

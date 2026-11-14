@@ -1096,6 +1096,51 @@ export async function runTests(data, env = {}) {
     eq(L.buyItem(s, data, 'moorrand', 'potion').error, 'in-combat', 'nicht im Kampf');
   });
 
+  await test('Moorpfad (0.13.0): Hinweistafeln, Auftrag von Hedda nur einmal, Moorlicht-Daten, Schlüssel vor Tor, Hin- und Rückweg', () => {
+    for (const lvl of Object.values(data.levels)) for (const o of lvl.objects) if (o.type === 'sign') assert(typeof o.text === 'string' && o.text.length > 5 && o.text.length <= 200, `${o.id}: Text`);
+    const ml = data.enemies.moorlicht;
+    assert(ml && ml.hp > 0 && ml.xp > 0 && ml.resist && ml.onHit && ml.onHit.status && data.statuses[ml.onHit.status], 'Moorlicht-Daten');
+    assert(data.palettes[data.levels.moorpfad.palette] && Object.keys(data.palettes.moor).length === Object.keys(data.palettes.keller).length, 'Palette moor');
+    assert(L.analyzeLevel(data, 'moorpfad').ok, 'Moorpfad lösbar');
+    const s = fresh(63);
+    L.changeArea(s, data, 'stairs_moor'); eq(s.levelId, 'moorrand', 'Siedlung');
+    s.player = { x: 8, y: 2, dir: 1 };
+    const r1 = L.interact(s, data); assert(r1.shop && /Nebel/.test(r1.msg) && s.flags.talk_hedda, 'Auftrag beim ersten Gespräch');
+    const r2 = L.interact(s, data); assert(r2.shop && !r2.msg, 'Auftrag nur einmal');
+    L.changeArea(s, data, 'stairs_pfad'); eq(s.levelId, 'moorpfad', 'Moorpfad erreicht');
+    eq(s.player.x, 2, 'Ankunft'); 
+    // Tafel blockiert und liest sich vor
+    s.player = { x: 2, y: 2, dir: 1 };
+    const m = L.tryMove(s, data, 'f'); assert(!m.moved && /tafel/i.test(m.msg), 'Tafel blockiert: ' + JSON.stringify(m) + JSON.stringify(s.objs.find((o) => o.id === 'sign_pfad1')));
+    const r3 = L.interact(s, data); assert(r3.msg && r3.long && /Moorpfad/.test(r3.msg), 'Tafel lesen');
+    // Tor ohne Schlüssel zu, mit Schlüssel auf
+    s.player = { x: 19, y: 4, dir: 1 };
+    const door = s.objs.find((o) => o.id === 'door_gruft'); assert(door.locked, 'Tor verschlossen');
+    assert(/verschlossen/.test(L.interact(s, data).msg), 'ohne Schlüssel zu');
+    s.player = { x: 19, y: 2, dir: 0 };
+    const c = L.interact(s, data); assert(s.inv.gruft_key === 1 && /Gruftschlüssel/.test(c.msg), 'Schlüssel aus Truhe: ' + JSON.stringify(c));
+    s.player = { x: 19, y: 4, dir: 1 };
+    assert(/Schlüssel dreht/.test(L.interact(s, data).msg), 'Tor öffnet mit Schlüssel');
+    assert(s.inv.gruft_key === 1, 'Schlüssel bleibt');
+    // Rückweg und Speichern/Laden im neuen Gebiet
+    const back = L.loadSave ? null : null;
+    L.changeArea(s, data, 'stairs_pfad_west'); eq(s.levelId, 'moorrand', 'zurück in der Siedlung'); eq(s.player.x, 9, 'Ankunft Siedlung');
+  });
+
+  await test('Alte Stände bekommen neue feste Objekte (Treppe, Auftrag), Truhenzustand bleibt', () => {
+    const s = fresh(64);
+    L.changeArea(s, data, 'stairs_moor'); // Siedlung aktiv
+    // Zustand wie nach 0.12.0: ohne Treppe zum Moorpfad und ohne Auftragstext
+    s.objs = s.objs.filter((o) => o.id !== 'stairs_pfad');
+    delete s.objs.find((o) => o.id === 'merchant_hedda').talk;
+    s.areas.test1.objs.find((o) => o.id === 'chest_a').open = true;
+    const back = L.deserialize(JSON.parse(JSON.stringify(L.serialize(s))), data);
+    assert(back.objs.some((o) => o.id === 'stairs_pfad'), 'Treppe ergänzt');
+    assert(back.objs.find((o) => o.id === 'merchant_hedda').talk, 'Auftrag ergänzt');
+    assert(back.areas.test1.objs.find((o) => o.id === 'chest_a').open === true, 'Truhenzustand bleibt');
+    eq(L.syncStatic(back, data), 0, 'zweiter Abgleich ändert nichts');
+  });
+
   await test('Migration v1→v2: beschädigte v1-Stände werden mit klarer Meldung abgelehnt', () => {
     const fails = (mut, re) => {
       const o = JSON.parse(V1_SAVE); mut(o);

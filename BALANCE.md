@@ -26,6 +26,7 @@ Gegner (EP: jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die vol
 | Moorschrat | 80 | 13 | 3 | 5 | 120 | 15 | Schweren Schlag jeden 3. Zug, angekündigt (170 %); Treffer: Gift 30 %; Boss, Phasen: Wutrausch ab ≤ 60 % LP (Angriff 15), Letzte Kraft ab ≤ 25 % LP (Angriff 17) |
 | Sumpfwolf | 26 | 9 | 1 | 8 | 35 | 6 | zielt auf den schwächsten Helden |
 | Moorkultist | 20 | 7 | 2 | 4 | 30 | 8 | zielt auf die Hinterreihe; Treffer: Schwach 35 % |
+| Moorlicht | 18 | 6 | 0 | 10 | 28 | 5 | zielt auf die Hinterreihe; Treffer: Verlangsamt 40 % |
 
 ## Rassen (Modifikatoren)
 
@@ -190,3 +191,4 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 | Moorschrat | 100 %, Boost 2 | Schratdorn oder Wurzelstab (100 %, nur einmal) |
 | Sumpfwolf | 15 % | – |
 | Moorkultist | 20 % | – |
+| Moorlicht | 10 % | – |

@@ -260,6 +260,29 @@ function genMerchant(seed) {
   }
   return t;
 }
+function genWisp(seed) {
+  const t = mk(255);
+  for (let y = 0; y < TEX; y++) for (let x = 0; x < TEX; x++) {
+    const dx = x - 32, dy = y - 34, r = Math.hypot(dx, dy);
+    if (r < 9) t.data[y * TEX + x] = P('glow', 7 - r * 0.15);
+    else if (r < 15) t.data[y * TEX + x] = P('flesh', 5.5 - (r - 9) * 0.5 + hash(x, y, seed) * 0.8);
+    else if (r < 21 && hash(x, y, seed + 1) > 0.55 + (r - 15) * 0.07) t.data[y * TEX + x] = P('flesh', 3 - (r - 15) * 0.3);
+  }
+  for (let i = 0; i < 6; i++) { const a = i * 1.05 + seed; for (let k = 0; k < 9; k++) { const px = Math.round(32 + Math.cos(a) * (14 + k)), py = Math.round(34 + Math.sin(a) * (14 + k) * 0.8 + k * 0.9); if (px >= 0 && px < TEX && py >= 0 && py < TEX && hash(px, py, seed + 2) > 0.3) t.data[py * TEX + px] = P('flesh', 2.5 - k * 0.2); } }
+  return t;
+}
+
+function genSign(seed) {
+  const t = mk(255);
+  for (let y = 30; y <= 60; y++) for (let x = 29; x <= 34; x++) t.data[y * TEX + x] = P('wood', 2.5 + hash(x, y, seed) * 1.1 - (x >= 33 ? 0.8 : 0));
+  for (let y = 14; y <= 36; y++) for (let x = 12; x <= 52; x++) {
+    const edge = y === 14 || y === 36 || x === 12 || x === 52;
+    t.data[y * TEX + x] = P('wood', (edge ? 2 : 4) + hash(x, y, seed + 1) * 1.0 - 0.4);
+  }
+  for (const ly of [21, 26, 31]) for (let x = 17; x <= 47; x++) if (hash(x >> 1, ly, seed + 3) > 0.25) t.data[ly * TEX + x] = P('stone', 1.2);
+  return t;
+}
+
 function genPortal(seed) {
   const t = mk(255);
   for (let y = 0; y < TEX; y++) for (let x = 0; x < TEX; x++) {
@@ -309,7 +332,7 @@ export function makeTextures(detail = 1) {
     wall: { [WALL_STONE]: up(genStone(11), 101), [WALL_MOSS]: up(genMoss(23), 102), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104) },
     floor: up(genFloor(41), 105),
     ceil: up(genCeil(53), 106),
-    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: genSchrat(71), portal: spr(genPortal(81), 109), merchant: spr(genMerchant(91), 110) }
+    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: genSchrat(71), portal: spr(genPortal(81), 109), merchant: spr(genMerchant(91), 110), wisp: genWisp(121), sign: spr(genSign(131), 111) }
   };
 }
 
@@ -465,6 +488,7 @@ export function buildGrid(lvl, objs) {
   for (const o of objs) if (o.type === 'door' && !o.open) grid[o.y * w + o.x] = o.locked ? WALL_DOOR_LOCKED : WALL_DOOR;
   return { grid, gw: w, gh: h };
 }
+const kindOf = (o, i) => (Array.isArray(o.kinds) ? o.kinds[Math.min(i, o.kinds.length - 1)] : o.kind);
 export function buildSprites(objs, tex, time, angle = 0, alive = null) { // alive: {objId: Anzahl lebender Gegner} im Kampf
   const out = [];
   const rx = Math.cos(angle), ry = Math.sin(angle); // „rechts“ aus Sicht der Kamera
@@ -475,9 +499,10 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null) { // aliv
       const n = alive && alive[o.id] != null ? alive[o.id] : tot; // Gruppe: eine Gestalt je lebendem Gegner, nebeneinander
       for (let i = 0; i < n; i++) {
         const off = n > 1 ? (i - (n - 1) / 2) * 0.36 : 0;
-        out.push({ x: o.x + rx * off, y: o.y + ry * off, tex: tex.sprites.schrat, scale: (n > 1 ? 0.62 : 0.85) * (1 + 0.02 * Math.sin(time * 3 + i)) });
+        out.push({ x: o.x + rx * off, y: o.y + ry * off, tex: (kindOf(o, i) === 'moorlicht' ? tex.sprites.wisp : tex.sprites.schrat), scale: (n > 1 ? 0.62 : 0.85) * (1 + 0.02 * Math.sin(time * 3 + i)) });
       }
     }
+    else if (o.type === 'sign') out.push({ x: o.x, y: o.y, tex: tex.sprites.sign, scale: 0.55 });
     else if (o.type === 'merchant') out.push({ x: o.x, y: o.y, tex: tex.sprites.merchant, scale: 0.8 });
     else if (o.type === 'exit' || o.type === 'stairs') out.push({ x: o.x, y: o.y, tex: tex.sprites.portal, scale: 0.9 });
   }
