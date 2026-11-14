@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setReso
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.8.0';
+const VERSION = '0.9.0';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -576,6 +576,7 @@ function openMenu() {
   openModal(`<h2>Menü</h2><div class="acts" style="flex-direction:column;align-items:stretch">
     <button class="mb primary" data-m="close">Weiterspielen</button>
     <button class="mb" data-m="rest">Rasten (Proviant: ${S.game ? (S.game.inv.ration || 0) : 0})</button>
+    <button class="mb" data-m="bestiary">Bestiarium</button>
     <button class="mb" data-m="save">Speichern</button>
     <button class="mb" data-m="load">Laden</button>
     <button class="mb" data-m="export">Spielstand exportieren (Datei)</button>
@@ -594,6 +595,25 @@ function helpHtml() {
   <h3>Ziel des Prototyps</h3><p>Truhe im Nebenraum öffnen, Eisenschlüssel nehmen, die Eisentür aufschließen, den Moorschrat besiegen und den Runenstein erreichen.</p>
   <p class="muted">Prototyp Phase 2 (in Arbeit) · Version ${VERSION} · Autor: eldermoor-dev. Alle Grafiken und Geräusche entstehen im Spiel selbst (prozedural). Keine Musik.</p>
   <div class="acts">${closeBtn}</div>`;
+}
+function openBestiary() {
+  const g = S.game, d = S.data, b = g.bestiary || {};
+  const ids = Object.keys(d.enemies), known = ids.filter((k) => b[k] && b[k].seen > 0);
+  const BX = 'border:1px solid #5a4a30;border-radius:5px;padding:8px;margin:6px 0';
+  const cards = ids.map((k) => {
+    const e = d.enemies[k], r = b[k];
+    if (!r || !r.seen) return `<div style="${BX}"><b>???</b><div class="muted">Noch nicht begegnet.</div></div>`;
+    const L = [`Begegnet: ${r.seen}× · Besiegt: ${r.won}×`];
+    if (r.won > 0) L.push(`LP ${e.hp} · Angriff ${e.atk} · Verteidigung ${e.def} · Beute ${e.gold || 0} Gold, ${e.xp || 0} EP`);
+    else L.push('Werte unbekannt (erst nach dem ersten Sieg).');
+    if (r.heavy && e.heavy) L.push(`Besonderer Angriff: ${esc(e.heavy.name)} (alle ${e.heavy.every} Züge, vorher angekündigt)`);
+    if (r.onHit && e.onHit) L.push(`Trefferwirkung: ${esc(d.statuses[e.onHit.status].name)} (${e.onHit.chance} %)`);
+    const rs = Object.keys(r.resist || {}).map((el) => { const v = (e.resist || {})[el] || 0; return `${esc(d.elements[el].name)}: ${v > 0 ? 'Resistent' : 'Schwäche'} (${v > 0 ? '−' : '+'}${Math.abs(v)} %)`; });
+    if (rs.length) L.push('Elemente: ' + rs.join(', '));
+    if (e.phases) L.push(`Phasen erreicht: ${r.phase || 0} von ${e.phases.length}${(r.phase || 0) > 0 ? ' – ' + e.phases.slice(0, r.phase).map((p) => esc(p.name)).join(', ') : ''}`);
+    return `<div style="${BX}"><b>${esc(e.name)}${e.boss ? ' · Boss' : ''}</b>${L.map((t) => `<div class="muted">${t}</div>`).join('')}</div>`;
+  }).join('');
+  openModal(`<h2>Bestiarium</h2><p class="muted">Entdeckt: ${known.length} von ${ids.length}. Werte, Elemente und Besonderheiten werden im Kampf aufgedeckt.</p>${cards}<div class="acts"><button class="mb" data-m="menu">Zurück</button></div>`, 'bestiary');
 }
 function openHelp() { openModal(helpHtml(), 'help'); }
 
@@ -846,6 +866,8 @@ async function onModalClick(e) {
   else if (m === 'load') openSlots('load');
   else if (m === 'settings') openSettings();
   else if (m === 'help') openHelp();
+  else if (m === 'bestiary') openBestiary();
+  else if (m === 'menu') openMenu();
   else if (m === 'export') exportSave();
   else if (m === 'import') $('#importfile').click();
   else if (m === 'fullscreen') {

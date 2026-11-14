@@ -271,3 +271,11 @@ Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätet
 - Darstellung: Treppe = Portal-Sprite (vorläufig), Karte: blaues Dreieck. Kartennotizen und Erkundung gelten je Gebiet.
 - Debug-Teleportliste ist noch auf test1 fest verdrahtet.
 - Tests: 51 (5 neue: Treppendaten, Wechsel hin/zurück mit Zustand, Kampf im 2. Gebiet, Migration v4→v5 und Ablehnung ungültiger Gebiete, Softlock test2).
+
+## 0.9.0 (Phase 3, Schritt 2: Bossphasen und Bestiarium)
+- game.json: `enemies.<id>.phases: [{below, name, msg, set}]` (below = LP-Schwelle in %, fallend; `set` überschreibt atk/def/init/heavy/onHit/ai/resist), `boss: true`. Moorschrat: Wutrausch (≤ 60 %: Angriff 15, Schwerer Schlag alle 2 Züge), Letzte Kraft (≤ 25 %: Angriff 17, Wurzelhieb ×2,0).
+- logic.js: `enemyOf(data, e)` liefert Werte inkl. eingetretener Phasen (überall statt `data.enemies[kind]` bei def/resist/init/Angriff). `checkPhases` läuft nach jeder Aktion vor `advance`; jede Phase einmal, mehrere Schwellen in einem Zug werden alle gemeldet; Muster (intent/cd) beginnt neu. Phase wird nur im Kampf gehalten (nie gespeichert); fliehen/verlieren setzt zurück.
+- Bestiarium: `state.bestiary[art] = {seen, won, phase?, heavy?, onHit?, resist?{element}}`, fehlend = unbekannt. Kein Versionssprung (v5 bleibt). Werte erst nach dem ersten Sieg sichtbar; Elemente beim ersten Treffer mit Schwäche/Resistenz; Besonderheiten beim ersten Auftreten. Menü → Bestiarium.
+- validateState prüft `bestiary` (optional).
+- BALANCE.md zeigt Bossphasen. SIM.md neu (3000 Läufe): Schrat „nur Angriff“ 97 %, „klug“ 100 % – Boss ist mit Stufe-1-Gruppe weiterhin leicht (vorläufig, nicht angepasst).
+- Tests: 54.
