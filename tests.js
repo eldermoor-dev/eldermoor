@@ -216,7 +216,7 @@ export async function runTests(data, env = {}) {
     assert(threw, 'ohne Migration');
     threw = false; try { L.migrate(save, { 1: (x) => x }, 2); } catch { threw = true; }
     assert(threw, 'Migration ohne Versionssprung');
-    assert(L.SAVE_VERSION === 5 && [1, 2, 3, 4].every((n) => typeof L.MIGRATIONS[n] === 'function'), 'echte Migrationen 1→2 bis 4→5 müssen vorhanden sein');
+    assert(L.SAVE_VERSION === 6 && [1, 2, 3, 4, 5].every((n) => typeof L.MIGRATIONS[n] === 'function'), 'echte Migrationen 1→2 bis 5→6 müssen vorhanden sein');
   });
 
   // ---- Phase 2, Schritt 1: Rassen, Berufe, Gruppe, Migration v1→v2 ----
@@ -317,7 +317,7 @@ export async function runTests(data, env = {}) {
     const s = L.newGame(data, 9, CUSTOM);
     s.heroes[1].hp = 5; s.heroes[0].hp = 0;
     const save = L.serialize(s);
-    eq(save.v, 5, 'Version');
+    eq(save.v, 6, 'Version');
     eq(L.deserialize(JSON.stringify(save), data), { ...s, combat: null }, 'Roundtrip');
     const rej = (mut, label) => {
       const b = L.serialize(s); mut(b.state.heroes[2]);
@@ -347,7 +347,7 @@ export async function runTests(data, env = {}) {
     });
     eq(st.heroes.map((h) => h.cls), ['warrior', 'rogue', 'priest', 'mage'], 'Berufe');
     eq(st.heroes[0].hp, 30, 'LP erhalten');
-    const rest = (x) => { const y = { ...x, heroes: 0, combat: 0, areas: 0, objs: x.objs.filter((o) => v1.state.objs.some((q) => q.id === o.id)) }; return JSON.stringify(Object.keys(y).sort().map((k) => [k, y[k]])); }; // v5 ergänzt fehlende feste Objekte (Treppen, später eingebaute Gegner) und Gebiete
+    const rest = (x) => { const y = { ...x, heroes: 0, combat: 0, areas: 0, gear: 0, uid: 0, objs: x.objs.filter((o) => v1.state.objs.some((q) => q.id === o.id)) }; return JSON.stringify(Object.keys(y).sort().map((k) => [k, y[k]])); }; // v5 ergänzt fehlende feste Objekte (Treppen, später eingebaute Gegner) und Gebiete
     assert(st.objs.some((o) => o.id === 'stairs_down') && JSON.stringify(st.areas) === '{}', 'v5: neue Treppe ergänzt, Gebiete leer');
     assert(st.objs.filter((o) => v1.state.objs.some((q) => q.id === o.id)).every((o) => JSON.stringify(o) === JSON.stringify(v1.state.objs.find((q) => q.id === o.id))), 'vorhandene Objekte unverändert');
     assert(rest(st) === rest(v1.state), 'übriger Zustand (Position, Gold, Inventar, Objekte, Karte, Notizen, Zufall) unverändert');
@@ -355,7 +355,7 @@ export async function runTests(data, env = {}) {
     assert(obj.v === 1 && !('race' in obj.state.heroes[0]), 'Eingabe wird nicht verändert');
     assert(L.tryMove(st, data, 'f').moved, 'Spiel läuft weiter');
     const again = L.serialize(st);
-    eq(again.v, 5, 'neu gespeichert als v5');
+    eq(again.v, 6, 'neu gespeichert als v6');
     eq(L.deserialize(JSON.stringify(again), data).player, st.player, 'erneut ladbar');
   });
 
@@ -817,7 +817,7 @@ export async function runTests(data, env = {}) {
     eq(st.areas, {}, 'areas leer');
     assert(st.objs.some((o) => o.id === 'stairs_down'), 'Treppe ergänzt');
     eq([st.gold, st.inv.potion, st.notes, st.player], [77, 5, [3], s.player], 'Zustand erhalten');
-    assert(L.serialize(st).v === 5, 'neu als v5');
+    assert(L.serialize(st).v === 6, 'neu als v6');
     // Spielstand mit ungültigen Gebieten wird abgelehnt
     const bad = JSON.parse(JSON.stringify(L.serialize(s)));
     bad.state.areas = { nirgendwo: { objs: [], seen: [], notes: [] } };
@@ -907,6 +907,115 @@ export async function runTests(data, env = {}) {
     const bad = JSON.parse(JSON.stringify(L.serialize(s))); bad.state.bestiary = { drache: { seen: 1, won: 0 } };
     let threw = false; try { L.deserialize(bad, data); } catch (e) { threw = /Bestiarium/.test(e.message); }
     assert(threw, 'unbekannte Art nicht abgelehnt');
+  });
+
+  // ---- Phase 3, Schritt 3: Beutesystem ----
+  await test('Beute (Phase 3): Daten gültig (Qualitäten, Eigenschaften, Grundgegenstände, Unikate, Drops)', () => {
+    assert(data.quality.length >= 3 && data.quality[0].id === 'common' && data.quality[0].statBonus === 0 && data.quality[0].affixes === 0, 'Gewöhnlich ist die Basis');
+    for (const q of data.quality) assert(q.weight > 0 && Number.isInteger(q.statBonus) && Number.isInteger(q.affixes) && q.name && q.color, `Qualität ${q.id}`);
+    const stats = new Set(['atk', 'def', 'init']);
+    for (const a of data.affixes) { assert(stats.has(a.stat) && a.min >= 1 && a.max >= a.min && a.name, `Eigenschaft ${a.id}`); assert(a.slots.every((x) => data.slots[x]), `Eigenschaft ${a.id}: Platz`); }
+    for (const slot of Object.keys(data.slots)) assert(data.affixes.some((a) => a.slots.includes(slot)), `keine Eigenschaft für ${slot}`);
+    assert(data.quality.some((q) => q.affixes > 0) && data.quality.every((q) => q.affixes <= data.affixes.length), 'Eigenschaftenzahl');
+    for (const id of data.lootBases) assert(data.items[id] && data.items[id].kind === 'equip', `Grundgegenstand ${id}`);
+    for (const [id, it] of Object.entries(data.items)) if (it.q === 'unique') assert(it.kind === 'equip' && it.classes && it.classes.every((c) => data.classes[c]), `Unikat ${id}`);
+    for (const [id, en] of Object.entries(data.enemies)) {
+      for (const d of en.drops || []) for (const x of d.pick || [d.item]) assert(data.items[x] && data.items[x].q === 'unique', `${id}: Drop ${x} ist kein Unikat`);
+      if (en.gearDrop) assert(en.gearDrop.chance > 0 && en.gearDrop.chance <= 100, `${id}: gearDrop`);
+    }
+  });
+
+  await test('Beute (Phase 3): erzeugte Ausrüstung – Werte stimmen zur Qualität, Verteilung nahe den Gewichten, nie über Obergrenzen', () => {
+    const s = fresh(31), n = 4000, cnt = {};
+    for (let i = 0; i < n; i++) {
+      const g = L.rollGear(s, data, {});
+      const q = data.quality.find((x) => x.id === g.q), base = data.items[g.base];
+      cnt[g.q] = (cnt[g.q] || 0) + 1;
+      eq(g.affixes.length, q.affixes, 'Zahl der Eigenschaften');
+      assert(new Set(g.affixes).size === g.affixes.length, 'Eigenschaft doppelt');
+      const sumNow = g.atk + g.def + g.init, sumBase = (base.atk || 0) + (base.def || 0);
+      assert(sumNow >= sumBase + q.statBonus + g.affixes.length && sumNow <= sumBase + q.statBonus + g.affixes.length * 2, `Werte außerhalb: ${g.name} ${g.q}`);
+      assert(g.atk <= 8 && g.def <= 8 && g.init <= 4, 'Obergrenze');
+      assert(g.desc && g.name.startsWith(base.name), 'Name/Beschreibung');
+      for (const a of g.affixes) assert(data.affixes.find((x) => x.id === a).slots.includes(g.slot), 'Eigenschaft passt nicht zum Platz');
+    }
+    const tot = data.quality.reduce((a, q) => a + q.weight, 0);
+    for (const q of data.quality) { const p = (cnt[q.id] || 0) / n, e = q.weight / tot; assert(Math.abs(p - e) < 0.04, `Verteilung ${q.id}: ${(p * 100).toFixed(1)} % statt ${(e * 100).toFixed(1)} %`); }
+    // Boost verschiebt zu besseren Qualitäten
+    const hi = (boost) => { let k = 0; for (let i = 0; i < 2000; i++) { const g = L.rollGear(s, data, { boost }); if (g.q === 'rare' || g.q === 'epic') k++; } return k; };
+    assert(hi(2) > hi(0) * 1.5, 'Boost wirkt nicht');
+    const w = L.rollGear(s, data, { slot: 'weapon' }), a = L.rollGear(s, data, { slot: 'armor' });
+    assert(w.slot === 'weapon' && a.slot === 'armor', 'Platzfilter');
+    return Object.entries(cnt).map(([k, v]) => `${k} ${(100 * v / n).toFixed(0)} %`).join(', ');
+  });
+
+  await test('Beute (Phase 3): Anlegen erzeugter Ausrüstung – Boni (auch Initiative), Berufsbeschränkung, Tausch, Speichern/Laden', () => {
+    const s = fresh(32);
+    const inst = { kind: 'equip', base: 'iron_sword', slot: 'weapon', q: 'rare', atk: 4, def: 0, init: 2, classes: ['warrior', 'rogue', 'ranger'], name: 'Eisenschwert des Wolfs', affixes: ['wolf'], desc: 'x' };
+    const uid = L.addGear(s, data, inst);
+    assert(/^g\d+$/.test(uid) && s.inv[uid] === 1 && s.gear[uid], 'im Inventar');
+    assert(L.addGear(s, data, { ...inst }) !== uid, 'neue Kennung');
+    assert(L.equipItem(s, data, uid, 3).error === 'not-allowed', 'Magier darf keine Schwerter');
+    const before = { atk: L.heroAtk(data, s.heroes[0], s), init: L.heroInit(data, s.heroes[0], s) };
+    const r = L.equipItem(s, data, uid, 0);
+    assert(r.msg && s.heroes[0].equip.weapon === uid && !s.inv[uid], 'angelegt');
+    eq(L.heroAtk(data, s.heroes[0], s) - before.atk, 4, 'Angriffsbonus');
+    eq(L.heroInit(data, s.heroes[0], s) - before.init, 2, 'Initiativebonus');
+    // Tausch gegen festes Eisenschwert legt die erzeugte Waffe zurück ins Inventar
+    s.inv.iron_sword = 1;
+    L.equipItem(s, data, 'iron_sword', 0);
+    assert(s.inv[uid] === 1 && s.heroes[0].equip.weapon === 'iron_sword', 'Tausch');
+    L.equipItem(s, data, uid, 0);
+    const back = L.deserialize(JSON.parse(JSON.stringify(L.serialize(s))), data);
+    eq(back.gear, s.gear, 'Ausrüstungsliste');
+    eq(back.heroes[0].equip, s.heroes[0].equip, 'getragen');
+    eq(L.heroAtk(data, back.heroes[0], back), L.heroAtk(data, s.heroes[0], s), 'gleiche Werte nach dem Laden');
+    // Wirkung im Kampf: der Schaden nutzt den Bonus
+    // Ablegen
+    assert(L.unequipItem(s, data, 0, 'weapon').msg && s.inv[uid] === 1, 'Ablegen');
+    // ungültige Stände werden abgelehnt
+    const bad = JSON.parse(JSON.stringify(L.serialize(s))); bad.state.gear.g1.atk = 99;
+    let threw = false; try { L.deserialize(bad, data); } catch (e) { threw = /Ausrüstung/.test(e.message); }
+    assert(threw, 'Wert 99 nicht abgelehnt');
+    const bad2 = JSON.parse(JSON.stringify(L.serialize(s))); bad2.state.inv.g77 = 1;
+    threw = false; try { L.deserialize(bad2, data); } catch (e) { threw = /Inventar/.test(e.message); }
+    assert(threw, 'Inventarposten ohne Definition nicht abgelehnt');
+  });
+
+  await test('Beute (Phase 3): Sieg gibt Drops – Unikat vom Boss genau einmal, Ausrüstung aus Truhe, Meldungen', () => {
+    // Boss: jeder Sieg über den Schrat liefert Ausrüstung (100 %) und ein Unikat, solange keines im Besitz ist
+    const win = (seed, pre) => {
+      const s = fresh(seed); pre && pre(s);
+      L.startCombat(s, data, s.objs.find((o) => o.id === 'en1'));
+      s.combat.enemies[0].hp = 1;
+      let g = 0, all = [];
+      while (s.combat && g++ < 20) { const a = L.currentActor(s); const r = a.side === 'h' ? L.heroAction(s, data, { type: 'attack', target: 0 }) : L.enemyStep(s, data, {}); all.push(...(r.msgs || [])); }
+      return { s, msgs: all };
+    };
+    const w = win(41);
+    assert(w.msgs.some((m) => /Beute von Moorschrat: (Schratdorn|Wurzelstab) \(einzigartig\)/.test(m)), 'Unikat fehlt: ' + w.msgs.filter((m) => /Beute/.test(m)).join(' | '));
+    assert(w.msgs.some((m) => /Beute von Moorschrat: .*(Eisenschwert|Eichenstab|Lederharnisch|Kettenhemd)/.test(m)), 'Ausrüstungsdrop fehlt');
+    assert(Object.keys(w.s.gear).length >= 1 && Object.keys(w.s.gear).every((k) => w.s.inv[k] === 1), 'Ausrüstung im Inventar');
+    // Unikat bereits im Besitz (auch getragen): fällt nicht noch einmal
+    const w2 = win(42, (s) => { s.inv.schratdorn = 1; s.inv.wurzelstab = 1; });
+    assert(!w2.msgs.some((m) => /einzigartig/.test(m)), 'Unikat doppelt');
+    const w3 = win(43, (s) => { s.heroes[0].equip = { weapon: 'schratdorn', armor: null }; s.inv.wurzelstab = 1; });
+    assert(!w3.msgs.some((m) => /einzigartig/.test(m)), 'getragenes Unikat zählt nicht als Besitz');
+    // Truhe der Unteren Gruft enthält eine erzeugte Ausrüstung
+    const s = fresh(44); L.changeArea(s, data, 'stairs_down');
+    s.player = { x: 11, y: 3, dir: 1 };
+    const r = L.interact(s, data);
+    assert(/Truhe geöffnet/.test(r.msg) && Object.keys(s.gear).length === 1, 'Truhe ohne Ausrüstung: ' + r.msg);
+  });
+
+  await test('Beute (Phase 3): Spielstand v5 (ohne Ausrüstung) lädt als v6, nichts geht verloren', () => {
+    const s = fresh(45); s.gold = 33; s.inv.potion = 4;
+    const raw = JSON.parse(JSON.stringify(L.serialize(s))); raw.v = 5; delete raw.state.gear; delete raw.state.uid;
+    const st = L.deserialize(raw, data);
+    eq([st.gear, st.uid, st.gold, st.inv.potion], [{}, 0, 33, 4], 'v6-Felder und Bestand');
+    assert(L.serialize(st).v === 6, 'neu als v6');
+    // Zufallsläufe: viele Kämpfe mit Drops halten die Invarianten
+    for (let i = 0; i < 60; i++) { const q = fresh(500 + i); q.heroes.forEach((h) => { h.level = 4; }); playFight(q, 'en2', i); const back = L.deserialize(JSON.parse(JSON.stringify(L.serialize(q))), data); eq(back.gear, q.gear, 'Rundlauf'); }
   });
 
   await test('Migration v1→v2: beschädigte v1-Stände werden mit klarer Meldung abgelehnt', () => {

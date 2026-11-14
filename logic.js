@@ -1,7 +1,7 @@
 // Die Schatten von Eldermoor – Spiellogik (ohne DOM, in Node testbar)
 // Autor: eldermoor-dev
 
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 export const SAVE_FORMAT = 'eldermoor-save';
 export const DIRS = [
   { dx: 0, dy: -1 }, // 0 Norden
@@ -192,6 +192,8 @@ export function newGame(data, seed = 20260101, party = null) {
     objs: a.objs,
     seen: a.seen,
     notes: a.notes,
+    gear: {}, // erzeugte Ausrüstung: { uid: Gegenstandsdefinition }, liegt mit Anzahl 1 in inv[uid]
+    uid: 0,
     areas: {}, // besuchte, aktuell nicht aktive Gebiete: { id: { objs, seen, notes } }
     combat: null,
     steps: 0
@@ -299,6 +301,11 @@ function addLoot(state, data, loot) {
   const parts = [];
   for (const e of loot || []) {
     if (e.gold) { state.gold += e.gold; parts.push(`${e.gold} Gold`); continue; }
+    if (e.gear) {
+      const inst = rollGear(state, data, e.gear);
+      if (inst) { addGear(state, data, inst); const q = data.quality.find((x) => x.id === inst.q); parts.push(`${inst.name}${inst.q !== 'common' ? ` [${q.name}]` : ''}`); }
+      continue;
+    }
     const it = data.items[e.item];
     const n = e.n || 1;
     if (it.kind === 'quest') state.inv[e.item] = 1; // Questgegenstände nie mehrfach, nie verbrauchbar
@@ -363,30 +370,33 @@ export function knownSpells(data, h) {
 // hero.equip = { weapon: itemId|null, armor: itemId|null } (optional; fehlt es, ist nichts angelegt).
 // Die gespeicherten Werte atk/def bleiben die Grundwerte; Boni werden beim Rechnen addiert.
 export const SLOTS = ['weapon', 'armor'];
-export function gearBonus(data, h) {
-  const b = { atk: 0, def: 0 };
-  for (const s of SLOTS) { const it = h.equip && data.items[h.equip[s]]; if (it && it.kind === 'equip') { b.atk += it.atk || 0; b.def += it.def || 0; } }
+// Gegenstandsdefinition: erzeugte Ausrüstung (state.gear) hat Vorrang vor den festen Gegenständen (data.items)
+export const itemDef = (state, data, id) => (state && state.gear && state.gear[id]) || data.items[id];
+export function gearBonus(data, h, state) {
+  const b = { atk: 0, def: 0, init: 0 };
+  for (const s of SLOTS) { const it = h.equip && h.equip[s] && itemDef(state, data, h.equip[s]); if (it && it.kind === 'equip') { b.atk += it.atk || 0; b.def += it.def || 0; b.init += it.init || 0; } }
   return b;
 }
-export const heroAtk = (data, h) => h.atk + gearBonus(data, h).atk;
-export const heroDef = (data, h) => h.def + gearBonus(data, h).def;
-export function canEquip(data, h, itemId) {
-  const it = data.items[itemId];
+export const heroAtk = (data, h, state) => h.atk + gearBonus(data, h, state).atk;
+export const heroDef = (data, h, state) => h.def + gearBonus(data, h, state).def;
+export const heroInit = (data, h, state) => h.init + gearBonus(data, h, state).init;
+export function canEquip(data, h, itemId, state) {
+  const it = itemDef(state, data, itemId);
   return !!it && it.kind === 'equip' && SLOTS.includes(it.slot) && (!it.classes || it.classes.includes(h.cls));
 }
 export function equipItem(state, data, itemId, heroIdx) {
   if (state.combat) return { error: 'in-combat' };
   const h = state.heroes[heroIdx];
   if (!h || !(state.inv[itemId] > 0)) return { error: 'no-item' };
-  if (!canEquip(data, h, itemId)) return { error: 'not-allowed' };
-  const it = data.items[itemId];
+  if (!canEquip(data, h, itemId, state)) return { error: 'not-allowed' };
+  const it = itemDef(state, data, itemId);
   h.equip = h.equip || { weapon: null, armor: null };
   const old = h.equip[it.slot];
   state.inv[itemId]--;
   if (old) state.inv[old] = (state.inv[old] || 0) + 1;
   h.equip[it.slot] = itemId;
-  for (const k of Object.keys(state.inv)) if (state.inv[k] === 0 && data.items[k].kind === 'equip') delete state.inv[k];
-  return { msg: `${h.name} legt ${it.name} an${old ? ` (${data.items[old].name} zurück ins Inventar)` : ''}.`, sfx: 'ui' };
+  for (const k of Object.keys(state.inv)) if (state.inv[k] === 0 && itemDef(state, data, k).kind === 'equip') delete state.inv[k];
+  return { msg: `${h.name} legt ${it.name} an${old ? ` (${itemDef(state, data, old).name} zurück ins Inventar)` : ''}.`, sfx: 'ui' };
 }
 export function unequipItem(state, data, heroIdx, slot) {
   if (state.combat) return { error: 'in-combat' };
@@ -395,7 +405,71 @@ export function unequipItem(state, data, heroIdx, slot) {
   const id = h.equip[slot];
   state.inv[id] = (state.inv[id] || 0) + 1;
   h.equip[slot] = null;
-  return { msg: `${h.name} legt ${data.items[id].name} ab.`, sfx: 'ui' };
+  return { msg: `${h.name} legt ${itemDef(state, data, id).name} ab.`, sfx: 'ui' };
+}
+
+// ---------- Beute: Qualität, Zufallseigenschaften, Unikate, Gegner-Drops (Phase 3, Schritt 3) ----------
+// Erzeugt eine Ausrüstung aus einem Grundgegenstand (data.lootBases): Qualität nach Gewichten (boost = so oft neu gewürfelt, bestes zählt),
+// Qualität gibt +statBonus auf den Hauptwert (Waffe: Angriff, Rüstung: Verteidigung) und affixes Zufallseigenschaften (data.affixes).
+export function rollGear(state, data, opts = {}) {
+  const bases = (data.lootBases || []).filter((id) => data.items[id] && data.items[id].kind === 'equip' && (!opts.slot || data.items[id].slot === opts.slot));
+  if (!bases.length) return null;
+  const base = data.items[bases[randInt(state, 0, bases.length - 1)]], baseId = bases.find((id) => data.items[id] === base);
+  const Q = data.quality, total = Q.reduce((n, q) => n + q.weight, 0);
+  const pick = () => { let r = rand(state) * total; for (let i = 0; i < Q.length; i++) { r -= Q[i].weight; if (r < 0) return i; } return 0; };
+  let qi = pick();
+  for (let b = 0; b < (opts.boost || 0); b++) qi = Math.max(qi, pick());
+  const q = Q[qi];
+  const inst = { kind: 'equip', base: baseId, slot: base.slot, q: q.id, atk: base.atk || 0, def: base.def || 0, init: 0, classes: base.classes ? [...base.classes] : null, name: base.name };
+  inst[base.slot === 'weapon' ? 'atk' : 'def'] += q.statBonus;
+  const pool = (data.affixes || []).filter((a) => a.slots.includes(base.slot));
+  const used = [];
+  for (let i = 0; i < q.affixes && pool.length; i++) {
+    const free = pool.filter((a) => !used.includes(a));
+    if (!free.length) break;
+    const a = free[randInt(state, 0, free.length - 1)];
+    used.push(a);
+    inst[a.stat] += randInt(state, a.min, a.max);
+  }
+  if (used.length) inst.name = `${base.name} ${used.map((a) => a.name).join(' und ')}`;
+  inst.affixes = used.map((a) => a.id);
+  inst.desc = gearDesc(data, inst);
+  return inst;
+}
+export function gearDesc(data, it) {
+  const parts = [];
+  if (it.atk) parts.push(`+${it.atk} Angriff`);
+  if (it.def) parts.push(`+${it.def} Verteidigung`);
+  if (it.init) parts.push(`+${it.init} Initiative`);
+  const cls = it.classes ? ' Für ' + it.classes.map((c) => data.classes[c].name).join(', ') + '.' : ' Für alle Berufe.';
+  return `${data.slots[it.slot]}. ${parts.join(', ') || 'keine Boni'}.${cls}`;
+}
+export function addGear(state, data, inst) {
+  state.gear = state.gear || {};
+  const uid = 'g' + (state.uid = (state.uid || 0) + 1);
+  state.gear[uid] = inst;
+  state.inv[uid] = 1;
+  return uid;
+}
+export const ownsItem = (state, id) => (state.inv[id] || 0) > 0 || state.heroes.some((h) => h.equip && SLOTS.some((s) => h.equip[s] === id));
+export const qualityOf = (state, data, id) => { const it = itemDef(state, data, id); return it && it.q ? (it.q === 'unique' ? { id: 'unique', name: 'Einzigartig', color: '#ffb347' } : data.quality.find((q) => q.id === it.q)) : null; };
+// Beute nach einem Sieg: je Gegnerart data.enemies.<id>.drops (feste Gegenstände, einmalig) und gearDrop {chance, boost, slot?}
+function rollDrops(state, data, enemies, msgs) {
+  for (const e of enemies) {
+    const en = data.enemies[e.kind];
+    for (const d of en.drops || []) { // { item | pick: [ids], chance }: Unikate fallen nur, solange sie noch nicht im Besitz sind
+      const cand = (d.pick || [d.item]).filter((id) => data.items[id] && !ownsItem(state, id));
+      if (!cand.length || !(rand(state) * 100 < (d.chance ?? 100))) continue;
+      const id = cand[cand.length === 1 ? 0 : randInt(state, 0, cand.length - 1)];
+      state.inv[id] = (state.inv[id] || 0) + 1;
+      msgs.push(`Beute von ${e.name}: ${data.items[id].name} (einzigartig)!`);
+    }
+    const g = en.gearDrop;
+    if (g && rand(state) * 100 < g.chance) {
+      const inst = rollGear(state, data, g);
+      if (inst) { addGear(state, data, inst); const q = data.quality.find((x) => x.id === inst.q); msgs.push(`Beute von ${e.name}: ${inst.name}${inst.q !== 'common' ? ` [${q.name}]` : ''}.`); }
+    }
+  }
 }
 
 // ---------- Rast (Schritt 5a) ----------
@@ -427,7 +501,7 @@ function buildOrder(state, data) {
   const c = state.combat;
   const list = [];
   const slowed = (side, i) => (c.status[side + i] && c.status[side + i].slow ? -100 : 0);
-  state.heroes.forEach((h, i) => { if (h.hp > 0) list.push({ side: 'h', idx: i, key: h.init + rand(state) * 4 + 0.5 + slowed('h', i) }); });
+  state.heroes.forEach((h, i) => { if (h.hp > 0) list.push({ side: 'h', idx: i, key: heroInit(data, h, state) + rand(state) * 4 + 0.5 + slowed('h', i) }); });
   c.enemies.forEach((e, i) => { if (e.hp > 0) list.push({ side: 'e', idx: i, key: enemyOf(data, e).init + rand(state) * 4 + slowed('e', i) }); });
   list.sort((a, b) => b.key - a.key);
   c.order = list.map(({ side, idx }) => ({ side, idx }));
@@ -596,6 +670,7 @@ function finishVictory(state, data, msgs) {
   state.gold += gold;
   msgs.push(`Sieg! Beute: ${gold} Gold.`);
   if (xp > 0) { msgs.push(`Erfahrung: +${xp} EP für jeden Helden, der noch steht.`); grantXp(state, data, xp, msgs); }
+  rollDrops(state, data, c.enemies, msgs);
   for (const h of state.heroes) if (h.hp <= 0) { h.hp = 1; msgs.push(`${h.name} kommt mit 1 LP wieder zu sich.`); } // vorläufig, bis die Rast kommt (Schritt 5)
   state.combat = null;
   return gold;
@@ -618,7 +693,7 @@ export function heroAction(state, data, act) {
     if (ti == null || !c.enemies[ti] || c.enemies[ti].hp <= 0) ti = c.enemies.findIndex((e) => e.hp > 0);
     const e = c.enemies[ti];
     const tr = {};
-    const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h)), enemyOf(data, e).def, { backMelee: h.row === 'back' && !h.ranged, trace: tr });
+    const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h, state)), enemyOf(data, e).def, { backMelee: h.row === 'back' && !h.ranged, trace: tr });
     if (d === 0) { msgs.push(`${h.name} verfehlt ${e.name}.`); sfx = 'miss'; }
     else {
       e.hp = Math.max(0, e.hp - d);
@@ -667,7 +742,7 @@ export function heroAction(state, data, act) {
         const tr = {};
         const el = ab.element ? ((enemyOf(data, e).resist || {})[ab.element] || 0) : 0;
         if (el !== 0) noteBestiary(state, e.kind, 'resist', ab.element);
-        const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h)), enemyOf(data, e).def, { backMelee: h.row === 'back' && !h.ranged, mult: ab.mult, sure: !!ab.sure, elem: el, elemName: ab.element && data.elements[ab.element].name, trace: tr });
+        const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h, state)), enemyOf(data, e).def, { backMelee: h.row === 'back' && !h.ranged, mult: ab.mult, sure: !!ab.sure, elem: el, elemName: ab.element && data.elements[ab.element].name, trace: tr });
         if (d === 0) { msgs.push(`${h.name} setzt ${ab.name} ein, verfehlt aber ${e.name}${list.length === 1 ? ` (−${ab.cost} ${rn})` : ''}.`); continue; }
         hit = true;
         e.hp = Math.max(0, e.hp - d);
@@ -685,7 +760,7 @@ export function heroAction(state, data, act) {
     let hit = false;
     for (const e of live) {
       const tr = {};
-      const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h)), enemyOf(data, e).def, { backMelee: h.row === 'back' && !h.ranged, mult: SWEEP_MULT, trace: tr });
+      const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h, state)), enemyOf(data, e).def, { backMelee: h.row === 'back' && !h.ranged, mult: SWEEP_MULT, trace: tr });
       if (d === 0) { msgs.push(`${h.name} verfehlt ${e.name}.`); continue; }
       hit = true; e.hp = Math.max(0, e.hp - d);
       msgs.push(`${h.name} trifft ${e.name} für ${d} Schaden.${SEP}${explain(tr)}`);
@@ -740,7 +815,7 @@ export function enemyStep(state, data, opts = {}) {
   const t = state.heroes[ti];
   const hv = en.heavy, heavy = !!hv && e.intent === 'heavy';
   const tr = {};
-  const d = calcDamage(state, effAtk(state, 'e', a.idx, en.atk), heroDef(data, t), { defending: !!c.defending[ti], mult: heavy ? hv.mult : 0, trace: tr });
+  const d = calcDamage(state, effAtk(state, 'e', a.idx, en.atk), heroDef(data, t, state), { defending: !!c.defending[ti], mult: heavy ? hv.mult : 0, trace: tr });
   let sfx = 'miss';
   const why = `${t.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}${c.defending[ti] ? ', in Deckung: halber Schaden' : ''}`;
   if (heavy) { msgs.push(`${e.name} setzt ${hv.name} ein!`); noteBestiary(state, e.kind, 'heavy'); }
@@ -827,6 +902,12 @@ export const MIGRATIONS = {
     const have = new Set(st.objs.map((o) => o && o.id));
     const added = lvl ? lvl.objects.filter((o) => !have.has(o.id)).map((o) => freshObj(data, o)) : [];
     return { ...save, v: 5, state: { ...st, objs: [...st.objs, ...added], areas: {}, notes: Array.isArray(st.notes) ? st.notes : [] } };
+  },
+  // v5 -> v6: erzeugte Ausrüstung (Beutesystem). Bisher gab es keine; alles andere bleibt.
+  5: (save) => {
+    const st = save.state;
+    if (!st || typeof st !== 'object') throw new Error('Spielstand v5: Zustand fehlt');
+    return { ...save, v: 6, state: { ...st, gear: {}, uid: 0 } };
   }
 };
 
@@ -873,15 +954,23 @@ export function validateState(state, data) {
     if (typeof hh.hp !== 'number' || hh.hp < 0 || hh.hp > hh.maxHp) err.push(`${n}: LP ungültig`);
     if (hh.equip != null) {
       if (typeof hh.equip !== 'object') err.push(`${n}: Ausrüstung ungültig`);
-      else for (const s of SLOTS) { const id = hh.equip[s]; if (id != null && !(data.items[id] && data.items[id].kind === 'equip' && data.items[id].slot === s)) err.push(`${n}: Ausrüstung ${s} ungültig`); }
+      else for (const s of SLOTS) { const id = hh.equip[s]; if (id != null && !(itemDef(state, data, id) && itemDef(state, data, id).kind === 'equip' && itemDef(state, data, id).slot === s)) err.push(`${n}: Ausrüstung ${s} ungültig`); }
     }
   });
   if (!state.inv || typeof state.inv !== 'object') err.push('Inventar ungültig');
-  else for (const [k, v] of Object.entries(state.inv)) if (!data.items[k] || !Number.isInteger(v) || v < 0) err.push(`Inventar: ${k} ungültig`);
+  else for (const [k, v] of Object.entries(state.inv)) if (!itemDef(state, data, k) || !Number.isInteger(v) || v < 0) err.push(`Inventar: ${k} ungültig`);
   if (!Number.isInteger(state.gold) || state.gold < 0) err.push('Gold ungültig');
   if (!Array.isArray(state.objs)) err.push('Objekte ungültig');
   if (!Array.isArray(state.seen) || state.seen.length !== w * h) err.push('Karte ungültig');
   if (!Number.isInteger(state.rng)) err.push('Zufallszustand ungültig');
+  if (state.gear != null) {
+    if (typeof state.gear !== 'object' || Array.isArray(state.gear)) err.push('Ausrüstungsliste ungültig');
+    else for (const [k, g] of Object.entries(state.gear)) {
+      if (!/^g\d+$/.test(k) || !g || g.kind !== 'equip' || !SLOTS.includes(g.slot) || !data.items[g.base] || typeof g.name !== 'string' || !g.name
+        || !['atk', 'def', 'init'].every((x) => Number.isInteger(g[x]) && g[x] >= 0 && g[x] <= 20)) err.push(`Ausrüstung ${k} ungültig`);
+    }
+    if (!Number.isInteger(state.uid) || state.uid < 0) err.push('Zähler für Ausrüstung ungültig');
+  }
   if (state.bestiary != null) {
     if (typeof state.bestiary !== 'object' || Array.isArray(state.bestiary)) err.push('Bestiarium ungültig');
     else for (const [k, v] of Object.entries(state.bestiary)) if (!data.enemies[k] || !v || !Number.isInteger(v.seen) || !Number.isInteger(v.won)) err.push(`Bestiarium: ${k} ungültig`);
@@ -943,6 +1032,18 @@ export function balanceMarkdown(data) {
     L.push(`| ${r.name} | ${c.name} | ${a.maxHp}/${a.atk}/${a.def}/${a.init} | ${b.maxHp}/${b.atk}/${b.def}/${b.init} |`);
   }
   L.push('');
+  if (data.quality) {
+    const tot = data.quality.reduce((n, q) => n + q.weight, 0);
+    L.push('## Beute', '', 'Erzeugte Ausrüstung: Grundgegenstand zufällig aus ' + (data.lootBases || []).map((id) => data.items[id].name).join(', ') + '. Qualität nach Gewicht; „Boost“ würfelt so oft neu und nimmt die beste.', '');
+    L.push('| Qualität | Gewicht | Anteil | Bonus Hauptwert | Zufallseigenschaften |', '|---|---|---|---|---|');
+    for (const q of data.quality) L.push(`| ${q.name} | ${q.weight} | ${(100 * q.weight / tot).toFixed(0)} % | +${q.statBonus} | ${q.affixes} |`);
+    L.push('', '| Eigenschaft | Wirkung | Platz |', '|---|---|---|');
+    const sn = { atk: 'Angriff', def: 'Verteidigung', init: 'Initiative' };
+    for (const a of data.affixes) L.push(`| ${a.name} | +${a.min}${a.max > a.min ? '–' + a.max : ''} ${sn[a.stat]} | ${a.slots.map((x) => data.slots[x]).join(', ')} |`);
+    L.push('', '| Gegner | Ausrüstung | Unikat |', '|---|---|---|');
+    for (const e of Object.values(data.enemies)) if (e.gearDrop || e.drops) L.push(`| ${e.name} | ${e.gearDrop ? `${e.gearDrop.chance} %${e.gearDrop.boost ? `, Boost ${e.gearDrop.boost}` : ''}` : '–'} | ${(e.drops || []).map((d) => `${(d.pick || [d.item]).map((id) => data.items[id].name).join(' oder ')} (${d.chance ?? 100} %, nur einmal)`).join('; ') || '–'} |`);
+    L.push('');
+  }
   return L.join('\n');
 }
 

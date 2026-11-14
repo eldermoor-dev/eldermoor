@@ -285,3 +285,13 @@ Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätet
 - main.js `renderCombat`: roter, pulsierender Warnbalken im Gegnerfenster, Knopf „Verteidigen“ leuchtet (`.pulse`), Warnton (`audio.js` Fall `warn`) und Vibration [90,60,90] einmal je Ankündigung (`S.warnKey`). Name des Angriffs über `enemyOf` (Phasen können ihn ändern).
 - index.html: CSS `.heavywarn`, `.ab.pulse`; bei „reduzierte Bewegung“ ohne Animation.
 - Spielwerte unverändert. Tests 54 (reine Anzeige, per Headless-Browser geprüft).
+
+## 0.10.0 (Phase 3, Schritt 3: Beutesystem, Speicherstand v6)
+- `SAVE_VERSION = 6`, Migration 5→6 (`MIGRATIONS[5]`): `gear: {}`, `uid: 0`. Neu im Stand: `gear` = { uid: Gegenstandsdefinition }, erzeugte Ausrüstung liegt mit Anzahl 1 in `inv[uid]`; `hero.equip[slot]` darf eine uid sein.
+- `itemDef(state, data, id)` löst feste (`data.items`) und erzeugte Gegenstände auf. `gearBonus/heroAtk/heroDef/canEquip` nehmen jetzt `state` als letztes Argument; neu `heroInit` (Initiative aus Ausrüstung, nur in `buildOrder`).
+- game.json: `lootBases`, `quality` (Gewöhnlich 55 / Gut 28 / Selten 14 / Episch 3; Bonus Hauptwert, Zahl der Eigenschaften), `affixes` (atk/def/init, je Platz), Unikate als normale Gegenstände mit `q: "unique"` (Schratdorn, Wurzelstab), `enemies.<id>.gearDrop {chance, boost?, slot?}` und `drops [{item | pick:[ids], chance}]` (Unikate nur, solange nicht im Besitz, auch nicht getragen). Truhenbeute `{gear:{boost,slot}}`.
+- `rollGear` (RNG: Grundgegenstand, Qualität, Eigenschaften), `addGear`, `rollDrops` (läuft in `finishVictory` nach der Erfahrung; danach ändert sich der Zufallsverlauf nachfolgender Kämpfe).
+- Obergrenzen in `validateState`: atk/def ≤ 20, init ≤ 20; Namen/Platz/Grundgegenstand müssen stimmen.
+- UI: Inventar sortiert (Verbrauchbares, Vorrat, Quest, Ausrüstung), Qualitätsfarben, Vergleich „· Angriff +1“ beim Ausrüsten, Initiativebonus im Charakterbild, Toast bei „Beute von …“.
+- Nicht enthalten: Handel/Verkaufen, Ausrüstung wegwerfen (Inventar wächst), maxHP-Eigenschaften, Elementeigenschaften.
+- BALANCE.md hat Abschnitt „Beute“. Tests 59.
