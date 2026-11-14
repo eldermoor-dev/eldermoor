@@ -453,7 +453,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null) { // aliv
         out.push({ x: o.x + rx * off, y: o.y + ry * off, tex: tex.sprites.schrat, scale: (n > 1 ? 0.62 : 0.85) * (1 + 0.02 * Math.sin(time * 3 + i)) });
       }
     }
-    else if (o.type === 'exit') out.push({ x: o.x, y: o.y, tex: tex.sprites.portal, scale: 0.9 });
+    else if (o.type === 'exit' || o.type === 'stairs') out.push({ x: o.x, y: o.y, tex: tex.sprites.portal, scale: 0.9 });
   }
   return out;
 }

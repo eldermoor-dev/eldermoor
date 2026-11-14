@@ -3,13 +3,13 @@
 import {
   DIRS, DIR_NAMES, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, knownSpells, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
+  buildParty, deriveStats, skipStunned, restParty, changeArea, knownSpells, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setResolution, W, H, BASE_W, BASE_H } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.7.1';
+const VERSION = '0.8.0';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -305,6 +305,18 @@ function doTurn(d) {
   if (r.encounter) startCombatUI(r.encounter);
 }
 async function onEvent(ev) {
+  if (ev.type === 'stairs') {
+    const r = changeArea(S.game, S.data, ev.id);
+    if (!r.ok) { say(r.msg); return; }
+    S.lvl = getLevel(S.data, S.game);
+    S.rc.setPalette(S.data.palettes[S.lvl.palette]);
+    S.held = []; S.queued = null;
+    snapCam();
+    say(r.msg);
+    renderAll();
+    await saveSlot('auto', true);
+    return;
+  }
   if (ev.type !== 'exit') return;
   say('Ein Runenstein glimmt auf. Das Zielgebiet des Prototyps ist erreicht.');
   S.held = [];
@@ -675,6 +687,7 @@ function drawMap() {
     const cx = o.x * cs + cs / 2, cy = o.y * cs + cs / 2;
     if (o.type === 'door') { c.fillStyle = o.open ? '#6b5a3a' : (o.locked ? '#b8472f' : '#a0703a'); c.fillRect(o.x * cs + 2, o.y * cs + 2, cs - 4, cs - 4); }
     else if (o.type === 'chest') { c.fillStyle = o.open ? '#7a6a3a' : '#e0b040'; c.fillRect(cx - cs * 0.25, cy - cs * 0.2, cs * 0.5, cs * 0.4); }
+    else if (o.type === 'stairs') { c.fillStyle = '#7fd4ff'; c.beginPath(); c.moveTo(cx - cs * 0.3, cy - cs * 0.25); c.lineTo(cx + cs * 0.3, cy - cs * 0.25); c.lineTo(cx, cy + cs * 0.3); c.fill(); }
     else if (o.type === 'exit') { c.strokeStyle = '#7fd4ff'; c.lineWidth = 2; c.beginPath(); c.arc(cx, cy, cs * 0.3, 0, 7); c.stroke(); }
     else if (o.type === 'enemy' && !o.dead) { c.fillStyle = '#d05040'; c.font = `bold ${cs}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('×', cx, cy); }
   }
