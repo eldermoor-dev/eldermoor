@@ -379,3 +379,16 @@ Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätet
 - Neue Gegenstände: `oelflasche` (`throw`: 14 Feuerschaden, trifft immer, Elementfaktor wie bei Zaubern, 60 % Brennen) und `gegengift` (`cure: poison`), nur im Kampf (`heroAction`, type `item`, Parameter `target` bzw. `hero`). Kampfleiste: Zeilen nur, wenn etwas geht. Hedda verkauft beide; Beute in chest_s1 / chest_s2. `useItemOutside` heilt nur Gegenstände mit `heal`.
 - `?dev`: `S.fn.startCombatUI`, `S.fn.showEvent` für Tests.
 - Nicht umgesetzt (bewusst): Geheimräume, Schurken-Schlösser, Rollenlabel im Bestiarium. Simulation (camp.mjs) kennt die neuen Gegenstände nicht.
+
+## 0.15.2
+- Berührung: gegen Tür, Truhe, Hebel oder Gitter laufen (Vor-Taste) benutzt sie (`tryMove` meldet `blocker`, `doMove` ruft `act('interact')`). Tippen im Bild auf Tür/Truhe/Hebel/Gitter (`tapUseByTap`, bis 2,6 Felder): steht das Objekt direkt vor dir, wird es benutzt, sonst „Geh näher heran.“
+- Boss-Sprite: `genSchratBoss` (192×192, breiter Baumriese mit Geweih, Zähnen, glühenden Brustrissen und Augen); gilt für `schrat` und `grubenschrat`; Bosse werden größer gezeichnet (`bossScale`: Schrat 1,2, Hauptmann 1,0). Wolf und Kultist nutzen weiter den alten Schrat-Sprite (echte Sprites offen).
+
+## 0.15.3
+- Ausgänge (`exit`) zeichnen keinen Goldring mehr: ohne `look` ein Runenstein (`genRuneStone`, Steinplatte mit leuchtenden Runen), mit `look` (`up`/`down`/`path`) wie Treppen/Bogen. `exit_gruben` hat `look: up`. Das Portal-Sprite (`sprites.portal`) wird nirgends mehr verwendet.
+
+## 0.15.4
+- Händler- und Inventarzeilen: Knopf steht immer rechts (`.row.nw`, kein Umbruch, einheitliche Mindestbreite). Symbole vor Gegenständen (`itemIcon`): ⚔ Waffe, 🛡 Rüstung, 🧪 Heiltrank, 💧 Gegengift, 🔥 Ölflasche, 🍞 Proviant, 🗝 Quest; optional `icon` im Item. `S.fn.openShop` unter ?dev.
+
+## 0.15.5
+- Schilder tragen lesbare Titel: `sign.title` (Zeilen mit `|` getrennt, max. 2 Zeilen à 8 Zeichen, Großbuchstaben, Ziffern, `.:!?-→`, Ä Ö Ü) wird mit einer 5×7-Pixelschrift (`FONT`, `genSign(seed, title)`) auf das Schild gezeichnet, darunter angedeutete Textzeilen; ein Sprite je Titel (`signTex`, Cache in `tex.signs`). Ohne `title` bleiben die dunklen Wortblöcke. Volltext weiter per Tippen/◉. Alle 10 Schilder haben Titel.

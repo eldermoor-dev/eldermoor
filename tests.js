@@ -1418,6 +1418,14 @@ export async function runTests(data, env = {}) {
     for (const id of ['moorpfad', 'kultgruft', 'schratgruben']) assert(data.levels[id].intro && data.levels[id].intro.title, 'Gebiets-Auftritt ' + id);
   });
 
+  await test('Berührung (0.15.2): tryMove meldet den Blocker (Tür, Truhe, Hebel) für die Auto-Benutzung', () => {
+    const s = fresh();
+    put(s, 11, 7, 1);
+    const r = L.tryMove(s, data, 'f');
+    assert(!r.moved && r.blocker && r.blocker.type === 'door', 'Tür als Blocker gemeldet');
+    assert(L.interact(s, data).sfx === 'unlock' || L.interact(s, data).msg, 'Interaktion danach möglich');
+  });
+
   await test('Fackelwand: Kartenzeichen T wird zur Fackel-Textur und blockiert wie eine Wand', () => {
     const lvl = { map: ['###', '#T#', '#.#'], objects: [] };
     const { grid } = buildGrid(lvl, []);

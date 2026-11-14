@@ -1254,7 +1254,8 @@
           "type": "sign",
           "x": 3,
           "y": 2,
-          "text": "Moorpfad. Nach Osten liegt die alte Kultgruft. Wer nachts allein geht, folgt keinem Licht."
+          "text": "Moorpfad. Nach Osten liegt die alte Kultgruft. Wer nachts allein geht, folgt keinem Licht.",
+          "title": "MOORPFAD|→ GRUFT"
         },
         {
           "id": "en_p1",
@@ -1279,7 +1280,8 @@
           "type": "sign",
           "x": 9,
           "y": 3,
-          "text": "Kratzspuren am Pfahl. Darunter hat jemand geschrieben: Irrlichter meiden Eisen, nicht Feuer."
+          "text": "Kratzspuren am Pfahl. Darunter hat jemand geschrieben: Irrlichter meiden Eisen, nicht Feuer.",
+          "title": "ACHTUNG|IRRLICHT"
         },
         {
           "id": "chest_p1",
@@ -1357,7 +1359,8 @@
           "type": "sign",
           "x": 19,
           "y": 5,
-          "text": "Das Eisentor der Kultgruft. Das Schloss ist neu, der Rost drumherum alt."
+          "text": "Das Eisentor der Kultgruft. Das Schloss ist neu, der Rost drumherum alt.",
+          "title": "EISENTOR"
         },
         {
           "id": "chest_p3",
@@ -1462,7 +1465,8 @@
           "type": "sign",
           "x": 3,
           "y": 5,
-          "text": "Es riecht nach Kerzenwachs und feuchter Erde. Die alten Zellen werden wieder benutzt."
+          "text": "Es riecht nach Kerzenwachs und feuchter Erde. Die alten Zellen werden wieder benutzt.",
+          "title": "ALTE|ZELLEN"
         },
         {
           "id": "en_g1",
@@ -1480,7 +1484,8 @@
           "type": "sign",
           "x": 15,
           "y": 5,
-          "text": "In den Stein geritzt: Nur wer das Siegel des Kults trägt, darf in die Halle des Hauptmanns."
+          "text": "In den Stein geritzt: Nur wer das Siegel des Kults trägt, darf in die Halle des Hauptmanns.",
+          "title": "NUR MIT|SIEGEL"
         },
         {
           "id": "en_g2",
@@ -1701,7 +1706,8 @@
           "type": "sign",
           "x": 3,
           "y": 6,
-          "text": "Schratgruben. Betreten auf eigene Gefahr. Die Gefahr ist eigen, die Haftung nicht."
+          "text": "Schratgruben. Betreten auf eigene Gefahr. Die Gefahr ist eigen, die Haftung nicht.",
+          "title": "SCHRAT-|GRUBEN"
         },
         {
           "id": "en_s1",
@@ -1719,7 +1725,8 @@
           "type": "sign",
           "x": 14,
           "y": 5,
-          "text": "Stollen 2: Erz. Stollen 3: mehr Erz. Stollen 4: der Grund, warum es keinen Stollen 5 gibt."
+          "text": "Stollen 2: Erz. Stollen 3: mehr Erz. Stollen 4: der Grund, warum es keinen Stollen 5 gibt.",
+          "title": "STOLLEN|2 3 4"
         },
         {
           "id": "chest_s1",
@@ -1768,7 +1775,8 @@
           "type": "sign",
           "x": 19,
           "y": 9,
-          "text": "Wer den Schlüssel will, geht nach Süden. Wer überleben will, geht nach Süden mit Plan."
+          "text": "Wer den Schlüssel will, geht nach Süden. Wer überleben will, geht nach Süden mit Plan.",
+          "title": "SÜDEN|→"
         },
         {
           "id": "en_s3",
@@ -1845,7 +1853,8 @@
           "type": "sign",
           "x": 23,
           "y": 5,
-          "text": "Hier wohnt der Schrat. Bitte klopfen. Er antwortet nicht, aber er hört zu."
+          "text": "Hier wohnt der Schrat. Bitte klopfen. Er antwortet nicht, aber er hört zu.",
+          "title": "BITTE|KLOPFEN"
         },
         {
           "id": "en_sboss",
@@ -1881,7 +1890,8 @@
           "y": 9,
           "title": "Ende der Schratgruben",
           "say": "Hinter dem Lager führt ein Gang nach oben ins Nebelland, aber Nebel und Geröll versperren ihn.",
-          "text": "Der Moorschrat ist besiegt. Der Weg zum Nebelturm ist noch von Geröll und Nebel versperrt. In der nächsten Version geht es hier weiter."
+          "text": "Der Moorschrat ist besiegt. Der Weg zum Nebelturm ist noch von Geröll und Nebel versperrt. In der nächsten Version geht es hier weiter.",
+          "look": "up"
         },
         {
           "id": "gate_s1",
@@ -1903,7 +1913,8 @@
           "type": "sign",
           "x": 22,
           "y": 5,
-          "text": "Nordstollen. Gesperrt. Der Hebel steht, wie üblich, ganz woanders."
+          "text": "Nordstollen. Gesperrt. Der Hebel steht, wie üblich, ganz woanders.",
+          "title": "NORD-|STOLLEN"
         }
       ],
       "intro": {

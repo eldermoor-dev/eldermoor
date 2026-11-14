@@ -1,7 +1,7 @@
 // Die Schatten von Eldermoor – Spielsteuerung, Oberfläche, Eingabe
 // Autor: eldermoor-dev
 import {
-  DIRS, DIR_NAMES, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
+  DIRS, DIR_NAMES, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
   buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, knownSpells, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
 } from './logic.js';
@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setReso
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.15.1';
+const VERSION = '0.15.5';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -28,7 +28,7 @@ const S = {
   debug: { god: false }, itemMode: false, abMode: false, spMode: false, spSel: 0, foe: 0, invUse: null, draft: null, fps: 60, frameMs: 0, lastRender: 0,
   installEvent: null, loadMs: null, hadController: false
 };
-if (new URLSearchParams(location.search).has('dev')) { window.__S = S; S.snapCam = () => snapCam(); S.fn = { startCombatUI: (o) => startCombatUI(o), showEvent: (a, b) => showEvent(a, b) }; } // nur für automatische Tests (?dev)
+if (new URLSearchParams(location.search).has('dev')) { window.__S = S; S.snapCam = () => snapCam(); S.fn = { startCombatUI: (o) => startCombatUI(o), showEvent: (a, b) => showEvent(a, b), openShop: (id) => openShop(id, true) }; } // nur für automatische Tests (?dev)
 
 // ---------------------------------------------------------------- Fehlerlog
 const ERR = { list: [], saveT: 0 };
@@ -305,7 +305,10 @@ function doMove(rel) {
     (r.events || []).forEach(onEvent);
     if (r.encounter) startCombatUI(r.encounter);
   } else if (r.encounter) startCombatUI(r.encounter);
-  else {
+  else if (rel === 'f' && r.blocker && ['door', 'chest', 'lever', 'gate'].includes(r.blocker.type)) { // gegen Tür, Truhe, Hebel laufen = benutzen
+    S.held = []; S.nextAllowed = performance.now() + 350;
+    act('interact');
+  } else {
     S.sfx.play('bump'); vib(15);
     if (r.msg) say(r.msg);
     S.nextAllowed = performance.now() + 300;
@@ -447,8 +450,39 @@ function readSignByTap(e) {
   return true;
 }
 
+// Tippen auf Tür, Truhe, Hebel oder Gitter im Bild: steht das Objekt direkt vor dir, wird es benutzt, sonst „Geh näher heran.“
+function tapUseByTap(e) {
+  const g = S.game;
+  if (!g || g.combat || S.lock || !$('#modal').hidden) return false;
+  const lvl = S.data.levels[g.levelId];
+  const r = $('#view').getBoundingClientRect();
+  const fx = (e.clientX - r.left) / r.width;
+  const a = S.cam.a, dirX = Math.sin(a), dirY = -Math.cos(a), plX = Math.cos(a) * 0.8, plY = Math.sin(a) * 0.8;
+  const inv = 1 / (plX * dirY - dirX * plY);
+  const open = (x, y) => { const row = lvl.map[Math.floor(y)]; return row && row[Math.floor(x)] === '.'; };
+  const f = frontCell(g);
+  let best = null, bt = 1e9;
+  for (const o of g.objs) {
+    const big = o.type === 'door' || o.type === 'gate';
+    if (!(big ? !o.open : o.type === 'chest' ? !o.open : o.type === 'lever')) continue;
+    const sx = o.x + 0.5 - S.cam.x, sy = o.y + 0.5 - S.cam.y;
+    const tX = inv * (dirY * sx - dirX * sy), tY = inv * (-plY * sx + plX * sy);
+    if (tY <= 0.3 || tY > 2.6 || tY >= bt) continue;
+    const tol = big ? 0.31 / tY + 0.02 : 0.16 / tY + 0.04;
+    if (Math.abs(0.5 * (1 + tX / tY) - fx) > tol) continue;
+    let clear = true;
+    const dist = Math.hypot(sx, sy), steps = Math.ceil(dist / 0.2);
+    for (let i = 1; i < steps - 1; i++) { const k = i / steps; if (!open(S.cam.x + sx * k, S.cam.y + sy * k)) { clear = false; break; } }
+    if (clear) { best = o; bt = tY; }
+  }
+  if (!best) return false;
+  if (best.x === f.x && best.y === f.y) act('interact'); else { say('Geh näher heran.'); toast('Geh näher heran.', 1500); }
+  return true;
+}
+
 function onViewTap(e) {
   if (readSignByTap(e)) return;
+  if (tapUseByTap(e)) return;
   const c = S.game && S.game.combat;
   if (!c || c.over) return;
   const alive = c.enemies.map((x, i) => i).filter((i) => c.enemies[i].hp > 0);
@@ -663,7 +697,7 @@ function openMenu() {
 function helpHtml() {
   return `<h2>Steuerung &amp; Info</h2>
   <h3>Links: Bewegung</h3><p>↑ Vor, ↓ Zurück, ← → seitwärts, ↶ ↷ um 90° drehen. Gedrückt halten wiederholt die Bewegung.</p>
-  <h3>Rechts: Aktionen</h3><p>◉ Interagieren (Türen, Truhen, Gegner ansprechen), ⚔ Angriff, ✦ Fähigkeit (nur im Kampf, kostet Mana oder Ausdauer). Bei mehreren Gegnern: Gegner antippen = Ziel wählen, „Alle“ trifft jeden Gegner mit 60 % Schaden, ▣ Inventar, ☻ Charakter.</p>
+  <h3>Rechts: Aktionen</h3><p>◉ Interagieren (Türen, Truhen, Hebel, Gegner ansprechen; Türen und Truhen gehen auch auf, wenn du gegen sie läufst oder sie direkt vor dir antippst), ⚔ Angriff, ✦ Fähigkeit (nur im Kampf, kostet Mana oder Ausdauer). Bei mehreren Gegnern: Gegner antippen = Ziel wählen, „Alle“ trifft jeden Gegner mit 60 % Schaden, ▣ Inventar, ☻ Charakter.</p>
   <h3>Menü (☰ rechts unten)</h3><p>Karte (auf eine erkundete Zelle tippen setzt oder entfernt eine Notiz), Rasten, Speichern, Laden, Einstellungen. Oben rechts zeigt der Kompass die Blickrichtung.</p>
   <h3>Kampf</h3><p>Rundenbasiert. Die Zugreihenfolge steht oben. Hinterreihe-Helden ohne Fernkampf treffen nur halb so hart.</p>
   <h3>Rast</h3><p>Menü → Rasten (oder im Inventar beim Proviant). Mit Proviant erholt sich die Gruppe vollständig, auch Bewusstlose. Ohne Proviant nur zu 30 %. Nicht im Kampf und nicht, wenn ein Gegner nahe ist.</p>
@@ -694,13 +728,13 @@ function openShop(shopId, greet) {
   if (tab === 'buy') {
     html += shopStock(d, shopId).map((e) => {
       const it = d.items[e.item], p = buyPrice(g, d, e.item), have = g.inv[e.item] || 0;
-      return `<div class="row"><div><b>${esc(it.name)}</b>${have ? ` <span class="muted">(im Beutel: ${have})</span>` : ''}<div class="muted">${esc(it.desc)}</div></div><button class="mb" data-m="buy:${e.item}" ${g.gold >= p ? '' : 'disabled'}>Kaufen (${p} G)</button></div>`;
+      return `<div class="row nw"><div><b>${itemIcon(e.item, it)}${esc(it.name)}</b>${have ? ` <span class="muted">(im Beutel: ${have})</span>` : ''}<div class="muted">${esc(it.desc)}</div></div><button class="mb" data-m="buy:${e.item}" ${g.gold >= p ? '' : 'disabled'}>Kaufen (${p} G)</button></div>`;
     }).join('');
   } else {
     const rows = Object.entries(g.inv).filter(([id, n]) => n > 0 && sellPrice(g, d, id) != null);
     html += rows.length ? rows.map(([id, n]) => {
       const it = itemDef(g, d, id), p = sellPrice(g, d, id), sure = S.shopSure === id;
-      return `<div class="row"><div><b>${qTag(id, it)}</b> × ${n}<div class="muted">${esc(it.desc)}</div></div><button class="mb${sure ? ' primary' : ''}" data-m="shopsell:${id}">${sure ? 'Wirklich verkaufen' : 'Verkaufen'} (${p} G)</button></div>`;
+      return `<div class="row nw"><div><b>${itemIcon(id, it)}${qTag(id, it)}</b> × ${n}<div class="muted">${esc(it.desc)}</div></div><button class="mb${sure ? ' primary' : ''}" data-m="shopsell:${id}">${sure ? 'Wirklich verkaufen' : 'Verkaufen'} (${p} G)</button></div>`;
     }).join('') : '<p class="muted">Du hast nichts, was sie kaufen würde. Getragene Ausrüstung musst du erst ablegen.</p>';
   }
   html += `<div class="acts">${closeBtn}</div>`;
@@ -727,6 +761,11 @@ function openBestiary() {
 }
 function openHelp() { openModal(helpHtml(), 'help'); }
 
+// Symbol vor dem Gegenstandsnamen (Waffe, Rüstung, Trank, Gegengift, Öl, Proviant, Schlüssel …)
+function itemIcon(id, it) {
+  const ic = it.icon || (it.kind === 'equip' ? (it.slot === 'armor' ? '🛡' : '⚔') : it.kind === 'quest' ? '🗝' : it.heal ? '🧪' : it.cure ? '💧' : it.throw ? '🔥' : it.kind === 'supply' ? '🍞' : '');
+  return ic ? `<span class="ic">${ic}</span> ` : '';
+}
 // Name mit Qualitätsfarbe, z. B. „Eisenschwert des Wolfs [Selten]“
 function qTag(id, it) {
   const q = qualityOf(S.game, S.data, id);
@@ -747,7 +786,7 @@ function openInventory() {
   html += items.length ? items.map(([id, n]) => {
     const it = itemDef(g, d, id);
     const use = it.kind === 'consumable' && it.heal && !g.combat ? `<button class="mb" data-m="use:${id}">Benutzen</button>` : it.kind === 'supply' && !g.combat ? '<button class="mb" data-m="rest">Rasten</button>' : it.kind === 'equip' && !g.combat ? `<button class="mb" data-m="eqsel:${id}">Ausrüsten</button>` : '';
-    return `<div class="row"><div><b>${qTag(id, it)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}<div class="muted">${esc(it.desc)}</div></div>${use}</div>`;
+    return `<div class="row nw"><div><b>${itemIcon(id, it)}${qTag(id, it)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}<div class="muted">${esc(it.desc)}</div></div>${use}</div>`;
   }).join('') : '<p class="muted">Nichts dabei.</p>';
   if (S.invEquip && itemDef(g, d, S.invEquip) && (g.inv[S.invEquip] || 0) > 0) {
     html += `<h3>${esc(itemDef(g, d, S.invEquip).name)} an wen?</h3><div class="acts">` + g.heroes.map((h, i) =>

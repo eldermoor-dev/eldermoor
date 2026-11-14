@@ -357,7 +357,26 @@ function genWisp(seed) {
   return t;
 }
 
-function genSign(seed) {
+// 5×7-Pixelschrift für Schilder (Großbuchstaben, Ziffern, wenige Zeichen)
+const FONT = {
+  A: '01110/10001/10001/11111/10001/10001/10001', B: '11110/10001/10001/11110/10001/10001/11110', C: '01110/10001/10000/10000/10000/10001/01110',
+  D: '11110/10001/10001/10001/10001/10001/11110', E: '11111/10000/10000/11110/10000/10000/11111', F: '11111/10000/10000/11110/10000/10000/10000',
+  G: '01110/10001/10000/10111/10001/10001/01111', H: '10001/10001/10001/11111/10001/10001/10001', I: '01110/00100/00100/00100/00100/00100/01110',
+  J: '00111/00010/00010/00010/00010/10010/01100', K: '10001/10010/10100/11000/10100/10010/10001', L: '10000/10000/10000/10000/10000/10000/11111',
+  M: '10001/11011/10101/10101/10001/10001/10001', N: '10001/10001/11001/10101/10011/10001/10001', O: '01110/10001/10001/10001/10001/10001/01110',
+  P: '11110/10001/10001/11110/10000/10000/10000', Q: '01110/10001/10001/10001/10101/10010/01101', R: '11110/10001/10001/11110/10100/10010/10001',
+  S: '01111/10000/10000/01110/00001/00001/11110', T: '11111/00100/00100/00100/00100/00100/00100', U: '10001/10001/10001/10001/10001/10001/01110',
+  V: '10001/10001/10001/10001/10001/01010/00100', W: '10001/10001/10001/10101/10101/10101/01010', X: '10001/10001/01010/00100/01010/10001/10001',
+  Y: '10001/10001/01010/00100/00100/00100/00100', Z: '11111/00001/00010/00100/01000/10000/11111',
+  'Ä': '01010/01110/10001/11111/10001/10001/10001', 'Ö': '01010/01110/10001/10001/10001/10001/01110', 'Ü': '01010/10001/10001/10001/10001/10001/01110',
+  0: '01110/10001/10011/10101/11001/10001/01110', 1: '00100/01100/00100/00100/00100/00100/01110', 2: '01110/10001/00001/00010/00100/01000/11111',
+  3: '11110/00001/00001/01110/00001/00001/11110', 4: '00010/00110/01010/10010/11111/00010/00010', 5: '11111/10000/11110/00001/00001/10001/01110',
+  6: '00110/01000/10000/11110/10001/10001/01110', 7: '11111/00001/00010/00100/01000/01000/01000', 8: '01110/10001/10001/01110/10001/10001/01110',
+  9: '01110/10001/10001/01111/00001/00010/01100',
+  '.': '00000/00000/00000/00000/00000/01100/01100', '!': '00100/00100/00100/00100/00100/00000/00100', '?': '01110/10001/00001/00010/00100/00000/00100',
+  ':': '00000/01100/01100/00000/01100/01100/00000', '-': '00000/00000/00000/11111/00000/00000/00000', '→': '00000/00100/00010/11111/00010/00100/00000', ' ': '00000/00000/00000/00000/00000/00000/00000'
+};
+function genSign(seed, title) {
   const t = mk(255);
   const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
   for (let y = 36; y <= 62; y++) for (let x = 29; x <= 35; x++) set(x, y, P('wood', 2.4 + hash(x, y, seed) * 0.8 - (x >= 34 ? 0.8 : 0)));
@@ -365,13 +384,27 @@ function genSign(seed) {
     const edge = y <= 9 || y >= 39 || x <= 6 || x >= 58;
     set(x, y, P('wood', edge ? 2.2 : 5.6 + hash(x >> 2, y >> 3, seed + 1) * 0.5));
   }
-  // „Schrift“: dunkle Wortblöcke in vier Zeilen, kräftig und scharf
+  const ink = P('wood', 0.3);
+  const lines = String(title || '').toUpperCase().split('|').slice(0, 2).filter(Boolean);
+  if (lines.length) { // Titel in Pixelschrift, mittig; darunter angedeutete Textzeilen
+    lines.forEach((ln, li) => {
+      const chars = [...ln].slice(0, 8), w = chars.length * 6 - 1, x0 = Math.round(32 - w / 2), y0 = 12 + li * 9;
+      chars.forEach((ch, ci) => {
+        const g = (FONT[ch] || FONT[' ']).split('/');
+        for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) if (g[r][c] === '1') set(x0 + ci * 6 + c, y0 + r, ink);
+      });
+    });
+    const sy = lines.length > 1 ? 31 : 24;
+    for (let i = 0; i < (lines.length > 1 ? 2 : 3); i++) { const w2 = 30 - i * 5 + Math.floor(hash(i, 9, seed + 4) * 6); for (let x = 10; x < 10 + w2; x++) if (hash(x, i, seed + 6) > 0.15) set(x, sy + i * 4, P('wood', 1.2)); }
+    return t;
+  }
+  // ohne Titel: dunkle Wortblöcke
   for (let line = 0; line < 4; line++) {
     let x = 10 + Math.floor(hash(line, 1, seed + 2) * 4);
     const y0 = 13 + line * 6;
     while (x < 52) {
       const w = 5 + Math.floor(hash(x, line, seed + 3) * 8);
-      for (let yy = y0; yy < y0 + 3; yy++) for (let xx = x; xx < Math.min(54, x + w); xx++) set(xx, yy, P('wood', 0.3));
+      for (let yy = y0; yy < y0 + 3; yy++) for (let xx = x; xx < Math.min(54, x + w); xx++) set(xx, yy, ink);
       x += w + 3;
     }
   }
@@ -419,6 +452,116 @@ function genArch(seed) {
     else { const d = Math.min(1, Math.hypot(dx * 1.1, (y - 44) * 0.8) / 17); set(x, y, P('ceil', 0.6 + (1 - d) * 3.4 + hash(x, y, seed + 1) * 0.5)); }
   }
   for (let k = 0; k < 14; k++) { const x = 20 + Math.floor(hash(k, 3, seed) * 24), y = 52 + Math.floor(hash(k, 4, seed) * 9); set(x, y, P('floor', 3)); set(x + 1, y, P('floor', 3)); }
+  return t;
+}
+
+// Moorschrat als Boss: breiter, vorgebeugter Baumriese mit Geweihkrone, Bodenkrallen, Zähnen und glühenden Rissen in der Brust
+function genSchratBoss(seed) {
+  const SN = 192, k = 64 / SN;
+  const t = { w: SN, h: SN, data: new Uint8Array(SN * SN).fill(255) };
+  const segd = (px, py, ax, ay, bx, by) => {
+    const vx = bx - ax, vy = by - ay, q = Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / (vx * vx + vy * vy)));
+    const nx = ax + vx * q, ny = ay + vy * q;
+    return { d: Math.hypot(px - nx, py - ny), nx, ny, q };
+  };
+  const lim = (px, py, ax, ay, bx, by, r0, r1) => { const q = segd(px, py, ax, ay, bx, by), r = r0 + (r1 - r0) * q.q; return q.d <= r ? { cx: q.nx, cy: q.ny, r } : null; };
+  const ell = (px, py, cx, cy, rx, ry) => { const a = (px - cx) / rx, b = (py - cy) / ry; return a * a + b * b <= 1 ? { cx, cy, r: Math.max(rx, ry) } : null; };
+  const MIRROR = [-1, 1];
+  const arm = (px, py) => { for (const sg of MIRROR) { const h = lim(px, py, 32 + sg * 17, 27, 32 + sg * 27, 44, 7, 5.4) || lim(px, py, 32 + sg * 27, 44, 32 + sg * 25, 59, 5.4, 4) || ell(px, py, 32 + sg * 17, 26, 9, 8); if (h) return h; } return null; };
+  const claws = (px, py) => { for (const sg of MIRROR) for (const d of [-5, -1.5, 2]) { const c = lim(px, py, 32 + sg * 25, 58, 32 + sg * (25 + d * 1.7), 63.7, 1.9, 0.35); if (c) return c; } return null; };
+  const antlers = (px, py) => {
+    for (const sg of MIRROR) {
+      const X = (v) => 32 + sg * v;
+      const a = lim(px, py, X(7), 9, X(13), 3, 1.9, 1.1) || lim(px, py, X(13), 3, X(19), 0.6, 1.1, 0.5) || lim(px, py, X(10), 6, X(17), 7.5, 1.1, 0.5) || lim(px, py, X(14.4), 2.2, X(15.5), -0.5, 0.8, 0.3) || lim(px, py, X(7), 9, X(5), 1.5, 1.2, 0.4) || lim(px, py, X(17), 7.5, X(21), 4.5, 0.6, 0.3);
+      if (a) return a;
+    }
+    return null;
+  };
+  const roots = (px, py) => lim(px, py, 22, 54, 9, 63.5, 5, 1.6) || lim(px, py, 42, 54, 55, 63.5, 5, 1.6) || lim(px, py, 28, 56, 20, 63.9, 4.2, 1.3) || lim(px, py, 36, 56, 44, 63.9, 4.2, 1.3) || lim(px, py, 32, 57, 32, 63.9, 3.6, 1.3);
+  for (let y = 0; y < SN; y++) for (let x = 0; x < SN; x++) {
+    const px = (x + 0.5) * k, py = (y + 0.5) * k;
+    let hit = null, part = '';
+    const bw = 17.5 - 5.5 * Math.max(0, (py - 33) / 26);
+    if (!hit) { const bx = (px - 32) / bw, by = (py - 40) / 20.5; if (bx * bx + by * by <= 1) { hit = { cx: 32, cy: 40, r: 19 }; part = 'body'; } }
+    if (!hit && (hit = ell(px, py, 32, 17.2, 11, 9.4))) part = 'head';
+    if (!hit && (hit = arm(px, py))) part = 'arm';
+    if (!hit && (hit = roots(px, py))) part = 'root';
+    if (!hit && (hit = antlers(px, py))) part = 'branch';
+    if (!hit && (hit = claws(px, py))) part = 'claw';
+    if (!hit) continue;
+    const l = ((px - hit.cx) * 0.9 + (py - hit.cy) * 0.7) / hit.r;
+    let sh = 3.2 - l * 1.7 + (vnoise(px, py, 3.5, seed) - 0.5) * 1.0, mat = 'wood';
+    if (part === 'head') {
+      mat = 'wood'; sh = 2.9 - l * 1.4 + (vnoise(px * 3, py, 8, seed + 4) - 0.5) * 1.3;
+      if (py > 21.2 && py < 25 && Math.abs(px - 32) < 7.6) { mat = 'ceil'; sh = 0; } // Maul
+    } else if (part === 'claw') { mat = 'stone'; sh = 5.6 - l; }
+    else if (part === 'branch') { mat = 'wood'; sh = 2.0 - l * 0.8; }
+    else {
+      const g = vnoise(px * 4, py, 9, seed + 2);
+      if (g < 0.34) sh -= 1.9; else if (g > 0.66) sh += 0.8;
+      sh += (hash(x, y, seed + 5) - 0.5) * 0.5;
+    }
+    if (part !== 'claw' && part !== 'branch' && mat !== 'ceil' && vnoise(px, py, 6.5, seed + 9) > (part === 'root' ? 0.5 : 0.62) + (py < 24 ? 0.08 : 0)) { mat = 'moss'; sh = 2.5 + (1 - l) * 0.8 + (hash(x, y, seed + 11) - 0.5) * 0.7; }
+    t.data[y * SN + x] = P(mat, sh);
+  }
+  // Zähne: helle Dornen oben und unten im Maul
+  const setp = (px, py, v) => { const x = Math.floor(px / k), y = Math.floor(py / k); if (x >= 0 && y >= 0 && x < SN && y < SN && t.data[y * SN + x] !== 255) t.data[y * SN + x] = v; };
+  for (let y = 0; y < SN; y++) for (let x = 0; x < SN; x++) {
+    const px = (x + 0.5) * k, py = (y + 0.5) * k;
+    if (Math.abs(px - 32) > 7.2 || py < 20.8 || py > 25.4) continue;
+    const ph = ((px - 24.8) / 2.4) % 1, tri = Math.abs(ph - 0.5) * 2; // 0..1 Zickzack
+    if (py < 22.7 && py - 20.8 < (1 - tri) * 2.4 + 0.2) setp(px, py, P('stone', 6.6 - (py - 20.8) * 0.5));
+    if (py > 23.6 && 25.4 - py < (1 - Math.abs(((px - 26) / 2.4) % 1 - 0.5) * 2) * 1.9 + 0.1) setp(px, py, P('stone', 6.2));
+  }
+  // glühende Risse in der Brust
+  for (let i = 0; i < 4; i++) {
+    let cx = 32 + (i - 1.5) * 4.2, cy = 33 + (i % 2) * 2;
+    for (let n = 0; n < 26; n++) { setp(cx, cy, P('glow', 6.4 - n * 0.06)); setp(cx + 0.35, cy, P('glow', 5)); cx += (hash(i, n, seed + 20) - 0.5) * 1.5; cy += 0.55; }
+  }
+  // dunkler Umriss
+  for (let pass = 0; pass < 2; pass++) {
+    const copy = t.data.slice();
+    for (let y = 1; y < SN - 1; y++) for (let x = 1; x < SN - 1; x++) {
+      const i = y * SN + x;
+      if (copy[i] === 255) continue;
+      if (copy[i - 1] === 255 || copy[i + 1] === 255 || copy[i - SN] === 255 || copy[i + SN] === 255) t.data[i] = P(MATS[copy[i] >> 3], Math.max(0, (copy[i] & 7) - 2.8));
+    }
+  }
+  // Augen: breite, zornige Schlitze, hell glühend, mit dunkler Höhle
+  for (const [ex, sg] of [[27.4, -1], [36.6, 1]]) {
+    for (let y = 0; y < SN; y++) for (let x = 0; x < SN; x++) {
+      const dx = (x + 0.5) * k - ex, dy = (y + 0.5) * k - 15.8;
+      const rx = dx * 0.9 - sg * dy * 0.55, ry = dy * 0.9 + sg * dx * 0.55;
+      const e = (rx / 3.1) ** 2 + (ry / 1.3) ** 2;
+      if (e <= 1) setp(dx + ex, dy + 15.8, P('glow', e < 0.4 ? 7 : 5.5));
+      else if (e <= 4 && t.data[y * SN + x] !== 255) t.data[y * SN + x] = P('ceil', 0);
+    }
+  }
+  t.noWrap = true;
+  return t;
+}
+
+// Runenstein: aufrechte Steinplatte mit leuchtenden Runen und Schein am Boden (Ziel eines Gebiets)
+function genRuneStone(seed) {
+  const t = mk(255);
+  const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
+  for (let y = 7; y <= 62; y++) for (let x = 17; x <= 47; x++) {
+    const top = y < 22 ? Math.hypot(Math.max(0, Math.abs(x - 32) - 6), 22 - y) : 0;
+    if (y < 22 && (Math.abs(x - 32) > 6 ? top > 9.5 : false)) continue;
+    if (y < 14 && Math.abs(x - 32) > 8 - (14 - y) * 0.4) continue;
+    const edge = x < 20 || y < 11 && y < 9 + Math.abs(x - 32) * 0.1, shade = x > 43 ? -0.9 : 0;
+    set(x, y, P('stone', 3.4 + hash(x >> 1, y >> 1, seed) * 1.2 + (x < 20 ? 0.9 : 0) + shade));
+  }
+  for (const [y0, w] of [[18, 7], [31, 9], [44, 7]]) { // drei Runenzeilen
+    for (let i = 0; i < 3; i++) {
+      const cx = 32 + (i - 1) * 8, gy = y0, kind = Math.floor(hash(i, y0, seed + 3) * 3);
+      for (let a = -4; a <= 4; a++) { set(cx, gy + a, P('glow', 6.4)); set(cx + 1, gy + a, P('glow', 4.6)); }
+      if (kind === 0) for (let a = 0; a <= 4; a++) { set(cx + a, gy - 4 + a, P('glow', 6)); set(cx - a, gy - 4 + a, P('glow', 6)); }
+      else if (kind === 1) for (let a = -3; a <= 3; a++) { set(cx + a, gy, P('glow', 6)); set(cx + a, gy + 4, P('glow', 5.5)); }
+      else for (let a = 0; a <= 4; a++) { set(cx + a, gy + a - 4, P('glow', 6)); set(cx + a, gy + 4 - a, P('glow', 6)); }
+    }
+  }
+  for (let x = 12; x <= 52; x++) for (let y = 60; y <= 63; y++) if (t.data[y * TEX + x] === 255) set(x, y, P('glow', 2.4 + hash(x, y, seed + 5) * 0.8)); // Schein am Boden
   return t;
 }
 
@@ -537,7 +680,7 @@ export function makeTextures(detail = 1) {
     wall: { [WALL_STONE]: genStone(11, n), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
     ceil: genCeil(53, nf),
-    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: genSchrat(71), portal: spr(genPortal(81), 109), merchant: spr(genMerchant(91), 110), wisp: genWisp(121), skeleton: genSkeleton(171), guard: genGuard(181, false), captain: genGuard(191, true), kaefer: genKaefer(201), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: genSchrat(71), portal: spr(genPortal(81), 109), merchant: spr(genMerchant(91), 110), wisp: genWisp(121), skeleton: genSkeleton(171), guard: genGuard(181, false), captain: genGuard(191, true), kaefer: genKaefer(201), schratBoss: genSchratBoss(221), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
@@ -694,8 +837,14 @@ export function buildGrid(lvl, objs) {
   for (const o of objs) if (o.type === 'gate' && !o.open) grid[o.y * w + o.x] = WALL_GATE;
   return { grid, gw: w, gh: h };
 }
-const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : tex.sprites.schrat);
+const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : (k === 'schrat' || k === 'grubenschrat') ? tex.sprites.schratBoss : tex.sprites.schrat);
+const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' ? 1.2 : k === 'hauptmann' ? 1 : 0.85); // Bosse stehen größer im Gang
 const kindOf = (o, i) => (Array.isArray(o.kinds) ? o.kinds[Math.min(i, o.kinds.length - 1)] : o.kind);
+function signTex(tex, o) { // ein Schild-Sprite je Titel, einmal erzeugt
+  const key = o.title || '';
+  const c = tex.signs || (tex.signs = {});
+  return c[key] || (c[key] = key ? genSign(131, key) : tex.sprites.sign);
+}
 export function buildSprites(objs, tex, time, angle = 0, alive = null) { // alive: {objId: Arten (Liste) oder Anzahl der lebenden Gegner} im Kampf
   const out = [];
   const rx = Math.cos(angle), ry = Math.sin(angle); // „rechts“ aus Sicht der Kamera
@@ -707,14 +856,14 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null) { // aliv
       const n = kindList ? kindList.length : av != null ? av : tot; // Gruppe: eine Gestalt je lebendem Gegner, nebeneinander
       for (let i = 0; i < n; i++) {
         const off = n > 1 ? (i - (n - 1) / 2) * 0.36 : 0;
-        out.push({ x: o.x + rx * off, y: o.y + ry * off, tex: spriteFor(tex, kindList ? kindList[i] : kindOf(o, i)), scale: (n > 1 ? 0.62 : 0.85) * (1 + 0.02 * Math.sin(time * 3 + i)) });
+        out.push({ x: o.x + rx * off, y: o.y + ry * off, tex: spriteFor(tex, kindList ? kindList[i] : kindOf(o, i)), scale: (n > 1 ? 0.62 : bossScale(kindList ? kindList[i] : kindOf(o, i))) * (1 + 0.02 * Math.sin(time * 3 + i)) });
       }
     }
     else if (o.type === 'lever') out.push({ x: o.x, y: o.y, tex: o.used ? tex.sprites.leverDown : tex.sprites.leverUp, scale: 0.75 });
-    else if (o.type === 'sign') out.push({ x: o.x, y: o.y, tex: tex.sprites.sign, scale: 0.7 });
+    else if (o.type === 'sign') out.push({ x: o.x, y: o.y, tex: signTex(tex, o), scale: 0.7 });
     else if (o.type === 'merchant') out.push({ x: o.x, y: o.y, tex: tex.sprites.merchant, scale: 0.8 });
     else if (o.type === 'stairs') out.push({ x: o.x, y: o.y, tex: o.look === 'down' ? tex.sprites.stairsDown : o.look === 'up' ? tex.sprites.stairsUp : o.look === 'path' ? tex.sprites.arch : tex.sprites.portal, scale: 0.9 });
-    else if (o.type === 'exit') out.push({ x: o.x, y: o.y, tex: tex.sprites.portal, scale: 0.9 });
+    else if (o.type === 'exit') out.push({ x: o.x, y: o.y, tex: o.look === 'down' ? tex.sprites.stairsDown : o.look === 'up' ? tex.sprites.stairsUp : o.look === 'path' ? tex.sprites.arch : tex.sprites.runeStone, scale: 0.9 });
   }
   return out;
 }

@@ -282,7 +282,7 @@ export function tryMove(state, data, rel) {
   const b = blockerAt(state, nx, ny);
   if (b) {
     if (b.type === 'enemy' && rel === 'f') return { moved: false, encounter: b };
-    return { moved: false, msg: blockedText(b) };
+    return { moved: false, msg: blockedText(b), blocker: b };
   }
   p.x = nx; p.y = ny;
   state.steps++;
