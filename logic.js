@@ -324,6 +324,7 @@ export function interact(state, data) {
   if (!o) {
     const p = state.player, f2 = { x: f.x + DIRS[p.dir].dx, y: f.y + DIRS[p.dir].dy };
     const b2 = blockerAt(state, f2.x, f2.y);
+    if (b2 && b2.type === 'sign' && cellChar(getLevel(data, state), f.x, f.y) === '.') return { msg: b2.text, sfx: 'ui', long: true }; // Tafeln lassen sich aus bis zu 2 Feldern Abstand lesen
     if (b2 && cellChar(getLevel(data, state), f.x, f.y) === '.') return { msg: 'Geh näher heran.' };
     return { msg: 'Hier gibt es nichts zu tun.' };
   }
@@ -813,7 +814,7 @@ export function heroAction(state, data, act) {
         if (d === 0) { msgs.push(`${h.name} setzt ${ab.name} ein, verfehlt aber ${e.name}${list.length === 1 ? ` (−${ab.cost} ${rn})` : ''}.`); continue; }
         hit = true;
         e.hp = Math.max(0, e.hp - d);
-        const note = el > 0 ? ' Schwäche!' : el < 0 ? ' Resistent.' : '';
+        const note = el > 0 ? ' Anfällig!' : el < 0 ? ' Resistent.' : '';
         msgs.push(`${h.name} setzt ${ab.name} ein: ${d} Schaden an ${e.name}${list.length === 1 ? ` (−${ab.cost} ${rn})` : ''}.${note}${SEP}${explain(tr)}`);
         if (e.hp === 0) msgs.push(`${e.name} bricht zusammen.`);
         else addStatus(state, data, 'e', ti, ab.inflict, msgs);

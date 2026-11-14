@@ -12,7 +12,7 @@ const M = { stone: 0, moss: 1, wood: 2, iron: 3, floor: 4, ceil: 5, flesh: 6, gl
 const P = (mat, shade) => M[mat] * 8 + Math.max(0, Math.min(7, Math.round(shade)));
 
 // Wandtextur-IDs im Raster: 0 = frei, 1 Stein, 2 Moos, 3 Tür, 4 verschlossene Tür
-export const WALL_STONE = 1, WALL_MOSS = 2, WALL_DOOR = 3, WALL_DOOR_LOCKED = 4;
+export const WALL_STONE = 1, WALL_MOSS = 2, WALL_DOOR = 3, WALL_DOOR_LOCKED = 4, WALL_TORCH = 5;
 
 // ---------- Palette: 8 Materialien × 8 Helligkeitsstufen = 64 feste Farben ----------
 export function buildPalette(def) {
@@ -49,33 +49,72 @@ function vnoise(x, y, cell, seed) { // kachelbares Value-Noise auf 64×64
 }
 const mk = (fill = 255) => ({ w: TEX, h: TEX, data: new Uint8Array(TEX * TEX).fill(fill) });
 
-function genStone(seed) {
-  const t = mk();
-  for (let y = 0; y < TEX; y++) for (let x = 0; x < TEX; x++) {
-    const off = ((y >> 4) & 1) * 16;
-    const bx = (x + off) & 31, by = y & 15;
-    let sh = 3 + vnoise(x, y, 4, seed) * 1.6 + hash(x, y, seed + 1) * 0.8 - 1.2;
-    if (by === 0 || bx === 0) sh = 1 + hash(x, y, seed + 2);
+// Wand-, Boden- und Deckentexturen entstehen in Eigenauflösung n (64 oder 128): Formen werden aus dem 64er-Raster
+// kontinuierlich abgetastet, Rauschen ist weich und das Pixelkorn schwach – dadurch wirken sie glatter und schärfer als hochskalierte 64er.
+const grain = (x, y, s, amp) => (hash(x, y, s) - 0.5) * amp;
+function genStone(seed, n = TEX) {
+  const t = { w: n, h: n, data: new Uint8Array(n * n) };
+  const k = n / TEX, fine = n > TEX ? 0.35 : 0.8;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const u = x / k, v = y / k; // Koordinaten im 64er-Raster
+    const row = Math.floor(v / 16), off = (row & 1) * 16;
+    const bu = (((u + off) % 32) + 32) % 32, bv = v % 16;
+    const bid = Math.floor((u + off) / 32) + row * 7; // Stein-Nummer: jeder Stein bekommt eine eigene Grundhelligkeit
+    let sh = 3.1 + (hash(bid, row, seed + 5) - 0.5) * 0.9 + (vnoise(u, v, 8, seed) - 0.5) * 1.4 + (vnoise(u, v, 3, seed + 3) - 0.5) * 0.6 + grain(x, y, seed + 1, fine);
+    const edgeU = Math.min(bu, 31 - bu), edgeV = Math.min(bv, 15 - bv);
+    if (bu < 0.9 || bv < 0.9) sh = 0.9 + hash(x, y, seed + 2) * 0.5; // Fuge
     else {
-      if (by === 1 || bx === 1) sh += 1.2;
-      if (by === 15 || bx === 31) sh -= 0.8;
+      if (bu < 2.2 || bv < 2.2) sh += 0.9; // Lichtkante oben/links
+      else if (bu > 29.5 || bv > 13.5) sh -= 0.9; // Schattenkante unten/rechts
+      sh -= Math.max(0, 2.6 - Math.min(edgeU, edgeV)) * 0.12; // sanft abgerundete Steine
     }
-    t.data[y * TEX + x] = P('stone', sh);
+    t.data[y * n + x] = P('stone', sh);
   }
-  for (let k = 0; k < 3; k++) { // feine Risse
-    let cx = Math.floor(hash(k, 1, seed + 7) * 60) + 2, cy = Math.floor(hash(k, 2, seed + 7) * 30);
-    for (let i = 0; i < 12; i++) {
-      t.data[(cy & 63) * TEX + (cx & 63)] = P('stone', 0.5);
-      cy++; cx += Math.floor(hash(k, i, seed + 8) * 3) - 1;
+  for (let c = 0; c < 3; c++) { // feine Risse
+    let cx = (Math.floor(hash(c, 1, seed + 7) * 60) + 2) * k, cy = Math.floor(hash(c, 2, seed + 7) * 30) * k;
+    for (let i = 0; i < 12 * k; i++) {
+      t.data[(Math.floor(cy) % n) * n + (Math.floor(cx) % n + n) % n] = P('stone', 0.6);
+      cy += 0.5 + 0.5 * (k > 1 ? 1 : 1); cx += (hash(c, i, seed + 8) - 0.5) * 1.4;
     }
   }
   return t;
 }
-function genMoss(seed) {
-  const t = genStone(seed);
-  for (let y = 0; y < TEX; y++) for (let x = 0; x < TEX; x++) {
-    const n = vnoise(x, y, 8, seed + 9) + hash(x, y, seed + 10) * 0.15;
-    if (n > 0.58) t.data[y * TEX + x] = P('moss', 2 + (n - 0.58) * 9);
+function genMoss(seed, n = TEX) {
+  // Moos wächst an Fugen und Oberkanten der Steine, nach unten dünner; weiche Ränder statt Flecken
+  const t = genStone(seed, n);
+  const k = n / TEX;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const u = x / k, v = y / k;
+    const bv = v % 16, fuge = Math.max(0, 1 - Math.min(bv, 16 - bv) / 5) + Math.max(0, 1 - Math.min(((u + (Math.floor(v / 16) & 1) * 16) % 32), 32 - ((u + (Math.floor(v / 16) & 1) * 16) % 32)) / 4) * 0.6;
+    const top = Math.max(0, 1 - v / 38);
+    const cover = vnoise(u, v, 10, seed + 9) * 0.75 + vnoise(u, v, 4, seed + 11) * 0.25 + fuge * 0.22 + top * 0.3;
+    const e = cover - 0.74;
+    if (e > 0) {
+      const base = t.data[y * n + x] & 7;
+      t.data[y * n + x] = P('moss', Math.min(4.6, 1.2 + e * 7 + grain(x, y, seed + 12, n > TEX ? 0.3 : 0.7)) + (base > 3 ? 0.3 : 0));
+    }
+  }
+  return t;
+}
+// Wandfackel: feste Flamme (kein Flackern), Halterung aus Eisen, Lichtschein auf dem Stein
+function genTorch(seed, n = TEX) {
+  const t = genStone(seed, n);
+  const k = n / TEX;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const u = x / k - 32, v = y / k - 24, d = Math.hypot(u * 0.8, v);
+    const idx = t.data[y * n + x];
+    if (d < 34 && (idx >> 3) === M.stone) t.data[y * n + x] = P('stone', (idx & 7) + Math.pow(1 - d / 34, 1.3) * 3.4);
+  }
+  const set = (u, v, val) => { for (let dy = 0; dy < k; dy++) for (let dx = 0; dx < k; dx++) { const px = Math.round(u * k) + dx, py = Math.round(v * k) + dy; if (px >= 0 && px < n && py >= 0 && py < n) t.data[py * n + px] = val; } };
+  for (let v = 34; v <= 52; v++) for (let u = 29; u <= 35; u++) set(u, v, P('wood', 3 + (u === 29 ? 1 : 0) - (u === 35 ? 1.2 : 0) + hash(u, v, seed) * 0.5)); // Holzstab
+  for (let u = 25; u <= 39; u++) for (let v = 31; v <= 35; v++) set(u, v, P('iron', 3.8 - (v - 31) * 0.35)); // Eisenschale
+  for (let u = 27; u <= 37; u++) set(u, 36, P('iron', 1.5));
+  for (let v = 6; v <= 31; v++) { // Flamme als Tropfen, dazu ein heller Kern
+    const t0 = (31 - v) / 25, w = Math.sin(Math.min(1, t0 * 1.1) * Math.PI) * 7.5 * (1 - t0 * 0.4);
+    for (let u = 32 - Math.ceil(w); u <= 32 + Math.ceil(w); u++) {
+      const dd = Math.abs(u - 32) / Math.max(0.5, w);
+      set(u, v, P('glow', dd < 0.4 && t0 < 0.75 ? 7 : dd < 0.75 ? 6 : 5));
+    }
   }
   return t;
 }
@@ -104,19 +143,24 @@ function genDoor(seed, locked) {
   }
   return t;
 }
-function genFloor(seed) {
-  const t = mk();
-  for (let y = 0; y < TEX; y++) for (let x = 0; x < TEX; x++) {
-    let sh = 2.6 + vnoise(x, y, 8, seed) * 1.5 + hash(x, y, seed + 1) * 0.6 - 0.7;
-    if ((x & 31) === 0 || (y & 31) === 0) sh = 1;
-    t.data[y * TEX + x] = P('floor', sh);
+function genFloor(seed, n = TEX) {
+  const t = { w: n, h: n, data: new Uint8Array(n * n) };
+  const k = n / TEX;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const u = x / k, v = y / k, tile = Math.floor(u / 32) + Math.floor(v / 32) * 3;
+    let sh = 2.7 + (hash(tile, 1, seed + 4) - 0.5) * 0.7 + (vnoise(u, v, 8, seed) - 0.5) * 1.3 + grain(x, y, seed + 1, n > TEX ? 0.3 : 0.6);
+    const fu = u % 32, fv = v % 32;
+    if (fu < 0.9 || fv < 0.9) sh = 0.9; else if (fu < 2 || fv < 2) sh += 0.5;
+    t.data[y * n + x] = P('floor', sh);
   }
   return t;
 }
-function genCeil(seed) {
-  const t = mk();
-  for (let y = 0; y < TEX; y++) for (let x = 0; x < TEX; x++) {
-    t.data[y * TEX + x] = P('ceil', 1.2 + vnoise(x, y, 4, seed) * 1.8 + hash(x, y, seed + 1) * 0.5);
+function genCeil(seed, n = TEX) {
+  const t = { w: n, h: n, data: new Uint8Array(n * n) };
+  const k = n / TEX;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const u = x / k, v = y / k;
+    t.data[y * n + x] = P('ceil', 1.3 + vnoise(u, v, 6, seed) * 1.6 + vnoise(u, v, 2, seed + 2) * 0.4 + grain(x, y, seed + 1, n > TEX ? 0.25 : 0.5));
   }
   return t;
 }
@@ -264,7 +308,7 @@ function genWisp(seed) {
   const t = mk(255);
   for (let y = 0; y < TEX; y++) for (let x = 0; x < TEX; x++) {
     const dx = x - 32, dy = y - 34, r = Math.hypot(dx, dy);
-    if (r < 9) t.data[y * TEX + x] = P('glow', 7 - r * 0.15);
+    if (r < 9) t.data[y * TEX + x] = P('flesh', 7);
     else if (r < 15) t.data[y * TEX + x] = P('flesh', 5.5 - (r - 9) * 0.5 + hash(x, y, seed) * 0.8);
     else if (r < 21 && hash(x, y, seed + 1) > 0.55 + (r - 15) * 0.07) t.data[y * TEX + x] = P('flesh', 3 - (r - 15) * 0.3);
   }
@@ -274,12 +318,22 @@ function genWisp(seed) {
 
 function genSign(seed) {
   const t = mk(255);
-  for (let y = 30; y <= 60; y++) for (let x = 29; x <= 34; x++) t.data[y * TEX + x] = P('wood', 2.5 + hash(x, y, seed) * 1.1 - (x >= 33 ? 0.8 : 0));
-  for (let y = 14; y <= 36; y++) for (let x = 12; x <= 52; x++) {
-    const edge = y === 14 || y === 36 || x === 12 || x === 52;
-    t.data[y * TEX + x] = P('wood', (edge ? 2 : 4) + hash(x, y, seed + 1) * 1.0 - 0.4);
+  const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
+  for (let y = 36; y <= 62; y++) for (let x = 29; x <= 35; x++) set(x, y, P('wood', 2.4 + hash(x, y, seed) * 0.8 - (x >= 34 ? 0.8 : 0)));
+  for (let y = 8; y <= 40; y++) for (let x = 5; x <= 59; x++) {
+    const edge = y <= 9 || y >= 39 || x <= 6 || x >= 58;
+    set(x, y, P('wood', edge ? 2.2 : 5.6 + hash(x >> 2, y >> 3, seed + 1) * 0.5));
   }
-  for (const ly of [21, 26, 31]) for (let x = 17; x <= 47; x++) if (hash(x >> 1, ly, seed + 3) > 0.25) t.data[ly * TEX + x] = P('stone', 1.2);
+  // „Schrift“: dunkle Wortblöcke in vier Zeilen, kräftig und scharf
+  for (let line = 0; line < 4; line++) {
+    let x = 10 + Math.floor(hash(line, 1, seed + 2) * 4);
+    const y0 = 13 + line * 6;
+    while (x < 52) {
+      const w = 5 + Math.floor(hash(x, line, seed + 3) * 8);
+      for (let yy = y0; yy < y0 + 3; yy++) for (let xx = x; xx < Math.min(54, x + w); xx++) set(xx, yy, P('wood', 0.3));
+      x += w + 3;
+    }
+  }
   return t;
 }
 
@@ -287,23 +341,25 @@ function genStairs(kind, seed) {
   const t = mk(255);
   const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
   if (kind === 'down') {
-    // Treppenschacht: steinerne Einfassung, dunkle Stufen führen nach unten
-    for (let y = 18; y <= 60; y++) { const w = 15 + Math.round((y - 18) * 0.3); for (let x = 32 - w; x <= 32 + w; x++) set(x, y, P('stone', 3 + hash(x, y, seed) * 1.2 - (y < 24 ? 1 : 0))); }
-    for (let i = 0; i < 8; i++) {
-      const y0 = 24 + i * 4.5, w = 11 + Math.round(i * 1.3);
-      for (let y = Math.round(y0); y < Math.round(y0 + 4.5) && y <= 58; y++) for (let x = 32 - w; x <= 32 + w; x++) {
-        const tread = y - Math.round(y0) < 2;
-        set(x, y, P('stone', Math.max(0, (tread ? 3.2 : 1.2) - (7 - i) * 0.35 + hash(x, y, seed + 1) * 0.6)));
+    // Treppenschacht von oben gesehen: heller Rand, helle Trittflächen, dunkle Kanten, nach hinten immer dunkler
+    for (let y = 12; y <= 62; y++) { const w = 17 + Math.round((y - 12) * 0.22); for (let x = 32 - w; x <= 32 + w; x++) set(x, y, P('stone', 4.2 + hash(x, y, seed) * 1.0 - (x > 32 ? 0.6 : 0))); }
+    for (let y = 22; y <= 56; y++) {
+      const w = 12 + Math.round((y - 22) * 0.28), band = Math.floor((y - 22) / 6), pos = (y - 22) % 6, depth = (56 - y) / 34;
+      for (let x = 32 - w; x <= 32 + w; x++) {
+        const tread = pos >= 2;
+        set(x, y, P('stone', Math.max(0, (tread ? 5 - depth * 4.2 : 0.2) + (tread ? hash(x, y, seed + 1) * 0.6 : 0))));
       }
     }
+    for (let x = 12; x <= 52; x++) set(x, 59, P('stone', 6.5));
   } else {
-    // Treppe nach oben: Stufen wie eine Pyramide, oben fällt Licht herein
-    for (let y = 12; y <= 22; y++) for (let x = 20; x <= 44; x++) set(x, y, P('glow', 4 + (22 - y) * 0.15 + hash(x, y, seed) * 0.4));
+    // Treppe nach oben: Stufen mit hellen Trittflächen, oben ein dunkler Durchgang
+    for (let y = 5; y <= 26; y++) for (let x = 21; x <= 43; x++) set(x, y, P('stone', 3.6 + hash(x, y, seed) * 0.7));
+    for (let y = 9; y <= 26; y++) for (let x = 25; x <= 39; x++) set(x, y, P('stone', 0));
     for (let i = 0; i < 7; i++) {
-      const w = 26 - i * 3, yb = 58 - i * 5.5;
+      const w = 27 - i * 3, yb = 61 - i * 5.5;
       for (let y = Math.round(yb - 5); y <= Math.round(yb); y++) for (let x = 32 - w; x <= 32 + w; x++) {
         const tread = y <= Math.round(yb - 3);
-        set(x, y, P('stone', (tread ? 5 : 2.5) + hash(x, y, seed + 1) * 0.8 - 0.4 - (x === 32 - w || x === 32 + w ? 1 : 0)));
+        set(x, y, P('stone', (tread ? 6.2 - i * 0.2 : 2.4) + hash(x, y, seed + 1) * 0.7 - (x <= 32 - w + 1 || x >= 32 + w - 1 ? 0.8 : 0)));
       }
     }
   }
@@ -313,12 +369,15 @@ function genStairs(kind, seed) {
 function genArch(seed) {
   const t = mk(255);
   const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
-  for (let y = 18; y <= 60; y++) for (let x = 14; x <= 49; x++) {
-    const post = x <= 19 || x >= 44, lintel = y <= 24;
-    if (post || lintel) set(x, y, P('wood', 2.5 + hash(x, y, seed) * 1.2 - (x >= 44 ? 0.8 : 0) + (y === 18 ? 1 : 0)));
-    else set(x, y, P('ceil', 3 + (y - 24) * 0.04 + hash(x, y, seed + 1) * 0.8));
+  for (let y = 8; y <= 62; y++) for (let x = 6; x <= 58; x++) {
+    const dx = x - 32, dy = y - 34;
+    const top = y <= 34, ro = Math.hypot(dx, dy);
+    const outer = top ? ro <= 26 : Math.abs(dx) <= 26, inner = top ? ro <= 17 : Math.abs(dx) <= 17;
+    if (!outer) continue;
+    if (!inner) set(x, y, P('stone', 3.4 + hash(x >> 1, y >> 1, seed) * 1.4 + (Math.abs(dx) < 3 && y < 14 ? 1.4 : 0) - (dx > 0 ? 0.5 : 0)));
+    else { const d = Math.min(1, Math.hypot(dx * 1.1, (y - 44) * 0.8) / 17); set(x, y, P('ceil', 0.6 + (1 - d) * 3.4 + hash(x, y, seed + 1) * 0.5)); }
   }
-  for (let x = 24; x <= 40; x += 4) for (let y = 40; y <= 60; y++) if (hash(x, y, seed + 2) > 0.6) set(x, y, P('floor', 3));
+  for (let k = 0; k < 14; k++) { const x = 20 + Math.floor(hash(k, 3, seed) * 24), y = 52 + Math.floor(hash(k, 4, seed) * 9); set(x, y, P('floor', 3)); set(x + 1, y, P('floor', 3)); }
   return t;
 }
 
@@ -395,11 +454,12 @@ function upsample2(t, seed) {
 export function makeTextures(detail = 1) {
   const up = (t, s) => (detail > 1 ? upsample2(t, s) : t);
   const spr = (t, s) => { t.noWrap = true; return up(t, s); };
+  const n = TEX * (detail > 1 ? 4 : 1), nf = TEX * (detail > 1 ? 2 : 1); // Wände 256, Boden/Decke 128: Eigenauflösung statt hochskaliert (Potenzen von 2 wegen Maskierung)
   return {
-    wall: { [WALL_STONE]: up(genStone(11), 101), [WALL_MOSS]: up(genMoss(23), 102), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104) },
-    floor: up(genFloor(41), 105),
-    ceil: up(genCeil(53), 106),
-    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: genSchrat(71), portal: spr(genPortal(81), 109), merchant: spr(genMerchant(91), 110), wisp: genWisp(121), skeleton: genSkeleton(171), guard: genGuard(181, false), captain: genGuard(191, true), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: spr(genSign(131), 111) }
+    wall: { [WALL_STONE]: genStone(11, n), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n) },
+    floor: genFloor(41, nf),
+    ceil: genCeil(53, nf),
+    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: genSchrat(71), portal: spr(genPortal(81), 109), merchant: spr(genMerchant(91), 110), wisp: genWisp(121), skeleton: genSkeleton(171), guard: genGuard(181, false), captain: genGuard(191, true), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
@@ -420,7 +480,7 @@ export class Raycaster {
     this.shadeTbl = [];
     for (let d = 0; d < 8; d++) {
       const t = new Uint32Array(64);
-      for (let i = 0; i < 64; i++) t[i] = this.pal[(i & ~7) | Math.max(0, (i & 7) - d)];
+      for (let i = 0; i < 64; i++) t[i] = (i >> 3) === M.glow && d < 7 ? this.pal[(i & ~7) | Math.max(2, (i & 7) - (d >> 1))] : this.pal[(i & ~7) | Math.max(0, (i & 7) - d)];
       this.shadeTbl.push(t);
     }
   }
@@ -550,27 +610,28 @@ export function buildGrid(lvl, objs) {
   const grid = new Uint8Array(w * h);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const c = lvl.map[y][x];
-    grid[y * w + x] = c === '#' ? WALL_STONE : c === 'm' ? WALL_MOSS : 0;
+    grid[y * w + x] = c === '#' ? WALL_STONE : c === 'm' ? WALL_MOSS : c === 'T' ? WALL_TORCH : 0;
   }
   for (const o of objs) if (o.type === 'door' && !o.open) grid[o.y * w + o.x] = o.locked ? WALL_DOOR_LOCKED : WALL_DOOR;
   return { grid, gw: w, gh: h };
 }
 const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'hauptmann' ? tex.sprites.captain : tex.sprites.schrat);
 const kindOf = (o, i) => (Array.isArray(o.kinds) ? o.kinds[Math.min(i, o.kinds.length - 1)] : o.kind);
-export function buildSprites(objs, tex, time, angle = 0, alive = null) { // alive: {objId: Anzahl lebender Gegner} im Kampf
+export function buildSprites(objs, tex, time, angle = 0, alive = null) { // alive: {objId: Arten (Liste) oder Anzahl der lebenden Gegner} im Kampf
   const out = [];
   const rx = Math.cos(angle), ry = Math.sin(angle); // „rechts“ aus Sicht der Kamera
   for (const o of objs) {
     if (o.type === 'chest') out.push({ x: o.x, y: o.y, tex: o.open ? tex.sprites.chestOpen : tex.sprites.chest, scale: 0.5 });
     else if (o.type === 'enemy' && !o.dead) {
       const tot = Array.isArray(o.kinds) ? Math.min(3, o.kinds.length) : 1;
-      const n = alive && alive[o.id] != null ? alive[o.id] : tot; // Gruppe: eine Gestalt je lebendem Gegner, nebeneinander
+      const av = alive && alive[o.id] != null ? alive[o.id] : null, kindList = Array.isArray(av) ? av : null;
+      const n = kindList ? kindList.length : av != null ? av : tot; // Gruppe: eine Gestalt je lebendem Gegner, nebeneinander
       for (let i = 0; i < n; i++) {
         const off = n > 1 ? (i - (n - 1) / 2) * 0.36 : 0;
-        out.push({ x: o.x + rx * off, y: o.y + ry * off, tex: spriteFor(tex, kindOf(o, i)), scale: (n > 1 ? 0.62 : 0.85) * (1 + 0.02 * Math.sin(time * 3 + i)) });
+        out.push({ x: o.x + rx * off, y: o.y + ry * off, tex: spriteFor(tex, kindList ? kindList[i] : kindOf(o, i)), scale: (n > 1 ? 0.62 : 0.85) * (1 + 0.02 * Math.sin(time * 3 + i)) });
       }
     }
-    else if (o.type === 'sign') out.push({ x: o.x, y: o.y, tex: tex.sprites.sign, scale: 0.55 });
+    else if (o.type === 'sign') out.push({ x: o.x, y: o.y, tex: tex.sprites.sign, scale: 0.7 });
     else if (o.type === 'merchant') out.push({ x: o.x, y: o.y, tex: tex.sprites.merchant, scale: 0.8 });
     else if (o.type === 'stairs') out.push({ x: o.x, y: o.y, tex: o.look === 'down' ? tex.sprites.stairsDown : o.look === 'up' ? tex.sprites.stairsUp : o.look === 'path' ? tex.sprites.arch : tex.sprites.portal, scale: 0.9 });
     else if (o.type === 'exit') out.push({ x: o.x, y: o.y, tex: tex.sprites.portal, scale: 0.9 });

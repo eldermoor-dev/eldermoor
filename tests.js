@@ -510,7 +510,7 @@ export async function runTests(data, env = {}) {
     };
     const fs = hit('schrat'), fw = hit('wolf'), fk = hit('kultist');
     assert(fs.dmg > 0 && fw.dmg > 0, 'Feuerblitz trifft (Wurf fest)');
-    assert(/Schwäche/.test(fs.r.msgs.join(' ')) && /Feuer \+50 %/.test(fs.r.msgs.join(' ')), 'Rechenweg zeigt Feuer +50 %');
+    assert(/Anfällig/.test(fs.r.msgs.join(' ')) && /Feuer \+50 %/.test(fs.r.msgs.join(' ')), 'Rechenweg zeigt Feuer +50 %');
     assert(/Resistent/.test(fk.r.msgs.join(' ')), 'Resistenz gemeldet');
     // Frost: Verlangsamung, Brennen tickt, Kettenblitz trifft alle
     const q = fresh(5); q.heroes.forEach((x) => { x.level = 3; x.mp = x.maxMp = 30; });
@@ -1150,6 +1150,17 @@ export async function runTests(data, env = {}) {
     assert(back.objs.some((o) => o.id === 'stairs_gruft') && !back.objs.some((o) => o.id === 'exit_pfad'), 'Ausgang ersetzt');
   });
 
+  await test('Hinweistafeln: lesbar aus höchstens 2 Feldern (Interagieren), nicht aus 3', () => {
+    const s = fresh(66);
+    L.changeArea(s, data, 'stairs_moor'); L.changeArea(s, data, 'stairs_pfad'); // Tafel sign_pfad1 bei (3,2)
+    s.player = { x: 2, y: 2, dir: 1 };
+    assert(/Moorpfad/.test(L.interact(s, data).msg), 'aus 1 Feld');
+    s.player = { x: 1, y: 2, dir: 1 };
+    const r2 = L.interact(s, data); assert(/Moorpfad/.test(r2.msg) && r2.long, 'aus 2 Feldern');
+    s.player = { x: 0, y: 2, dir: 1 }; // Wand
+    assert(!/Moorpfad/.test(L.interact(s, data).msg), 'aus Wand nicht');
+  });
+
   await test('Alte Stände bekommen neue feste Objekte (Treppe, Auftrag), Truhenzustand bleibt', () => {
     const s = fresh(64);
     L.changeArea(s, data, 'stairs_moor'); // Siedlung aktiv
@@ -1315,13 +1326,14 @@ export async function runTests(data, env = {}) {
     return 'Renderzeit in Node (nur Orientierung, nicht Gerät): ' + info.join(', ');
   });
 
-  await test('Grafik: Scharf-Modus (960×540, Texturen 128) rendert ohne Fehler', () => {
+  await test('Grafik: Scharf-Modus (960×540, Wände 256, Boden 128) rendert ohne Fehler', () => {
     const prevRes = W / 480; // aktuelle Auflösung merken (das laufende Spiel nutzt dieselbe Moduleinstellung)
     setResolution(2);
     try {
       const tex = makeTextures(2);
       assert(W === 960 && H === 540, 'Auflösung');
-      assert(tex.wall[1].w === 128 && tex.sprites.schrat.w === 160, 'Texturgrößen');
+      assert(tex.wall[1].w === 256 && tex.wall[5].w === 256 && tex.floor.w === 128 && tex.sprites.schrat.w === 160, 'Texturgrößen');
+      for (const w of [tex.wall[1], tex.wall[2], tex.wall[5], tex.floor, tex.ceil]) assert((w.w & (w.w - 1)) === 0 && w.data.every((v) => v < 64), 'Zweierpotenz und gültige Palettenindizes');
       const s = fresh();
       const lvl = L.getLevel(data, s);
       const { grid, gw, gh } = buildGrid(lvl, s.objs);
@@ -1332,6 +1344,24 @@ export async function runTests(data, env = {}) {
       assert(nz === rc.buf.length, 'Pixel unbeschrieben');
     } finally { setResolution(prevRes); }
     assert(W === 480 * prevRes && H === 270 * prevRes, 'Zurücksetzen');
+  });
+
+  await test('Grafik: Gruppenbilder folgen den lebenden Gegnern (Art, nicht Platz)', () => {
+    const tex = makeTextures();
+    const o = { id: 'x', type: 'enemy', x: 3, y: 3, kind: 'kultist', kinds: ['kultist', 'skeleton', 'skeleton'] };
+    const all = buildSprites([o], tex, 0);
+    eq(all.length, 3, 'drei Gestalten'); eq(all[0].tex, tex.sprites.schrat, 'Kultist zuerst');
+    const after = buildSprites([o], tex, 0, 0, { x: ['skeleton', 'skeleton'] });
+    eq(after.length, 2, 'zwei Gestalten'); assert(after.every((s) => s.tex === tex.sprites.skeleton), 'nur noch Skelette');
+    eq(buildSprites([o], tex, 0, 0, { x: 2 }).length, 2, 'Zahl funktioniert weiter');
+  });
+
+  await test('Fackelwand: Kartenzeichen T wird zur Fackel-Textur und blockiert wie eine Wand', () => {
+    const lvl = { map: ['###', '#T#', '#.#'], objects: [] };
+    const { grid } = buildGrid(lvl, []);
+    eq(grid[4], 5, 'T = Fackelwand');
+    assert(L.isWallChar('T'), 'T ist Wand');
+    for (const lv of Object.values(data.levels)) assert(lv.map.some((r) => r.includes('T')) || lv.id === 'test1' || lv.id === 'test2', `${lv.id}: keine Fackel`);
   });
 
   await test('Grafik: Sprites werden gezeichnet und von Wänden verdeckt', () => {

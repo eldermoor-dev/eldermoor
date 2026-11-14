@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setReso
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.14.0';
+const VERSION = '0.14.6';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -406,7 +406,36 @@ async function heroAct(a) {
   await runEnemyTurns();
 }
 // Gegnerfigur im Bild antippen = Ziel (Bildschirmposition wie im Raycaster berechnet)
+// Tippen auf eine Hinweistafel liest sie, wenn man höchstens 2 Felder davor steht (freie Sicht).
+function readSignByTap(e) {
+  const g = S.game;
+  if (!g || g.combat || S.lock || !$('#modal').hidden) return false;
+  const lvl = S.data.levels[g.levelId];
+  const r = $('#view').getBoundingClientRect();
+  const fx = (e.clientX - r.left) / r.width;
+  const a = S.cam.a, dirX = Math.sin(a), dirY = -Math.cos(a), plX = Math.cos(a) * 0.8, plY = Math.sin(a) * 0.8;
+  const inv = 1 / (plX * dirY - dirX * plY);
+  const open = (x, y) => { const row = lvl.map[Math.floor(y)]; return row && row[Math.floor(x)] === '.'; };
+  let best = null, bd = 1;
+  for (const o of g.objs) {
+    if (o.type !== 'sign') continue;
+    const sx = o.x + 0.5 - S.cam.x, sy = o.y + 0.5 - S.cam.y;
+    const tX = inv * (dirY * sx - dirX * sy), tY = inv * (-plY * sx + plX * sy);
+    if (tY <= 0.3 || tY > 2.6) continue;
+    const d = Math.abs(0.5 * (1 + tX / tY) - fx), tol = 0.06 + 0.25 / tY;
+    if (d > tol || d >= bd) continue;
+    let clear = true;
+    const dist = Math.hypot(sx, sy), steps = Math.ceil(dist / 0.2);
+    for (let i = 1; i < steps; i++) { const k = i / steps; if (!open(S.cam.x + sx * k, S.cam.y + sy * k)) { clear = false; break; } }
+    if (clear) { best = o; bd = d; }
+  }
+  if (!best) return false;
+  say(best.text); toast(best.text, 8000); if (S.sfx) S.sfx.play('ui');
+  return true;
+}
+
 function onViewTap(e) {
+  if (readSignByTap(e)) return;
   const c = S.game && S.game.combat;
   if (!c || c.over) return;
   const alive = c.enemies.map((x, i) => i).filter((i) => c.enemies[i].hp > 0);
@@ -535,7 +564,7 @@ function aliveMap() {
   const c = S.game && S.game.combat;
   if (!c) return null;
   const m = {};
-  for (const e of c.enemies) m[e.objId] = (m[e.objId] || 0) + (e.hp > 0 ? 1 : 0);
+  for (const e of c.enemies) { (m[e.objId] = m[e.objId] || []); if (e.hp > 0) m[e.objId].push(e.kind); } // je Gruppe: Arten der noch lebenden Gegner, damit das richtige Bild bleibt
   return m;
 }
 function renderCombat() {
@@ -667,7 +696,7 @@ function openBestiary() {
     else L.push('Werte unbekannt (erst nach dem ersten Sieg).');
     if (r.heavy && e.heavy) L.push(`Besonderer Angriff: ${esc(e.heavy.name)} (alle ${e.heavy.every} Züge, vorher angekündigt)`);
     if (r.onHit && e.onHit) L.push(`Trefferwirkung: ${esc(d.statuses[e.onHit.status].name)} (${e.onHit.chance} %)`);
-    const rs = Object.keys(r.resist || {}).map((el) => { const v = (e.resist || {})[el] || 0; return `${esc(d.elements[el].name)}: ${v > 0 ? 'Resistent' : 'Schwäche'} (${v > 0 ? '−' : '+'}${Math.abs(v)} %)`; });
+    const rs = Object.keys(r.resist || {}).map((el) => { const v = (e.resist || {})[el] || 0; return v >= 100 ? `immun gegen ${esc(d.elements[el].name)}` : `${v > 0 ? 'resistent gegen' : 'anfällig für'} ${esc(d.elements[el].name)} (${v > 0 ? '−' : '+'}${Math.abs(v)} % Schaden)`; });
     if (rs.length) L.push('Elemente: ' + rs.join(', '));
     if (e.phases) L.push(`Phasen erreicht: ${r.phase || 0} von ${e.phases.length}${(r.phase || 0) > 0 ? ' – ' + e.phases.slice(0, r.phase).map((p) => esc(p.name)).join(', ') : ''}`);
     return `<div style="${BX}"><b>${esc(e.name)}${e.boss ? ' · Boss' : ''}</b>${L.map((t) => `<div class="muted">${t}</div>`).join('')}</div>`;

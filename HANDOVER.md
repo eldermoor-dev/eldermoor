@@ -326,3 +326,31 @@ Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätet
 - logic.js: `syncStatic` entfernt jetzt auch veraltete feste Objekte (z. B. alten Ausgang) und gleicht `look` ab; alte Stände aus 0.13.0 bekommen die Treppe.
 - Balance (Ad-hoc-Simulation, Stufe 1 Start, nur Moorpfad+Gruft, ohne Ausrüstung, 200 Läufe, **nicht** in SIM.md): „klug“ gewinnt den Boss in 99 % der Läufe, „nur Angriff“ gesamt 68 % (21 % der Läufe scheitern bereits an der Gruppe `en_p3` im Moorpfad). Wirkliche Spielerdaten fehlen noch; Feinabstimmung in 0.17.0.
 - Tests 66. Speicherstand weiter v6.
+
+## 0.14.1 (Treppen neu gezeichnet)
+- Nutzer: Treppen 0.14.0 sahen nicht wie Treppen aus, der hölzerne Durchgang wirkte wie eine Klappe, der Aufstieg hatte einen goldenen Block. Neu in `render.js`: `genStairs('down')` mit heller Einfassung, hellen Trittflächen und dunklen Kanten; `genStairs('up')` mit hellen Stufen und dunklem Durchgang oben; `genArch` als runder Steinbogen mit nebligem Gang dahinter. Keine Änderung an Daten, Logik oder Speicherstand.
+- Lob des Nutzers: Humor/Ironie der Moorpfad-Tafel (Irrlichter, „folgt keinem Licht“); diesen Ton für weitere Tafeln beibehalten.
+
+## 0.14.2 (Hinweistafeln: Antippen und schärferes Bild)
+- Nutzer: Tafeln sollen sich durch Antippen lesen lassen und waren zu unscharf. `main.js` `readSignByTap`: Tippen auf eine sichtbare Tafel (freie Sicht, bis 7 Felder, Trefferbreite wächst mit der Nähe) zeigt den Text sofort als Meldung und Hinweisfenster; Tippen daneben tut nichts. Gilt nur außerhalb von Kampf und Fenstern.
+- `render.js` `genSign`: größeres Schild, helles Holz, dunkle Schriftblöcke in 4 Zeilen, ohne Hochskalieren (scharf), Maßstab 0,7.
+- Offen (Zusage an Nutzer): geöffnete Truhen begehbar machen (0.15.0).
+- Tests 66, keine Daten-/Speicheränderung.
+
+## 0.14.3 (Fix: Gruppenbild im Kampf)
+- Fehler (Nutzer-Screenshot): In gemischten Gruppen (Kultist + 2 Skelette) zeigte das Bild nach dem Tod des Kultisten noch den Kultisten und nur ein Skelett, weil die Bilder nach Platz statt nach Art gewählt wurden. `main.js` `aliveMap()` liefert jetzt je Gruppe die Arten der lebenden Gegner, `render.js` `buildSprites` nimmt Liste oder Zahl. Neuer Test, 67.
+
+## 0.14.4 (Bestiarium: Elementtexte eindeutig)
+- Nutzer: „Feuer: Schwäche“ ist nicht eindeutig (Schwäche ist auch ein Statuseffekt) und zwei Doppelpunkte stören. Bestiarium zeigt jetzt „Elemente: anfällig für Feuer (+25 % Schaden), resistent gegen Eis (−50 % Schaden)“, bei 100 % „immun gegen …“. Kampfmeldung bei Zaubern: „Anfällig!“ statt „Schwäche!“ („Resistent.“ unverändert). Statuseffekt „Schwäche“ behält seinen Namen.
+
+## 0.14.5 (Tafeln: höchstens 2 Felder Abstand)
+- Nutzer: Tafeln nur aus höchstens 2 Feldern lesbar, dann per Antippen der Tafel oder Interagieren-Knopf. `logic.js` `interact`: liegt die Tafel genau 2 Felder voraus und das Feld davor ist frei, liefert Interagieren ihren Text (statt „Geh näher heran.“). `main.js` `readSignByTap`: Reichweite von 7 auf 2,6 Felder. Test 68. Keine Daten-/Speicheränderung.
+
+## 0.14.6 (Grafik: schärfer und glatter, Moos neu, Wandfackeln)
+- Nutzer: Grafik insgesamt schärfer/glatter, Moos sieht seltsam aus, ab und zu eine Fackel, nicht flackernd.
+- `render.js`: Wände (Stein, Moos, Fackel) entstehen im Modus „Scharf“ in 256×256, Boden/Decke in 128×128 direkt aus dem 64er-Raster (kontinuierlich abgetastet, weiches Rauschen, schwaches Pixelkorn, Lichtkanten, jeder Stein mit eigener Grundhelligkeit, abgerundete Steine) statt per Scale2x hochskaliert. Im Modus „Retro“ bleibt es 64×64. Texturgrößen müssen Zweierpotenzen bleiben (Maskierung im Raycaster).
+- Moos (`genMoss`): wächst an Fugen und Oberkanten, nach unten dünner, weiche Ränder, höchstens Helligkeit 4,6.
+- Fackel: neues Wandfeld `T` im Kartentext (`WALL_TORCH`, `genTorch`), feste Flamme ohne Flackern, Halterung, warmer Lichtschein auf dem Stein. Material `glow` wird vom Nebel nur halb abgedunkelt (leuchtet in der Ferne weiter). Fackeln gesetzt: Kultgruft 8, Moorpfad 3, Siedlung 2. `T` zählt wie `#` als Wand.
+- Palette `moor`: `glow` jetzt warm (255,200,110) statt grünlich; Moorlicht-Kern nutzt `flesh` (bleibt grün).
+- Texturerzeugung ~150 ms in Node (Startzeit auf dem Handy messen: Einstellungen → Debug → „Start→1. Bild“).
+- Das globale „Fackelflackern“ (Einstellung) bleibt unverändert und betrifft nur die Helligkeit der ganzen Szene.
