@@ -3,13 +3,13 @@
 import {
   DIRS, DIR_NAMES, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, castOutside, jumpToLevel, grantXp, knownSpells, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
+  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, castOutside, jumpToLevel, resetArea, grantXp, knownSpells, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
 } from './logic.js';
-import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, GROUP_GAP } from './render.js';
+import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, groupOffsets, isNarrowAt } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.16.4';
+const VERSION = '0.16.7';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -187,7 +187,7 @@ function updateTween(now) {
 // ---------------------------------------------------------------- Blickanpassung (0.16.4)
 // Die Leiste unten (Meldungen, Aktionen, Heldenkarten) deckt das untere Bilddrittel ab. Damit Gegner und Truhen nicht dahinter
 // verschwinden: im Kampf weicht die Kamera einen halben Schritt zurück und neigt den Blick so, dass die Füße über der Leiste stehen
-// (Bosse: unverändert nah und formatfüllend). Vor einer geschlossenen Truhe senkt sich der Blick.
+// (Bosse: unverändert nah und formatfüllend). Vor einer Truhe senkt sich der Blick.
 const VIEW_BACK = 0.45;
 function viewCam() {
   const a = S.cam.a, b = S.vb || 0;
@@ -219,7 +219,7 @@ function viewTarget(now) {
   }
   if (!S.tween) {
     const p = g.player, d = [[0, -1], [1, 0], [0, 1], [-1, 0]][p.dir];
-    const ch = g.objs.find((o) => o.type === 'chest' && !o.open && o.x === p.x + d[0] && o.y === p.y + d[1]);
+    const ch = g.objs.find((o) => o.type === 'chest' && o.x === p.x + d[0] && o.y === p.y + d[1]); // auch geöffnete Truhe (Inhalt/Deckel sichtbar)
     if (ch) {
       const hz = hudTopPx(now) - H * 0.015 - 0.5 * f; // Unterkante der Truhe knapp über der Leiste
       return { back: 0, hz: Math.max(0.28, Math.min(0.5, hz / H)) };
@@ -254,7 +254,7 @@ function frame(now) {
   const { grid, gw, gh } = buildGrid(S.lvl, S.game.objs);
   updateViewAdjust(now);
   const vc = viewCam();
-  S.rc.render({ px: vc.x, py: vc.y, angle: vc.a, horizon: S.vh * H, grid, gw, gh, sprites: buildSprites(S.game.objs, S.tex, now / 1000, S.cam.a, aliveMap()), time: now / 1000 });
+  S.rc.render({ px: vc.x, py: vc.y, angle: vc.a, horizon: S.vh * H, grid, gw, gh, sprites: buildSprites(S.game.objs, S.tex, now / 1000, S.cam.a, aliveMap(), { grid, gw, gh }), time: now / 1000 });
   S.ctx.putImageData(S.img, 0, 0);
   S.frameMs = S.frameMs * 0.9 + (performance.now() - t0) * 0.1;
   if (S.loadMs == null) S.loadMs = Math.round(performance.now());
@@ -505,7 +505,7 @@ function readSignByTap(e) {
   const open = (x, y) => { const row = lvl.map[Math.floor(y)]; return row && row[Math.floor(x)] === '.'; };
   let best = null, bd = 1;
   for (const o of g.objs) {
-    if (o.type !== 'sign') continue;
+    if (o.type !== 'sign' && o.type !== 'runestone') continue;
     const sx = o.x + 0.5 - S.cam.x, sy = o.y + 0.5 - S.cam.y;
     const tX = inv * (dirY * sx - dirX * sy), tY = inv * (-plY * sx + plX * sy);
     if (tY <= 0.3 || tY > 2.6) continue;
@@ -535,11 +535,11 @@ function tapUseByTap(e) {
   let best = null, bt = 1e9;
   for (const o of g.objs) {
     const big = o.type === 'door' || o.type === 'gate' || o.type === 'secret' || (o.type === 'lever' && o.wall);
-    if (!(big ? !o.open : o.type === 'chest' ? !o.open : o.type === 'lever')) continue;
+    if (!(big ? !o.open : o.type === 'chest' ? !o.open : o.type === 'lever' || o.type === 'merchant')) continue; // 0.16.5: Händlerin antippen = ansprechen
     const sx = o.x + 0.5 - S.cam.x, sy = o.y + 0.5 - S.cam.y;
     const tX = inv * (dirY * sx - dirX * sy), tY = inv * (-plY * sx + plX * sy);
     if (tY <= 0.3 || tY > 2.6 || tY >= bt) continue;
-    const tol = big ? 0.31 / tY + 0.02 : 0.16 / tY + 0.04;
+    const tol = big ? 0.31 / tY + 0.02 : o.type === 'merchant' ? 0.26 / tY + 0.03 : 0.16 / tY + 0.04;
     if (Math.abs(0.5 * (1 + tX / tY) - fx) > tol) continue;
     let clear = true;
     const dist = Math.hypot(sx, sy), steps = Math.ceil(dist / 0.2);
@@ -570,8 +570,8 @@ function onViewTap(e) {
     if (!o) continue;
     const list = byObj[id], n = list.length;
     list.forEach((ei, k) => {
-      const off = n > 1 ? (k - (n - 1) / 2) * GROUP_GAP : 0;
-      const sx = o.x + Math.cos(a) * off + 0.5 - vc.x, sy = o.y + Math.sin(a) * off + 0.5 - vc.y;
+      const { lat, dep } = groupOffsets(n, n > 1 && isNarrowAt(buildGrid(S.lvl, S.game.objs), o.x, o.y, a))[k];
+      const sx = o.x + Math.cos(a) * lat + dirX * dep + 0.5 - vc.x, sy = o.y + Math.sin(a) * lat + dirY * dep + 0.5 - vc.y;
       const tX = inv * (dirY * sx - dirX * sy), tY = inv * (-plY * sx + plX * sy);
       if (tY <= 0.15) return;
       const d = Math.abs(0.5 * (1 + tX / tY) - fx);
@@ -777,6 +777,7 @@ function renderCombat() {
 // ---------------------------------------------------------------- Dialoge
 function openModal(html, kind = 'generic') {
   $('#modal-box').innerHTML = html;
+  $('#modal-box').dataset.kind = kind; // z. B. breiteres Kartenfenster (CSS)
   $('#modal').hidden = false;
   S.modal = kind;
   S.held = [];
@@ -807,7 +808,7 @@ function helpHtml() {
   <h3>Menü (☰ rechts unten)</h3><p>Karte (auf eine erkundete Zelle tippen setzt oder entfernt eine Notiz), Rasten, Speichern, Laden, Einstellungen. Oben rechts zeigt der Kompass die Blickrichtung.</p>
   <h3>Kampf</h3><p>Rundenbasiert. Die Zugreihenfolge steht oben. Hinterreihe-Helden ohne Fernkampf treffen nur halb so hart.</p>
   <h3>Rast</h3><p>Menü → Rasten (oder im Inventar beim Proviant). Mit Proviant erholt sich die Gruppe vollständig, auch Bewusstlose. Ohne Proviant nur zu 30 %. Nicht im Kampf, nicht wenn ein Gegner in Sichtweite ist, und erst ab 10 Schritten Abstand zum nächsten Gegner (Weg zählt, nicht Luftlinie).</p>
-  <h3>Ziel des Prototyps</h3><p>Truhe im Nebenraum öffnen, Eisenschlüssel nehmen, die Eisentür aufschließen, den Moorschrat besiegen und den Runenstein erreichen.</p>
+  <h3>Weg</h3><p>Vom Testgewölbe führt die Treppe im Westen hinauf zur Siedlung am Moorrand. Dort beginnt der Weg durchs Moor. Runensteine lassen sich lesen (antippen oder ◉).</p>
   <p class="muted">Prototyp Phase 2 (in Arbeit) · Version ${VERSION} · Autor: eldermoor-dev. Alle Grafiken und Geräusche entstehen im Spiel selbst (prozedural). Keine Musik.</p>
   <div class="acts">${closeBtn}</div>`;
 }
@@ -951,8 +952,9 @@ function openCharacter() {
 function openMap() {
   const w = S.lvl.map[0].length, h = S.lvl.map.length;
   const cs = Math.max(8, Math.min(Math.floor(560 / w), Math.floor(230 / h)));
-  openModal(`<h2 style="margin:0 0 4px">Karte – ${esc(S.lvl.name)}</h2><canvas id="mapcv" width="${cs * w}" height="${cs * h}"></canvas>
-  <div class="acts mapbar"><span class="muted">Blick: ${DIR_NAMES[S.game.player.dir]} · Zelle tippen = Notiz ◆</span><span style="display:flex;gap:8px"><button class="mb" data-m="maplegend">Legende</button>${closeBtn}</span></div>`, 'map');
+  openModal(`<h2 style="margin:0 0 4px">Karte – ${esc(S.lvl.name)}</h2><div class="mapwrap"><canvas id="mapcv" width="${cs * w}" height="${cs * h}"></canvas>${mapLegendHtml()}</div>
+  <div class="acts mapbar"><span class="muted">Blick: ${DIR_NAMES[S.game.player.dir]} · Zelle tippen = Notiz ◆</span>${closeBtn}</div>`, 'map');
+  paintLegend();
   const cv = $('#mapcv');
   cv.dataset.cs = cs;
   drawMap();
@@ -1000,14 +1002,14 @@ function mapSymKind(o) {
   if (o.type === 'gate') return o.open ? 'gateOpen' : 'gate';
   if (o.type === 'lever') return o.used ? 'leverUsed' : 'lever';
   if (o.type === 'enemy') return o.dead ? null : 'enemy';
-  return ['stairs', 'exit', 'sign', 'merchant'].includes(o.type) ? o.type : null;
+  return ['stairs', 'exit', 'sign', 'merchant', 'runestone'].includes(o.type) ? o.type : null;
 }
 const MAP_LEGEND = [
-  ['player', 'Du (Spitze = Blickrichtung)'], ['note', 'Eigene Notiz (Zelle antippen)'], ['floor', 'Erkundeter Boden'], ['wall', 'Wand'], ['unknown', 'Noch nicht erkundet'],
-  ['door', 'Tür, geschlossen'], ['doorLocked', 'Tür, verschlossen (Schlüssel nötig)'], ['doorOpen', 'Tür, offen'],
+  ['player', 'Du (Spitze = Blick)'], ['note', 'Notiz'], ['floor', 'Erkundeter Boden'], ['wall', 'Wand'], ['unknown', 'Noch nicht erkundet'],
+  ['door', 'Tür, geschlossen'], ['doorLocked', 'Tür, verschlossen'], ['doorOpen', 'Tür, offen'],
   ['chest', 'Truhe'], ['chestOpen', 'Truhe, geöffnet'], ['gate', 'Gitter, geschlossen'], ['gateOpen', 'Gitter, offen'],
-  ['lever', 'Hebel'], ['leverUsed', 'Hebel, benutzt'], ['stairs', 'Treppe / Durchgang in ein anderes Gebiet'], ['exit', 'Ausgang (Ende des Gebiets)'],
-  ['sign', 'Hinweistafel'], ['merchant', 'Händler'], ['enemy', 'Gegner'],
+  ['lever', 'Hebel'], ['leverUsed', 'Hebel, benutzt'], ['stairs', 'Treppe / Durchgang'], ['exit', 'Ausgang (Ende des Gebiets)'],
+  ['sign', 'Hinweistafel'], ['runestone', 'Runenstein'], ['merchant', 'Händler'], ['enemy', 'Gegner'],
 ];
 function drawMapSym(c, k, x0, y0, cs, horiz = true, dir = 1) {
   const cx = x0 + cs / 2, cy = y0 + cs / 2;
@@ -1024,6 +1026,7 @@ function drawMapSym(c, k, x0, y0, cs, horiz = true, dir = 1) {
   }
   else if (k === 'chest' || k === 'chestOpen') { c.fillStyle = k === 'chestOpen' ? '#7a6a3a' : '#e0b040'; c.fillRect(cx - cs * 0.25, cy - cs * 0.2, cs * 0.5, cs * 0.4); }
   else if (k === 'stairs') { c.fillStyle = '#7fd4ff'; c.beginPath(); c.moveTo(cx - cs * 0.3, cy - cs * 0.25); c.lineTo(cx + cs * 0.3, cy - cs * 0.25); c.lineTo(cx, cy + cs * 0.3); c.fill(); }
+  else if (k === 'runestone') { c.fillStyle = '#7fd4ff'; c.fillRect(cx - cs * 0.18, cy - cs * 0.32, cs * 0.36, cs * 0.64); }
   else if (k === 'exit') { c.strokeStyle = '#7fd4ff'; c.lineWidth = 2; c.beginPath(); c.arc(cx, cy, cs * 0.3, 0, 7); c.stroke(); }
   else if (k === 'gate' || k === 'gateOpen') { c.strokeStyle = k === 'gateOpen' ? '#6b5a3a' : '#9aa4b4'; c.lineWidth = 2; for (let i = 1; i < 4; i++) { c.beginPath(); c.moveTo(x0 + i * cs / 4, y0 + 2); c.lineTo(x0 + i * cs / 4, y0 + cs - 2); c.stroke(); } }
   else if (k === 'lever' || k === 'leverUsed') { c.fillStyle = k === 'leverUsed' ? '#6b5a3a' : '#d9a441'; c.fillRect(cx - 2, cy - cs * 0.3, 4, cs * 0.6); }
@@ -1040,15 +1043,16 @@ function drawMapSym(c, k, x0, y0, cs, horiz = true, dir = 1) {
     c.fill();
   }
 }
-// Legende: nur Symbole, die in diesem Gebiet schon gesehen wurden (verrät nichts Unentdecktes), dazu die Grundsymbole.
-function openMapLegend() {
+// Legende neben der Karte (0.16.6, Nutzerwunsch; vorher eigenes Fenster): nur Zeichen, die in diesem Gebiet schon
+// gesehen wurden (verrät nichts Unentdecktes), dazu die Grundzeichen. Schmale Bildschirme: rutscht unter die Karte.
+function mapLegendHtml() {
   const g = S.game, w = S.lvl.map[0].length;
   const have = new Set(['player', 'note', 'floor', 'wall', 'unknown']);
   for (const o of g.objs) { const k = mapSymKind(o); if (k && g.seen[o.y * w + o.x]) have.add(k); }
   const rows = MAP_LEGEND.filter(([k]) => have.has(k));
-  openModal(`<h2 style="margin:0 0 4px">Legende – ${esc(S.lvl.name)}</h2><p class="muted" style="margin:0 0 6px">Nur Zeichen, die du in diesem Gebiet schon gesehen hast.</p>
-  <div class="grid4">${rows.map(([k, t]) => `<div class="qp"><canvas data-sym="${k}" width="40" height="40" style="width:24px;height:24px;background:#0a0806;border-radius:3px"></canvas><span>${esc(t)}</span></div>`).join('')}</div>
-  <div class="acts"><button class="mb primary" data-m="map">Zurück zur Karte</button>${closeBtn}</div>`, 'maplegend');
+  return `<div class="mapleg${rows.length > 10 ? ' two' : ''}">${rows.map(([k, t]) => `<div><canvas data-sym="${k}" width="40" height="40"></canvas><span>${esc(t)}</span></div>`).join('')}</div>`;
+}
+function paintLegend() {
   document.querySelectorAll('#modal-box canvas[data-sym]').forEach((cv) => drawMapSym(cv.getContext('2d'), cv.dataset.sym, 0, 0, 40, true, 1));
 }
 
@@ -1161,11 +1165,12 @@ function openDebug() {
     return `<div>${esc(o.id)} (${o.type}) · ${st}</div>`;
   }).join('');
   openModal(`<h2>Debug</h2>
-  <h3>Teleport</h3><div class="acts" style="margin-top:0">${['start', 'door_a', 'chest_a', 'door_b', 'en1', 'exit1'].map((id) => `<button class="mb" data-m="tp:${id}">${id}</button>`).join('')}</div>
+  <h3>Teleport</h3><div class="acts" style="margin-top:0">${['start', 'door_a', 'chest_a', 'door_b', 'en1', 'rune_t1'].map((id) => `<button class="mb" data-m="tp:${id}">${id}</button>`).join('')}</div>
   <h3>Gebiet wechseln</h3><div class="acts" style="margin-top:0">${Object.values(S.data.levels).map((l) => `<button class="mb" data-m="dbg-area:${l.id}">${esc(l.name)}</button>`).join('')}</div>
   <h3>Cheats</h3><div class="acts" style="margin-top:0">
     <button class="mb" data-m="dbg-lvl">Alle +1 Stufe (${g.heroes.map((h) => h.level).join('/')})</button>
     <button class="mb" data-m="god">Unverwundbar: ${S.debug.god ? 'AN' : 'aus'}</button>
+    <button class="mb" data-m="dbg-reset">Dieses Gebiet zurücksetzen (Gegner, Truhen, Türen neu)</button>
     <button class="mb" data-m="dbg-key">Schlüssel geben</button>
     <button class="mb" data-m="dbg-potions">+5 Heiltränke</button>
     <button class="mb" data-m="dbg-heal">Alle heilen</button>
@@ -1197,7 +1202,6 @@ async function onModalClick(e) {
   else if (m === 'title-close') { closeModal(); }
   else if (m === 'title') { if (S.started && !confirm('Zum Titelbild? Nicht gespeicherter Fortschritt geht verloren.')) return; closeModal(); await showTitle(); }
   else if (m === 'map') openMap();
-  else if (m === 'maplegend') openMapLegend();
   else if (m === 'debug') openDebug();
   else if (m === 'save') openSlots('save');
   else if (m === 'load') openSlots('load');
@@ -1300,6 +1304,7 @@ async function onModalClick(e) {
     renderAll(); openDebug(); toast('Stufe: ' + g.heroes.map((h) => h.level).join('/'));
   }
   else if (m === 'god') { S.debug.god = !S.debug.god; openDebug(); }
+  else if (m === 'dbg-reset') { if (resetArea(g, S.data).ok) { S.held = []; S.queued = null; closeModal(); snapCam(); renderAll(); toast('Gebiet zurückgesetzt: ' + S.lvl.name); } }
   else if (m === 'dbg-key') { g.inv.iron_key = 1; toast('Schlüssel erhalten.'); }
   else if (m === 'dbg-potions') { g.inv.potion = (g.inv.potion || 0) + 5; toast('+5 Heiltränke'); }
   else if (m === 'dbg-heal') { g.heroes.forEach((h) => { h.hp = h.maxHp; }); renderAll(); toast('Alle geheilt.'); }

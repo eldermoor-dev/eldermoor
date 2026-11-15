@@ -822,10 +822,10 @@
     },
     "nebelgeist": {
       "name": "Nebelgeist",
-      "hp": 30,
-      "atk": 10,
-      "def": 2,
-      "init": 8,
+      "hp": 62,
+      "atk": 16,
+      "def": 3,
+      "init": 9,
       "gold": 10,
       "xp": 70,
       "ai": "backline",
@@ -834,7 +834,7 @@
           "name": "Frosthauch",
           "kind": "bolt",
           "every": 2,
-          "mult": 115,
+          "mult": 125,
           "inflict": {
             "status": "slow",
             "chance": 50,
@@ -852,9 +852,9 @@
     },
     "kultpriester": {
       "name": "Kultpriester",
-      "hp": 40,
-      "atk": 8,
-      "def": 3,
+      "hp": 80,
+      "atk": 13,
+      "def": 4,
       "init": 5,
       "gold": 16,
       "xp": 85,
@@ -864,7 +864,7 @@
           "name": "Dunkler Segen",
           "kind": "heal",
           "every": 2,
-          "heal": 16
+          "heal": 28
         },
         {
           "name": "Fluch der Schwäche",
@@ -885,11 +885,33 @@
         "chance": 25
       }
     },
+    "turmwache": {
+      "name": "Turmwache",
+      "hp": 95,
+      "atk": 17,
+      "def": 8,
+      "init": 4,
+      "gold": 18,
+      "xp": 100,
+      "ai": "backline",
+      "heavy": {
+        "name": "Schildstoß",
+        "every": 3,
+        "mult": 160
+      },
+      "resist": {
+        "ice": 25,
+        "lightning": -25
+      },
+      "gearDrop": {
+        "chance": 25
+      }
+    },
     "nebelhueter": {
       "name": "Nebelhüter",
-      "hp": 280,
-      "atk": 15,
-      "def": 5,
+      "hp": 480,
+      "atk": 26,
+      "def": 8,
       "init": 6,
       "gold": 80,
       "xp": 320,
@@ -918,7 +940,7 @@
           "name": "Nebelwand",
           "msg": "Der Saal füllt sich mit Nebel. Die Fackeln werden zu blassen Punkten.",
           "set": {
-            "atk": 16,
+            "atk": 27,
             "cast": [
               {
                 "name": "Nebelspeer",
@@ -950,7 +972,7 @@
           "name": "Sturm der Schleier",
           "msg": "Der Hüter löst sich fast auf. Was bleibt, ist Kälte und Zorn.",
           "set": {
-            "atk": 17,
+            "atk": 28,
             "cast": [
               {
                 "name": "Schleiersturm",
@@ -964,7 +986,7 @@
                 "name": "Nebel sammeln",
                 "kind": "heal",
                 "every": 3,
-                "heal": 18
+                "heal": 28
               }
             ]
           }
@@ -1261,10 +1283,11 @@
           ]
         },
         {
-          "id": "exit1",
-          "type": "exit",
+          "id": "rune_t1",
+          "type": "runestone",
           "x": 19,
-          "y": 7
+          "y": 7,
+          "text": "Ein alter Runenstein. Die Zeichen sind verwittert, aber lesbar: „Wer Licht sucht, steigt hinauf. Unten wartet nur, wer nicht mehr gefunden werden will.“"
         },
         {
           "id": "stairs_down",
@@ -2239,11 +2262,10 @@
           "type": "enemy",
           "x": 14,
           "y": 10,
-          "kind": "kultpriester",
+          "kind": "turmwache",
           "kinds": [
-            "kultist",
-            "kultpriester",
-            "kultist"
+            "turmwache",
+            "kultpriester"
           ]
         },
         {
@@ -2265,9 +2287,9 @@
           "type": "enemy",
           "x": 14,
           "y": 4,
-          "kind": "kultpriester",
+          "kind": "turmwache",
           "kinds": [
-            "kultwaechter",
+            "turmwache",
             "kultpriester",
             "nebelgeist"
           ]

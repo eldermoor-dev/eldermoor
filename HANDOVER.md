@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.16.4 (15.11.2026). 0.16.3 vom Nutzer auf dem Galaxy S25 durchgetestet (siehe Abschnitt 0.16.4). Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.16.7 (15.11.2026). 0.16.3 vom Nutzer auf dem Galaxy S25 durchgetestet (siehe Abschnitt 0.16.4). Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -25,7 +25,7 @@ Autor: eldermoor-dev · Stand: Version 0.16.4 (15.11.2026). 0.16.3 vom Nutzer au
 | BALANCE.md | Balancetabelle (EP, Rassen, Berufe, Werte je Stufe), **erzeugt**, nicht von Hand ändern. Neu erzeugen: `node -e "import('./logic.js').then(async L=>{const fs=await import('node:fs');fs.writeFileSync('BALANCE.md',L.balanceMarkdown(JSON.parse(fs.readFileSync('game.json','utf8'))))})"`. Der Test prüft, dass sie zu game.json passt. Nicht im Offline-Cache. |
 | HANDOVER.md | Diese Datei |
 | sim.js | Balance-Simulation (Node, `node sim.js 3000 --write` schreibt SIM.md). Nicht im Offline-Cache. |
-| SIM.md | Ergebnis der Simulation, **veraltet** (Stand vor Hauptmann/Nebelhüter); wird in der Balance-Version neu erzeugt. |
+| SIM.md | Ergebnis der Simulation (`node sim.js 3000 --write`), seit 0.16.7 mit Abschnitt C: ganze Kampagne. Nach jeder Änderung an Gegner- oder Heldenwerten neu erzeugen. |
 
 **Regel:** Wird eine Spieldatei geändert, `VERSION` in `main.js` UND `sw.js` erhöhen (der Test prüft Gleichheit). Neue Dateien in `ASSETS` (sw.js) eintragen.
 
@@ -505,9 +505,30 @@ Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätet
 - Speicherstand weiter v6. Tests 83.
 
 ## Plan nach 0.16.4 (vom Nutzer am 15.11.2026 festgelegt bzw. bestätigt)
-- **0.16.5 Balance:** Kampagnen-Simulation neu (das frühere `camp.mjs` liegt nicht im Repo), Nebelhüter und Turmgegner schwerer. Vorschlag Zielwerte (Annahme des Assistenten, nicht vom Nutzer festgelegt): Nebelhüter bei Stufe 8 „klug“ ca. 75–85 % Siege, „nur Angriff“ unter 30 %. Neue Rast-Regel und Truhen-Wächter in die Simulation übernehmen.
-- **0.16.6 Türen und Schilder:** Türen bleiben geöffnet sichtbar (Rahmen + aufgeklapptes Türblatt statt verschwinden). Raumnamen (ZELLEN, ARCHIV …) über/auf den Türen; längere Texte als Tafel **an der Wand** (sichtbar, Lesen per Tippen/◉); keine Schilder mehr mitten im Raum. Kartenlegende anpassen.
-- **0.16.7 Figuren:** Skelett größer/bedrohlicher (Vorschlag: breitere Schultern, Schwert, glühende Augen); Hauptmann eigenes Sprite 128–192 px; Nebelhüter neu (192 px, Unterkörper aus Nebel, kalte Krone, kein Brust-Symbol) **sitzend auf einem Thron an der Ostwand** des Thronsaals (Option A, Nutzer 15.11.2026), Saal so, dass Truhe/Ausgang erreichbar bleiben.
+- **0.16.7 Balance (erledigt, siehe Abschnitt 0.16.7):** Kampagnen-Simulation neu (das frühere `camp.mjs` liegt nicht im Repo), Nebelhüter und Turmgegner schwerer. Vorschlag Zielwerte (Annahme des Assistenten, nicht vom Nutzer festgelegt): Nebelhüter bei Stufe 8 „klug“ ca. 75–85 % Siege, „nur Angriff“ unter 30 %. Neue Rast-Regel und Truhen-Wächter in die Simulation übernehmen.
+- **0.16.8 Türen und Schilder:** Türen bleiben geöffnet sichtbar (Rahmen + aufgeklapptes Türblatt statt verschwinden). Raumnamen (ZELLEN, ARCHIV …) über/auf den Türen; längere Texte als Tafel **an der Wand** (sichtbar, Lesen per Tippen/◉); keine Schilder mehr mitten im Raum. Kartenlegende anpassen.
+- **0.16.9 Figuren:** Skelett größer/bedrohlicher (Vorschlag: breitere Schultern, Schwert, glühende Augen); Hauptmann eigenes Sprite 128–192 px; Nebelhüter neu (192 px, Unterkörper aus Nebel, kalte Krone, kein Brust-Symbol) **sitzend auf einem Thron an der Ostwand** des Thronsaals (Option A, Nutzer 15.11.2026), Saal so, dass Truhe/Ausgang erreichbar bleiben.
 - Danach 0.17: Talente (siehe Plan ab 0.16).
 - Rätselhilfe an den Nutzer im Chat: gestuft (erst sanfter Hinweis, konkreter nur auf Nachfrage).
+
+## 0.16.5 – Funde zu 0.16.4 (Nutzer-Screenshots 15.11.2026)
+- **Gruppen im engen Gang:** Seitliche Figuren ragten in die Wände (Gang 1 Feld breit). `render.js` `groupOffsets(n, narrow)` und `isNarrowAt(grid, x, y, angle)`: sind beide Nachbarfelder quer zur Blickrichtung Wand, stehen die Gegner gestaffelt (vorn Mitte, dahinter ±0,22 seitlich, 0,42 tiefer). `buildSprites` bekommt dafür das Raster (6. Argument), `onViewTap` nutzt dieselbe Aufstellung. Headless geprüft (test1, Gang vor der Eisentür).
+- **Offene Truhe sah aus wie ein Stuhl** (Deckel schwebte mit Lücke über dem Kasten). `genChest(true)`: Öffnung als Trapez mit dunklem, leerem Innenraum und hellem Rand, Deckel hängt ohne Lücke an der Hinterkante, nach hinten geklappt (oben schmaler, Bretterfugen, Eisenbänder, Scharnierleiste). Der Blick senkt sich jetzt vor jeder Truhe (auch geöffnet).
+- **Runenstein im Testgewölbe** (früher Phase-1-Ziel `exit1`, begehbar, ohne Funktion): neuer Objekttyp `runestone {text}` (`rune_t1`), versperrt den Weg, Inschrift per Antippen/◉ als Text (Hinweis „hinauf“ = Treppe zur Siedlung, kein Story-Spoiler). `exit1` entfällt; `syncStatic` entfernt ihn aus alten Ständen und ergänzt den Runenstein (`runestone` in `STATIC_TYPES`). Kartenzeichen + Legende „Runenstein“. Hilfe: „Ziel des Prototyps“ ersetzt durch „Weg“. Debug-Teleport `exit1` → `rune_t1`. Geplant: Runensteine als Reisenetz (siehe Plan ab 0.16).
+- **Hedda antippen** startet das Gespräch bzw. den Handel, wenn sie direkt vor dir steht (`tapUseByTap` kennt `merchant`); sonst wie bei Truhen „Geh näher heran.“ (bis 2,6 Felder).
+- Migrationstest: der v1-Stand verliert genau `exit1` (geprüft), alles andere bleibt gleich.
+- Speicherstand weiter v6. Tests 84.
+
+## 0.16.6 – Legende neben der Karte
+- Nutzer: Legende direkt neben oder unter die Karte statt eigenes Fenster. Kartenfenster ist breiter (`#modal-box[data-kind=map]`, `openModal` setzt `data-kind`), Legende rechts neben der Karte (`mapLegendHtml`, `paintLegend`), ab 11 Einträgen zweispaltig, auf schmalen Bildschirmen (< 520 px) unter der Karte. Weiterhin nur bereits gesehene Zeichen. Knopf „Legende“ und `openMapLegend` entfallen. Texte gekürzt. Headless ohne Scrollen geprüft (915×360, 915×330, 780×340; Nebelturm, Testgewölbe, Schratgruben).
+- Tests 84, Speicherstand v6.
+
+## 0.16.7 – Balance Nebelturm, Kampagnen-Simulation
+- **sim.js Abschnitt C (neu, ersetzt das verlorene camp.mjs):** ganze Kampagne Testgewölbe → Untere Gruft → Moorpfad → Kultgruft → Schratgruben → Nebelturm mit der echten Logik: alle Gegner je Gebiet (Boss zuletzt), Truhen nach Wächter-Regel, Ausrüstung automatisch, Rast nach Bedarf (Proviant, sonst hungrig), Einkauf bei Hedda vor jedem Gebiet (bis 4 Heiltränke, 3 Proviant), Niederlage nach Spielregel und bis zu 3 Versuche. Annahmen stehen im Code über `campaign`. Nicht simuliert: Rückweg zum Rastplatz (neue Rast-Regel), Verkaufen, Fliehen. „klug“ trinkt Tränke jetzt nach der Regel aus 0.15.10 (nur der Held am Zug), verteidigt bei angesagtem Zauber, wirft Ölflaschen auf Bosse. Tabelle zeigt je Gegnergruppe: erreicht, Ø Stufe, Sieg im 1. Versuch, Runden, KO, Schaden.
+- **Befund vor der Änderung (100 Läufe):** Ab der Unteren Gruft gewann auch „nur Angriff“ jeden Kampf im 1. Versuch; „klug“ verlor je Kampf meist unter 10 % der Gruppen-LP. Nebelhüter (280 LP, Angriff 15): beide Strategien 100 %. Deckt sich mit dem Gerätetest des Nutzers („zu leicht“, Gruppe Stufe 8–9). Die frühere Angabe „nur Angriff ca. 47 %“ (0.16.0) stammte aus einem Lauf ohne Testgewölbe-EP/Ausrüstung/Einkauf und ist überholt.
+- **Neue Werte (alle vorläufig, nur simuliert):** Nebelgeist 62 LP / Angriff 16 / Vert. 3 / Init 9, Frosthauch 125 % (vorher 30/10/2/8, 115 %). Kultpriester 80 LP / Angriff 13 / Vert. 4, Dunkler Segen heilt 28 (vorher 40/8/3, 16). Neuer Gegner **Turmwache** (95 LP, Angriff 17, Vert. 8, Init 4, zielt auf die Hinterreihe, Schildstoß jeden 3. Zug 160 %, 100 EP, 18 Gold; Bild vorerst das des Kultwächters). Turmgruppen: en_t2 = Turmwache + Kultpriester (vorher Kultist + Kultpriester + Kultist), en_t3 = Turmwache + Kultpriester + Nebelgeist (vorher Kultwächter statt Turmwache). Nebelhüter 480 LP / Angriff 26 / Vert. 8 (vorher 280/15/5), Phasen Angriff 27 und 28, „Nebel sammeln“ heilt 28 (vorher 18).
+- **Ergebnis (SIM.md, 600 Läufe):** Gruppe erreicht den Turm mit Ø Stufe 8, den Boss mit Ø Stufe 9. Turmgruppen „klug“: 100 % Siege, 14–28 % der Gruppen-LP Schaden je Kampf; „nur Angriff“: 63–100 % im 1. Versuch, bis 79 % Schaden. Nebelhüter „klug“: 78 % im 1. Versuch, Ø 11,6 Runden, 1,1 KO; „nur Angriff“: 0 %.
+- **Offen / Warnung:** Es entsteht eine Schwierigkeitsstufe: Moorpfad, Kultgruft und Schratgruben sind laut Simulation weiterhin sehr leicht (Hauptmann und Grubenschrat: beide Strategien 100 % im 1. Versuch), der Turm ist jetzt deutlich härter. Vorschlag: die mittleren Gebiete in einer eigenen Version stufenweise anheben. Vom Nutzer noch nicht entschieden.
+- **Alte Spielstände:** Gegnergruppen liegen im Spielstand. Wer den Turm schon betreten hat, behält die alten Gruppen (Werte der Arten gelten aber neu). Zum Testen: neues Debug-Werkzeug **„Dieses Gebiet zurücksetzen“** (Menü → Debug; `resetArea` in logic.js: Gegner, Truhen, Türen, Hebel wie neu, Boss-Auftritt wieder möglich, Karte bleibt).
+- Tests 86. BALANCE.md und SIM.md neu erzeugt. Speicherstand v6.
 

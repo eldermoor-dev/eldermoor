@@ -226,10 +226,30 @@ function genChest(open, seed) {
     for (let y = 30; y <= 38; y++) for (let x = 29; x <= 34; x++) set(x, y, P('glow', 5 - (y - 30) * 0.15));
     set(31, 33, P('glow', 0)); set(32, 33, P('glow', 0)); set(31, 34, P('glow', 0)); set(32, 34, P('glow', 0));
   } else {
-    for (let y = 12; y <= 25; y++) for (let x = 12; x <= 51; x++) set(x, y, P('wood', 1.5 + hash(x, y, seed + 4) * 1.2 + (y === 12 ? 1 : 0)));
-    for (let y = 34; y <= 40; y++) for (let x = 12; x <= 51; x++) {
-      const gl = hash(x, y, seed + 5);
-      set(x, y, gl > 0.86 ? P('glow', 6) : P('wood', 0.5 + gl));
+    // 0.16.4b: offener Deckel ohne Lücke (vorher wirkte die Truhe wie ein Stuhl). Von leicht oben gesehen:
+    // Öffnung als Trapez (hinten schmaler) mit dunklem, leerem Innenraum, Rand hell; Deckel hängt an der Hinterkante,
+    // ist nach hinten geklappt (oben schmaler, Innenseite mit Brettern und Eisenbändern, helle Kante oben).
+    for (let y = 27; y <= 34; y++) { // Öffnung / Oberseite des Kastens
+      const inset = Math.round((34 - y) * 0.55);
+      const x0 = 10 + inset, x1 = 53 - inset;
+      for (let x = x0; x <= x1; x++) {
+        const rim = x <= x0 + 1 || x >= x1 - 1 || y === 34 || y === 27;
+        set(x, y, rim ? P('wood', 4 + (y === 34 ? 0.6 : 0) - (y === 27 ? 1 : 0)) : P('wood', 0.2 + hash(x, y, seed + 5) * 0.5 + (y >= 32 ? 0.3 : 0)));
+      }
+    }
+    for (let y = 15; y <= 27; y++) { // Deckel, Innenseite (nach hinten geklappt: kürzer, oben schmaler)
+      const k = (27 - y) / 12, inset = Math.round(4 + k * 4);
+      const x0 = 10 + inset, x1 = 53 - inset, w = x1 - x0;
+      for (let x = x0; x <= x1; x++) {
+        const u = (x - x0) / w;
+        let v = P('wood', 2.2 + hash(x, y, seed + 4) * 0.9 - k * 0.4);
+        if (Math.abs(u * 6 - Math.round(u * 6)) < 0.06) v = P('wood', 1.2); // Bretterfugen
+        if ((u > 0.17 && u < 0.25) || (u > 0.75 && u < 0.83)) v = P('iron', 3 + hash(x, y, seed + 6) * 0.8);
+        if (x <= x0 || x >= x1) v = P('wood', 1.4);
+        if (y <= 16) v = P('wood', 4.4 - (y === 15 ? 0 : 0.6)); // Deckelkante oben (Dicke)
+        if (y >= 26) v = P('iron', 2.6); // Scharnierleiste
+        set(x, y, v);
+      }
     }
   }
   return t;
@@ -982,32 +1002,50 @@ export function buildGrid(lvl, objs) {
   for (const o of objs) { if (o.type === 'secret' && !o.open) grid[o.y * w + o.x] = WALL_SECRET; else if (o.type === 'lever' && o.wall) grid[o.y * w + o.x] = o.used ? WALL_SWITCH_ON : WALL_SWITCH; }
   return { grid, gw: w, gh: h };
 }
-const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
+const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' || k === 'turmwache' ? tex.sprites.guard : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
 const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' ? 1 : 0.9); // Bosse stehen größer im Gang
 export const GROUP_SCALE = 0.78, GROUP_GAP = 0.44, CHEST_SCALE = 0.62; // 0.16.4: Gruppen vorher 0.62/0.36, Truhe 0.5 (Nutzer: zu klein, hinter der Leiste)
 export const spriteScale = (k, n) => (n > 1 ? GROUP_SCALE : bossScale(k));
+// Aufstellung einer Gruppe (0.16.4b): lat = seitlich (rechts +), dep = Tiefe (vom Betrachter weg). Im engen Gang (links und rechts Wand)
+// stehen die Gegner gestaffelt hintereinander statt nebeneinander, sonst ragen sie in die Wände (Nutzer-Screenshot 0.16.4).
+export function groupOffsets(n, narrow) {
+  if (n <= 1) return [{ lat: 0, dep: 0 }];
+  if (!narrow) return Array.from({ length: n }, (_, i) => ({ lat: (i - (n - 1) / 2) * GROUP_GAP, dep: 0 }));
+  if (n === 2) return [{ lat: -0.12, dep: 0 }, { lat: 0.18, dep: 0.42 }];
+  return [{ lat: 0, dep: 0 }, { lat: -0.22, dep: 0.42 }, { lat: 0.22, dep: 0.42 }];
+}
+// Eng = beide Nachbarfelder quer zur Blickrichtung sind Wand (grid aus buildGrid: 0 = frei)
+export function isNarrowAt(g, x, y, angle) {
+  if (!g) return false;
+  const rx = Math.round(Math.cos(angle)), ry = Math.round(Math.sin(angle));
+  const wall = (cx, cy) => cx < 0 || cy < 0 || cx >= g.gw || cy >= g.gh || g.grid[cy * g.gw + cx] !== 0;
+  return wall(x + rx, y + ry) && wall(x - rx, y - ry);
+}
 const kindOf = (o, i) => (Array.isArray(o.kinds) ? o.kinds[Math.min(i, o.kinds.length - 1)] : o.kind);
 function signTex(tex, o) { // ein Schild-Sprite je Titel, einmal erzeugt
   const key = o.title || '';
   const c = tex.signs || (tex.signs = {});
   return c[key] || (c[key] = key ? (() => { const t = genSign(131, key); t.noWrap = true; return smoothSprite(t, 4); })() : tex.sprites.sign);
 }
-export function buildSprites(objs, tex, time, angle = 0, alive = null) { // alive: {objId: Arten (Liste) oder Anzahl der lebenden Gegner} im Kampf
+export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = null) { // alive: {objId: Arten (Liste) oder Anzahl der lebenden Gegner} im Kampf; grid: für enge Gänge
   const out = [];
   const rx = Math.cos(angle), ry = Math.sin(angle); // „rechts“ aus Sicht der Kamera
+  const fx = Math.sin(angle), fy = -Math.cos(angle); // „vorn“
   for (const o of objs) {
     if (o.type === 'chest') out.push({ x: o.x, y: o.y, tex: o.open ? tex.sprites.chestOpen : tex.sprites.chest, scale: CHEST_SCALE });
     else if (o.type === 'enemy' && !o.dead) {
       const tot = Array.isArray(o.kinds) ? Math.min(3, o.kinds.length) : 1;
       const av = alive && alive[o.id] != null ? alive[o.id] : null, kindList = Array.isArray(av) ? av : null;
       const n = kindList ? kindList.length : av != null ? av : tot; // Gruppe: eine Gestalt je lebendem Gegner, nebeneinander
+      const offs = groupOffsets(n, n > 1 && isNarrowAt(grid, o.x, o.y, angle));
       for (let i = 0; i < n; i++) {
-        const off = n > 1 ? (i - (n - 1) / 2) * GROUP_GAP : 0;
-        out.push({ x: o.x + rx * off, y: o.y + ry * off, tex: spriteFor(tex, kindList ? kindList[i] : kindOf(o, i)), scale: spriteScale(kindList ? kindList[i] : kindOf(o, i), n) * (1 + 0.02 * Math.sin(time * 3 + i)) });
+        const { lat, dep } = offs[i];
+        out.push({ x: o.x + rx * lat + fx * dep, y: o.y + ry * lat + fy * dep, tex: spriteFor(tex, kindList ? kindList[i] : kindOf(o, i)), scale: spriteScale(kindList ? kindList[i] : kindOf(o, i), n) * (1 + 0.02 * Math.sin(time * 3 + i)) });
       }
     }
     else if (o.type === 'lever' && !o.wall) out.push({ x: o.x, y: o.y, tex: o.used ? tex.sprites.leverDown : tex.sprites.leverUp, scale: 0.75 });
     else if (o.type === 'sign') out.push({ x: o.x, y: o.y, tex: signTex(tex, o), scale: 0.7 });
+    else if (o.type === 'runestone') out.push({ x: o.x, y: o.y, tex: tex.sprites.runeStone, scale: 0.9 });
     else if (o.type === 'merchant') out.push({ x: o.x, y: o.y, tex: tex.sprites.merchant, scale: 0.8 });
     else if (o.type === 'stairs') out.push({ x: o.x, y: o.y, tex: o.look === 'down' ? tex.sprites.stairsDown : o.look === 'up' ? tex.sprites.stairsUp : o.look === 'path' ? tex.sprites.arch : tex.sprites.portal, scale: 0.9 });
     else if (o.type === 'exit') out.push({ x: o.x, y: o.y, tex: o.look === 'down' ? tex.sprites.stairsDown : o.look === 'up' ? tex.sprites.stairsUp : o.look === 'path' ? tex.sprites.arch : tex.sprites.runeStone, scale: 0.9 });

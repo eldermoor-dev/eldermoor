@@ -352,7 +352,9 @@ export async function runTests(data, env = {}) {
     });
     eq(st.heroes.map((h) => h.cls), ['warrior', 'rogue', 'priest', 'mage'], 'Berufe');
     eq(st.heroes[0].hp, 30, 'LP erhalten');
-    const rest = (x) => { const y = { ...x, heroes: 0, combat: 0, areas: 0, gear: 0, uid: 0, objs: x.objs.filter((o) => v1.state.objs.some((q) => q.id === o.id)) }; return JSON.stringify(Object.keys(y).sort().map((k) => [k, y[k]])); }; // v5 ergänzt fehlende feste Objekte (Treppen, später eingebaute Gegner) und Gebiete
+    const both = (id) => v1.state.objs.some((q) => q.id === id) && st.objs.some((q) => q.id === id); // exit1 ist seit 0.16.5 ein Runenstein (rune_t1) und fällt weg
+    eq(v1.state.objs.filter((q) => !st.objs.some((o) => o.id === q.id)).map((q) => q.id), ['exit1'], 'nur der alte Runenstein-Ausgang entfällt');
+    const rest = (x) => { const y = { ...x, heroes: 0, combat: 0, areas: 0, gear: 0, uid: 0, objs: x.objs.filter((o) => both(o.id)) }; return JSON.stringify(Object.keys(y).sort().map((k) => [k, y[k]])); }; // v5 ergänzt fehlende feste Objekte (Treppen, später eingebaute Gegner) und Gebiete
     assert(st.objs.some((o) => o.id === 'stairs_down') && JSON.stringify(st.areas) === '{}', 'v5: neue Treppe ergänzt, Gebiete leer');
     assert(st.objs.filter((o) => v1.state.objs.some((q) => q.id === o.id)).every((o) => JSON.stringify(o) === JSON.stringify(v1.state.objs.find((q) => q.id === o.id))), 'vorhandene Objekte unverändert');
     assert(rest(st) === rest(v1.state), 'übriger Zustand (Position, Gold, Inventar, Objekte, Karte, Notizen, Zufall) unverändert');
@@ -488,13 +490,42 @@ export async function runTests(data, env = {}) {
   });
 
   await test('Ausgang (0.16.4): erstes Betreten = Abschluss, danach kurzer Hinweis', () => {
-    const s = fresh(9); s.objs.forEach((o) => { if (o.type === 'door') { o.open = true; o.locked = false; } if (o.type === 'enemy') o.dead = true; });
-    put(s, 18, 7, 1);
+    const s = fresh(9); L.jumpToLevel(s, data, 'nebelturm');
+    put(s, 23, 12, 1);
     const a = L.tryMove(s, data, 'f'); assert(a.events.some((e) => e.type === 'exit'), 'erstes Mal: exit ' + JSON.stringify(a));
-    put(s, 18, 7, 1);
+    put(s, 23, 12, 1);
     const b = L.tryMove(s, data, 'f'); assert(b.events.some((e) => e.type === 'exitAgain') && !b.events.some((e) => e.type === 'exit'), 'danach: exitAgain ' + JSON.stringify(b));
     const t = data.levels.nebelturm.objects.find((o) => o.id === 'exit_turm');
     assert(t && /späteren Version/.test(t.again), 'Turm-Ausgang hat Hinweistext');
+  });
+
+  await test('Runenstein (0.16.5): versperrt den Weg, Inschrift lesbar, alter Ausgang verschwindet aus alten Ständen', () => {
+    const s = fresh(10); s.objs.forEach((o) => { if (o.type === 'door') { o.open = true; o.locked = false; } if (o.type === 'enemy') o.dead = true; });
+    put(s, 18, 7, 1);
+    const m = L.tryMove(s, data, 'f'); assert(!m.moved && /Runenstein/.test(m.msg), 'blockiert: ' + JSON.stringify(m));
+    const r = L.interact(s, data); assert(r.long && /Runenstein/.test(r.msg), 'Inschrift: ' + JSON.stringify(r));
+    const st = JSON.parse(JSON.stringify(L.serialize(s)));
+    st.state.objs = st.state.objs.filter((o) => o.id !== 'rune_t1'); st.state.objs.push({ id: 'exit1', type: 'exit', x: 19, y: 7 });
+    const back = L.deserialize(st, data);
+    assert(!back.objs.some((o) => o.id === 'exit1') && back.objs.some((o) => o.id === 'rune_t1' && o.type === 'runestone'), 'alter Stand: Ausgang ersetzt');
+  });
+
+  await test('Debug: Gebiet zurücksetzen (0.16.7) stellt Gegner und Truhen wieder her, neue Gegnergruppen kommen aus game.json', () => {
+    const s = fresh(12); L.jumpToLevel(s, data, 'nebelturm');
+    s.objs.forEach((o) => { if (o.type === 'enemy') { o.dead = true; o.hp = 0; o.kinds = ['kultist']; } if (o.type === 'chest') o.open = true; });
+    s.flags['intro:en_tboss'] = true;
+    assert(L.resetArea(s, data).ok, 'ok');
+    const t2 = s.objs.find((o) => o.id === 'en_t2'), boss = s.objs.find((o) => o.id === 'en_tboss');
+    assert(!t2.dead && t2.kinds.includes('turmwache') && !boss.dead && boss.hp === data.enemies.nebelhueter.hp, 'Gegner wie neu: ' + JSON.stringify(t2));
+    assert(s.objs.filter((o) => o.type === 'chest').every((o) => !o.open) && !s.flags['intro:en_tboss'], 'Truhen zu, Boss-Auftritt wieder möglich');
+    L.startCombat(s, data, boss); assert(!L.resetArea(s, data).ok, 'nicht im Kampf');
+  });
+  await test('Balance 0.16.7: Turmgegner und Nebelhüter (Daten), Turmwache vorhanden', () => {
+    const e = data.enemies;
+    assert(e.turmwache && e.turmwache.heavy && e.turmwache.hp >= 90, 'Turmwache');
+    assert(e.nebelgeist.hp >= 60 && e.kultpriester.hp >= 80 && e.nebelhueter.hp >= 450 && e.nebelhueter.atk >= 24, 'Werte angehoben');
+    const ph = e.nebelhueter.phases; assert(ph[0].set.atk > e.nebelhueter.atk && ph[1].set.atk > ph[0].set.atk, 'Phasen steigern den Angriff');
+    for (const o of data.levels.nebelturm.objects) if (o.type === 'enemy') for (const k of o.kinds || [o.kind]) assert(k !== 'kultist' && k !== 'kultwaechter', `${o.id}: Stufe-1-Gegner ${k} gehört nicht mehr in den Turm`);
   });
 
   await test('Rast (0.16.4): Sperre nach Weglänge (10 Schritte) und Sichtlinie', () => {

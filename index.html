@@ -122,7 +122,16 @@ button{font:inherit;color:inherit}
 #modal-box .qp canvas{width:40px;height:40px;flex:none;image-rendering:pixelated;border-radius:3px}
 #modal-box input[type=checkbox]{width:22px;height:22px}
 .ok{color:#8fd48a}.bad{color:#ff8a7a}
-#mapcv{display:block;margin:4px auto;width:auto;height:auto;max-width:100%;max-height:calc(100dvh - 120px);image-rendering:pixelated;border:1px solid var(--line);background:#0a0806}
+#modal-box[data-kind=map]{width:min(96vw,920px)}
+#modal-box .mapwrap{display:flex;gap:10px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+#modal-box .mapleg{flex:0 0 150px;display:grid;gap:2px 6px;font-size:.72rem;line-height:1.15;max-height:calc(100dvh - 120px);overflow:auto;touch-action:pan-y}
+#modal-box .mapleg div{display:flex;gap:5px;align-items:center}
+#modal-box .mapleg.two{flex-basis:290px;grid-template-columns:1fr 1fr}
+#modal-box .mapwrap #mapcv{max-width:calc(100% - 160px)}
+#modal-box .mapwrap .mapleg.two~#mapcv,#modal-box .mapwrap:has(.two) #mapcv{max-width:calc(100% - 300px)}
+@media (max-width:520px){#modal-box .mapwrap #mapcv{max-width:100%}}
+#modal-box .mapleg canvas{width:16px;height:16px;flex:none;background:#0a0806;border-radius:2px}
+#mapcv{display:block;margin:4px 0;min-width:0;width:auto;height:auto;max-width:100%;max-height:calc(100dvh - 120px);image-rendering:pixelated;border:1px solid var(--line);background:#0a0806}
 #banner{position:fixed;top:0;left:0;right:0;z-index:40;background:#4a3410;padding:8px;display:flex;gap:10px;justify-content:center;align-items:center;font-size:.85rem}
 #toast{position:fixed;left:50%;top:48px;transform:translateX(-50%);z-index:45;background:rgba(0,0,0,.85);border:1px solid var(--amber);border-radius:8px;padding:8px 14px;max-width:80vw;text-align:center;font-size:.88rem}
 #portrait-warn{display:none;position:fixed;inset:0;z-index:60;background:#000;align-items:center;justify-content:center;text-align:center;padding:24px;font-size:1.1rem}

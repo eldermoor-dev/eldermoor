@@ -180,6 +180,17 @@ function freshArea(data, levelId) {
   return { objs, seen: new Array(lvl.map[0].length * lvl.map.length).fill(0), notes: [] };
 }
 
+// Debug (0.16.7): aktuelles Gebiet auf den Ausgangszustand setzen (Gegner, Truhen, Türen, Hebel wie neu; Karte und Notizen bleiben).
+// Dient zum erneuten Testen, z. B. nach geänderten Gegnerwerten. Nicht im Kampf.
+export function resetArea(state, data) {
+  if (state.combat) return { ok: false };
+  state.objs = freshArea(data, state.levelId).objs;
+  for (const k of Object.keys(state.flags)) if (k.startsWith('intro:') && state.objs.some((o) => 'intro:' + o.id === k)) delete state.flags[k];
+  const lvl = getLevel(data, state);
+  state.player = { x: lvl.start.x, y: lvl.start.y, dir: lvl.start.dir };
+  markSeen(state, data);
+  return { ok: true };
+}
 export function newGame(data, seed = 20260101, party = null) {
   const lvl = data.levels[data.startLevel];
   const a = freshArea(data, data.startLevel);
@@ -239,7 +250,7 @@ export function blockerAt(state, x, y) {
     if (o.type === 'chest' && !o.open) return o; // geöffnete Truhen sind begehbar
     if ((o.type === 'gate' || o.type === 'secret') && !o.open) return o; // secret = Geheimwand: sieht aus wie Mauer mit feinem Riss
     if (o.type === 'lever') return o;
-    if (o.type === 'merchant' || o.type === 'sign') return o;
+    if (o.type === 'merchant' || o.type === 'sign' || o.type === 'runestone') return o;
     if (o.type === 'enemy' && !o.dead) return o;
   }
   return null;
@@ -277,6 +288,7 @@ function blockedText(b) {
   if (b.type === 'chest') return 'Eine Truhe versperrt den Weg.';
   if (b.type === 'merchant') return 'Der Stand der Händlerin versperrt den Weg.';
   if (b.type === 'sign') return 'Eine Hinweistafel steht im Weg.';
+  if (b.type === 'runestone') return 'Ein Runenstein. Die Zeichen glimmen schwach.';
   if (b.type === 'gate') return 'Ein Fallgitter versperrt den Weg.';
   if (b.type === 'secret') return 'Eine Wand. Durch die Fugen läuft ein feiner Riss.';
   if (b.type === 'lever') return b.wall ? 'Ein Stein in der Wand sitzt locker.' : 'Ein Wandhebel steht im Weg.';
@@ -347,6 +359,7 @@ export function interact(state, data) {
   }
   if (o.type === 'enemy') return { encounter: o };
   if (o.type === 'sign') return { msg: o.text, sfx: 'ui', long: true };
+  if (o.type === 'runestone') return { msg: o.text, sfx: 'ui', long: true }; // 0.16.5: Inschrift übersetzt (später Reisenetz)
   if (o.type === 'merchant') {
     const r = { shop: o.shop, merchant: o.id };
     if (o.talk && !state.flags[o.talk.flag]) { state.flags[o.talk.flag] = true; r.msg = o.talk.text; r.changed = true; }
@@ -1233,7 +1246,7 @@ export function validateState(state, data) {
 
 // Gleicht feste Objekte (Treppen, Tafeln, Händler, Ausgänge) und neu hinzugekommene Objekte aller bekannten Gebiete mit game.json ab.
 // So bekommen alte Spielstände Neuerungen (z. B. eine neue Treppe) ohne neue Speicherversion. Truhen, Türen und Gegner behalten ihren Zustand.
-const STATIC_TYPES = new Set(['stairs', 'sign', 'merchant', 'exit']);
+const STATIC_TYPES = new Set(['stairs', 'sign', 'merchant', 'exit', 'runestone']);
 export function syncStatic(state, data) {
   for (const h of state.heroes || []) if (h && data.classes[h.cls] && h.role !== data.classes[h.cls].name) h.role = data.classes[h.cls].name; // umbenannte Berufe (Priester → Kleriker)
   const areas = [{ id: state.levelId, objs: state.objs }, ...Object.entries(state.areas || {}).map(([id, a]) => ({ id, objs: a.objs }))];

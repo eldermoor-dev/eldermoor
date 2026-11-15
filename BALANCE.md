@@ -32,9 +32,10 @@ Gegner (EP: jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die vol
 | Kultwächter-Hauptmann | 160 | 13 | 5 | 5 | 220 | 40 | zielt auf den schwächsten Helden; Richtspruch jeden 3. Zug, angekündigt (160 %); Treffer: Schwach 35 %; Boss, Phasen: Kultruf ab ≤ 65 % LP (Angriff 14), Letzte Bastion ab ≤ 30 % LP (Angriff 16) |
 | Erzkäfer | 34 | 11 | 4 | 7 | 45 | 7 | – |
 | Moorschrat | 190 | 13 | 3 | 5 | 200 | 40 | Schweren Schlag jeden 3. Zug, angekündigt (170 %); Treffer: Gift 30 %; Boss, Phasen: Wutrausch ab ≤ 60 % LP (Angriff 15), Letzte Kraft ab ≤ 25 % LP (Angriff 17) |
-| Nebelgeist | 30 | 10 | 2 | 8 | 70 | 10 | zielt auf die Hinterreihe; Zaubert: Frosthauch (jeden 2. Zug) |
-| Kultpriester | 40 | 8 | 3 | 5 | 85 | 16 | Zaubert: Dunkler Segen (jeden 2. Zug), Fluch der Schwäche (jeden 3. Zug) |
-| Nebelhüter | 280 | 15 | 5 | 6 | 320 | 80 | Zaubert: Nebelspeer (jeden 3. Zug, angekündigt); Boss, Phasen: Nebelwand ab ≤ 66 % LP (Angriff 16), Sturm der Schleier ab ≤ 33 % LP (Angriff 17) |
+| Nebelgeist | 62 | 16 | 3 | 9 | 70 | 10 | zielt auf die Hinterreihe; Zaubert: Frosthauch (jeden 2. Zug) |
+| Kultpriester | 80 | 13 | 4 | 5 | 85 | 16 | Zaubert: Dunkler Segen (jeden 2. Zug), Fluch der Schwäche (jeden 3. Zug) |
+| Turmwache | 95 | 17 | 8 | 4 | 100 | 18 | zielt auf die Hinterreihe; Schildstoß jeden 3. Zug, angekündigt (160 %) |
+| Nebelhüter | 480 | 26 | 8 | 6 | 320 | 80 | Zaubert: Nebelspeer (jeden 3. Zug, angekündigt); Boss, Phasen: Nebelwand ab ≤ 66 % LP (Angriff 27), Sturm der Schleier ab ≤ 33 % LP (Angriff 28) |
 
 ## Rassen (Modifikatoren)
 
@@ -206,4 +207,5 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 | Moorschrat | 100 %, Boost 2 | Schratdorn oder Wurzelstab (100 %, nur einmal) |
 | Nebelgeist | 15 % | – |
 | Kultpriester | 25 % | – |
+| Turmwache | 25 % | – |
 | Nebelhüter | 100 %, Boost 3 | – |

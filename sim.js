@@ -23,7 +23,11 @@ function decideSmart(s, data) {
     const t = needy.find((q) => q.x.hp / q.x.maxHp <= 0.6 || (ab.cleanse && L.statusOf(s, 'h', q.i)[ab.cleanse]));
     if (t && (t.x.hp < t.x.maxHp || (ab.cleanse && L.statusOf(s, 'h', t.i)[ab.cleanse]))) return { type: 'ability', target: t.i };
   }
-  if ((s.inv.potion || 0) > 0 && needy[0] && needy[0].x.hp / needy[0].x.maxHp <= 0.3 && needy[0].x.hp < needy[0].x.maxHp) return { type: 'item', item: 'potion', hero: needy[0].i };
+  if ((s.inv.potion || 0) > 0 && h.hp / h.maxHp <= 0.35) return { type: 'item', item: 'potion', hero: a.idx }; // seit 0.15.10 trinkt nur der Held am Zug selbst
+  // angesagter Gegnerzauber (Boss): wer angeschlagen ist, verteidigt
+  const castSoon = c.enemies.some((e) => e.hp > 0 && (L.enemyOf(data, e).cast || []).some((sp) => sp.announce && ((e.ct || 0) + 1) % sp.every === 0));
+  if (castSoon && h.hp / h.maxHp <= 0.6 && !(ab && ab.kind === 'heal')) return { type: 'defend' };
+  if ((s.inv.oelflasche || 0) > 0 && !(ab && ab.kind !== 'heal' && h.mp >= ab.cost) && c.enemies.some((e) => e.hp > 0 && data.enemies[e.kind].boss)) return { type: 'item', item: 'oelflasche', target: weakest(c) };
   if (c.enemies.some((e) => e.hp > 0 && e.intent === 'heavy') && h.row === 'front') return { type: 'defend' };
   // Zauber: bester bezahlbarer Schadenszauber (Elementschwäche und Flächenwirkung zählen), Lichtwelle bei mehreren Verletzten
   const spells = L.knownSpells(data, h);
@@ -68,6 +72,77 @@ function fight(s, objId, strat) {
   return { won, ko, hpLost: taken, rounds };
 }
 
+// ---------- Kampagne (0.16.7): alle Gebiete in Spielreihenfolge, natürliche Erfahrung, Beute, Ausrüstung, Rast, Einkauf ----------
+// Annahmen (kein Spieltest!): die Gruppe besiegt alle Gegner eines Gebiets in fester Reihenfolge (Boss zuletzt), öffnet jede Truhe,
+// sobald ihre Wächter besiegt sind, legt bessere Ausrüstung sofort an, rastet nach einem Kampf, wenn jemand unter 60 % LP ist oder
+// die Zauberer unter halbem Mana sind (mit Proviant, sonst hungrig; der Rückweg zu einem sicheren Rastplatz wird nicht simuliert),
+// und kauft vor jedem Gebiet bei Hedda nach (bis 4 Heiltränke, 3 Proviant, solange das Gold reicht). Niederlage: Regel des Spiels
+// (halbe LP, 25 % Gold weg), Rast, neuer Versuch; nach 3 Niederlagen am selben Gegner gilt der Lauf als gescheitert.
+const CAMPAIGN = ['test1', 'test2', 'moorpfad', 'kultgruft', 'schratgruben', 'nebelturm'];
+function simRest(s) {
+  const need = s.heroes.some((h) => h.hp / h.maxHp < 0.6) || s.heroes.some((h) => data.classes[h.cls].res.name === 'Mana' && h.mp < h.maxMp / 2);
+  if (!need) return;
+  const hide = s.objs.filter((o) => o.type === 'enemy' && !o.dead).map((o) => [o, o.x, o.y]);
+  hide.forEach(([o]) => { o.x = -9; o.y = -9; });
+  L.restParty(s, data);
+  hide.forEach(([o, x, y]) => { o.x = x; o.y = y; });
+}
+function simEquip(s) {
+  for (let pass = 0; pass < 3; pass++) for (let i = 0; i < s.heroes.length; i++) for (const id of Object.keys(s.inv)) {
+    if (!(s.inv[id] > 0)) continue;
+    const it = L.itemDef(s, data, id);
+    if (!it || it.kind !== 'equip' || !L.canEquip(data, s.heroes[i], id, s)) continue;
+    const cur = s.heroes[i].equip && s.heroes[i].equip[it.slot] ? L.itemDef(s, data, s.heroes[i].equip[it.slot]) : null;
+    const val = (x) => (x ? (x.atk || 0) * 2 + (x.def || 0) * 2 + (x.init || 0) + (x.affixes || []).reduce((n, a) => n + (a.val || 0), 0) : -1);
+    if (val(it) > val(cur)) L.equipItem(s, data, id, i);
+  }
+}
+function simChests(s) {
+  const lvl = L.getLevel(data, s);
+  for (const o of s.objs) {
+    if (o.type !== 'chest' || o.open || L.chestGuarded(s, data, o)) continue;
+    for (let d = 0; d < 4; d++) {
+      const x = o.x - L.DIRS[d].dx, y = o.y - L.DIRS[d].dy;
+      if (L.isWallChar(L.cellChar(lvl, x, y)) || L.blockerAt(s, x, y)) continue;
+      s.player = { x, y, dir: d }; L.interact(s, data); break;
+    }
+  }
+  simEquip(s);
+}
+function simShop(s) {
+  const buy = (id, upTo) => { while ((s.inv[id] || 0) < upTo && s.gold >= L.buyPrice(s, data, id)) { if (L.buyItem(s, data, 'moorrand', id).error) break; } };
+  buy('potion', 4); buy('ration', 3);
+}
+function campaign(seed, strat) {
+  const s = L.newGame(data, seed), log = {};
+  let failed = null;
+  for (const lid of CAMPAIGN) {
+    if (failed) break;
+    simShop(s);
+    L.jumpToLevel(s, data, lid);
+    simChests(s);
+    const foes = s.objs.filter((o) => o.type === 'enemy').sort((a, b) => (data.enemies[a.kind].boss ? 1 : 0) - (data.enemies[b.kind].boss ? 1 : 0));
+    for (const f of foes) {
+      const rec = { level: stats(s.heroes.map((h) => h.level)), first: false, tries: 0, ko: 0, lost: 0, boss: !!data.enemies[f.kind].boss, area: lid, name: data.enemies[f.kind].name };
+      const full = s.heroes.reduce((n, h) => n + h.maxHp, 0);
+      let won = false;
+      while (!won && rec.tries < 3) {
+        rec.tries++;
+        const r = fight(s, f.id, strat);
+        if (rec.tries === 1) { rec.first = r.won; rec.ko = r.ko; rec.lost = r.hpLost / full; rec.rounds = r.rounds; }
+        won = r.won;
+        if (!won) L.applyDefeat(s, data);
+        simRest(s);
+      }
+      rec.won = won;
+      log[f.id] = rec;
+      if (!won) { failed = f.id; break; }
+      simChests(s);
+    }
+  }
+  return { log, failed, level: stats(s.heroes.map((h) => h.level)) };
+}
+
 function stats(arr) { return arr.reduce((a, b) => a + b, 0) / arr.length; }
 const pct = (x) => (100 * x).toFixed(0) + ' %';
 const f1 = (x) => x.toFixed(1);
@@ -109,6 +184,32 @@ for (const strat of ['simple', 'smart']) for (const rest of [false, 'ration', tr
     if (stage >= 1) w1++; if (stage >= 2) w2++; if (stage >= 3) w3++; kos.push(ko);
   }
   out(`| ${strat === 'simple' ? 'nur Angriff' : 'klug'} | ${rest === true ? 'immer voll' : rest === 'ration' ? 'mit Proviant (3)' : 'nein'} | ${pct(w1 / RUNS)} | ${pct(w2 / RUNS)} | ${pct(w3 / RUNS)} | ${f1(stats(kos))} |`);
+}
+out('');
+out('## C) Ganze Kampagne (Testgewölbe → Nebelturm), natürliche Stufen, Beute, Rast, Einkauf');
+out('Annahmen stehen in sim.js über `campaign`. „1. Versuch“ = Sieg ohne vorherige Niederlage gegen diesen Gegner. Schaden = Anteil der Max-LP der Gruppe, den die Gegner im 1. Versuch abziehen.');
+const CR = Math.max(100, Math.round(RUNS / 5));
+const camp = {};
+for (const strat of ['simple', 'smart']) { camp[strat] = []; for (let i = 0; i < CR; i++) camp[strat].push(campaign(9000 + i, strat)); }
+out(`${CR} Läufe je Strategie.`);
+out('');
+out('| Strategie | Kampagne geschafft | Ø Stufe am Ende | Niederlagen je Lauf |');
+out('|---|---|---|---|');
+for (const strat of ['simple', 'smart']) {
+  const c = camp[strat];
+  out(`| ${strat === 'simple' ? 'nur Angriff' : 'klug'} | ${pct(stats(c.map((r) => +!r.failed)))} | ${f1(stats(c.map((r) => r.level)))} | ${f1(stats(c.map((r) => Object.values(r.log).reduce((n, x) => n + x.tries - (x.won ? 1 : 0), 0))))} |`);
+}
+out('');
+out('| Gebiet | Gegner | Strategie | erreicht | Ø Stufe | Sieg 1. Versuch | Runden | KO-Helden | Schaden |');
+out('|---|---|---|---|---|---|---|---|---|');
+const order = [];
+for (const lid of CAMPAIGN) for (const o of data.levels[lid].objects) if (o.type === 'enemy') order.push([lid, o]);
+order.sort((a, b) => CAMPAIGN.indexOf(a[0]) - CAMPAIGN.indexOf(b[0]) || (data.enemies[a[1].kind].boss ? 1 : 0) - (data.enemies[b[1].kind].boss ? 1 : 0));
+for (const [lid, o] of order) for (const strat of ['simple', 'smart']) {
+  const recs = camp[strat].map((r) => r.log[o.id]).filter(Boolean);
+  if (!recs.length) { out(`| ${data.levels[lid].name} | ${o.id} | ${strat === 'simple' ? 'nur Angriff' : 'klug'} | 0 % | – | – | – | – | – |`); continue; }
+  const label = (o.kinds || [o.kind]).map((k) => data.enemies[k].name).join(' + ') + (data.enemies[o.kind].boss ? ' (Boss)' : '');
+  out(`| ${data.levels[lid].name} | ${label} | ${strat === 'simple' ? 'nur Angriff' : 'klug'} | ${pct(recs.length / CR)} | ${f1(stats(recs.map((r) => r.level)))} | ${pct(stats(recs.map((r) => +r.first)))} | ${f1(stats(recs.map((r) => r.rounds)))} | ${f1(stats(recs.map((r) => r.ko)))} | ${pct(stats(recs.map((r) => r.lost)))} |`);
 }
 out('');
 out('Hinweis: Die Simulation nutzt die echten Regeln, aber nur zwei feste Strategien. Ein echter Spieler liegt dazwischen.');
