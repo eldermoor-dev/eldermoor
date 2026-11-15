@@ -864,31 +864,30 @@ export class Raycaster {
     const fogK = 0.85 / (this.bright || 1);
     const dropFor = (dist) => Math.min(7, Math.floor(dist * fogK / fl));
 
-    // Decke und Boden
-    const half = H / 2;
+    // Decke und Boden. Horizont verschiebbar (view.horizon in Pixeln; Standard H/2): kleiner = Blick nach unten, größer = Blick nach oben
+    const half = Math.max(1, Math.min(H - 1, Math.round(view.horizon == null ? H / 2 : view.horizon)));
     if (q === 'low') {
-      for (let y = half; y < H; y++) {
-        const p = y + 0.5 - half;
+      for (let y = 0; y < H; y++) {
+        const fl0 = y >= half, p = fl0 ? y + 0.5 - half : half - y - 0.5;
         const tbl = this.shadeTbl[dropFor(0.5 * focal / p)];
-        const fc = tbl[P('floor', 3)], cc = tbl[P('ceil', 2)];
-        const rowF = y * W, rowC = (H - 1 - y) * W;
-        for (let x = 0; x < W; x++) { buf[rowF + x] = fc; buf[rowC + x] = cc; }
+        const c = fl0 ? tbl[P('floor', 3)] : tbl[P('ceil', 2)];
+        const row = y * W;
+        for (let x = 0; x < W; x++) buf[row + x] = c;
       }
     } else {
       const ftex = tex.floor.data, ctex = tex.ceil.data, FN = tex.floor.w, FM = FN - 1;
       const rdx0 = dirX - planeX, rdy0 = dirY - planeY, rdx1 = dirX + planeX, rdy1 = dirY + planeY;
-      for (let y = half; y < H; y++) {
-        const p = y + 0.5 - half;
+      for (let y = 0; y < H; y++) {
+        const fl0 = y >= half, p = fl0 ? y + 0.5 - half : half - y - 0.5;
         const rowDist = 0.5 * focal / p;
         const tbl = this.shadeTbl[dropFor(rowDist)];
+        const src = fl0 ? ftex : ctex;
         let fx = px + rowDist * rdx0, fy = py + rowDist * rdy0;
         const sx = rowDist * (rdx1 - rdx0) / W, sy = rowDist * (rdy1 - rdy0) / W;
-        const rowF = y * W, rowC = (H - 1 - y) * W;
+        const row = y * W;
         for (let x = 0; x < W; x++) {
           const tx = ((fx * FN) | 0) & FM, ty = ((fy * FN) | 0) & FM;
-          const ti = ty * FN + tx;
-          buf[rowF + x] = tbl[ftex[ti]];
-          buf[rowC + x] = tbl[ctex[ti]];
+          buf[row + x] = tbl[src[ty * FN + tx]];
           fx += sx; fy += sy;
         }
       }
@@ -984,7 +983,9 @@ export function buildGrid(lvl, objs) {
   return { grid, gw: w, gh: h };
 }
 const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
-const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' ? 1 : 0.85); // Bosse stehen größer im Gang
+const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' ? 1 : 0.9); // Bosse stehen größer im Gang
+export const GROUP_SCALE = 0.78, GROUP_GAP = 0.44, CHEST_SCALE = 0.62; // 0.16.4: Gruppen vorher 0.62/0.36, Truhe 0.5 (Nutzer: zu klein, hinter der Leiste)
+export const spriteScale = (k, n) => (n > 1 ? GROUP_SCALE : bossScale(k));
 const kindOf = (o, i) => (Array.isArray(o.kinds) ? o.kinds[Math.min(i, o.kinds.length - 1)] : o.kind);
 function signTex(tex, o) { // ein Schild-Sprite je Titel, einmal erzeugt
   const key = o.title || '';
@@ -995,14 +996,14 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null) { // aliv
   const out = [];
   const rx = Math.cos(angle), ry = Math.sin(angle); // „rechts“ aus Sicht der Kamera
   for (const o of objs) {
-    if (o.type === 'chest') out.push({ x: o.x, y: o.y, tex: o.open ? tex.sprites.chestOpen : tex.sprites.chest, scale: 0.5 });
+    if (o.type === 'chest') out.push({ x: o.x, y: o.y, tex: o.open ? tex.sprites.chestOpen : tex.sprites.chest, scale: CHEST_SCALE });
     else if (o.type === 'enemy' && !o.dead) {
       const tot = Array.isArray(o.kinds) ? Math.min(3, o.kinds.length) : 1;
       const av = alive && alive[o.id] != null ? alive[o.id] : null, kindList = Array.isArray(av) ? av : null;
       const n = kindList ? kindList.length : av != null ? av : tot; // Gruppe: eine Gestalt je lebendem Gegner, nebeneinander
       for (let i = 0; i < n; i++) {
-        const off = n > 1 ? (i - (n - 1) / 2) * 0.36 : 0;
-        out.push({ x: o.x + rx * off, y: o.y + ry * off, tex: spriteFor(tex, kindList ? kindList[i] : kindOf(o, i)), scale: (n > 1 ? 0.62 : bossScale(kindList ? kindList[i] : kindOf(o, i))) * (1 + 0.02 * Math.sin(time * 3 + i)) });
+        const off = n > 1 ? (i - (n - 1) / 2) * GROUP_GAP : 0;
+        out.push({ x: o.x + rx * off, y: o.y + ry * off, tex: spriteFor(tex, kindList ? kindList[i] : kindOf(o, i)), scale: spriteScale(kindList ? kindList[i] : kindOf(o, i), n) * (1 + 0.02 * Math.sin(time * 3 + i)) });
       }
     }
     else if (o.type === 'lever' && !o.wall) out.push({ x: o.x, y: o.y, tex: o.used ? tex.sprites.leverDown : tex.sprites.leverUp, scale: 0.75 });

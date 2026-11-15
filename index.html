@@ -50,7 +50,7 @@ button{font:inherit;color:inherit}
 #actionbar .ab{flex:1 1 auto;min-height:36px;padding:0 6px;border-radius:8px;background:rgba(42,33,22,.92);border:1px solid var(--amber);font-size:.78rem;white-space:nowrap}
 #actionbar .ab[disabled]{opacity:.4;border-color:#5a4a30}
 #actionbar .wait{padding:8px;font-size:.84rem;background:var(--panel);border-radius:6px}
-#party{display:flex;gap:4px}
+#party{display:flex;gap:4px;pointer-events:auto} /* #hud hat pointer-events:none – ohne auto kommen Tipps auf die Heldenkarten nie an (Fehler bis 0.16.3) */
 .card{cursor:pointer;flex:1;min-width:0;background:var(--panel);border:1px solid #5a4a30;border-radius:5px;padding:3px;display:flex;gap:4px;align-items:center}
 .card canvas{width:32px;height:32px;image-rendering:pixelated;flex:none;border-radius:3px}
 .card .nm{font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

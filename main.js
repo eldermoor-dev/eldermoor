@@ -5,11 +5,11 @@ import {
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
   buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, castOutside, jumpToLevel, grantXp, knownSpells, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
 } from './logic.js';
-import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setResolution, W, H, BASE_W, BASE_H } from './render.js';
+import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, GROUP_GAP } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.16.3';
+const VERSION = '0.16.4';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -184,6 +184,57 @@ function updateTween(now) {
   if (k >= 1) { S.cam = { ...t.to }; S.tween = null; }
 }
 
+// ---------------------------------------------------------------- Blickanpassung (0.16.4)
+// Die Leiste unten (Meldungen, Aktionen, Heldenkarten) deckt das untere Bilddrittel ab. Damit Gegner und Truhen nicht dahinter
+// verschwinden: im Kampf weicht die Kamera einen halben Schritt zurück und neigt den Blick so, dass die Füße über der Leiste stehen
+// (Bosse: unverändert nah und formatfüllend). Vor einer geschlossenen Truhe senkt sich der Blick.
+const VIEW_BACK = 0.45;
+function viewCam() {
+  const a = S.cam.a, b = S.vb || 0;
+  return { x: S.cam.x - Math.sin(a) * b, y: S.cam.y + Math.cos(a) * b, a };
+}
+function hudTopPx(now) { // Oberkante der Leiste in Bildpixeln (H), höchstens alle 200 ms gemessen
+  if (S.hudAt && now - S.hudAt < 200) return S.hudTop;
+  S.hudAt = now;
+  const v = $('#view'), st = $('#stack');
+  const vr = v && v.getBoundingClientRect(), sr = st && st.getBoundingClientRect();
+  S.hudTop = vr && sr && vr.height > 0 && sr.height > 0 ? Math.max(0, Math.min(H, (sr.top - vr.top) / vr.height * H)) : H * 0.7;
+  return S.hudTop;
+}
+function viewTarget(now) {
+  const g = S.game, f = S.rc.focal;
+  if (!g || !S.started) return { back: 0, hz: 0.5 };
+  const c = g.combat;
+  if (c && !c.over) {
+    const hud = hudTopPx(now), tY = 1 + VIEW_BACK, floor = 0.5 * f / tY;
+    if (c.enemies.some((e) => e.hp > 0 && S.data.enemies[e.kind].boss)) return { back: 0, hz: 0.5 }; // Bosse bleiben formatfüllend (wirken bedrohlich)
+    const groups = {};
+    c.enemies.forEach((e) => { if (e.hp > 0) (groups[e.objId] = groups[e.objId] || []).push(e.kind); });
+    let maxS = 0.5;
+    for (const ks of Object.values(groups)) for (const k of ks) maxS = Math.max(maxS, spriteScale(k, ks.length));
+    const hMax = f / tY * maxS;
+    const hzFeet = hud - H * 0.015 - floor, hzHead = H * 0.03 + hMax - floor;
+    const hz = hzHead <= hzFeet ? hzFeet : hzHead;
+    return { back: VIEW_BACK, hz: Math.max(0.22, Math.min(0.62, hz / H)) };
+  }
+  if (!S.tween) {
+    const p = g.player, d = [[0, -1], [1, 0], [0, 1], [-1, 0]][p.dir];
+    const ch = g.objs.find((o) => o.type === 'chest' && !o.open && o.x === p.x + d[0] && o.y === p.y + d[1]);
+    if (ch) {
+      const hz = hudTopPx(now) - H * 0.015 - 0.5 * f; // Unterkante der Truhe knapp über der Leiste
+      return { back: 0, hz: Math.max(0.28, Math.min(0.5, hz / H)) };
+    }
+  }
+  return { back: 0, hz: 0.5 };
+}
+function updateViewAdjust(now) {
+  const t = viewTarget(now), dt = Math.min(100, now - (S.vAt || now));
+  S.vAt = now;
+  if (S.vh == null) { S.vh = t.hz; S.vb = t.back; return; }
+  const k = Math.min(1, dt / 140);
+  S.vh += (t.hz - S.vh) * k; S.vb += (t.back - S.vb) * k;
+}
+
 // ---------------------------------------------------------------- Hauptschleife
 function frame(now) {
   requestAnimationFrame(frame);
@@ -201,7 +252,9 @@ function frame(now) {
   }
   const t0 = performance.now();
   const { grid, gw, gh } = buildGrid(S.lvl, S.game.objs);
-  S.rc.render({ px: S.cam.x, py: S.cam.y, angle: S.cam.a, grid, gw, gh, sprites: buildSprites(S.game.objs, S.tex, now / 1000, S.cam.a, aliveMap()), time: now / 1000 });
+  updateViewAdjust(now);
+  const vc = viewCam();
+  S.rc.render({ px: vc.x, py: vc.y, angle: vc.a, horizon: S.vh * H, grid, gw, gh, sprites: buildSprites(S.game.objs, S.tex, now / 1000, S.cam.a, aliveMap()), time: now / 1000 });
   S.ctx.putImageData(S.img, 0, 0);
   S.frameMs = S.frameMs * 0.9 + (performance.now() - t0) * 0.1;
   if (S.loadMs == null) S.loadMs = Math.round(performance.now());
@@ -341,6 +394,11 @@ async function onEvent(ev) {
     await saveSlot('auto', true);
     return;
   }
+  if (ev.type === 'exitAgain') {
+    const ex = S.game.objs.find((o) => o.id === ev.id) || {}, def = (S.lvl.objects || []).find((o) => o.id === ev.id) || {};
+    const t = def.again || ex.again || 'Hier geht es nicht weiter.';
+    say(t); toast(t); return;
+  }
   if (ev.type !== 'exit') return;
   const exo = S.game.objs.find((o) => o.id === ev.id) || {};
   say(exo.say || 'Ein Runenstein glimmt auf. Das Zielgebiet des Prototyps ist erreicht.');
@@ -361,11 +419,21 @@ function introOnce(key, intro) { // Auftritt nur beim ersten Mal (Marke im Spiel
   if (!intro || g.flags[key]) return false;
   g.flags[key] = true; showEvent(intro.title, intro.text); S.sfx.play('sting'); return true;
 }
+// Bossphasen groß ansagen (0.16.4: Wechsel ging in der Meldungszeile unter)
+function announcePhases(c) {
+  c.enemies.forEach((e, i) => {
+    const en = S.data.enemies[e.kind], ph = e.phase || 0, key = i + ':' + ph;
+    if (!en.phases || !ph || e.hp <= 0 || (S.phaseShown || {})[key]) return;
+    (S.phaseShown = S.phaseShown || {})[key] = true;
+    const p = en.phases[ph - 1];
+    showEvent(p.name, p.msg || ''); S.sfx.play('sting'); vib([60, 40, 60]);
+  });
+}
 function startCombatUI(enemyObj) {
   if (S.game.combat) return;
   S.held = []; S.queued = null;
   startCombat(S.game, S.data, enemyObj);
-  S.clog = []; S.annKey = null;
+  S.clog = []; S.annKey = null; S.phaseShown = {};
   S.foe = 0;
   const name = S.game.combat.enemies.map((e) => e.name).join(', ');
   say(`${name} ${S.game.combat.enemies.length > 1 ? 'greifen' : 'greift'} an!`);
@@ -492,7 +560,7 @@ function onViewTap(e) {
   if (alive.length < 2) return;
   const r = $('#view').getBoundingClientRect();
   const fx = (e.clientX - r.left) / r.width;
-  const a = S.cam.a, dirX = Math.sin(a), dirY = -Math.cos(a), plX = Math.cos(a) * 0.8, plY = Math.sin(a) * 0.8;
+  const vc = viewCam(), a = vc.a, dirX = Math.sin(a), dirY = -Math.cos(a), plX = Math.cos(a) * 0.8, plY = Math.sin(a) * 0.8;
   const inv = 1 / (plX * dirY - dirX * plY);
   const byObj = {};
   alive.forEach((i) => { (byObj[c.enemies[i].objId] = byObj[c.enemies[i].objId] || []).push(i); });
@@ -502,8 +570,8 @@ function onViewTap(e) {
     if (!o) continue;
     const list = byObj[id], n = list.length;
     list.forEach((ei, k) => {
-      const off = n > 1 ? (k - (n - 1) / 2) * 0.36 : 0;
-      const sx = o.x + Math.cos(a) * off + 0.5 - S.cam.x, sy = o.y + Math.sin(a) * off + 0.5 - S.cam.y;
+      const off = n > 1 ? (k - (n - 1) / 2) * GROUP_GAP : 0;
+      const sx = o.x + Math.cos(a) * off + 0.5 - vc.x, sy = o.y + Math.sin(a) * off + 0.5 - vc.y;
       const tX = inv * (dirY * sx - dirX * sy), tY = inv * (-plY * sx + plX * sy);
       if (tY <= 0.15) return;
       const d = Math.abs(0.5 * (1 + tX / tY) - fx);
@@ -659,6 +727,7 @@ function renderCombat() {
   const c = S.game.combat, eb = $('#enemybox'), ab = $('#actionbar');
   if (!c) { eb.hidden = true; ab.hidden = true; return; }
   eb.hidden = false;
+  announcePhases(c);
   const cur = c.over ? null : currentActor(S.game);
   const curName = cur ? (cur.side === 'h' ? S.game.heroes[cur.idx].name : c.enemies[cur.idx].name) : '';
   if (!c.enemies[S.foe] || c.enemies[S.foe].hp <= 0) S.foe = Math.max(0, c.enemies.findIndex((e) => e.hp > 0));
@@ -737,7 +806,7 @@ function helpHtml() {
   <h3>Rechts: Aktionen</h3><p>◉ Interagieren (Türen, Truhen, Hebel, Gegner ansprechen; Türen und Truhen gehen auch auf, wenn du gegen sie läufst oder sie direkt vor dir antippst), ⚔ Angriff, ✦ Fähigkeit (nur im Kampf, kostet Mana oder Ausdauer). Bei mehreren Gegnern: Gegner antippen = Ziel wählen, „Alle“ trifft jeden Gegner mit 60 % Schaden, ▣ Inventar, ☻ Charakter.</p>
   <h3>Menü (☰ rechts unten)</h3><p>Karte (auf eine erkundete Zelle tippen setzt oder entfernt eine Notiz), Rasten, Speichern, Laden, Einstellungen. Oben rechts zeigt der Kompass die Blickrichtung.</p>
   <h3>Kampf</h3><p>Rundenbasiert. Die Zugreihenfolge steht oben. Hinterreihe-Helden ohne Fernkampf treffen nur halb so hart.</p>
-  <h3>Rast</h3><p>Menü → Rasten (oder im Inventar beim Proviant). Mit Proviant erholt sich die Gruppe vollständig, auch Bewusstlose. Ohne Proviant nur zu 30 %. Nicht im Kampf und nicht, wenn ein Gegner nahe ist.</p>
+  <h3>Rast</h3><p>Menü → Rasten (oder im Inventar beim Proviant). Mit Proviant erholt sich die Gruppe vollständig, auch Bewusstlose. Ohne Proviant nur zu 30 %. Nicht im Kampf, nicht wenn ein Gegner in Sichtweite ist, und erst ab 10 Schritten Abstand zum nächsten Gegner (Weg zählt, nicht Luftlinie).</p>
   <h3>Ziel des Prototyps</h3><p>Truhe im Nebenraum öffnen, Eisenschlüssel nehmen, die Eisentür aufschließen, den Moorschrat besiegen und den Runenstein erreichen.</p>
   <p class="muted">Prototyp Phase 2 (in Arbeit) · Version ${VERSION} · Autor: eldermoor-dev. Alle Grafiken und Geräusche entstehen im Spiel selbst (prozedural). Keine Musik.</p>
   <div class="acts">${closeBtn}</div>`;
@@ -883,7 +952,7 @@ function openMap() {
   const w = S.lvl.map[0].length, h = S.lvl.map.length;
   const cs = Math.max(8, Math.min(Math.floor(560 / w), Math.floor(230 / h)));
   openModal(`<h2 style="margin:0 0 4px">Karte – ${esc(S.lvl.name)}</h2><canvas id="mapcv" width="${cs * w}" height="${cs * h}"></canvas>
-  <div class="acts mapbar"><span class="muted">Blick: ${DIR_NAMES[S.game.player.dir]} · Zelle tippen = Notiz ◆</span>${closeBtn}</div>`, 'map');
+  <div class="acts mapbar"><span class="muted">Blick: ${DIR_NAMES[S.game.player.dir]} · Zelle tippen = Notiz ◆</span><span style="display:flex;gap:8px"><button class="mb" data-m="maplegend">Legende</button>${closeBtn}</span></div>`, 'map');
   const cv = $('#mapcv');
   cv.dataset.cs = cs;
   drawMap();
@@ -914,32 +983,73 @@ function drawMap() {
     }
   }
   for (const o of g.objs) {
-    if (!seen(o.x, o.y) || o.type === 'secret' || (o.type === 'lever' && o.wall && !o.used)) continue;
-    const cx = o.x * cs + cs / 2, cy = o.y * cs + cs / 2;
-    if (o.type === 'door') { // Tür als Balken quer zum Gang (Wände links/rechts → waagerecht), Farbe: zu / verschlossen / offen
-      const horiz = cellChar(lvl, o.x - 1, o.y) !== '.' && cellChar(lvl, o.x + 1, o.y) !== '.', t = Math.max(3, Math.round(cs * 0.3)), x0 = o.x * cs, y0 = o.y * cs;
-      const bar = (a, b, l, d) => horiz ? c.fillRect(x0 + a, cy - t / 2 + b, l, t + d) : c.fillRect(cx - t / 2 + b, y0 + a, t + d, l);
-      c.fillStyle = o.open ? '#9fb86a' : (o.locked ? '#d9503a' : '#e8a24a');
-      if (o.open) { bar(0, 0, cs * 0.28, 0); bar(cs * 0.72, 0, cs * 0.28, 0); } // offen: nur zwei Stummel, Durchgang frei
-      else { bar(0, 0, cs, 0); c.fillStyle = '#1a120a'; c.beginPath(); c.arc(cx, cy, Math.max(1.5, cs * 0.1), 0, 7); c.fill(); } // Griff/Schloss
-    }
-    else if (o.type === 'chest') { c.fillStyle = o.open ? '#7a6a3a' : '#e0b040'; c.fillRect(cx - cs * 0.25, cy - cs * 0.2, cs * 0.5, cs * 0.4); }
-    else if (o.type === 'stairs') { c.fillStyle = '#7fd4ff'; c.beginPath(); c.moveTo(cx - cs * 0.3, cy - cs * 0.25); c.lineTo(cx + cs * 0.3, cy - cs * 0.25); c.lineTo(cx, cy + cs * 0.3); c.fill(); }
-    else if (o.type === 'exit') { c.strokeStyle = '#7fd4ff'; c.lineWidth = 2; c.beginPath(); c.arc(cx, cy, cs * 0.3, 0, 7); c.stroke(); }
-    else if (o.type === 'gate') { c.strokeStyle = o.open ? '#6b5a3a' : '#9aa4b4'; c.lineWidth = 2; for (let i = 1; i < 4; i++) { c.beginPath(); c.moveTo(o.x * cs + i * cs / 4, o.y * cs + 2); c.lineTo(o.x * cs + i * cs / 4, o.y * cs + cs - 2); c.stroke(); } }
-    else if (o.type === 'lever') { c.fillStyle = o.used ? '#6b5a3a' : '#d9a441'; c.fillRect(cx - 2, cy - cs * 0.3, 4, cs * 0.6); }
-    else if (o.type === 'sign') { c.fillStyle = '#c89a5a'; c.fillRect(cx - cs * 0.25, cy - cs * 0.2, cs * 0.5, cs * 0.3); }
-    else if (o.type === 'merchant') { c.fillStyle = '#e0b040'; c.font = `bold ${cs}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('$', cx, cy); }
-    else if (o.type === 'enemy' && !o.dead) { c.fillStyle = '#d05040'; c.font = `bold ${cs}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('×', cx, cy); }
+    if (!seen(o.x, o.y)) continue;
+    const k = mapSymKind(o);
+    if (!k) continue;
+    const horiz = o.type === 'door' && cellChar(lvl, o.x - 1, o.y) !== '.' && cellChar(lvl, o.x + 1, o.y) !== '.';
+    drawMapSym(c, k, o.x * cs, o.y * cs, cs, horiz);
   }
-  c.fillStyle = '#ffe066';
-  for (const idx of g.notes) { const x = idx % w, y = Math.floor(idx / w); c.beginPath(); c.moveTo(x * cs + cs / 2, y * cs + 3); c.lineTo(x * cs + cs - 3, y * cs + cs / 2); c.lineTo(x * cs + cs / 2, y * cs + cs - 3); c.lineTo(x * cs + 3, y * cs + cs / 2); c.fill(); }
-  const p = g.player, px = p.x * cs + cs / 2, py = p.y * cs + cs / 2, a = p.dir * Math.PI / 2, r = cs * 0.38;
-  c.fillStyle = '#ffffff'; c.beginPath();
-  c.moveTo(px + Math.sin(a) * r, py - Math.cos(a) * r);
-  c.lineTo(px + Math.sin(a + 2.5) * r, py - Math.cos(a + 2.5) * r);
-  c.lineTo(px + Math.sin(a - 2.5) * r, py - Math.cos(a - 2.5) * r);
-  c.fill();
+  for (const idx of g.notes) drawMapSym(c, 'note', (idx % w) * cs, Math.floor(idx / w) * cs, cs);
+  drawMapSym(c, 'player', g.player.x * cs, g.player.y * cs, cs, false, g.player.dir);
+}
+// Kartensymbole (eine Quelle für Karte und Legende). Geheimwand und unbenutzter Schalterstein erscheinen nicht (sehen aus wie Mauer).
+function mapSymKind(o) {
+  if (o.type === 'secret' || (o.type === 'lever' && o.wall && !o.used)) return null;
+  if (o.type === 'door') return o.open ? 'doorOpen' : o.locked ? 'doorLocked' : 'door';
+  if (o.type === 'chest') return o.open ? 'chestOpen' : 'chest';
+  if (o.type === 'gate') return o.open ? 'gateOpen' : 'gate';
+  if (o.type === 'lever') return o.used ? 'leverUsed' : 'lever';
+  if (o.type === 'enemy') return o.dead ? null : 'enemy';
+  return ['stairs', 'exit', 'sign', 'merchant'].includes(o.type) ? o.type : null;
+}
+const MAP_LEGEND = [
+  ['player', 'Du (Spitze = Blickrichtung)'], ['note', 'Eigene Notiz (Zelle antippen)'], ['floor', 'Erkundeter Boden'], ['wall', 'Wand'], ['unknown', 'Noch nicht erkundet'],
+  ['door', 'Tür, geschlossen'], ['doorLocked', 'Tür, verschlossen (Schlüssel nötig)'], ['doorOpen', 'Tür, offen'],
+  ['chest', 'Truhe'], ['chestOpen', 'Truhe, geöffnet'], ['gate', 'Gitter, geschlossen'], ['gateOpen', 'Gitter, offen'],
+  ['lever', 'Hebel'], ['leverUsed', 'Hebel, benutzt'], ['stairs', 'Treppe / Durchgang in ein anderes Gebiet'], ['exit', 'Ausgang (Ende des Gebiets)'],
+  ['sign', 'Hinweistafel'], ['merchant', 'Händler'], ['enemy', 'Gegner'],
+];
+function drawMapSym(c, k, x0, y0, cs, horiz = true, dir = 1) {
+  const cx = x0 + cs / 2, cy = y0 + cs / 2;
+  const txt = (t, col) => { c.fillStyle = col; c.font = `bold ${cs}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(t, cx, cy); };
+  if (k === 'floor') { c.fillStyle = '#4a4034'; c.fillRect(x0, y0, cs, cs); }
+  else if (k === 'wall') { c.fillStyle = '#8a7a5e'; c.fillRect(x0, y0, cs, cs); }
+  else if (k === 'unknown') { c.strokeStyle = '#4a4034'; c.lineWidth = 2; c.strokeRect(x0 + 1, y0 + 1, cs - 2, cs - 2); }
+  else if (k === 'door' || k === 'doorLocked' || k === 'doorOpen') { // Balken quer zum Gang, Farbe: zu / verschlossen / offen
+    const t = Math.max(3, Math.round(cs * 0.3));
+    const bar = (a, l) => horiz ? c.fillRect(x0 + a, cy - t / 2, l, t) : c.fillRect(cx - t / 2, y0 + a, t, l);
+    c.fillStyle = k === 'doorOpen' ? '#9fb86a' : k === 'doorLocked' ? '#d9503a' : '#e8a24a';
+    if (k === 'doorOpen') { bar(0, cs * 0.28); bar(cs * 0.72, cs * 0.28); } // offen: zwei Stummel, Durchgang frei
+    else { bar(0, cs); c.fillStyle = '#1a120a'; c.beginPath(); c.arc(cx, cy, Math.max(1.5, cs * 0.1), 0, 7); c.fill(); } // Griff/Schloss
+  }
+  else if (k === 'chest' || k === 'chestOpen') { c.fillStyle = k === 'chestOpen' ? '#7a6a3a' : '#e0b040'; c.fillRect(cx - cs * 0.25, cy - cs * 0.2, cs * 0.5, cs * 0.4); }
+  else if (k === 'stairs') { c.fillStyle = '#7fd4ff'; c.beginPath(); c.moveTo(cx - cs * 0.3, cy - cs * 0.25); c.lineTo(cx + cs * 0.3, cy - cs * 0.25); c.lineTo(cx, cy + cs * 0.3); c.fill(); }
+  else if (k === 'exit') { c.strokeStyle = '#7fd4ff'; c.lineWidth = 2; c.beginPath(); c.arc(cx, cy, cs * 0.3, 0, 7); c.stroke(); }
+  else if (k === 'gate' || k === 'gateOpen') { c.strokeStyle = k === 'gateOpen' ? '#6b5a3a' : '#9aa4b4'; c.lineWidth = 2; for (let i = 1; i < 4; i++) { c.beginPath(); c.moveTo(x0 + i * cs / 4, y0 + 2); c.lineTo(x0 + i * cs / 4, y0 + cs - 2); c.stroke(); } }
+  else if (k === 'lever' || k === 'leverUsed') { c.fillStyle = k === 'leverUsed' ? '#6b5a3a' : '#d9a441'; c.fillRect(cx - 2, cy - cs * 0.3, 4, cs * 0.6); }
+  else if (k === 'sign') { c.fillStyle = '#c89a5a'; c.fillRect(cx - cs * 0.25, cy - cs * 0.2, cs * 0.5, cs * 0.3); }
+  else if (k === 'merchant') txt('$', '#e0b040');
+  else if (k === 'enemy') txt('×', '#d05040');
+  else if (k === 'note') { c.fillStyle = '#ffe066'; c.beginPath(); c.moveTo(cx, y0 + 3); c.lineTo(x0 + cs - 3, cy); c.lineTo(cx, y0 + cs - 3); c.lineTo(x0 + 3, cy); c.fill(); }
+  else if (k === 'player') {
+    const a = dir * Math.PI / 2, r = cs * 0.38;
+    c.fillStyle = '#ffffff'; c.beginPath();
+    c.moveTo(cx + Math.sin(a) * r, cy - Math.cos(a) * r);
+    c.lineTo(cx + Math.sin(a + 2.5) * r, cy - Math.cos(a + 2.5) * r);
+    c.lineTo(cx + Math.sin(a - 2.5) * r, cy - Math.cos(a - 2.5) * r);
+    c.fill();
+  }
+}
+// Legende: nur Symbole, die in diesem Gebiet schon gesehen wurden (verrät nichts Unentdecktes), dazu die Grundsymbole.
+function openMapLegend() {
+  const g = S.game, w = S.lvl.map[0].length;
+  const have = new Set(['player', 'note', 'floor', 'wall', 'unknown']);
+  for (const o of g.objs) { const k = mapSymKind(o); if (k && g.seen[o.y * w + o.x]) have.add(k); }
+  const rows = MAP_LEGEND.filter(([k]) => have.has(k));
+  openModal(`<h2 style="margin:0 0 4px">Legende – ${esc(S.lvl.name)}</h2><p class="muted" style="margin:0 0 6px">Nur Zeichen, die du in diesem Gebiet schon gesehen hast.</p>
+  <div class="grid4">${rows.map(([k, t]) => `<div class="qp"><canvas data-sym="${k}" width="40" height="40" style="width:24px;height:24px;background:#0a0806;border-radius:3px"></canvas><span>${esc(t)}</span></div>`).join('')}</div>
+  <div class="acts"><button class="mb primary" data-m="map">Zurück zur Karte</button>${closeBtn}</div>`, 'maplegend');
+  document.querySelectorAll('#modal-box canvas[data-sym]').forEach((cv) => drawMapSym(cv.getContext('2d'), cv.dataset.sym, 0, 0, 40, true, 1));
 }
 
 function openSettings() {
@@ -1087,6 +1197,7 @@ async function onModalClick(e) {
   else if (m === 'title-close') { closeModal(); }
   else if (m === 'title') { if (S.started && !confirm('Zum Titelbild? Nicht gespeicherter Fortschritt geht verloren.')) return; closeModal(); await showTitle(); }
   else if (m === 'map') openMap();
+  else if (m === 'maplegend') openMapLegend();
   else if (m === 'debug') openDebug();
   else if (m === 'save') openSlots('save');
   else if (m === 'load') openSlots('load');
@@ -1132,7 +1243,7 @@ async function onModalClick(e) {
   else if (m === 'return') { applyDefeat(g, S.data); S.lock = false; snapCam(); closeModal(); say('Du erwachst am Eingang. Die Gruppe ist angeschlagen.'); renderAll(); }
   else if (m === 'rest') {
     const r = restParty(g, S.data);
-    const t = { 'in-combat': 'Im Kampf kann niemand rasten.', 'enemy-near': 'Ein Gegner ist zu nah. So kann die Gruppe nicht rasten.', 'nothing-to-do': 'Alle sind bereits bei Kräften.' }[r.error];
+    const t = { 'in-combat': 'Im Kampf kann niemand rasten.', 'enemy-near': `Ein Gegner ist zu nah (${r.dist} Schritte, nötig sind ${(S.data.rest || {}).enemyDistance || 10}). So kann die Gruppe nicht rasten.`, 'enemy-seen': 'Ein Gegner ist in Sichtweite. So kann die Gruppe nicht rasten.', 'nothing-to-do': 'Alle sind bereits bei Kräften.' }[r.error];
     if (t) { say(t); toast(t); closeModal(); }
     else { say(r.msg); S.sfx.play(r.sfx); toast(r.msg, 3200); closeModal(); renderAll(); }
   }

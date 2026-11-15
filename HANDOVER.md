@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Phase 2 Schritt 0 bis 2 auf dem Gerät getestet; 3a teilweise auf dem Gerät (Laden alter Stände, Anzeige); 3b auf dem Gerät bestätigt; 3c nur Node/Headless getestet, Version 0.4.0
+Autor: eldermoor-dev · Stand: Version 0.16.4 (15.11.2026). 0.16.3 vom Nutzer auf dem Galaxy S25 durchgetestet (siehe Abschnitt 0.16.4). Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -24,6 +24,8 @@ Autor: eldermoor-dev · Stand: Phase 2 Schritt 0 bis 2 auf dem Gerät getestet; 
 | icon-192.png, icon-512.png | Prozedural erzeugte Icons |
 | BALANCE.md | Balancetabelle (EP, Rassen, Berufe, Werte je Stufe), **erzeugt**, nicht von Hand ändern. Neu erzeugen: `node -e "import('./logic.js').then(async L=>{const fs=await import('node:fs');fs.writeFileSync('BALANCE.md',L.balanceMarkdown(JSON.parse(fs.readFileSync('game.json','utf8'))))})"`. Der Test prüft, dass sie zu game.json passt. Nicht im Offline-Cache. |
 | HANDOVER.md | Diese Datei |
+| sim.js | Balance-Simulation (Node, `node sim.js 3000 --write` schreibt SIM.md). Nicht im Offline-Cache. |
+| SIM.md | Ergebnis der Simulation, **veraltet** (Stand vor Hauptmann/Nebelhüter); wird in der Balance-Version neu erzeugt. |
 
 **Regel:** Wird eine Spieldatei geändert, `VERSION` in `main.js` UND `sw.js` erhöhen (der Test prüft Gleichheit). Neue Dateien in `ASSETS` (sw.js) eintragen.
 
@@ -490,3 +492,22 @@ Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätet
 
 ## 0.16.3
 - Hedda (Händlerin) neu gezeichnet: Frau mit Kopftuch, langen Haaren/Zöpfen, Gesicht mit Wimpern und Lippen, Schürze, Laterne, hinter dem Tresen; 128-px-Sprite (sm2), warmer Hautton statt Palette-Grün.
+
+## 0.16.4 – Fixes aus dem Gerätetest 0.16.3 (15.11.2026)
+**Gerätetest 0.16.3 (Nutzer, Galaxy S25):** ok: Update/Start, Kleriker-Beschriftung, Hedda, Treppe in den Turm, Hebel, Gitter, Schatzkammer, Geheimwand (Riss, Öffnen, Karte, Speichern/Laden), Thronsaal-Tor nur mit Schlüssel, Abschlussfenster, Speichern/Laden nach dem Boss, Fehlerlog leer. Fehler: Charakterkopf antippen ging nicht. Auftrittstext Nebelturm kam nicht (vermutlich, weil der Turm im Spielstand schon früher betreten wurde; nicht gesichert). Phasenwechsel des Bosses nicht bemerkt. Nebelhüter und Turmgegner zu leicht (ohne Debug, Gruppe Stufe 8–9).
+- **Fix Kopf antippen:** `#party` hatte kein `pointer-events:auto` (erbte `none` von `#hud`), Tipps gingen aufs Bild. Betraf 0.15.15/0.16.2 (Heilziel per Kopf, Zaubern per Kopf). Test prüft jetzt `#party`, `#enemybox`, `#actionbar`. Headless-Gegenprobe: in 0.16.3 erreicht der Klick die Karte nicht, in 0.16.4 öffnet er „Odalys zaubert“.
+- **Monster und Truhen größer und über der Leiste:** Renderer kann den Horizont verschieben (`view.horizon` in Pixeln, Boden/Decke zeilenweise, Wände und Sprites danach). `main.js` `viewTarget/updateViewAdjust`: im Kampf (ohne Boss) weicht die Kamera 0,45 Feld zurück (`VIEW_BACK`) und neigt den Blick so, dass die Füße knapp über der Leiste (`#stack`, alle 200 ms gemessen) stehen; reicht der Platz nicht, bleibt der Kopf im Bild. Bosskämpfe unverändert (formatfüllend). Vor einer geschlossenen Truhe senkt sich der Blick. Weicher Übergang (~140 ms). Gruppenfiguren 0,62 → 0,78 (`GROUP_SCALE`), Abstand 0,36 → 0,44, Einzelgegner 0,85 → 0,9, Truhe 0,5 → 0,62 (`CHEST_SCALE`). `onViewTap` nutzt dieselbe Kamera (`viewCam`). Headless-Vorher/Nachher geprüft (Wölfe, 3er-Gruppe, Boss, Truhe), auf dem Gerät offen.
+- **Bossphasen groß angesagt:** `announcePhases` zeigt beim Phasenwechsel das Ereignisbanner (Name + Satz), Ton `sting`, Vibration.
+- **Rast-Regel (Nutzer):** gesperrt, wenn ein lebender Gegner in Sichtlinie ist (beliebig weit; Mauer, geschlossene Tür, Geheimwand, Schalterstein verdecken, Gitter nicht) oder näher als 10 **Schritte Weglänge** (`restThreat` in logic.js, BFS; unverschlossene Türen gelten als begehbar, verschlossene Türen/Gitter/Geheimwände trennen). `game.json → rest {enemyDistance: 10, sight: true}`. Meldungen: „zu nah (n Schritte, nötig sind 10)“ / „in Sichtweite“. Folge (gemessen, alle Gegner lebend): Kultgruft 0 Rastfelder, nach der ersten Skelettgruppe 16; Moorpfad 15, Nebelturm 14, Schratgruben 4. Simulation (sim.js) unverändert lauffähig.
+- **Kartenlegende:** Knopf „Legende“ im Kartenfenster; zeigt nur Zeichen, die im Gebiet schon gesehen wurden, plus Grundzeichen. Kartensymbole aus einer Quelle (`mapSymKind`, `drawMapSym`, `MAP_LEGEND`).
+- **Truhen-Wächter (Nutzer):** `chest.guard = [Gegner-IDs]` in game.json. Solange einer lebt: „Die Truhe ist bewacht. Erst die Gegner in diesem Raum besiegen.“ Gelesen aus game.json (`chestGuards`), daher ohne Migration auch für alte Stände. Zuordnung: test1 chest_a←en2; test2 chest_b←en21; Moorpfad chest_p1/chest_p2←en_p3, chest_pfad_key←en_p3+en_p4 (offenes Gelände: nächste Gruppe nach Weglänge); Kultgruft chest_g1←en_g3, chest_g2←en_g4, chest_g3←en_boss; Schratgruben chest_s1←en_s5, chest_s_key←en_s3, chest_s2←en_s4, chest_s_boss←en_sboss; Nebelturm chest_t_key←en_t4, chest_t_boss←en_tboss. Ohne Wächter: chest_p3, chest_p4, chest_g4, chest_t2, chest_t_secret, Siedlung. Bereits geöffnete Truhen bleiben offen.
+- **Ausgang erneut betreten:** Ereignis `exitAgain`, zeigt `exit.again` (Turm: „Hier geht es in einer späteren Version weiter.“).
+- Speicherstand weiter v6. Tests 83.
+
+## Plan nach 0.16.4 (vom Nutzer am 15.11.2026 festgelegt bzw. bestätigt)
+- **0.16.5 Balance:** Kampagnen-Simulation neu (das frühere `camp.mjs` liegt nicht im Repo), Nebelhüter und Turmgegner schwerer. Vorschlag Zielwerte (Annahme des Assistenten, nicht vom Nutzer festgelegt): Nebelhüter bei Stufe 8 „klug“ ca. 75–85 % Siege, „nur Angriff“ unter 30 %. Neue Rast-Regel und Truhen-Wächter in die Simulation übernehmen.
+- **0.16.6 Türen und Schilder:** Türen bleiben geöffnet sichtbar (Rahmen + aufgeklapptes Türblatt statt verschwinden). Raumnamen (ZELLEN, ARCHIV …) über/auf den Türen; längere Texte als Tafel **an der Wand** (sichtbar, Lesen per Tippen/◉); keine Schilder mehr mitten im Raum. Kartenlegende anpassen.
+- **0.16.7 Figuren:** Skelett größer/bedrohlicher (Vorschlag: breitere Schultern, Schwert, glühende Augen); Hauptmann eigenes Sprite 128–192 px; Nebelhüter neu (192 px, Unterkörper aus Nebel, kalte Krone, kein Brust-Symbol) **sitzend auf einem Thron an der Ostwand** des Thronsaals (Option A, Nutzer 15.11.2026), Saal so, dass Truhe/Ausgang erreichbar bleiben.
+- Danach 0.17: Talente (siehe Plan ab 0.16).
+- Rätselhilfe an den Nutzer im Chat: gestuft (erst sanfter Hinweis, konkreter nur auf Nachfrage).
+

@@ -1185,6 +1185,9 @@
           "type": "chest",
           "x": 12,
           "y": 1,
+          "guard": [
+            "en2"
+          ],
           "loot": [
             {
               "item": "iron_key",
@@ -1330,6 +1333,9 @@
           "type": "chest",
           "x": 12,
           "y": 3,
+          "guard": [
+            "en21"
+          ],
           "loot": [
             {
               "item": "potion",
@@ -1495,6 +1501,9 @@
           "type": "chest",
           "x": 12,
           "y": 1,
+          "guard": [
+            "en_p3"
+          ],
           "loot": [
             {
               "item": "potion",
@@ -1507,6 +1516,9 @@
           "type": "chest",
           "x": 14,
           "y": 5,
+          "guard": [
+            "en_p3"
+          ],
           "loot": [
             {
               "item": "potion",
@@ -1539,6 +1551,10 @@
           "type": "chest",
           "x": 19,
           "y": 1,
+          "guard": [
+            "en_p3",
+            "en_p4"
+          ],
           "loot": [
             {
               "item": "gruft_key",
@@ -1729,6 +1745,9 @@
           "type": "chest",
           "x": 15,
           "y": 1,
+          "guard": [
+            "en_g3"
+          ],
           "loot": [
             {
               "item": "gruft_siegel",
@@ -1767,6 +1786,9 @@
           "type": "chest",
           "x": 15,
           "y": 11,
+          "guard": [
+            "en_g4"
+          ],
           "loot": [
             {
               "item": "potion",
@@ -1832,6 +1854,9 @@
           "type": "chest",
           "x": 25,
           "y": 4,
+          "guard": [
+            "en_boss"
+          ],
           "loot": [
             {
               "gold": 40
@@ -1940,6 +1965,9 @@
           "type": "chest",
           "x": 9,
           "y": 1,
+          "guard": [
+            "en_s5"
+          ],
           "loot": [
             {
               "gold": 30
@@ -2001,6 +2029,9 @@
           "type": "chest",
           "x": 25,
           "y": 13,
+          "guard": [
+            "en_s3"
+          ],
           "loot": [
             {
               "item": "gruben_schluessel",
@@ -2028,6 +2059,9 @@
           "type": "chest",
           "x": 26,
           "y": 1,
+          "guard": [
+            "en_s4"
+          ],
           "loot": [
             {
               "item": "ration",
@@ -2075,6 +2109,9 @@
           "type": "chest",
           "x": 32,
           "y": 5,
+          "guard": [
+            "en_sboss"
+          ],
           "loot": [
             {
               "gold": 60
@@ -2266,6 +2303,9 @@
           "type": "chest",
           "x": 2,
           "y": 2,
+          "guard": [
+            "en_t4"
+          ],
           "loot": [
             {
               "item": "turm_schluessel",
@@ -2339,6 +2379,9 @@
           "type": "chest",
           "x": 24,
           "y": 6,
+          "guard": [
+            "en_tboss"
+          ],
           "loot": [
             {
               "gold": 90
@@ -2362,7 +2405,8 @@
           "look": "up",
           "title": "Der Nebel lichtet sich",
           "say": "Vom Turmfenster aus siehst du zum ersten Mal über das ganze Moor. Im Norden steht eine Festung, die auf keiner Karte ist.",
-          "text": "Der Nebelhüter ist besiegt. Der Weg zur Moorfestung wird in einer späteren Version geöffnet."
+          "text": "Der Nebelhüter ist besiegt. Der Weg zur Moorfestung wird in einer späteren Version geöffnet.",
+          "again": "Hier geht es in einer späteren Version weiter."
         },
         {
           "id": "secret_t1",
@@ -2413,7 +2457,8 @@
   },
   "rest": {
     "hungryPct": 30,
-    "enemyDistance": 3
+    "enemyDistance": 10,
+    "sight": true
   },
   "slots": {
     "weapon": "Waffe",

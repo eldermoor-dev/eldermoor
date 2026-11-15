@@ -80,6 +80,9 @@ export async function runTests(data, env = {}) {
     assert(/verschlossen/.test(r.msg) && s.objs.find((o) => o.id === 'door_b').locked, 'Tür ohne Schlüssel muss zu bleiben');
     put(s, 12, 2, 0);
     r = L.interact(s, data);
+    assert(r.guarded && !s.inv.iron_key, 'Truhe bleibt zu, solange die Wölfe (en2) leben: ' + JSON.stringify(r));
+    s.objs.find((o) => o.id === 'en2').dead = true;
+    r = L.interact(s, data);
     assert(r.sfx === 'chest' && s.inv.iron_key === 1 && s.inv.potion === 4 && s.gold === 32, 'Truhenbeute: ' + JSON.stringify([s.inv, s.gold]));
     assert(L.interact(s, data).sfx !== 'chest' && s.inv.potion === 4, 'zweites Öffnen bringt nichts');
     assert(L.tryMove(s, data, 'f').moved, 'geöffnete Truhe ist begehbar');
@@ -463,6 +466,60 @@ export async function runTests(data, env = {}) {
     const oh = data.enemies.schrat.onHit; assert(data.statuses[oh.status] && oh.power >= 1, 'Moorschrat onHit');
     // Kampf wird nie gespeichert: Status taucht nicht im Spielstand auf
     assert(!JSON.stringify(L.serialize(L.deserialize(L.serialize(s6), data))).includes('"status"'), 'kein Status im Spielstand');
+  });
+
+  await test('Truhen-Wächter (0.16.4): Truhe zu, solange ein Wächter lebt; Daten stimmig; alte Stände', () => {
+    for (const [lid, lvl] of Object.entries(data.levels)) for (const o of lvl.objects) {
+      if (!o.guard) continue;
+      assert(o.type === 'chest' && Array.isArray(o.guard) && o.guard.length, `${lid}: ${o.id} guard nur an Truhen, als Liste`);
+      for (const id of o.guard) assert(lvl.objects.some((q) => q.id === id && q.type === 'enemy'), `${lid}: ${o.id} Wächter ${id} ist kein Gegner dieses Gebiets`);
+    }
+    const s = fresh(5); put(s, 12, 2, 0);
+    const chest = s.objs.find((o) => o.id === 'chest_a');
+    delete chest.guard; // alter Spielstand ohne Feld: Regel kommt aus game.json
+    assert(L.interact(s, data).guarded && !chest.open, 'bewacht');
+    s.objs.find((o) => o.id === 'en2').dead = true;
+    assert(L.interact(s, data).sfx === 'chest' && chest.open, 'nach dem Sieg offen');
+    const t = L.newGame(data, 6); L.jumpToLevel(t, data, 'nebelturm');
+    const boss = t.objs.find((o) => o.id === 'en_tboss'), bc = t.objs.find((o) => o.id === 'chest_t_boss');
+    assert(L.chestGuarded(t, data, bc), 'Boss-Truhe im Thronsaal bewacht');
+    boss.dead = true; assert(!L.chestGuarded(t, data, bc), 'nach Boss-Sieg frei');
+    assert(!L.chestGuarded(t, data, t.objs.find((o) => o.id === 'chest_t_secret')), 'Truhe ohne Wächter frei');
+  });
+
+  await test('Ausgang (0.16.4): erstes Betreten = Abschluss, danach kurzer Hinweis', () => {
+    const s = fresh(9); s.objs.forEach((o) => { if (o.type === 'door') { o.open = true; o.locked = false; } if (o.type === 'enemy') o.dead = true; });
+    put(s, 18, 7, 1);
+    const a = L.tryMove(s, data, 'f'); assert(a.events.some((e) => e.type === 'exit'), 'erstes Mal: exit ' + JSON.stringify(a));
+    put(s, 18, 7, 1);
+    const b = L.tryMove(s, data, 'f'); assert(b.events.some((e) => e.type === 'exitAgain') && !b.events.some((e) => e.type === 'exit'), 'danach: exitAgain ' + JSON.stringify(b));
+    const t = data.levels.nebelturm.objects.find((o) => o.id === 'exit_turm');
+    assert(t && /späteren Version/.test(t.again), 'Turm-Ausgang hat Hinweistext');
+  });
+
+  await test('Rast (0.16.4): Sperre nach Weglänge (10 Schritte) und Sichtlinie', () => {
+    const d = L.clone(data);
+    d.rest = { hungryPct: 30, enemyDistance: 10, sight: true };
+    d.levels.rt = { id: 'rt', name: 'Rasttest', palette: 'keller', start: { x: 1, y: 1, dir: 1 }, objects: [], map: [
+      '#################',
+      '#...............#',
+      '###############.#',
+      '#...............#',
+      '#################'] };
+    const mk = (objs) => { const s = L.newGame(d, 7); s.levelId = 'rt'; s.player = { x: 1, y: 1, dir: 1 }; s.objs = objs; s.heroes[0].hp = 1; return s; };
+    const en = (x, y) => ({ id: 'e' + x + y, type: 'enemy', kind: 'wolf', x, y, hp: 26, dead: false });
+    eq(L.restParty(mk([en(1, 3)]), d).error, undefined, 'Luftlinie 2, aber Weg 30 und Wand dazwischen: Rast erlaubt');
+    const r1 = L.restParty(mk([en(5, 1)]), d);
+    assert(r1.error === 'enemy-near' && r1.dist === 4, 'Weg 4 → zu nah: ' + JSON.stringify(r1));
+    eq(L.restParty(mk([en(10, 1)]), d).error, 'enemy-near', 'Weg 9 → zu nah');
+    eq(L.restParty(mk([en(12, 1)]), d).error, 'enemy-seen', 'Weg 11, aber gerader Gang: in Sicht');
+    const door = (locked) => ({ id: 'd1', type: 'door', x: 6, y: 1, open: false, locked, key: 'iron_key' });
+    eq(L.restParty(mk([door(false), en(12, 1)]), d).error, undefined, 'geschlossene Tür verdeckt die Sicht, Weg 11: Rast erlaubt');
+    eq(L.restParty(mk([door(false), en(9, 1)]), d).error, 'enemy-near', 'unverschlossene Tür: Weg zählt durch die Tür');
+    eq(L.restParty(mk([door(true), en(9, 1)]), d).error, undefined, 'verschlossene Tür trennt: kein Weg, keine Sicht');
+    eq(L.restParty(mk([{ ...en(12, 1), dead: true }]), d).error, undefined, 'besiegte Gegner zählen nicht');
+    eq(L.restParty(mk([{ id: 'g', type: 'gate', x: 6, y: 1, open: false }, en(9, 1)]), d).error, 'enemy-seen', 'Gitter trennt den Weg, aber man sieht hindurch');
+    assert(data.rest.enemyDistance === 10 && data.rest.sight === true, 'game.json: rest.enemyDistance 10, sight true');
   });
 
   await test('Rast (5a): Proviant, hungrig, Bewusstlose, Kampf/Gegner-Sperre, nichts zu tun', () => {
@@ -1006,6 +1063,7 @@ export async function runTests(data, env = {}) {
     // Truhe der Unteren Gruft enthält eine erzeugte Ausrüstung
     const s = fresh(44); L.changeArea(s, data, 'stairs_down');
     s.player = { x: 11, y: 3, dir: 1 };
+    s.objs.find((o) => o.id === 'en21').dead = true; // Wächter der Truhe
     const r = L.interact(s, data);
     assert(/Truhe geöffnet/.test(r.msg) && Object.keys(s.gear).length === 1, 'Truhe ohne Ausrüstung: ' + r.msg);
   });
@@ -1120,6 +1178,7 @@ export async function runTests(data, env = {}) {
     const door = s.objs.find((o) => o.id === 'door_gruft'); assert(door.locked, 'Tor verschlossen');
     assert(/verschlossen/.test(L.interact(s, data).msg), 'ohne Schlüssel zu');
     s.player = { x: 19, y: 2, dir: 0 };
+    s.objs.forEach((o) => { if (o.id === 'en_p3' || o.id === 'en_p4') o.dead = true; }); // Wächter der Schlüsseltruhe
     const c = L.interact(s, data); assert(s.inv.gruft_key === 1 && /Gruftschlüssel/.test(c.msg), 'Schlüssel aus Truhe: ' + JSON.stringify(c));
     s.player = { x: 19, y: 4, dir: 1 };
     assert(/Schlüssel dreht/.test(L.interact(s, data).msg), 'Tor öffnet mit Schlüssel');
@@ -1588,6 +1647,11 @@ export async function runTests(data, env = {}) {
     });
     if (texts['BALANCE.md'] != null) await test('BALANCE.md ist aktuell (entspricht game.json)', () => {
       assert(texts['BALANCE.md'] === L.balanceMarkdown(data), 'BALANCE.md veraltet: neu erzeugen (Befehl in HANDOVER.md)');
+    });
+    await test('Oberfläche: tippbare HUD-Teile haben pointer-events:auto (#party, #enemybox, #actionbar)', () => {
+      const css = texts['index.html'] || '';
+      assert(/#hud\{[^}]*pointer-events:none/.test(css), '#hud ohne pointer-events:none – Test anpassen');
+      for (const id of ['party', 'enemybox', 'actionbar']) assert(new RegExp('#' + id + '\\{[^}]*pointer-events:auto').test(css), `#${id} bekommt keine Tipps`);
     });
     await test('Helden kommen nur noch aus game.json (races, classes, quickParty)', () => {
       for (const f of ['logic.js', 'main.js']) assert(!/data\.heroes/.test(texts[f] || ''), `${f}: Zugriff auf data.heroes`);

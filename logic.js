@@ -222,6 +222,16 @@ export function changeArea(state, data, stairsId) {
   return { ok: true, msg: st.msg || `Du erreichst: ${target.name}.`, levelName: target.name };
 }
 
+// Truhen-Wächter (0.16.4): game.json → chest.guard = [Gegner-Objekt-IDs im selben Gebiet]. Solange einer davon lebt, bleibt die Truhe zu.
+// Gelesen aus den Spieldaten (nicht aus dem Spielstand), damit alte Stände die Regel ohne Migration bekommen.
+export function chestGuards(state, data, o) {
+  const def = (getLevel(data, state).objects || []).find((q) => q.id === o.id);
+  return (def && def.guard) || o.guard || [];
+}
+export function chestGuarded(state, data, o) {
+  const g = chestGuards(state, data, o);
+  return g.some((id) => { const e = state.objs.find((q) => q.id === id); return e && e.type === 'enemy' && !e.dead; });
+}
 export function blockerAt(state, x, y) {
   for (const o of state.objs) {
     if (o.x !== x || o.y !== y) continue;
@@ -293,7 +303,7 @@ export function tryMove(state, data, rel) {
   if (ex && !state.flags[ex.id]) {
     state.flags[ex.id] = true;
     res.events.push({ type: 'exit', id: ex.id });
-  }
+  } else if (ex) res.events.push({ type: 'exitAgain', id: ex.id }); // 0.16.4: erneutes Betreten zeigt einen kurzen Hinweis
   const stairs = state.objs.find((o) => o.type === 'stairs' && o.x === nx && o.y === ny);
   if (stairs) { res.events.push({ type: 'stairs', id: stairs.id }); return res; }
   res.encounter = enemyInFront(state);
@@ -364,6 +374,7 @@ export function interact(state, data) {
   }
   if (o.type === 'chest') {
     if (o.open) return { msg: 'Die Truhe ist leer.' };
+    if (chestGuarded(state, data, o)) return { msg: 'Die Truhe ist bewacht. Erst die Gegner in diesem Raum besiegen.', sfx: 'bump', guarded: true };
     o.open = true;
     const txt = addLoot(state, data, o.loot);
     return { msg: `Truhe geöffnet: ${txt}.`, sfx: 'chest', changed: true };
@@ -591,12 +602,55 @@ export function formatErrorLog(list, meta = '') {
 // ---------- Rast (Schritt 5a) ----------
 // Mit Proviant: alle Helden (auch bewusstlose) voll bei LP und Ressource, 1 Proviant weg.
 // Ohne Proviant („hungrig“): jeder Held erholt sich nur um data.rest.hungryPct % von LP und Ressource.
-// Nicht im Kampf und nicht, wenn ein lebender Gegner näher als data.rest.enemyDistance Felder ist.
+// Nicht im Kampf, nicht bei Gegnern in Sicht oder näher als data.rest.enemyDistance Schritte (restThreat).
+// Rast-Sperre (0.16.4, Nutzerwunsch): kein lebender Gegner näher als cfg.enemyDistance SCHRITTE (Weglänge, Wände zählen)
+// und keiner in Sichtlinie (beliebig weit; Mauern, geschlossene Türen und Geheimwände verdecken, Gitter nicht).
+// Weglänge: geschlossene, unverschlossene Türen gelten als begehbar (die Gruppe kann sie öffnen); verschlossene Türen,
+// geschlossene Gitter und Geheimwände trennen. Truhen, Tafeln usw. zählen nicht als Hindernis (man geht drumherum).
+export function restThreat(state, data, cfg = data.rest || {}) {
+  const lvl = getLevel(data, state), w = lvl.map[0].length, h = lvl.map.length;
+  const D = cfg.enemyDistance == null ? 10 : cfg.enemyDistance;
+  const foes = state.objs.filter((o) => o.type === 'enemy' && !o.dead && o.x >= 0 && o.y >= 0 && o.x < w && o.y < h);
+  if (!foes.length) return { near: 0, seen: false };
+  const at = (x, y) => state.objs.filter((o) => o.x === x && o.y === y);
+  const pathBlocked = (x, y) => isWallChar(cellChar(lvl, x, y)) || at(x, y).some((o) => (o.type === 'door' && !o.open && o.locked) || ((o.type === 'gate' || o.type === 'secret') && !o.open) || (o.type === 'lever' && o.wall));
+  const sightBlocked = (x, y) => isWallChar(cellChar(lvl, x, y)) || at(x, y).some((o) => (o.type === 'door' && !o.open) || (o.type === 'secret' && !o.open) || (o.type === 'lever' && o.wall));
+  const foeAt = new Set(foes.map((o) => o.y * w + o.x));
+  const { x: px, y: py } = state.player;
+  const dist = new Int16Array(w * h).fill(-1), q = [py * w + px];
+  dist[py * w + px] = 0;
+  let near = 0;
+  for (let i = 0; i < q.length && !near; i++) {
+    const c = q[i], cx = c % w, cy = (c - cx) / w, d = dist[c];
+    if (d >= D) continue;
+    if (foeAt.has(c) && d > 0) { near = d; break; }
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = cx + dx, ny = cy + dy, n = ny * w + nx;
+      if (nx < 0 || ny < 0 || nx >= w || ny >= h || dist[n] >= 0) continue;
+      if (foeAt.has(n)) { if (d + 1 < D) { near = d + 1; break; } continue; }
+      if (pathBlocked(nx, ny)) continue;
+      dist[n] = d + 1; q.push(n);
+    }
+  }
+  if (near) return { near, seen: false };
+  if (cfg.sight === false) return { near: 0, seen: false };
+  const los = (tx, ty) => { // Sichtlinie Mitte zu Mitte, Abtastung in Zehntelfeldern
+    const ax = px + 0.5, ay = py + 0.5, dx = tx + 0.5 - ax, dy = ty + 0.5 - ay, n = Math.ceil(Math.hypot(dx, dy) * 10);
+    for (let k = 1; k < n; k++) {
+      const cx = Math.floor(ax + dx * k / n), cy = Math.floor(ay + dy * k / n);
+      if ((cx === px && cy === py) || (cx === tx && cy === ty)) continue;
+      if (sightBlocked(cx, cy)) return false;
+    }
+    return true;
+  };
+  return { near: 0, seen: foes.some((o) => los(o.x, o.y)) };
+}
 export function restParty(state, data) {
   if (state.combat) return { error: 'in-combat' };
-  const cfg = data.rest || { hungryPct: 30, enemyDistance: 3 };
-  const near = state.objs.some((o) => o.type === 'enemy' && !o.dead && Math.max(Math.abs(o.x - state.player.x), Math.abs(o.y - state.player.y)) < cfg.enemyDistance);
-  if (near) return { error: 'enemy-near' };
+  const cfg = data.rest || { hungryPct: 30, enemyDistance: 10, sight: true };
+  const th = restThreat(state, data, cfg);
+  if (th.near) return { error: 'enemy-near', dist: th.near };
+  if (th.seen) return { error: 'enemy-seen' };
   if (state.heroes.every((h) => h.hp >= h.maxHp && h.mp >= h.maxMp)) return { error: 'nothing-to-do' };
   const fed = (state.inv.ration || 0) > 0;
   if (fed) state.inv.ration--;
