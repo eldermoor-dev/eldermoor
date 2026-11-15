@@ -474,3 +474,19 @@ Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätet
   - Neue Ebenen ALLE deutlich größer (doppelte bis dreifache Fläche). Folge: Karte muss zoomen/verschieben können, Leistung der Wegprüfung/Tests prüfen.
   - Besiegte Gegner bleiben weg; nach Ereignissen ziehen neue, stärkere Gegner in alte Gebiete ein.
   - Zwei Schwierigkeitsgrade (Normal, Schwer) beim Spielstart wählbar.
+
+## 0.16.1 – Geheimwand-Prototyp
+- Neuer Objekttyp `secret` (Geheimwand): liegt auf einer Bodenzelle, wird als Steinmauer mit feinem Riss gezeichnet (WALL_SECRET 9), sperrt bis `open`. Untersuchen/Dagegenlaufen gibt Hinweistext.
+- Versteckter Schalter: `lever` mit `wall: true` = lockerer Stein in der Mauer (WALL_SWITCH 10, eingedrückt WALL_SWITCH_ON 11), öffnet über `gate: <id>` Gitter ODER Geheimwand. Kein Hebel-Sprite.
+- markSeen: Blick endet an Geheimwand/Schalterstein. Karte zeichnet beide als Mauer (drawMap: wallObj, cellCharRaw), geöffnete Geheimwand = normaler Boden. analyzeLevel behandelt `secret` wie ein Gitter.
+- Zustand liegt wie bei Türen/Gittern im Objekt (objs/areas), übersteht Speichern/Laden (Test). Alte Spielstände bekommen die neuen Objekte über syncStatic/freshObj.
+- Nebelturm: Kammer südlich des Archivs (Felder 2–4/7–8), Geheimwand (3,6), Schalterstein (7,6), Truhe (3,8), Hinweisschild „ARCHIV“ (6,5).
+- Texturen bisher nur für Steinmauer (`#`); Fels-/Moosvarianten fehlen. Tests: 78.
+
+## 0.16.2
+- Charakterkopf antippen (Karte unten): außerhalb des Kampfs öffnet "<Name> zaubert" mit Heilzaubern und Zielköpfen (`castOutside`); im Kampf: aktiver Held öffnet Fähigkeiten/Zauber, sonst Heilmenü. Ohne Zauber öffnet der Tipp den Charakterbogen.
+- Gegnerzauber (bolt) verursachen höchstens 50 % der Max-LP des Ziels (Flächenzauber 40 %) – Magier fällt nicht mehr durch 1–2 Treffer.
+- Debug (?dev): Gebiet wechseln, Alle +1 Stufe.
+
+## 0.16.3
+- Hedda (Händlerin) neu gezeichnet: Frau mit Kopftuch, langen Haaren/Zöpfen, Gesicht mit Wimpern und Lippen, Schürze, Laterne, hinter dem Tresen; 128-px-Sprite (sm2), warmer Hautton statt Palette-Grün.

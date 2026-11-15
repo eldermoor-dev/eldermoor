@@ -1418,6 +1418,46 @@ export async function runTests(data, env = {}) {
     assert(iA >= 0 && iC > iA, 'Ansage vor dem großen Zauber');
   });
 
+  await test('Geheimwand (0.16.1): sperrt, Schalterstein öffnet, bleibt nach Speichern offen, Karte verrät nichts', () => {
+    const lv = data.levels.nebelturm, s = L.newGame(data, 5);
+    s.levelId = 'nebelturm'; s.objs = JSON.parse(JSON.stringify(lv.objects));
+    for (const o of s.objs) { if (o.type === 'gate' || o.type === 'secret') o.open = false; if (o.type === 'lever') o.used = false; if (o.type === 'chest' || o.type === 'door') o.open = false; if (o.type === 'enemy') { o.hp = 1; o.dead = true; } }
+    s.seen = new Array(lv.map[0].length * lv.map.length).fill(0);
+    s.player = { x: 3, y: 5, dir: 2 };
+    L.markSeen(s, data);
+    assert(!s.seen[7 * lv.map[0].length + 3], 'Blick endet an der Geheimwand');
+    let r = L.tryMove(s, data, 'f');
+    assert(!r.moved && r.blocker && r.blocker.type === 'secret' && /Riss/.test(r.msg), 'Geheimwand sperrt und zeigt den Riss');
+    assert(/hohl/.test(L.interact(s, data).msg), 'Hinweis beim Untersuchen');
+    s.player = { x: 7, y: 5, dir: 2 };
+    r = L.interact(s, data);
+    assert(r.changed && s.objs.find((o) => o.id === 'switch_t1').used && s.objs.find((o) => o.id === 'secret_t1').open, 'Schalterstein öffnet die Geheimwand');
+    assert(/schon eingedrückt/.test(L.interact(s, data).msg), 'zweites Drücken ändert nichts');
+    const s2 = L.deserialize(JSON.stringify(L.serialize(s)), data);
+    assert(s2.objs.find((o) => o.id === 'secret_t1').open && s2.objs.find((o) => o.id === 'switch_t1').used, 'Zustand übersteht Speichern und Laden');
+    s2.player = { x: 3, y: 5, dir: 2 };
+    assert(L.tryMove(s2, data, 'f').moved && L.tryMove(s2, data, 'f').moved, 'Weg in die Kammer ist frei');
+    const a = L.analyzeLevel(data, 'nebelturm');
+    assert(a.ok, 'Analyse: Kammer und Truhe erreichbar: ' + JSON.stringify(a.problems || a.errors || ''));
+    const g = buildGrid(lv, s.objs.map((o) => (o.id === 'secret_t1' ? { ...o, open: false } : o))).grid;
+    assert(g[6 * lv.map[0].length + 3] === 9 && g[6 * lv.map[0].length + 7] === 11, 'Darstellung: Rissmauer und eingedrückter Stein');
+  });
+
+  await test('Heilzauber außerhalb des Kampfs (0.16.2): kostet Mana, nur Verletzte, nicht im Kampf; Debug-Sprung', () => {
+    const s = L.newGame(data, 7), k = s.heroes.findIndex((h) => h.cls === 'priest'), m = s.heroes.findIndex((h) => h.cls === 'mage');
+    assert(L.castOutside(s, data, k, 'heal', m).error === 'bad-target', 'volle LP: abgelehnt');
+    s.heroes[m].hp = 3; const mp = s.heroes[k].mp;
+    const r = L.castOutside(s, data, k, 'heal', m);
+    assert(!r.error && s.heroes[m].hp === Math.min(s.heroes[m].maxHp, 23) && s.heroes[k].mp === mp - 5 && /Heilende Hand/.test(r.msg), 'heilt 20 LP für 5 Mana');
+    assert(L.castOutside(s, data, m, 'firebolt', k).error === 'no-spell', 'Schadenszauber gehen außerhalb nicht');
+    s.heroes[m].hp = 3; s.heroes[k].mp = 2;
+    assert(L.castOutside(s, data, k, 'heal', m).error === 'no-mp' && s.heroes[m].hp === 3, 'ohne Mana kein Zauber');
+    s.heroes[k].mp = 20; L.startCombat(s, data, s.objs.find((o) => o.type === 'enemy'));
+    assert(L.castOutside(s, data, k, 'heal', m).error === 'in-combat', 'im Kampf gilt die Zugreihenfolge');
+    const s2 = L.newGame(data, 8);
+    assert(L.jumpToLevel(s2, data, 'nebelturm').ok && s2.levelId === 'nebelturm' && s2.player.x === data.levels.nebelturm.start.x && s2.areas[data.startLevel], 'Debug-Sprung wechselt das Gebiet und merkt sich das alte');
+  });
+
   await test('Fallgitter und Hebel (0.15.1): Gitter sperrt, Hebel öffnet, Analyse, Karte', () => {
     const s = L.newGame(data, 5);
     s.levelId = 'schratgruben'; s.objs = JSON.parse(JSON.stringify(data.levels.schratgruben.objects));

@@ -2144,9 +2144,9 @@
         "T.........................#",
         "#.........#.......####T####",
         "#.........#.......#.......#",
-        "###########.......m.......#",
-        "#########m#T##.##T#.......#",
-        "######m####.......#.......#",
+        "###.###.###.......m.......#",
+        "##...####m#T##.##T#.......#",
+        "##...#m####.......#.......#",
         "###T######m.......#.......T",
         "#.....#####...............#",
         "m.....##T##.......#.......#",
@@ -2363,6 +2363,50 @@
           "title": "Der Nebel lichtet sich",
           "say": "Vom Turmfenster aus siehst du zum ersten Mal über das ganze Moor. Im Norden steht eine Festung, die auf keiner Karte ist.",
           "text": "Der Nebelhüter ist besiegt. Der Weg zur Moorfestung wird in einer späteren Version geöffnet."
+        },
+        {
+          "id": "secret_t1",
+          "type": "secret",
+          "x": 3,
+          "y": 6,
+          "hint": "Die Wand klingt hohl. Der Riss ist zu gerade für einen Zufall."
+        },
+        {
+          "id": "switch_t1",
+          "type": "lever",
+          "wall": true,
+          "x": 7,
+          "y": 6,
+          "gate": "secret_t1",
+          "msg": "Der Stein gibt nach. Ein Stück weiter schabt Stein über Stein."
+        },
+        {
+          "id": "chest_t_secret",
+          "type": "chest",
+          "x": 3,
+          "y": 8,
+          "loot": [
+            {
+              "gold": 40
+            },
+            {
+              "gear": {
+                "boost": 2
+              }
+            },
+            {
+              "item": "potion",
+              "n": 2
+            }
+          ]
+        },
+        {
+          "id": "sign_t4",
+          "type": "sign",
+          "x": 6,
+          "y": 5,
+          "text": "Archiv. Bestand: 412 Bände, 3 Regale, 1 Wand zu viel. Wer hier Ordnung sucht, drücke, was locker sitzt.",
+          "title": "ARCHIV"
         }
       ]
     }

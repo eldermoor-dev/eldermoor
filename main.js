@@ -3,13 +3,14 @@
 import {
   DIRS, DIR_NAMES, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, knownSpells, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
+  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, castOutside, jumpToLevel, grantXp, knownSpells, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setResolution, W, H, BASE_W, BASE_H } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.16.0';
+const VERSION = '0.16.3';
+const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -307,7 +308,7 @@ function doMove(rel) {
     (r.events || []).forEach(onEvent);
     if (r.encounter) startCombatUI(r.encounter);
   } else if (r.encounter) startCombatUI(r.encounter);
-  else if (rel === 'f' && r.blocker && ['door', 'chest', 'lever', 'gate'].includes(r.blocker.type)) { // gegen Tür, Truhe, Hebel laufen = benutzen
+  else if (rel === 'f' && r.blocker && ['door', 'chest', 'lever', 'gate', 'secret'].includes(r.blocker.type)) { // gegen Tür, Truhe, Hebel laufen = benutzen
     S.held = []; S.nextAllowed = performance.now() + 350;
     act('interact');
   } else {
@@ -465,7 +466,7 @@ function tapUseByTap(e) {
   const f = frontCell(g);
   let best = null, bt = 1e9;
   for (const o of g.objs) {
-    const big = o.type === 'door' || o.type === 'gate';
+    const big = o.type === 'door' || o.type === 'gate' || o.type === 'secret' || (o.type === 'lever' && o.wall);
     if (!(big ? !o.open : o.type === 'chest' ? !o.open : o.type === 'lever')) continue;
     const sx = o.x + 0.5 - S.cam.x, sy = o.y + 0.5 - S.cam.y;
     const tX = inv * (dirY * sx - dirX * sy), tY = inv * (-plY * sx + plX * sy);
@@ -612,10 +613,40 @@ function renderParty() {
     card.append(info);
     card.addEventListener('click', () => { // Kopf antippen = Heilziel wählen (nur wenn gerade ein Ziel für Heilzauber gefragt ist)
       const b = $('#actionbar') && $(`#actionbar [data-c="abheal:${i}"]`);
-      if (b && !b.disabled) b.click();
+      if (b && !b.disabled) { b.click(); return; }
+      partyTap(i);
     });
     box.append(card);
   });
+}
+// Kopf antippen = zaubern. Im Kampf: der Held am Zug öffnet seine Fähigkeit/Zauberliste. Außerhalb: Heilzauber dieses Helden wählen.
+function partyTap(i) {
+  const g = S.game;
+  if (S.modal || !$('#modal').hidden) return;
+  if (g.combat && !g.combat.over) {
+    const a = currentActor(g), bar = $('#actionbar');
+    if (a && a.side === 'h' && a.idx === i && bar && !bar.hidden && bar.querySelector('[data-c="spell"],[data-c="spells"]')) { S.sfx.unlock(); useAbility(); }
+    return;
+  }
+  openHeroCast(i);
+}
+function openHeroCast(i) {
+  const g = S.game, h = g.heroes[i];
+  S.castHero = i;
+  const sps = knownSpells(S.data, h).filter((s) => s.kind === 'heal'), rn = S.data.classes[h.cls].res.name;
+  if (!sps.length) { openCharacter(); return; }
+  if (h.hp <= 0) { toast(`${h.name} ist bewusstlos.`); return; }
+  const hurt = (x) => x.hp > 0 && x.hp < x.maxHp;
+  let html = `<h2 style="margin:0 0 4px">${esc(h.name)} zaubert</h2><p class="muted" style="margin:0 0 6px">${esc(rn)}: ${h.mp}/${h.maxMp}</p>`;
+  for (const sp of sps) {
+    const ok = h.mp >= sp.cost;
+    html += `<h3 style="margin:8px 0 4px">${esc(sp.name)} · ${sp.cost} ${esc(rn)} · heilt ${sp.heal} LP${sp.all ? ' (alle)' : ''}</h3><div class="acts" style="margin-top:0">`;
+    html += sp.all ? `<button class="mb" data-m="oc:${sp.id}:-1" ${ok && g.heroes.some(hurt) ? '' : 'disabled'}>Auf die ganze Gruppe wirken</button>`
+      : g.heroes.map((t, k) => `<button class="mb headbtn" data-m="oc:${sp.id}:${k}" ${ok && hurt(t) ? '' : 'disabled'}><img src="${makePortrait(t).toDataURL()}" alt=""><span>${esc(t.name)}<br>${t.hp}/${t.maxHp}</span></button>`).join('');
+    html += '</div>';
+  }
+  html += `<div class="acts">${closeBtn}</div>`;
+  openModal(html, 'cast');
 }
 function aliveMap() {
   const c = S.game && S.game.combat;
@@ -872,6 +903,8 @@ function drawMap() {
   const w = lvl.map[0].length, h = lvl.map.length;
   c.fillStyle = '#0a0806'; c.fillRect(0, 0, cv.width, cv.height);
   const seen = (x, y) => x >= 0 && y >= 0 && x < w && y < h && g.seen[y * w + x];
+  const wallObj = new Set(g.objs.filter((o) => (o.type === 'secret' && !o.open) || (o.type === 'lever' && o.wall)).map((o) => o.x + ',' + o.y)); // Geheimwand und Schalterstein zählen auf der Karte als Mauer
+  const cellChar = (l, x, y) => (wallObj.has(x + ',' + y) ? '#' : cellCharRaw(l, x, y));
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     if (cellChar(lvl, x, y) === '.') { if (seen(x, y)) { c.fillStyle = '#4a4034'; c.fillRect(x * cs, y * cs, cs, cs); } }
     else {
@@ -881,7 +914,7 @@ function drawMap() {
     }
   }
   for (const o of g.objs) {
-    if (!seen(o.x, o.y)) continue;
+    if (!seen(o.x, o.y) || o.type === 'secret' || (o.type === 'lever' && o.wall && !o.used)) continue;
     const cx = o.x * cs + cs / 2, cy = o.y * cs + cs / 2;
     if (o.type === 'door') { // Tür als Balken quer zum Gang (Wände links/rechts → waagerecht), Farbe: zu / verschlossen / offen
       const horiz = cellChar(lvl, o.x - 1, o.y) !== '.' && cellChar(lvl, o.x + 1, o.y) !== '.', t = Math.max(3, Math.round(cs * 0.3)), x0 = o.x * cs, y0 = o.y * cs;
@@ -1019,7 +1052,9 @@ function openDebug() {
   }).join('');
   openModal(`<h2>Debug</h2>
   <h3>Teleport</h3><div class="acts" style="margin-top:0">${['start', 'door_a', 'chest_a', 'door_b', 'en1', 'exit1'].map((id) => `<button class="mb" data-m="tp:${id}">${id}</button>`).join('')}</div>
+  <h3>Gebiet wechseln</h3><div class="acts" style="margin-top:0">${Object.values(S.data.levels).map((l) => `<button class="mb" data-m="dbg-area:${l.id}">${esc(l.name)}</button>`).join('')}</div>
   <h3>Cheats</h3><div class="acts" style="margin-top:0">
+    <button class="mb" data-m="dbg-lvl">Alle +1 Stufe (${g.heroes.map((h) => h.level).join('/')})</button>
     <button class="mb" data-m="god">Unverwundbar: ${S.debug.god ? 'AN' : 'aus'}</button>
     <button class="mb" data-m="dbg-key">Schlüssel geben</button>
     <button class="mb" data-m="dbg-potions">+5 Heiltränke</button>
@@ -1138,6 +1173,21 @@ async function onModalClick(e) {
     renderAll(); openInventory();
   }
   else if (m.startsWith('tp:')) teleportTo(m.slice(3));
+  else if (m.startsWith('oc:')) {
+    const [, sid, t] = m.split(':');
+    const r = castOutside(g, S.data, S.castHero, sid, +t);
+    if (r.msg) { say(r.msg); S.sfx.play(r.sfx); toast(r.msg); }
+    renderAll(); openHeroCast(S.castHero);
+  }
+  else if (m.startsWith('dbg-area:')) {
+    if (jumpToLevel(g, S.data, m.slice(9)).ok) { S.lvl = getLevel(S.data, g); S.rc.setPalette(S.data.palettes[S.lvl.palette]); S.held = []; S.queued = null; closeModal(); snapCam(); renderAll(); toast('Gebiet: ' + S.lvl.name); }
+  }
+  else if (m === 'dbg-lvl') {
+    const need = Math.max(0, ...g.heroes.map((h) => { const n = xpForNext(S.data, h); return n == null ? 0 : n - h.xp; }));
+    if (need > 0) grantXp(g, S.data, need);
+    g.heroes.forEach((h) => { h.hp = h.maxHp; h.mp = h.maxMp; });
+    renderAll(); openDebug(); toast('Stufe: ' + g.heroes.map((h) => h.level).join('/'));
+  }
   else if (m === 'god') { S.debug.god = !S.debug.god; openDebug(); }
   else if (m === 'dbg-key') { g.inv.iron_key = 1; toast('Schlüssel erhalten.'); }
   else if (m === 'dbg-potions') { g.inv.potion = (g.inv.potion || 0) + 5; toast('+5 Heiltränke'); }

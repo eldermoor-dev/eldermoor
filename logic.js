@@ -169,7 +169,7 @@ function freshObj(data, o) {
   const c = clone(o);
   if (o.type === 'door') c.open = false;
   if (o.type === 'chest') c.open = false;
-  if (o.type === 'gate') c.open = false;
+  if (o.type === 'gate' || o.type === 'secret') c.open = false;
   if (o.type === 'lever') c.used = false;
   if (o.type === 'enemy') { c.hp = data.enemies[o.kind].hp; c.dead = false; }
   return c;
@@ -227,7 +227,7 @@ export function blockerAt(state, x, y) {
     if (o.x !== x || o.y !== y) continue;
     if (o.type === 'door' && !o.open) return o;
     if (o.type === 'chest' && !o.open) return o; // geöffnete Truhen sind begehbar
-    if (o.type === 'gate' && !o.open) return o;
+    if ((o.type === 'gate' || o.type === 'secret') && !o.open) return o; // secret = Geheimwand: sieht aus wie Mauer mit feinem Riss
     if (o.type === 'lever') return o;
     if (o.type === 'merchant' || o.type === 'sign') return o;
     if (o.type === 'enemy' && !o.dead) return o;
@@ -257,7 +257,7 @@ export function markSeen(state, data) {
     set(cx, cy);
     if (isWallChar(cellChar(lvl, cx, cy))) break;
     const b = blockerAt(state, cx, cy);
-    if (b && b.type === 'door') break;
+    if (b && (b.type === 'door' || b.type === 'secret' || (b.type === 'lever' && b.wall))) break;
   }
 }
 
@@ -268,7 +268,8 @@ function blockedText(b) {
   if (b.type === 'merchant') return 'Der Stand der Händlerin versperrt den Weg.';
   if (b.type === 'sign') return 'Eine Hinweistafel steht im Weg.';
   if (b.type === 'gate') return 'Ein Fallgitter versperrt den Weg.';
-  if (b.type === 'lever') return 'Ein Wandhebel steht im Weg.';
+  if (b.type === 'secret') return 'Eine Wand. Durch die Fugen läuft ein feiner Riss.';
+  if (b.type === 'lever') return b.wall ? 'Ein Stein in der Wand sitzt locker.' : 'Ein Wandhebel steht im Weg.';
   return 'Ein Gegner steht im Weg.';
 }
 
@@ -353,12 +354,13 @@ export function interact(state, data) {
     return { msg: 'Die Tür öffnet sich knarrend.', sfx: 'door', changed: true };
   }
   if (o.type === 'gate') return { msg: o.hint || 'Das Gitter sitzt fest. Es muss einen Hebel geben.', sfx: 'bump' };
-  if (o.type === 'lever') {
+  if (o.type === 'secret') return { msg: o.hint || 'Die Wand klingt hohl. Der Riss ist zu gerade für einen Zufall.', sfx: 'bump' };
+  if (o.type === 'lever') { // wall: true = versteckter Schalter (lockerer Stein in der Mauer); Ziel ist ein Gitter oder eine Geheimwand
     const gate = state.objs.find((x) => x.id === o.gate);
-    if (o.used) return { msg: 'Der Hebel ist schon umgelegt.', sfx: 'ui' };
+    if (o.used) return { msg: o.wall ? 'Der Stein ist schon eingedrückt.' : 'Der Hebel ist schon umgelegt.', sfx: 'ui' };
     o.used = true;
     if (gate) gate.open = true;
-    return { msg: o.msg || 'Der Hebel rastet ein. Irgendwo rasselt eine Kette.', sfx: 'door', changed: true };
+    return { msg: o.msg || (o.wall ? 'Der Stein gibt nach. In der Nähe schabt Stein über Stein.' : 'Der Hebel rastet ein. Irgendwo rasselt eine Kette.'), sfx: 'door', changed: true };
   }
   if (o.type === 'chest') {
     if (o.open) return { msg: 'Die Truhe ist leer.' };
@@ -379,6 +381,38 @@ export function useItemOutside(state, data, itemId, heroIdx) {
   h.hp = Math.min(h.maxHp, h.hp + it.heal);
   state.inv[itemId]--;
   return { msg: `${h.name} erhält ${h.hp - before} LP zurück.`, sfx: 'heal' };
+}
+
+// Heilzauber außerhalb des Kampfs: nur Zauber der Art 'heal', kostet Mana wie im Kampf, Mana kommt nur durch Rasten zurück.
+export function castOutside(state, data, casterIdx, spellId, targetIdx) {
+  if (state.combat) return { error: 'in-combat' };
+  const h = state.heroes[casterIdx];
+  if (!h || h.hp <= 0) return { error: 'bad-caster' };
+  const sp = knownSpells(data, h).find((s) => s.id === spellId && s.kind === 'heal');
+  if (!sp) return { error: 'no-spell' };
+  if (h.mp < sp.cost) return { error: 'no-mp' };
+  const hurt = (x) => x && x.hp > 0 && x.hp < x.maxHp;
+  const targets = sp.all ? state.heroes.filter(hurt) : [state.heroes[targetIdx]];
+  if (!targets.length || !targets.every(hurt)) return { error: sp.all ? 'full-hp' : 'bad-target' };
+  h.mp -= sp.cost;
+  const parts = targets.map((t) => { const before = t.hp; t.hp = Math.min(t.maxHp, t.hp + sp.heal); return `${t.name} +${t.hp - before} LP`; });
+  return { msg: `${h.name} wirkt ${sp.name}: ${parts.join(', ')}.`, sfx: 'heal' };
+}
+// Debug: direkt zum Start eines Gebiets springen (Zustand des alten Gebiets bleibt wie bei einer Treppe erhalten)
+export function jumpToLevel(state, data, levelId) {
+  const target = data.levels[levelId];
+  if (!target || state.combat) return { ok: false };
+  if (levelId !== state.levelId) {
+    state.areas = state.areas || {};
+    state.areas[state.levelId] = { objs: state.objs, seen: state.seen, notes: state.notes };
+    const a = state.areas[levelId] || freshArea(data, levelId);
+    delete state.areas[levelId];
+    state.levelId = levelId;
+    state.objs = a.objs; state.seen = a.seen; state.notes = a.notes || [];
+  }
+  state.player = { x: target.start.x, y: target.start.y, dir: target.start.dir };
+  markSeen(state, data);
+  return { ok: true };
 }
 
 // ---------- Zauber (Schritt 5c) ----------
@@ -938,7 +972,9 @@ function enemyCast(state, data, ei, e, en, sp, msgs, opts) {
     if (opts.god) { msgs.push(`${sp.name} trifft ${t.name}, doch Debug-Unverwundbarkeit hält.`); sfx = 'hurt'; continue; }
     if (sp.kind === 'bolt') {
       const tr = {};
-      const d = calcDamage(state, effAtk(state, 'e', ei, en.atk), Math.floor(heroDef(data, t, state) / 2), { sure: true, defending: !!c.defending[ti], mult: sp.mult, trace: tr });
+      let d = calcDamage(state, effAtk(state, 'e', ei, en.atk), Math.floor(heroDef(data, t, state) / 2), { sure: true, defending: !!c.defending[ti], mult: sp.mult, trace: tr });
+      const cap = Math.max(1, Math.ceil(t.maxHp * (sp.all ? 0.4 : 0.5))); // ein Zauber nimmt höchstens die Hälfte der Max-LP (schützt den Magier)
+      if (d > cap) { d = cap; tr.total = d; tr.cap = cap; }
       t.hp = Math.max(0, t.hp - d);
       msgs.push(`${sp.name} trifft ${t.name} für ${d} Schaden (Zauber: halbe Rüstung${c.defending[ti] ? ', verteidigt: halber Schaden' : ''}).${SEP}${explain(tr)}`);
       sfx = 'hurt';
@@ -1243,7 +1279,7 @@ export function analyzeLevel(data, levelId) {
         const door = doors.find((o) => o.x === nx && o.y === ny);
         if (door && door.locked && !have.has(door.key)) continue;
         if (chests.some((o) => o.x === nx && o.y === ny)) continue;
-        if (lvl.objects.some((o) => (o.type === 'lever' || (o.type === 'gate' && !gatesOpen.has(o.id))) && o.x === nx && o.y === ny)) continue;
+        if (lvl.objects.some((o) => (o.type === 'lever' || ((o.type === 'gate' || o.type === 'secret') && !gatesOpen.has(o.id))) && o.x === nx && o.y === ny)) continue;
         seen.add(k); q.push([nx, ny]);
       }
     }

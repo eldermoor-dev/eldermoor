@@ -12,7 +12,7 @@ const M = { stone: 0, moss: 1, wood: 2, iron: 3, floor: 4, ceil: 5, flesh: 6, gl
 const P = (mat, shade) => M[mat] * 8 + Math.max(0, Math.min(7, Math.round(shade)));
 
 // Wandtextur-IDs im Raster: 0 = frei, 1 Stein, 2 Moos, 3 Tür, 4 verschlossene Tür
-export const WALL_STONE = 1, WALL_MOSS = 2, WALL_DOOR = 3, WALL_DOOR_LOCKED = 4, WALL_TORCH = 5, WALL_ROCK = 6, WALL_LICHEN = 7, WALL_GATE = 8;
+export const WALL_STONE = 1, WALL_MOSS = 2, WALL_DOOR = 3, WALL_DOOR_LOCKED = 4, WALL_TORCH = 5, WALL_ROCK = 6, WALL_LICHEN = 7, WALL_GATE = 8, WALL_SECRET = 9, WALL_SWITCH = 10, WALL_SWITCH_ON = 11;
 
 // ---------- Palette: 8 Materialien × 8 Helligkeitsstufen = 64 feste Farben ----------
 export function buildPalette(def, lift = 1) {
@@ -321,28 +321,48 @@ function genSchrat(seed) {
   return t;
 }
 // Händlerin: Gestalt mit Kapuze hinter einem Holzstand, Laterne rechts
-function genMerchant(seed) {
-  const t = mk(255);
-  const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
-  for (let y = 10; y <= 56; y++) for (let x = 12; x <= 52; x++) {
-    const cx = (x - 32) / (y < 26 ? 9.5 : 9.5 + (y - 26) * 0.55), cy = y < 26 ? (y - 17) / 8.5 : 0;
-    if (cx * cx + cy * cy <= 1) {
-      const l = (x - 32) / 18;
-      let v = P('moss', 2.6 - l * 1.3 + (hash(x, y, seed) - 0.5) * 0.8 + (Math.sin(x * 0.7 + y * 0.2) > 0.5 ? -0.6 : 0));
-      if (y >= 12 && y <= 24 && Math.abs(x - 32) <= 5 && (y - 18) * (y - 18) / 30 + (x - 32) * (x - 32) / 26 <= 1) v = P('flesh', 3.6 + (hash(x, y, seed + 1) - 0.5) * 0.6);
-      if ((y === 18 || y === 19) && (x === 29 || x === 35)) v = P('iron', 0);
-      set(x, y, v);
-    }
+function genMerchant(seed) { // Hedda: Händlerin mit Kopftuch, Umhang, Schürze und Laterne hinter dem Tresen
+  const SN = 128, k = 64 / SN;
+  const t = { w: SN, h: SN, data: new Uint8Array(SN * SN).fill(255) };
+  const el = (px, py, cx, cy, rx, ry) => ((px - cx) / rx) ** 2 + ((py - cy) / ry) ** 2 <= 1;
+  for (let y = 0; y < SN; y++) for (let x = 0; x < SN; x++) {
+    const px = (x + 0.5) * k, py = (y + 0.5) * k, dx = px - 32, l = dx / 18;
+    let v = -1;
+    // Körper: Kleid + Umhang
+    const hw = 8.5 + Math.max(0, py - 24) * 0.28;
+    if (py >= 24 && py <= 50 && Math.abs(dx) <= hw) v = P('moss', 2.6 - l * 1.4 + (vnoise(px * 5, py * 0.4, 6, seed) - 0.5) * 1.2);
+    if (el(px, py, 32, 24.5, 12, 4.2)) v = P('moss', 3 - l * 1.4); // Schultern
+    // Schürze
+    if (py >= 31 && py <= 50 && Math.abs(dx) <= 5.6 + (py - 31) * 0.12) v = P('iron', 5.4 - l * 0.8 + (hash(x, y, seed) - 0.5) * 0.3);
+    if (py >= 31 && py <= 32.2 && Math.abs(dx) <= 6.4) v = P('wood', 2.5); // Schürzenband
+    // Hals + Gesicht
+    if (py >= 21 && py <= 25 && Math.abs(dx) <= 2.2) v = P('glow', 3.6);
+    if (el(px, py, 32, 14.5, 6.3, 7.4)) v = P('glow', 4.9 - l * 0.8);
+    // Haar: dunkle Strähnen seitlich des Gesichts, unter dem Tuch
+    if (py >= 9 && py <= 26 && (el(px, py, 32, 15, 8.4, 8.6) && !el(px, py, 32, 15.5, 5.6, 6.6))) v = P('wood', 1.6 + (hash(x, y, seed + 4) - 0.5) * 0.8);
+    if (py > 19 && py < 28 && Math.abs(Math.abs(dx) - 7.3) < 1.7 && py - 18 > Math.abs(dx) * 0.2) v = P('wood', 1.4 + (hash(x, y, seed + 5) - 0.5) * 0.8); // Zöpfe über die Schultern
+    // Kopftuch (oben) mit Knoten
+    if (py <= 11.2 && el(px, py, 32, 10, 9.2, 6.2)) v = P('iron', 3.4 - l * 1.0);
+    if (el(px, py, 32, 9.6, 8.4, 3.4)) v = P('iron', 4 - l * 1.0);
+    if (el(px, py, 41, 12.5, 2.4, 2.8) && py > 9) v = P('iron', 2.6); // Knoten seitlich
+    // Arm mit Laterne
+    if (v < 0 && (Math.hypot(px - 47, py - 35) <= 2.6 || (py >= 26 && py <= 36 && Math.abs(px - (41 + (py - 26) * 0.55)) <= 3))) v = P('moss', 2.2);
+    if (v >= 0) t.data[y * SN + x] = v;
   }
-  for (let y = 44; y <= 58; y++) for (let x = 8; x <= 56; x++) {
-    let sh = 3 + hash(x, y, seed + 2) * 1.2 - 0.6 + (y === 44 ? 1.2 : 0) - (y >= 57 ? 1 : 0);
-    if (x === 8 || x === 56) sh -= 1;
-    set(x, y, P('wood', sh));
+  // Gesichtszüge: Augen mit Wimpern, Brauen, Nase, Lippen
+  const paint = (cx, cy, rx, ry, val) => { for (let y = 0; y < SN; y++) for (let x = 0; x < SN; x++) { const px = (x + 0.5) * k, py = (y + 0.5) * k; if (el(px, py, cx, cy, rx, ry)) t.data[y * SN + x] = val; } };
+  for (const ex of [29.6, 34.4]) { paint(ex, 14.4, 1.35, 0.85, P('iron', 7)); paint(ex, 14.4, 0.7, 0.8, P('ceil', 0)); paint(ex, 12.6, 1.6, 0.4, P('wood', 1)); paint(ex, 13.5, 1.5, 0.3, P('ceil', 0)); }
+  paint(32, 16.7, 0.7, 1.1, P('glow', 3.6)); // Nase
+  paint(32, 19.2, 1.9, 0.75, P('wood', 2.6)); paint(32, 19.0, 1.0, 0.3, P('wood', 3.6)); // Lippen
+  // Theke
+  for (let y = 0; y < SN; y++) for (let x = 0; x < SN; x++) {
+    const px = (x + 0.5) * k, py = (y + 0.5) * k;
+    if (py >= 44 && py <= 63.5 && px >= 7 && px <= 57) { let sh = 3 + hash(x, y, seed + 2) * 1.2 - 0.6 + (py < 45 ? 1.2 : 0) - (py > 62 ? 1 : 0); if (px < 8 || px > 56) sh -= 1; t.data[y * SN + x] = P('wood', sh); }
+    if (px >= 44 && px <= 50 && py >= 34 && py <= 44 && !(py > 43.5)) { const edge = px < 44.9 || px > 49.1 || py < 34.9; t.data[y * SN + x] = edge ? P('iron', 2) : P('glow', 5 - (py - 34) * 0.25 + hash(x, y, seed + 3) * 0.6); }
   }
-  for (let y = 34; y <= 43; y++) for (let x = 47; x <= 53; x++) {
-    const edge = x === 47 || x === 53 || y === 34;
-    set(x, y, edge ? P('iron', 2) : P('glow', 5 - (y - 34) * 0.25 + hash(x, y, seed + 3) * 0.6));
-  }
+  const copy = t.data.slice(); // dunkler Umriss
+  for (let y = 1; y < SN - 1; y++) for (let x = 1; x < SN - 1; x++) { const i = y * SN + x; if (copy[i] !== 255 && (copy[i] >> 3) !== 7 && (copy[i - 1] === 255 || copy[i + 1] === 255 || copy[i - SN] === 255 || copy[i + SN] === 255)) t.data[i] = P(MATS[copy[i] >> 3], Math.max(0, (copy[i] & 7) - 2.5)); }
+  t.noWrap = true;
   return t;
 }
 function genWisp(seed) {
@@ -772,17 +792,37 @@ function smoothSprite(t, S = 4) {
   }
   return { w: o, h: o, data: out, noWrap: true };
 }
+// Geheimwand und versteckter Schalter: Abwandlungen der Steinmauer (feiner Riss · lockerer Stein · eingedrückter Stein)
+function shadeBy(t, i, d) { const v = t.data[i]; t.data[i] = (v & ~7) | Math.max(0, Math.min(7, (v & 7) + d)); }
+function genSecretWall(base, seed) {
+  const t = { w: base.w, h: base.h, data: base.data.slice() }, n = t.w, th = Math.max(1, n >> 7);
+  let x = n * 0.5;
+  for (let y = 0; y < n; y++) { // eine Haarlinie von oben nach unten, leicht gezackt
+    if (y % Math.max(2, n >> 4) === 0) x += (hash(y, 3, seed) - 0.5) * n * 0.05;
+    for (let k = 0; k < th; k++) shadeBy(t, y * n + ((Math.round(x) + k) & (n - 1)), -2);
+  }
+  return t;
+}
+function genSwitchWall(base, pressed) {
+  const t = { w: base.w, h: base.h, data: base.data.slice() }, n = t.w, x0 = Math.round(n * 0.4), x1 = Math.round(n * 0.62), y0 = Math.round(n * 0.56), y1 = Math.round(n * 0.7), b = Math.max(1, n >> 6);
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+    const edge = x - x0 < b || x1 - x < b || y - y0 < b || y1 - y < b;
+    shadeBy(t, y * n + x, pressed ? (edge ? -3 : -2) : (edge ? (y - y0 < b || x - x0 < b ? 1 : -2) : 1)); // locker: steht leicht vor (hell oben/links, Schatten unten/rechts)
+  }
+  return t;
+}
 export function makeTextures(detail = 1) {
   const up = (t, s) => (detail > 1 ? upsample2(t, s) : t);
   const spr = (t, s) => { t.noWrap = true; return up(t, s); };
   const sm2 = (t) => { t.noWrap = true; return detail > 1 ? smoothSprite(t, 2) : t; }; // große Bosse (160/192 px): 2× weich
   const sm = (t) => { t.noWrap = true; return detail > 1 ? smoothSprite(t, 4) : t; }; // Monster und Händler: im Modus Scharf geglättet
   const n = TEX * (detail > 1 ? 4 : 1), nf = TEX * (detail > 1 ? 2 : 1); // Wände 256, Boden/Decke 128: Eigenauflösung statt hochskaliert (Potenzen von 2 wegen Maskierung)
+  const stoneW = genStone(11, n);
   return {
-    wall: { [WALL_STONE]: genStone(11, n), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
+    wall: { [WALL_STONE]: stoneW, [WALL_SECRET]: genSecretWall(stoneW, 301), [WALL_SWITCH]: genSwitchWall(stoneW, false), [WALL_SWITCH_ON]: genSwitchWall(stoneW, true), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
     ceil: genCeil(53, nf),
-    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm(genMerchant(91)), wisp: sm(genWisp(121)), skeleton: sm(genSkeleton(171)), guard: sm(genGuard(181, false)), captain: sm(genGuard(191, true)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genRobed(251, 'priester')), hueter: sm2(genRobed(261, 'hueter')), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm(genWisp(121)), skeleton: sm(genSkeleton(171)), guard: sm(genGuard(181, false)), captain: sm(genGuard(191, true)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genRobed(251, 'priester')), hueter: sm2(genRobed(261, 'hueter')), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
@@ -940,6 +980,7 @@ export function buildGrid(lvl, objs) {
   }
   for (const o of objs) if (o.type === 'door' && !o.open) grid[o.y * w + o.x] = o.locked ? WALL_DOOR_LOCKED : WALL_DOOR;
   for (const o of objs) if (o.type === 'gate' && !o.open) grid[o.y * w + o.x] = WALL_GATE;
+  for (const o of objs) { if (o.type === 'secret' && !o.open) grid[o.y * w + o.x] = WALL_SECRET; else if (o.type === 'lever' && o.wall) grid[o.y * w + o.x] = o.used ? WALL_SWITCH_ON : WALL_SWITCH; }
   return { grid, gw: w, gh: h };
 }
 const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
@@ -964,7 +1005,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null) { // aliv
         out.push({ x: o.x + rx * off, y: o.y + ry * off, tex: spriteFor(tex, kindList ? kindList[i] : kindOf(o, i)), scale: (n > 1 ? 0.62 : bossScale(kindList ? kindList[i] : kindOf(o, i))) * (1 + 0.02 * Math.sin(time * 3 + i)) });
       }
     }
-    else if (o.type === 'lever') out.push({ x: o.x, y: o.y, tex: o.used ? tex.sprites.leverDown : tex.sprites.leverUp, scale: 0.75 });
+    else if (o.type === 'lever' && !o.wall) out.push({ x: o.x, y: o.y, tex: o.used ? tex.sprites.leverDown : tex.sprites.leverUp, scale: 0.75 });
     else if (o.type === 'sign') out.push({ x: o.x, y: o.y, tex: signTex(tex, o), scale: 0.7 });
     else if (o.type === 'merchant') out.push({ x: o.x, y: o.y, tex: tex.sprites.merchant, scale: 0.8 });
     else if (o.type === 'stairs') out.push({ x: o.x, y: o.y, tex: o.look === 'down' ? tex.sprites.stairsDown : o.look === 'up' ? tex.sprites.stairsUp : o.look === 'path' ? tex.sprites.arch : tex.sprites.portal, scale: 0.9 });
