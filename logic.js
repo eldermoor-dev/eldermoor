@@ -906,6 +906,49 @@ function pickTarget(state, en) {
   return pool[randInt(state, 0, pool.length - 1)];
 }
 
+// Gegnerzauber: enemies.<art>.cast = [{ name, kind: 'bolt' | 'heal' | 'curse', every, mult, all, inflict, heal, announce }]
+// every = jeder n-te eigene Zug. announce: großer Zauber, wird einen Zug vorher angesagt (wie der schwere Schlag).
+// bolt: Zauberschaden, trifft immer, halbe Rüstung, bevorzugt die Hinterreihe · heal: heilt den am stärksten verletzten Gegner · curse: Statuswirkung auf alle Helden
+function pickCast(state, e, en, msgs) {
+  if (!en.cast || !en.cast.length) return null;
+  e.ct = (e.ct || 0) + 1;
+  let now = null;
+  for (const sp of en.cast) {
+    if (!now && e.ct % sp.every === 0 && !(sp.kind === 'heal' && !state.combat.enemies.some((x) => x.hp > 0 && x.hp < x.maxHp * 0.75))) now = sp;
+    else if (sp.announce && (e.ct + 1) % sp.every === 0) msgs.push(`${e.name} sammelt Kraft für ${sp.name}! Verteidigen halbiert den Schaden.`);
+  }
+  return now;
+}
+function enemyCast(state, data, ei, e, en, sp, msgs, opts) {
+  const c = state.combat;
+  msgs.push(`${e.name} wirkt ${sp.name}!`);
+  noteBestiary(state, e.kind, 'cast');
+  if (sp.kind === 'heal') {
+    const t = c.enemies.filter((x) => x.hp > 0).reduce((b, x) => (x.hp / x.maxHp < b.hp / b.maxHp ? x : b));
+    const before = t.hp;
+    t.hp = Math.min(t.maxHp, t.hp + sp.heal);
+    msgs.push(`${t.name} erholt sich um ${t.hp - before} LP.`);
+    return 'heal';
+  }
+  const alive = state.heroes.map((h, i) => (h.hp > 0 ? i : -1)).filter((i) => i >= 0);
+  const targets = sp.all || sp.kind === 'curse' ? alive : [pickTarget(state, { ai: 'backline' })];
+  let sfx = 'miss';
+  for (const ti of targets) {
+    const t = state.heroes[ti];
+    if (opts.god) { msgs.push(`${sp.name} trifft ${t.name}, doch Debug-Unverwundbarkeit hält.`); sfx = 'hurt'; continue; }
+    if (sp.kind === 'bolt') {
+      const tr = {};
+      const d = calcDamage(state, effAtk(state, 'e', ei, en.atk), Math.floor(heroDef(data, t, state) / 2), { sure: true, defending: !!c.defending[ti], mult: sp.mult, trace: tr });
+      t.hp = Math.max(0, t.hp - d);
+      msgs.push(`${sp.name} trifft ${t.name} für ${d} Schaden (Zauber: halbe Rüstung${c.defending[ti] ? ', verteidigt: halber Schaden' : ''}).${SEP}${explain(tr)}`);
+      sfx = 'hurt';
+      if (t.hp === 0) { msgs.push(`${t.name} sinkt bewusstlos zu Boden.`); delete c.status['h' + ti]; continue; }
+    }
+    addStatus(state, data, 'h', ti, sp.inflict, msgs);
+  }
+  return sfx;
+}
+
 export function enemyStep(state, data, opts = {}) {
   const c = state.combat;
   if (!c || c.over) return { error: 'no-combat' };
@@ -914,22 +957,30 @@ export function enemyStep(state, data, opts = {}) {
   const e = c.enemies[a.idx];
   const en = enemyOf(data, e);
   const msgs = [];
-  const ti = pickTarget(state, en);
-  const t = state.heroes[ti];
   const hv = en.heavy, heavy = !!hv && e.intent === 'heavy';
-  const tr = {};
-  const d = calcDamage(state, effAtk(state, 'e', a.idx, en.atk), heroDef(data, t, state), { defending: !!c.defending[ti], mult: heavy ? hv.mult : 0, trace: tr });
+  let ti = pickTarget(state, en);
+  if (heavy) { // schwerer Nahkampfschlag trifft nur die Vorderreihe, solange dort jemand steht (kein Ein-Treffer-Tod für Magier hinten)
+    const fr = state.heroes.map((h, i) => (h.hp > 0 && h.row === 'front' ? i : -1)).filter((i) => i >= 0);
+    if (fr.length && !fr.includes(ti)) ti = fr[randInt(state, 0, fr.length - 1)];
+  }
+  const t = state.heroes[ti];
   let sfx = 'miss';
-  const why = `${t.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}${c.defending[ti] ? ', verteidigt: halber Schaden' : ''}`;
-  if (heavy) { msgs.push(`${e.name} setzt ${hv.name} ein!`); noteBestiary(state, e.kind, 'heavy'); }
-  if (d === 0) msgs.push(`${e.name} greift ${t.name} an (${why}) und verfehlt.`);
-  else if (opts.god) { msgs.push(`${e.name} trifft ${t.name}, doch Debug-Unverwundbarkeit hält.`); sfx = 'hurt'; }
+  const sp = heavy ? null : pickCast(state, e, en, msgs);
+  if (sp) sfx = enemyCast(state, data, a.idx, e, en, sp, msgs, opts);
   else {
-    t.hp = Math.max(0, t.hp - d);
-    msgs.push(`${e.name} trifft ${t.name} für ${d} Schaden (${why}).${SEP}${explain(tr)}`);
-    sfx = 'hurt';
-    if (t.hp === 0) { msgs.push(`${t.name} sinkt bewusstlos zu Boden.`); delete c.status['h' + ti]; }
-    else { addStatus(state, data, 'h', ti, en.onHit, msgs); if (en.onHit) noteBestiary(state, e.kind, 'onHit'); }
+    const tr = {};
+    const d = calcDamage(state, effAtk(state, 'e', a.idx, en.atk), heroDef(data, t, state), { defending: !!c.defending[ti], mult: heavy ? hv.mult : 0, trace: tr });
+    const why = `${t.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}${c.defending[ti] ? ', verteidigt: halber Schaden' : ''}`;
+    if (heavy) { msgs.push(`${e.name} setzt ${hv.name} ein!`); noteBestiary(state, e.kind, 'heavy'); }
+    if (d === 0) msgs.push(`${e.name} greift ${t.name} an (${why}) und verfehlt.`);
+    else if (opts.god) { msgs.push(`${e.name} trifft ${t.name}, doch Debug-Unverwundbarkeit hält.`); sfx = 'hurt'; }
+    else {
+      t.hp = Math.max(0, t.hp - d);
+      msgs.push(`${e.name} trifft ${t.name} für ${d} Schaden (${why}).${SEP}${explain(tr)}`);
+      sfx = 'hurt';
+      if (t.hp === 0) { msgs.push(`${t.name} sinkt bewusstlos zu Boden.`); delete c.status['h' + ti]; }
+      else { addStatus(state, data, 'h', ti, en.onHit, msgs); if (en.onHit) noteBestiary(state, e.kind, 'onHit'); }
+    }
   }
   if (hv) { // angekündigter Schlag: jeder dritte Zug, eine Runde vorher wird er angesagt
     if (heavy) { e.intent = null; e.cd = 0; }
@@ -1094,6 +1145,7 @@ export function validateState(state, data) {
 // So bekommen alte Spielstände Neuerungen (z. B. eine neue Treppe) ohne neue Speicherversion. Truhen, Türen und Gegner behalten ihren Zustand.
 const STATIC_TYPES = new Set(['stairs', 'sign', 'merchant', 'exit']);
 export function syncStatic(state, data) {
+  for (const h of state.heroes || []) if (h && data.classes[h.cls] && h.role !== data.classes[h.cls].name) h.role = data.classes[h.cls].name; // umbenannte Berufe (Priester → Kleriker)
   const areas = [{ id: state.levelId, objs: state.objs }, ...Object.entries(state.areas || {}).map(([id, a]) => ({ id, objs: a.objs }))];
   let n = 0;
   for (const a of areas) {
@@ -1137,7 +1189,7 @@ export function balanceMarkdown(data) {
   for (let lv = 2; lv <= mx; lv++) L.push(`| ${lv} | ${xp[lv - 2]} | ${xp[lv - 2] - (lv > 2 ? xp[lv - 3] : 0)} |`);
   L.push('', 'Gegner (EP: jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die volle Summe):', '', '| Gegner | LP | Angriff | Verteidigung | Initiative | EP | Gold | Verhalten |', '|---|---|---|---|---|---|---|---|');
   const aiName = { weakest: 'zielt auf den schwächsten Helden', backline: 'zielt auf die Hinterreihe' };
-  for (const e of Object.values(data.enemies)) L.push(`| ${e.name} | ${e.hp} | ${e.atk} | ${e.def} | ${e.init} | ${e.xp || 0} | ${e.gold || 0} | ${[aiName[e.ai], e.heavy && `${e.heavy.name} jeden ${e.heavy.every}. Zug, angekündigt (${e.heavy.mult} %)`, e.onHit && `Treffer: ${data.statuses[e.onHit.status].name} ${e.onHit.chance} %`, e.phases && `Boss, Phasen: ${e.phases.map((p) => `${p.name} ab ≤ ${p.below} % LP${p.set && p.set.atk ? ` (Angriff ${p.set.atk})` : ''}`).join(', ')}`].filter(Boolean).join('; ') || '–'} |`);
+  for (const e of Object.values(data.enemies)) L.push(`| ${e.name} | ${e.hp} | ${e.atk} | ${e.def} | ${e.init} | ${e.xp || 0} | ${e.gold || 0} | ${[aiName[e.ai], e.heavy && `${e.heavy.name} jeden ${e.heavy.every}. Zug, angekündigt (${e.heavy.mult} %)`, e.onHit && `Treffer: ${data.statuses[e.onHit.status].name} ${e.onHit.chance} %`, e.cast && `Zaubert: ${e.cast.map((c) => `${c.name} (jeden ${c.every}. Zug${c.announce ? ', angekündigt' : ''})`).join(', ')}`, e.phases && `Boss, Phasen: ${e.phases.map((p) => `${p.name} ab ≤ ${p.below} % LP${p.set && p.set.atk ? ` (Angriff ${p.set.atk})` : ''}`).join(', ')}`].filter(Boolean).join('; ') || '–'} |`);
   L.push('', '## Rassen (Modifikatoren)', '', '| Rasse | LP | Angriff | Verteidigung | Initiative |', '|---|---|---|---|---|');
   for (const r of Object.values(data.races)) L.push(`| ${r.name} | ${sg(r.mods.maxHp)} | ${sg(r.mods.atk)} | ${sg(r.mods.def)} | ${sg(r.mods.init)} |`);
   L.push('', '## Berufe (Basis auf Stufe 1, Wachstum in Zehnteln je Stufe)', '', '| Beruf | Reihe | Fernkampf | LP | Angriff | Verteidigung | Initiative | Wachstum LP/Ang/Vert/Init |', '|---|---|---|---|---|---|---|---|');

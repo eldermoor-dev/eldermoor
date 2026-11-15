@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setReso
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.15.12';
+const VERSION = '0.16.0';
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -610,6 +610,10 @@ function renderParty() {
     info.style.cssText = 'flex:1;min-width:0';
     info.innerHTML = `<div class="nm">${esc(h.name)} <span class="rw">· ${h.row === 'front' ? 'vorn' : 'hinten'}</span> ${stIcons('h', i)}</div><div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div><div class="hp">${h.hp}/${h.maxHp} · ${h.mp}/${h.maxMp} ${esc(S.data.classes[h.cls].res.name === 'Mana' ? 'MP' : 'AU')}</div>`;
     card.append(info);
+    card.addEventListener('click', () => { // Kopf antippen = Heilziel wählen (nur wenn gerade ein Ziel für Heilzauber gefragt ist)
+      const b = $('#actionbar') && $(`#actionbar [data-c="abheal:${i}"]`);
+      if (b && !b.disabled) b.click();
+    });
     box.append(card);
   });
 }
@@ -647,16 +651,16 @@ function renderCombat() {
   if (a.side !== 'h' || S.lock) { ab.innerHTML = `<div class="wait">${a.side === 'h' ? esc(S.game.heroes[a.idx].name) + ' ist gleich dran …' : 'Gegner ist am Zug …'}</div><button class="ab" data-c="log" style="flex:0 0 auto">Protokoll</button>`; return; }
   const potions = (S.game.inv.potion || 0) + (S.game.inv.gegengift || 0) + (S.game.inv.oelflasche || 0);
   const ch = S.game.heroes[a.idx], cab = S.data.classes[ch.cls].ability, cres = S.data.classes[ch.cls].res;
+  const inv = S.game.inv, itemRows = [];
+  { const row = (n, mk) => { const bs = mk(); if (n > 0 && bs.some((x) => x.ok)) itemRows.push(bs.map((x) => `<button class="ab" data-c="${x.c}" ${x.ok ? '' : 'disabled'}>${x.t}</button>`).join('')); }; // nur Zeilen zeigen, in denen etwas geht
+    row(inv.potion, () => [{ c: `heal:${a.idx}`, ok: ch.hp > 0 && ch.hp < ch.maxHp, t: `Heiltrank (${inv.potion}) trinken` }]);
+    row(inv.gegengift, () => [{ c: `cure:${a.idx}`, ok: ch.hp > 0 && !!statusOf(S.game, 'h', a.idx).poison, t: `Gegengift (${inv.gegengift}) nehmen` }]);
+    row(inv.oelflasche, () => S.game.combat.enemies.map((e, i) => ({ c: `throw:${i}`, ok: e.hp > 0, t: `Ölflasche (${inv.oelflasche}) → ${esc(e.name)}` }))); }
   const known = knownSpells(S.data, ch);
   const abBtn = known.length > 1 ? `<button class="ab" data-c="spells">✦ Zauber (${known.length})${S.spMode ? ' ▴' : ' ▾'}</button>` : cab ? `<button class="ab" data-c="sp:0" ${ch.mp >= cab.cost ? '' : 'disabled'}>✦ ${esc(cab.name)} (${cab.cost} ${esc(cres.name)})</button>` : '';
   let html = `<button class="ab" data-c="attack">⚔ Angriff</button><button class="ab${heavyNow.length ? ' pulse' : ''}" data-c="defend">⛨ Verteidigen</button><button class="ab" data-c="item" ${potions ? '' : 'disabled'}>Gegenstand (${potions})</button>${abBtn}${multi ? `<button class="ab" data-c="sweep">⚔ Alle (${SWEEP_MULT} %)</button>` : ''}<button class="ab" data-c="log">Protokoll</button>`;
   if (S.itemMode) {
-    const inv = S.game.inv, rows = [];
-    const row = (n, mk) => { const bs = mk(); if (n > 0 && bs.some((x) => x.ok)) rows.push(bs.map((x) => `<button class="ab" data-c="${x.c}" ${x.ok ? '' : 'disabled'}>${x.t}</button>`).join('')); }; // nur Zeilen zeigen, in denen etwas geht
-    row(inv.potion, () => [{ c: `heal:${a.idx}`, ok: ch.hp > 0 && ch.hp < ch.maxHp, t: `Heiltrank (${inv.potion}) trinken` }]);
-    row(inv.gegengift, () => [{ c: `cure:${a.idx}`, ok: ch.hp > 0 && !!statusOf(S.game, 'h', a.idx).poison, t: `Gegengift (${inv.gegengift}) nehmen` }]);
-    row(inv.oelflasche, () => S.game.combat.enemies.map((e, i) => ({ c: `throw:${i}`, ok: e.hp > 0, t: `Ölflasche (${inv.oelflasche}) → ${esc(e.name)}` })));
-    html += rows.map((r) => `<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">${r}</div>`).join('');
+    html += itemRows.length ? itemRows.map((r) => `<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">${r}</div>`).join('') : `<div class="wait" style="flex:1 0 100%">${esc(ch.name)} hat volle LP und kein Gift. Heiltrank und Gegengift wirkt nur auf den, der dran ist.</div>`;
   }
   if (S.spMode && known.length > 1) {
     html += '<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">' + known.map((sp, i) =>
@@ -729,7 +733,11 @@ function openShop(shopId, greet) {
   const g = S.game, d = S.data, sh = d.shops[shopId];
   S.shopId = shopId;
   const tab = S.shopTab || 'buy';
-  let html = `<h2>${esc(sh.name)}</h2>${greet && S.shopTalk ? speechHtml(S.shopTalk) : ''}${greet ? `<p class="muted">${esc(sh.greeting)}</p>` : ''}<p>Gold: <b>${g.gold}</b></p>
+  if (greet && S.shopTalk) { // erstes Ansprechen: Rede groß und mittig, erst nach „Weiter“ kommen die Waren
+    openModal(`${speechHtml(S.shopTalk)}<p class="muted" style="text-align:center">${esc(sh.greeting)}</p><div class="acts" style="justify-content:center"><button class="mb primary" data-m="shopgo">Weiter</button></div>`, 'shop');
+    return;
+  }
+  let html = `<h2>${esc(sh.name)}</h2>${greet ? `<p class="muted">${esc(sh.greeting)}</p>` : ''}<p>Gold: <b>${g.gold}</b></p>
     <div class="acts" style="margin-top:0"><button class="mb${tab === 'buy' ? ' primary' : ''}" data-m="shopbuy">Kaufen</button><button class="mb${tab === 'sell' ? ' primary' : ''}" data-m="shopsellTab">Verkaufen</button></div>`;
   if (tab === 'buy') {
     html += shopStock(d, shopId).map((e) => {
@@ -757,6 +765,7 @@ function openBestiary() {
     if (r.won > 0) L.push(`LP ${e.hp} · Angriff ${e.atk} · Verteidigung ${e.def} · Beute ${e.gold || 0} Gold, ${e.xp || 0} EP`);
     else L.push('Werte unbekannt (erst nach dem ersten Sieg).');
     if (r.heavy && e.heavy) L.push(`Besonderer Angriff: ${esc(e.heavy.name)} (alle ${e.heavy.every} Züge, vorher angekündigt)`);
+    if (r.cast && e.cast) L.push(`Zaubert: ${e.cast.map((c) => esc(c.name)).join(', ')}`);
     if (r.onHit && e.onHit) L.push(`Trefferwirkung: ${esc(d.statuses[e.onHit.status].name)} (${e.onHit.chance} %)`);
     const rs = Object.keys(r.resist || {}).map((el) => { const v = (e.resist || {})[el] || 0; return v >= 100 ? `immun gegen ${esc(d.elements[el].name)}` : `${v > 0 ? 'resistent gegen' : 'anfällig für'} ${esc(d.elements[el].name)} (${v > 0 ? '−' : '+'}${Math.abs(v)} % Schaden)`; });
     if (rs.length) L.push('Elemente: ' + rs.join(', '));
@@ -800,7 +809,7 @@ function openInventory() {
   }
   if (S.invUse) {
     html += `<h3>${esc(itemDef(g, d, S.invUse).name)} an wem anwenden?</h3><div class="acts">` + g.heroes.map((h, i) =>
-      `<button class="mb" data-m="heal:${i}" ${h.hp > 0 && h.hp < h.maxHp ? '' : 'disabled'}>${esc(h.name)} (${h.hp}/${h.maxHp})</button>`).join('') + '</div>';
+      `<button class="mb headbtn" data-m="heal:${i}" ${h.hp > 0 && h.hp < h.maxHp ? '' : 'disabled'}><img src="${makePortrait(h).toDataURL()}" alt=""><span>${esc(h.name)}<br>${h.hp}/${h.maxHp}</span></button>`).join('') + '</div>';
   }
   if (g.combat) html += '<p class="muted">Im Kampf: Gegenstände über den Knopf „Gegenstand“ benutzen.</p>';
   else if (items.some(([id]) => sellPrice(g, d, id) != null)) html += '<p class="muted">Verkaufen kannst du bei einer Händlerin.</p>';
@@ -1120,6 +1129,7 @@ async function onModalClick(e) {
     if (r.msg) { say(r.msg); toast(r.msg); }
     renderAll(); openCharacter();
   }
+  else if (m === 'shopgo') { S.shopTalk = null; openShop(S.shopId, false); }
   else if (m.startsWith('use:')) { S.invUse = m.slice(4); openInventory(); }
   else if (m.startsWith('heal:')) {
     const r = useItemOutside(g, S.data, S.invUse || 'potion', +m.slice(5));

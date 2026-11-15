@@ -413,3 +413,64 @@ Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätet
 
 ## 0.15.12
 - Karte: Türen als Balken quer zum Gang (orange = zu, rot = verschlossen, grün mit Lücke = offen) statt brauner Quadrate (Verwechslung mit Truhe).
+
+## 0.15.13
+- Kampf: Knopf „Gegenstand“ zeigt bei nichts Nutzbarem einen Hinweistext (statt leerer Liste). Folge der Regel aus 0.15.10 (Items nur für den aktiven Helden).
+
+## 0.15.14
+- Kampf: angekündigte schwere Angriffe (heavy) treffen nur die Vorderreihe, solange dort ein Held steht (Magier hinten wurde durch Schweren Schlag 25+ Schaden sofort getötet). Test ergänzt (75 Tests). Weiterhin möglich: Ein-Treffer-Tod eines unverteidigten Vorderreihe-Helden in Phase 3 (Wurzelhieb 200 
+## 0.15.14
+- Kampf: angekündigte schwere Angriffe (heavy) treffen nur die Vorderreihe, solange dort ein Held steht (Magier hinten wurde durch den Schweren Schlag sofort getötet). Test ergänzt (75 Tests). Weiterhin möglich: Ein-Treffer-Tod eines unverteidigten Vorderreihe-Helden in Phase 3 (Wurzelhieb 200 Prozent, ATK 17).
+
+## 0.15.15
+- Heilziel per Kopf: Inventar „Benutzen“ zeigt Heldenköpfe (Porträt, Name, LP) als Knöpfe; im Kampf zählt ein Tipp auf die Heldenkarte unten als Auswahl des Heilziels, solange die Zielauswahl eines Heilzaubers offen ist (löst den Knopf abheal:i aus).
+
+## 0.15.16
+- Händler: erstes Ansprechen zeigt die Rede groß und mittig mit „Weiter“ (data-m=shopgo), danach öffnet sich der Shop direkt mit den Waren (kein Scrollen mehr bis zur Ware).
+- Schrat-Bosse (schratBoss wird von schrat UND grubenschrat genutzt, genSchrat von Wolf/Kultist u. a.): Rinde mit feinen senkrechten Furchen statt Tarnflecken, Moos nur als kleine Büschel (Schultern, Kopf, Arme, Füße), beide Sprites im Modus Scharf 2× geglättet (sm2: 192→384, 160→320). Test Texturgröße schrat=320.
+- Offen: Grubenschrat und Moorschrat teilen weiter dasselbe Sprite (nur Palette unterscheidet sich).
+
+## 0.15.17
+- Eigene Sprites für die Schrat-Bosse (genSchratBoss(seed, variant), sprites.moorschrat / sprites.grubenschrat; spriteFor: schrat → moorschrat, grubenschrat → grubenschrat):
+  - Moorschrat: grünlich mit Algen/Moos und fauligen Holzstellen, nass (Perlen + hängende Tropfen), kahler Schädel ohne Geweih/Ohren, kleine Augen.
+  - Grubenschrat: schmutzige Rinde mit Dreckflecken, lange schwarze Zottelhaare (Strähnen aus Wellenlinien), fahles Gesicht, große schwarze Augen mit Glanzpunkt, glühende Brustrisse.
+- Geweih beider Bosse entfernt. Party-Erstellung hatte bereits Namensfelder (Held 1–4, maxlength NAME_MAX).
+
+## Plan ab 0.16 (Entscheidungen des Nutzers, 15.11.2026)
+- Welt: Eldermoor bleibt. Reihenfolge: Nebelturm (0.16) → Talente (Stufe 12, Kosten 1/1/2/2, 4. Talent ab Stufe 8, 6 Berufe inkl. Alchemist, Priester heißt Kleriker) → Moorfestung mit 4–5 Kellerebenen als Schlussgebiet.
+- Der Nutzer will das Ende der Geschichte NICHT erfahren: keine Spoiler im Chat oder in Testanleitungen; Story-Notizen hier nur unter einer Überschrift „SPOILER“.
+- Gegnerzauber: kleine Zauber überraschend, große Boss-/Flächenzauber eine Runde vorher angesagt.
+- Alchemist darf als einziger Tränke an andere Helden geben (Ausnahme von der Regel aus 0.15.10).
+- Geheimtüren: feiner Riss in der Wand + Hinweis in der Nähe (Schild, Inschrift, Geräusch). Kein Fortschritt durch blindes Absuchen.
+- Kombinationsangriffe: automatisch bei erfüllten Bedingungen, Anzeige im Protokoll + Symbol am Gegner.
+- Heldentausch in der Siedlung (neuer Held auf gleicher Stufe), damit der Alchemist in laufende Gruppen kommt.
+- Übernommen aus dem Ideenpapier: Geheimtüren (Schalter, Geräusch, späterer Gegenstand), mehrstufiges Rätsel, Gewichtsplatten (braucht „Gegenstand ablegen“), veränderliche Räume, wiederkehrender Gegner, 3 Artefakte (Schwert, Bogen, Amulett), geheime Spezialisierungen (max. 2 Fähigkeiten), alternative Enden.
+- NICHT weiterverfolgen (Nutzer bestätigt): neuer Titel/12 neue Ebenen, festes Ziel 5–8 Stunden, drehbare Räume, Wassersteuerung, echte APK, Chronomant „letzte Aktion wiederholen“.
+
+## 0.16.0 – Nebelturm, Gegnerzauber, Kleriker
+- Priester heißt Kleriker (classes.priest.name; interner Schlüssel bleibt `priest`). syncStatic gleicht `hero.role` alter Spielstände an. Porträt akzeptiert beide Namen.
+- Gegnerzauber: `enemies.<art>.cast = [{ name, kind: bolt|heal|curse, every, mult, all, inflict, heal, announce }]` (logic.js pickCast/enemyCast, Zähler `e.ct`). bolt: trifft immer, halbe Rüstung, bevorzugt Hinterreihe, Verteidigen halbiert. heal: heilt den am stärksten verletzten Gegner, entfällt wenn niemand unter 75 % LP. curse: Status auf alle Helden. announce: Ansage einen Zug vorher. Phasen können `cast` überschreiben. Bestiarium zeigt „Zaubert: …“, BALANCE.md führt die Zauber.
+- Neue Gegner: nebelgeist (Frosthauch), kultpriester (Dunkler Segen, Fluch der Schwäche), Boss nebelhueter (280 LP, 2 Phasenwechsel = 3 Phasen; Nebelspeer angesagt, später Schleier der Schwäche, Schleiersturm auf alle, Nebel sammeln).
+- Neues Gebiet `nebelturm` (27×15, Palette `turm`: blauer Stein, roter Teppich, kaltes Licht): Eingang → Gang → Halle → Schreibsaal → Archiv (Turmschlüssel, Hebel) → Schatzkammer hinter Gitter; Thronsaal hinter verschlossenem Tor. Schratgruben: `exit_gruben` ersetzt durch Treppe `stairs_gruben_turm`.
+- Sprites: genRobed(seed, 'geist'|'priester'|'hueter'), 128 px, im Modus Scharf 2× geglättet.
+- Kampagnen-Simulation (Scratchpad camp.mjs, 300 Läufe, nicht im Repo): Stufe vor dem Turmboss Ø 8,0; Nebelhüter: kluge Spielweise ca. 98 % Sieg, reines Angreifen ca. 47 % (jeweils der Gruppen, die ihn erreichen).
+- Tests: 77 (neu: Nebelturm, Gegnerzauber).
+- Offen: eigener Wandtyp „Marmor“ (bisher nur Palette), Kultist nutzt weiter das alte Schrat-Sprite, kein Blinken des Verteidigen-Knopfs bei angesagtem Zauber, Geheimtür-Prototyp (für 0.16.1 geplant).
+- Nachtrag 15.11.2026: Nutzer übernimmt zusätzlich alle neun offenen Ideen: falscher Schatzraum, vier Statuen (eine lügt), verfluchte Waffe, sechs Siegel (+ drittes Ende), Elementarfackeln, Positionsaktion im Kampf, Dialoge mit Entscheidungen, Abkürzungen zu besuchten Gebieten, Fallen. Verteilung vor allem auf die Kellerebenen der Moorfestung (je Ebene ein bis zwei).
+- Feinplanung 15.11.2026 (Antworten des Nutzers):
+  - Fallen: Hinweis am Boden, an der Wand, auf einem Schild oder durch Hinweise anderer Charaktere (NPCs). Gruppenmitglieder mit passendem Talent erkennen Fallen eher (deutlicher/früher). Keine Klasse zwingend.
+  - Positionsaktion: Platztausch mit einem Helden der anderen Reihe KOSTET DEN ZUG (ersetzt Angriff/Verteidigung).
+  - Dialoge: wenige Entscheidungen mit spürbaren Folgen (Belohnungen, einzelne Kämpfe, mögliches Ende).
+  - Verfluchte Waffe: hoher Schaden, Träger verliert bei jedem Angriff LP; Fluch per versteckter Aufgabe lösbar.
+  - Sechs Siegel: über ALLE Gebiete verteilt (auch Moorpfad, Kultgruft, Schratgruben, Nebelturm).
+  - Abkürzungen: Runensteine als Reisenetz zwischen besuchten Gebieten UND Türen/Gitter, die nur von der Rückseite entriegelt werden.
+  - Falscher Schatzraum: die auffällige Truhe ist ein Monster (erwacht beim Öffnen), echter Schatz hinter unscheinbarer Wand.
+  - Rätselhilfe: Hinweis gegen Gold bei Hedda oder anderem NPC; ungefragt kein Spoiler.
+- Umfang 15.11.2026 (Nutzer: keine Einschränkung der Spieldauer):
+  - Drei Akte, ca. 13 Gebiete: Akt 1 Moor (vorhanden: Siedlung, Moorpfad, Kultgruft, Schratgruben, Nebelturm), Akt 2 Moorfestung (Oberburg + 4–5 Keller), Akt 3 letzter Abschnitt mit 2–3 Gebieten.
+  - Maximalstufe 15 (statt 12): 14 Talentpunkte bei 18 möglichen (Kosten 1/1/2/2). EP-Tabelle bis 15 und Stufengate für das 4. Talent neu festlegen.
+  - Siedlung wächst mit: Schmied, Taverne (Heldentausch + bis zu vier Reservehelden, die langsamer mit aufsteigen), Alchemistenküche; neue Bewohner nach Ereignissen.
+  - Nebenaufgaben: Aushangbrett, zwei bis drei gute je Akt mit eigener kleiner Geschichte.
+  - Neue Ebenen ALLE deutlich größer (doppelte bis dreifache Fläche). Folge: Karte muss zoomen/verschieben können, Leistung der Wegprüfung/Tests prüfen.
+  - Besiegte Gegner bleiben weg; nach Ereignissen ziehen neue, stärkere Gegner in alte Gebiete ein.
+  - Zwei Schwierigkeitsgrade (Normal, Schwer) beim Spielstart wählbar.

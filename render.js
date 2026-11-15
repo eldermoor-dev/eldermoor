@@ -454,8 +454,8 @@ function genArch(seed) {
 }
 
 // Moorschrat als Boss: breiter, vorgebeugter Baumriese mit Geweihkrone, Bodenkrallen, Zähnen und glühenden Rissen in der Brust
-function genSchratBoss(seed) {
-  const SN = 192, k = 64 / SN;
+function genSchratBoss(seed, variant = 'moor') { // 'moor': grünlich, algig, nass, kahl, kleine Augen · 'grube': dreckig, lange schwarze Zottelhaare, große schwarze Augen
+  const moor = variant === 'moor', SN = 192, k = 64 / SN;
   const t = { w: SN, h: SN, data: new Uint8Array(SN * SN).fill(255) };
   const segd = (px, py, ax, ay, bx, by) => {
     const vx = bx - ax, vy = by - ay, q = Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / (vx * vx + vy * vy)));
@@ -465,6 +465,15 @@ function genSchratBoss(seed) {
   const lim = (px, py, ax, ay, bx, by, r0, r1) => { const q = segd(px, py, ax, ay, bx, by), r = r0 + (r1 - r0) * q.q; return q.d <= r ? { cx: q.nx, cy: q.ny, r } : null; };
   const ell = (px, py, cx, cy, rx, ry) => { const a = (px - cx) / rx, b = (py - cy) / ry; return a * a + b * b <= 1 ? { cx, cy, r: Math.max(rx, ry) } : null; };
   const MIRROR = [-1, 1];
+  const STR = []; // Haarsträhnen: Wellenlinien vom Scheitel über Schultern, nach außen länger
+  if (!moor) for (let i = 0; i < 34; i++) {
+    const fringe = i % 4 === 0, sg = i % 2 ? 1 : -1, r = hash(i, 1, seed), u = fringe ? (hash(i, 4, seed) - 0.5) * 1.6 : sg * 0.55;
+    const x0 = fringe ? 32 + u * 8.5 : 32 + sg * (8.2 + r * 4.2), y0 = fringe ? 7.8 + Math.abs(u) * 2 : 9.5 + r * 4, len = fringe ? 2.5 + hash(i, 2, seed) * 2.2 : 24 + r * 18;
+    const pts = [[x0, y0]]; let cx = x0, cy = y0;
+    for (let n = 1; n <= 5; n++) { cx += u * (fringe ? 0.6 : 2.0) + (hash(i, n, seed + 3) - 0.5) * 3.0; cy += len / 5; pts.push([cx, cy]); }
+    STR.push(pts);
+  }
+  const hair = (px, py) => { for (const p of STR) for (let n = 0; n < 5; n++) { const q = lim(px, py, p[n][0], p[n][1], p[n + 1][0], p[n + 1][1], 1.9 - n * 0.2, 1.6 - n * 0.28); if (q) return q; } return null; };
   const arm = (px, py) => { for (const sg of MIRROR) { const h = lim(px, py, 32 + sg * 17, 27, 32 + sg * 27, 44, 7, 5.4) || lim(px, py, 32 + sg * 27, 44, 32 + sg * 25, 59, 5.4, 4) || ell(px, py, 32 + sg * 17, 26, 9, 8); if (h) return h; } return null; };
   const claws = (px, py) => { for (const sg of MIRROR) for (const d of [-5, -1.5, 2]) { const c = lim(px, py, 32 + sg * 25, 58, 32 + sg * (25 + d * 1.7), 63.7, 1.9, 0.35); if (c) return c; } return null; };
   const antlers = (px, py) => {
@@ -479,27 +488,34 @@ function genSchratBoss(seed) {
   for (let y = 0; y < SN; y++) for (let x = 0; x < SN; x++) {
     const px = (x + 0.5) * k, py = (y + 0.5) * k;
     let hit = null, part = '';
+    if (!moor && (hit = hair(px, py))) part = 'hair';
     const bw = 17.5 - 5.5 * Math.max(0, (py - 33) / 26);
     if (!hit) { const bx = (px - 32) / bw, by = (py - 40) / 20.5; if (bx * bx + by * by <= 1) { hit = { cx: 32, cy: 40, r: 19 }; part = 'body'; } }
     if (!hit && (hit = ell(px, py, 32, 17.2, 11, 9.4))) part = 'head';
     if (!hit && (hit = arm(px, py))) part = 'arm';
     if (!hit && (hit = roots(px, py))) part = 'root';
-    if (!hit && (hit = antlers(px, py))) part = 'branch';
     if (!hit && (hit = claws(px, py))) part = 'claw';
     if (!hit) continue;
     const l = ((px - hit.cx) * 0.9 + (py - hit.cy) * 0.7) / hit.r;
-    let sh = 3.2 - l * 1.7 + (vnoise(px, py, 3.5, seed) - 0.5) * 1.0, mat = 'wood';
-    if (part === 'head') {
-      mat = 'wood'; sh = 2.9 - l * 1.4 + (vnoise(px * 3, py, 8, seed + 4) - 0.5) * 1.3;
+    let sh = 3.3 - l * 1.9 + (vnoise(px, py, 3.5, seed) - 0.5) * 0.7, mat = 'wood';
+    if (part === 'hair') { mat = 'ceil'; sh = 0.5 - l * 0.5 + (vnoise(px * 9, py * 0.6, 4, seed + 21) - 0.5) * 1.2 + (hash(x, y, seed + 23) - 0.5) * 0.4; if (vnoise(px * 8, py * 0.5, 4, seed + 25) > 0.8) sh = 2.1; }
+    else if (part === 'head') {
+      mat = 'wood'; sh = 3.0 - l * 1.5 + (vnoise(px * 3, py, 8, seed + 4) - 0.5) * 1.0;
       if (py > 21.2 && py < 25 && Math.abs(px - 32) < 7.6) { mat = 'ceil'; sh = 0; } // Maul
     } else if (part === 'claw') { mat = 'stone'; sh = 5.6 - l; }
     else if (part === 'branch') { mat = 'wood'; sh = 2.0 - l * 0.8; }
-    else {
-      const g = vnoise(px * 4, py, 9, seed + 2);
-      if (g < 0.34) sh -= 1.9; else if (g > 0.66) sh += 0.8;
-      sh += (hash(x, y, seed + 5) - 0.5) * 0.5;
+    else { // Rinde: feine senkrechte Furchen und Rippen statt großer Flecken
+      const g = vnoise(px * 9, py * 0.7, 5, seed + 2), g2 = vnoise(px * 3.2, py * 0.5, 11, seed + 7);
+      sh += (g - 0.5) * 2.6 + (g2 - 0.5) * 1.1;
+      if (g < 0.2) sh -= 1.1; // tiefe Rindenspalte
+      sh += (hash(x, y, seed + 5) - 0.5) * 0.35;
     }
-    if (part !== 'claw' && part !== 'branch' && mat !== 'ceil' && vnoise(px, py, 6.5, seed + 9) > (part === 'root' ? 0.5 : 0.62) + (py < 24 ? 0.08 : 0)) { mat = 'moss'; sh = 2.5 + (1 - l) * 0.8 + (hash(x, y, seed + 11) - 0.5) * 0.7; }
+    if (!moor && part === 'head' && mat !== 'ceil') { mat = 'flesh'; sh = 3.6 - l * 1.2 + (vnoise(px * 3, py, 6, seed + 4) - 0.5) * 0.8; } // fahles, schmutziges Gesicht, damit die schwarzen Augen wirken
+    if (!moor && part !== 'hair' && part !== 'claw' && mat !== 'ceil') { sh -= 0.5; if (vnoise(px, py, 4.5, seed + 15) > 0.62) sh -= 1.2; } // Grubenschrat: schmutzig, dunkle Dreckflecken
+    if (moor && part !== 'claw' && mat !== 'ceil' && part !== 'head' && vnoise(px, py, 4.2, seed + 13) < 0.74) { mat = 'moss'; sh = 3.1 - l * 1.7 + (vnoise(px * 8, py * 0.8, 5, seed + 3) - 0.5) * 1.8 + (hash(x, y, seed + 5) - 0.5) * 0.4; } // Moorschrat: überwiegend Algen und Moos mit fauligen Holzstellen
+    if (moor && part === 'head') { mat = 'moss'; sh = 3.3 - l * 1.4 + (vnoise(px * 3, py, 6, seed + 4) - 0.5) * 0.9; if (py > 21.2 && py < 25 && Math.abs(px - 32) < 7.6) { mat = 'ceil'; sh = 0; } } // kahler, grünlicher Schädel
+    const mossy = false;
+    if (part !== 'claw' && part !== 'branch' && mat !== 'ceil' && mossy) { mat = 'moss'; sh = 2.6 + (1 - l) * 0.8 + (hash(x, y, seed + 11) - 0.5) * 0.5; }
     t.data[y * SN + x] = P(mat, sh);
   }
   // Zähne: helle Dornen oben und unten im Maul
@@ -511,8 +527,8 @@ function genSchratBoss(seed) {
     if (py < 22.7 && py - 20.8 < (1 - tri) * 2.4 + 0.2) setp(px, py, P('stone', 6.6 - (py - 20.8) * 0.5));
     if (py > 23.6 && 25.4 - py < (1 - Math.abs(((px - 26) / 2.4) % 1 - 0.5) * 2) * 1.9 + 0.1) setp(px, py, P('stone', 6.2));
   }
-  // glühende Risse in der Brust
-  for (let i = 0; i < 4; i++) {
+  // glühende Risse in der Brust (nur Grubenschrat)
+  for (let i = 0; i < (moor ? 0 : 4); i++) {
     let cx = 32 + (i - 1.5) * 4.2, cy = 33 + (i % 2) * 2;
     for (let n = 0; n < 26; n++) { setp(cx, cy, P('glow', 6.4 - n * 0.06)); setp(cx + 0.35, cy, P('glow', 5)); cx += (hash(i, n, seed + 20) - 0.5) * 1.5; cy += 0.55; }
   }
@@ -525,16 +541,82 @@ function genSchratBoss(seed) {
       if (copy[i - 1] === 255 || copy[i + 1] === 255 || copy[i - SN] === 255 || copy[i + SN] === 255) t.data[i] = P(MATS[copy[i] >> 3], Math.max(0, (copy[i] & 7) - 2.8));
     }
   }
-  // Augen: breite, zornige Schlitze, hell glühend, mit dunkler Höhle
-  for (const [ex, sg] of [[27.4, -1], [36.6, 1]]) {
-    for (let y = 0; y < SN; y++) for (let x = 0; x < SN; x++) {
-      const dx = (x + 0.5) * k - ex, dy = (y + 0.5) * k - 15.8;
-      const rx = dx * 0.9 - sg * dy * 0.55, ry = dy * 0.9 + sg * dx * 0.55;
-      const e = (rx / 3.1) ** 2 + (ry / 1.3) ** 2;
-      if (e <= 1) setp(dx + ex, dy + 15.8, P('glow', e < 0.4 ? 7 : 5.5));
-      else if (e <= 4 && t.data[y * SN + x] !== 255) t.data[y * SN + x] = P('ceil', 0);
+  if (moor) { // Wassertropfen: glänzende Perlen auf dem Körper und Tropfen, die von Kinn, Armen und Körper hängen
+    for (let i = 0; i < 34; i++) {
+      const px = 14 + hash(i, 5, seed + 31) * 36, py = 12 + hash(i, 6, seed + 31) * 44, X = Math.floor(px / k), Y = Math.floor(py / k);
+      if (t.data[Y * SN + X] === 255 || (t.data[Y * SN + X] >> 3) === 5) continue;
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -1; dx <= 1; dx++) { const o = (Y + dy) * SN + X + dx; if (t.data[o] !== 255 && Math.hypot(dx / 1.2, dy / 2) <= 1) t.data[o] = P('moss', 6.3 - dy * 0.35); }
+      for (const [dx, dy] of [[-1, -1], [0, -1]]) { const o = (Y + dy) * SN + X + dx; if (t.data[o] !== 255) t.data[o] = P('stone', 7.4); } // Glanzpunkt
+    }
+    for (let i = 0; i < 14; i++) { // hängende Tropfen
+      const px = 17 + hash(i, 7, seed + 33) * 30, py0 = 24 + hash(i, 8, seed + 33) * 24;
+      let X = Math.floor(px / k), Y = Math.floor(py0 / k); while (Y < SN - 3 && t.data[(Y + 1) * SN + X] !== 255) Y++;
+      if (Y > SN - 20 || t.data[Y * SN + X] === 255) continue;
+      const L = 5 + Math.floor(hash(i, 9, seed + 33) * 9);
+      for (let n = 1; n <= L; n++) t.data[(Y + n) * SN + X] = P('moss', 5.2);
+      for (const dy of [L + 1, L + 2]) for (const dx of dy === L + 1 ? [-1, 0, 1] : [0]) t.data[(Y + dy) * SN + X + dx] = P('stone', dy === L + 1 ? 6.4 : 5.6);
+      t.data[(Y + L) * SN + X - 1] = P('stone', 7.4);
     }
   }
+  const E = moor ? { rx: 1.5, ry: 0.85, y: 16.2, xs: [28.6, 35.4] } : { rx: 3.7, ry: 3.0, y: 15.8, xs: [27.2, 36.8] };
+  for (const [ei, ex] of E.xs.entries()) {
+    const sg = ei ? 1 : -1;
+    for (let y = 0; y < SN; y++) for (let x = 0; x < SN; x++) {
+      const dx = (x + 0.5) * k - ex, dy = (y + 0.5) * k - E.y, i = y * SN + x;
+      if (t.data[i] === 255) continue;
+      if (moor) { // kleine, kalte, glimmende Augen in dunkler Höhle
+        const rx = dx * 0.95 - sg * dy * 0.4, ry = dy * 0.95 + sg * dx * 0.4, e = (rx / E.rx) ** 2 + (ry / E.ry) ** 2;
+        if (e <= 1) t.data[i] = P('glow', e < 0.4 ? 7 : 5.5); else if (e <= 3.2) t.data[i] = P('ceil', 0);
+      } else { // große, tiefschwarze Augen mit Glanzpunkt
+        const e = (dx / E.rx) ** 2 + (dy / E.ry) ** 2;
+        if (e <= 1) t.data[i] = P('ceil', 0); else if (e <= 1.35) t.data[i] = P('ceil', 1);
+        if (Math.hypot(dx + 1.4, dy + 1.1) < 0.55) t.data[i] = P('stone', 7.4);
+      }
+    }
+  }
+  t.noWrap = true;
+  return t;
+}
+
+// Robengestalten des Nebelturms: 'geist' (Nebelgeist, schwebend, zerfranst), 'priester' (Kultpriester mit Stab), 'hueter' (Nebelhüter: Krone, Stab, leuchtendes Siegel)
+function genRobed(seed, kind) {
+  const SN = 128, k = 64 / SN, geist = kind === 'geist', hueter = kind === 'hueter';
+  const t = { w: SN, h: SN, data: new Uint8Array(SN * SN).fill(255) };
+  const segd = (px, py, ax, ay, bx, by) => { const vx = bx - ax, vy = by - ay, q = Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / (vx * vx + vy * vy))); return { d: Math.hypot(px - ax - vx * q, py - ay - vy * q), q }; };
+  const cap = (px, py, ax, ay, bx, by, r0, r1) => { const q = segd(px, py, ax, ay, bx, by); return q.d <= r0 + (r1 - r0) * q.q; };
+  const robeMat = geist ? 'flesh' : hueter ? 'iron' : 'wood';
+  for (let y = 0; y < SN; y++) for (let x = 0; x < SN; x++) {
+    const px = (x + 0.5) * k, py = (y + 0.5) * k, dx = px - 32;
+    let part = '';
+    const bottom = geist ? 55 - 5 * Math.abs(Math.sin(px * 0.85 + seed)) - 2 * Math.abs(Math.sin(px * 2.3)) : 63.5 - 1.2 * Math.abs(Math.sin(px * 1.1 + seed));
+    const hw = 6.5 + Math.max(0, py - 20) * (geist ? 0.24 : 0.3) + (geist ? Math.sin(py * 0.45 + seed) * 1.2 : 0);
+    if (py >= 19 && py <= bottom && Math.abs(dx) <= hw) part = 'robe';
+    if (!part && ((dx / 11.5) ** 2 + ((py - 22.5) / 5) ** 2 <= 1)) part = 'robe';
+    if (!part && (cap(px, py, 22, 23, 17.5, 40, 3.4, 2.6) || cap(px, py, 42, 23, 46.5, 37, 3.4, 2.6))) part = 'arm';
+    if ((dx / 7.6) ** 2 + ((py - 13.5) / 8.6) ** 2 <= 1) part = 'hood';
+    if (!geist && !part && cap(px, py, 47.2, 7, 47.2, 62.5, 0.9, 0.9)) part = 'staff';
+    if (!geist && Math.hypot(px - 47.2, py - 6) <= (hueter ? 3.2 : 2.5)) part = 'orb';
+    if (hueter && !part && (cap(px, py, 27, 7, 24.5, 0.8, 1.3, 0.3) || cap(px, py, 32, 6, 32, -0.5, 1.4, 0.3) || cap(px, py, 37, 7, 39.5, 0.8, 1.3, 0.3))) part = 'crown';
+    if (!part) continue;
+    const l = (dx * 0.9 + (py - 34) * 0.25) / 18; // Licht von links oben
+    let mat = robeMat, sh = 3.6 - l * 2.2 + (vnoise(px * 5, py * 0.35, 6, seed) - 0.5) * 2.0 + (hash(x, y, seed + 3) - 0.5) * 0.3; // senkrechte Falten
+    if (part === 'hood') { sh = 3.4 - ((px - 32) * 0.9 + (py - 13.5) * 0.6) / 8 * 1.5; if (((px - 32) / 4.9) ** 2 + ((py - 15.2) / 5.6) ** 2 <= 1) { mat = 'ceil'; sh = 0; } }
+    else if (part === 'staff') { mat = 'wood'; sh = 2.4; }
+    else if (part === 'orb') { mat = 'glow'; sh = 7 - Math.hypot(px - 46.5, py - 5.3) * 0.9; }
+    else if (part === 'crown') { mat = 'iron'; sh = 5.2 - l; }
+    else if (part === 'arm') sh -= 0.5;
+    if (geist) sh += 1.6 - Math.max(0, py - 30) * 0.07; // oben hell, nach unten verblassend
+    if (!geist && part === 'robe' && Math.abs(dx) < 1.1 && py > 24) { mat = 'glow'; sh = hueter ? 5.5 : 3.2; } // Saum in der Mitte
+    if (hueter && part === 'robe' && Math.abs(Math.hypot(dx, py - 31) - 3.6) < 0.8) { mat = 'glow'; sh = 6.8; } // Siegel auf der Brust
+    t.data[y * SN + x] = P(mat, sh);
+  }
+  const copy = t.data.slice(); // dunkler Umriss
+  for (let y = 1; y < SN - 1; y++) for (let x = 1; x < SN - 1; x++) { const i = y * SN + x; if (copy[i] !== 255 && (copy[i] >> 3) !== 7 && (copy[i - 1] === 255 || copy[i + 1] === 255 || copy[i - SN] === 255 || copy[i + SN] === 255)) t.data[i] = P(MATS[copy[i] >> 3], Math.max(0, (copy[i] & 7) - 2.5)); }
+  for (const ex of [29.6, 34.4]) for (let y = 0; y < SN; y++) for (let x = 0; x < SN; x++) { // Augen
+    const d = Math.hypot((x + 0.5) * k - ex, ((y + 0.5) * k - 14.6) * 1.25), r = hueter ? 1.25 : geist ? 1.1 : 0.85;
+    if (d <= r) t.data[y * SN + x] = geist ? P('ceil', 0) : P('glow', d < r * 0.55 ? 7 : 5.2);
+  }
+  if (geist) for (let y = 0; y < SN; y++) for (let x = 0; x < SN; x++) { const px = (x + 0.5) * k, py = (y + 0.5) * k; if (((px - 32) / 1.5) ** 2 + ((py - 18.6) / 2.2) ** 2 <= 1) t.data[y * SN + x] = P('ceil', 0); } // offener Mund
   t.noWrap = true;
   return t;
 }
@@ -693,13 +775,14 @@ function smoothSprite(t, S = 4) {
 export function makeTextures(detail = 1) {
   const up = (t, s) => (detail > 1 ? upsample2(t, s) : t);
   const spr = (t, s) => { t.noWrap = true; return up(t, s); };
+  const sm2 = (t) => { t.noWrap = true; return detail > 1 ? smoothSprite(t, 2) : t; }; // große Bosse (160/192 px): 2× weich
   const sm = (t) => { t.noWrap = true; return detail > 1 ? smoothSprite(t, 4) : t; }; // Monster und Händler: im Modus Scharf geglättet
   const n = TEX * (detail > 1 ? 4 : 1), nf = TEX * (detail > 1 ? 2 : 1); // Wände 256, Boden/Decke 128: Eigenauflösung statt hochskaliert (Potenzen von 2 wegen Maskierung)
   return {
     wall: { [WALL_STONE]: genStone(11, n), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
     ceil: genCeil(53, nf),
-    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: genSchrat(71), portal: spr(genPortal(81), 109), merchant: sm(genMerchant(91)), wisp: sm(genWisp(121)), skeleton: sm(genSkeleton(171)), guard: sm(genGuard(181, false)), captain: sm(genGuard(191, true)), kaefer: sm(genKaefer(201)), schratBoss: genSchratBoss(221), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm(genMerchant(91)), wisp: sm(genWisp(121)), skeleton: sm(genSkeleton(171)), guard: sm(genGuard(181, false)), captain: sm(genGuard(191, true)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genRobed(251, 'priester')), hueter: sm2(genRobed(261, 'hueter')), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
@@ -859,8 +942,8 @@ export function buildGrid(lvl, objs) {
   for (const o of objs) if (o.type === 'gate' && !o.open) grid[o.y * w + o.x] = WALL_GATE;
   return { grid, gw: w, gh: h };
 }
-const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : (k === 'schrat' || k === 'grubenschrat') ? tex.sprites.schratBoss : tex.sprites.schrat);
-const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' ? 1.2 : k === 'hauptmann' ? 1 : 0.85); // Bosse stehen größer im Gang
+const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
+const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' ? 1 : 0.85); // Bosse stehen größer im Gang
 const kindOf = (o, i) => (Array.isArray(o.kinds) ? o.kinds[Math.min(i, o.kinds.length - 1)] : o.kind);
 function signTex(tex, o) { // ein Schild-Sprite je Titel, einmal erzeugt
   const key = o.title || '';
@@ -894,12 +977,12 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null) { // aliv
 const SKIN = ['#e0b48c', '#c98f66', '#f0c8a0', '#a8714c'];
 const ORK_SKIN = ['#7f9a5a', '#6f8a4e'];
 const hx = (c) => c;
-// role = Berufsname (Krieger, Schurke, Priester, Magier, Waldläufer), race = Rassen-Schlüssel (optional, z. B. 'elf')
+// role = Berufsname (Krieger, Schurke, Kleriker, Magier, Waldläufer), race = Rassen-Schlüssel (optional, z. B. 'elf')
 export function drawPortrait(ctx, role, seed, race) {
   const skin = race === 'ork' ? ORK_SKIN[Math.abs(seed) % ORK_SKIN.length] : SKIN[Math.abs(seed) % SKIN.length];
   const px = (x, y, w, h, c) => { ctx.fillStyle = hx(c); ctx.fillRect(x, y, w, h); };
   px(0, 0, 32, 32, '#1b1712');
-  px(0, 24, 32, 8, role === 'Krieger' ? '#6b7280' : role === 'Schurke' ? '#2f4a33' : role === 'Priester' ? '#e8e2d0' : role === 'Waldläufer' ? '#6b5532' : '#2c3e7a');
+  px(0, 24, 32, 8, role === 'Krieger' ? '#6b7280' : role === 'Schurke' ? '#2f4a33' : (role === 'Priester' || role === 'Kleriker') ? '#e8e2d0' : role === 'Waldläufer' ? '#6b5532' : '#2c3e7a');
   px(13, 22, 6, 4, skin);
   for (let y = 8; y <= 24; y++) { // Gesicht (Ellipse)
     const k = Math.sqrt(Math.max(0, 1 - Math.pow((y - 16) / 8.5, 2))) * 7.2;
@@ -912,7 +995,7 @@ export function drawPortrait(ctx, role, seed, race) {
   else if (race === 'gnome') { px(15, 17, 3, 3, '#e0a080'); }
   if (role === 'Krieger') { px(8, 6, 16, 6, '#8d95a3'); px(8, 12, 3, 8, '#8d95a3'); px(21, 12, 3, 8, '#8d95a3'); px(15, 12, 2, 6, '#8d95a3'); }
   else if (role === 'Schurke') { px(7, 5, 18, 7, '#2f4a33'); px(7, 12, 3, 12, '#2f4a33'); px(22, 12, 3, 12, '#2f4a33'); }
-  else if (role === 'Priester') { px(9, 5, 14, 5, '#e8e2d0'); px(14, 1, 4, 5, '#d9b44a'); px(15, 2, 2, 3, '#e8e2d0'); }
+  else if ((role === 'Priester' || role === 'Kleriker')) { px(9, 5, 14, 5, '#e8e2d0'); px(14, 1, 4, 5, '#d9b44a'); px(15, 2, 2, 3, '#e8e2d0'); }
   else if (role === 'Waldläufer') { px(8, 5, 16, 6, '#6b5532'); px(6, 10, 20, 2, '#6b5532'); px(21, 1, 2, 7, '#b7d17a'); px(7, 12, 2, 8, '#6b5532'); px(23, 12, 2, 8, '#6b5532'); }
   else { for (let i = 0; i < 12; i++) px(16 - Math.round(i * 0.55), 1 + i, Math.round(1 + i * 1.1), 1, '#2c3e7a'); px(6, 12, 20, 2, '#2c3e7a'); px(14, 6, 4, 2, '#d9b44a'); }
 }

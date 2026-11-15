@@ -49,7 +49,7 @@
         "mage",
         "priest"
       ],
-      "desc": "Waffe. +2 Angriff. Für Magier und Priester.",
+      "desc": "Waffe. +2 Angriff. Für Magier und Kleriker.",
       "value": 24
     },
     "leather_armor": {
@@ -70,7 +70,7 @@
         "priest",
         "ranger"
       ],
-      "desc": "Rüstung. +2 Verteidigung. Für Krieger, Priester, Waldläufer.",
+      "desc": "Rüstung. +2 Verteidigung. Für Krieger, Kleriker, Waldläufer.",
       "value": 30
     },
     "schratdorn": {
@@ -98,7 +98,7 @@
         "mage",
         "priest"
       ],
-      "desc": "Einzigartige Waffe. +4 Angriff, +1 Initiative. Eine Wurzel, die noch Magie des Moors trägt. Für Magier und Priester."
+      "desc": "Einzigartige Waffe. +4 Angriff, +1 Initiative. Eine Wurzel, die noch Magie des Moors trägt. Für Magier und Kleriker."
     },
     "gruft_key": {
       "name": "Gruftschlüssel",
@@ -123,7 +123,7 @@
         "priest",
         "ranger"
       ],
-      "desc": "Einzigartige Rüstung. +4 Verteidigung. Der Plattenpanzer des Hauptmanns. Für Krieger, Priester, Waldläufer."
+      "desc": "Einzigartige Rüstung. +4 Verteidigung. Der Plattenpanzer des Hauptmanns. Für Krieger, Kleriker, Waldläufer."
     },
     "nebelmantel": {
       "name": "Nebelmantel",
@@ -166,6 +166,12 @@
       "cure": "poison",
       "desc": "Nur im Kampf: nimmt einem Helden das Gift.",
       "value": 8
+    },
+    "turm_schluessel": {
+      "name": "Turmschlüssel",
+      "kind": "quest",
+      "desc": "Ein kalter Schlüssel aus blauem Stahl. Passt in das Tor zum Thronsaal des Nebelturms.",
+      "noSell": true
     }
   },
   "races": {
@@ -296,7 +302,7 @@
       }
     },
     "priest": {
-      "name": "Priester",
+      "name": "Kleriker",
       "desc": "Hinterreihe, Heiler der Gruppe.",
       "row": "back",
       "ranged": false,
@@ -813,6 +819,165 @@
         "title": "Der Moorschrat",
         "text": "Wurzeln brechen aus dem Fels. Er hat euch erwartet."
       }
+    },
+    "nebelgeist": {
+      "name": "Nebelgeist",
+      "hp": 30,
+      "atk": 10,
+      "def": 2,
+      "init": 8,
+      "gold": 10,
+      "xp": 70,
+      "ai": "backline",
+      "cast": [
+        {
+          "name": "Frosthauch",
+          "kind": "bolt",
+          "every": 2,
+          "mult": 115,
+          "inflict": {
+            "status": "slow",
+            "chance": 50,
+            "turns": 2
+          }
+        }
+      ],
+      "resist": {
+        "ice": -50,
+        "fire": 25
+      },
+      "gearDrop": {
+        "chance": 15
+      }
+    },
+    "kultpriester": {
+      "name": "Kultpriester",
+      "hp": 40,
+      "atk": 8,
+      "def": 3,
+      "init": 5,
+      "gold": 16,
+      "xp": 85,
+      "ai": "random",
+      "cast": [
+        {
+          "name": "Dunkler Segen",
+          "kind": "heal",
+          "every": 2,
+          "heal": 16
+        },
+        {
+          "name": "Fluch der Schwäche",
+          "kind": "curse",
+          "every": 3,
+          "inflict": {
+            "status": "weak",
+            "chance": 60,
+            "turns": 2
+          }
+        }
+      ],
+      "resist": {
+        "ice": 25,
+        "lightning": -25
+      },
+      "gearDrop": {
+        "chance": 25
+      }
+    },
+    "nebelhueter": {
+      "name": "Nebelhüter",
+      "hp": 280,
+      "atk": 15,
+      "def": 5,
+      "init": 6,
+      "gold": 80,
+      "xp": 320,
+      "boss": true,
+      "cast": [
+        {
+          "name": "Nebelspeer",
+          "kind": "bolt",
+          "every": 3,
+          "mult": 150,
+          "announce": true,
+          "inflict": {
+            "status": "slow",
+            "chance": 50,
+            "turns": 2
+          }
+        }
+      ],
+      "resist": {
+        "ice": -50,
+        "lightning": 25
+      },
+      "phases": [
+        {
+          "below": 66,
+          "name": "Nebelwand",
+          "msg": "Der Saal füllt sich mit Nebel. Die Fackeln werden zu blassen Punkten.",
+          "set": {
+            "atk": 16,
+            "cast": [
+              {
+                "name": "Nebelspeer",
+                "kind": "bolt",
+                "every": 2,
+                "mult": 150,
+                "announce": true,
+                "inflict": {
+                  "status": "slow",
+                  "chance": 50,
+                  "turns": 2
+                }
+              },
+              {
+                "name": "Schleier der Schwäche",
+                "kind": "curse",
+                "every": 3,
+                "inflict": {
+                  "status": "weak",
+                  "chance": 60,
+                  "turns": 2
+                }
+              }
+            ]
+          }
+        },
+        {
+          "below": 33,
+          "name": "Sturm der Schleier",
+          "msg": "Der Hüter löst sich fast auf. Was bleibt, ist Kälte und Zorn.",
+          "set": {
+            "atk": 17,
+            "cast": [
+              {
+                "name": "Schleiersturm",
+                "kind": "bolt",
+                "all": true,
+                "every": 2,
+                "mult": 95,
+                "announce": true
+              },
+              {
+                "name": "Nebel sammeln",
+                "kind": "heal",
+                "every": 3,
+                "heal": 18
+              }
+            ]
+          }
+        }
+      ],
+      "gearDrop": {
+        "chance": 100,
+        "boost": 3
+      },
+      "intro": {
+        "title": "Der Nebelhüter",
+        "text": "Auf dem Thron sitzt etwas, das einmal eine Gestalt hatte."
+      }
     }
   },
   "palettes": {
@@ -940,6 +1105,48 @@
         255,
         196,
         104
+      ]
+    },
+    "turm": {
+      "stone": [
+        112,
+        138,
+        190
+      ],
+      "moss": [
+        172,
+        196,
+        232
+      ],
+      "wood": [
+        86,
+        70,
+        110
+      ],
+      "iron": [
+        150,
+        160,
+        184
+      ],
+      "floor": [
+        132,
+        58,
+        70
+      ],
+      "ceil": [
+        58,
+        70,
+        110
+      ],
+      "flesh": [
+        168,
+        182,
+        214
+      ],
+      "glow": [
+        170,
+        225,
+        255
       ]
     }
   },
@@ -1884,16 +2091,6 @@
           ]
         },
         {
-          "id": "exit_gruben",
-          "type": "exit",
-          "x": 32,
-          "y": 9,
-          "title": "Ende der Schratgruben",
-          "say": "Hinter dem Lager führt ein Gang nach oben ins Nebelland, aber Nebel und Geröll versperren ihn.",
-          "text": "Der Moorschrat ist besiegt. Der Weg zum Nebelturm ist noch von Geröll und Nebel versperrt. In der nächsten Version geht es hier weiter.",
-          "look": "up"
-        },
-        {
           "id": "gate_s1",
           "type": "gate",
           "x": 21,
@@ -1915,12 +2112,259 @@
           "y": 5,
           "text": "Nordstollen. Gesperrt. Der Hebel steht, wie üblich, ganz woanders.",
           "title": "NORD-|STOLLEN"
+        },
+        {
+          "id": "stairs_gruben_turm",
+          "type": "stairs",
+          "x": 32,
+          "y": 9,
+          "look": "up",
+          "msg": "Der Gang ist frei. Du steigst durch kalten Nebel hinauf zum Nebelturm.",
+          "to": {
+            "level": "nebelturm",
+            "x": 2,
+            "y": 12,
+            "dir": 1
+          }
         }
       ],
       "intro": {
         "title": "Schratgruben",
         "text": "Erz, Staub und Holz, das knarrt, ohne dass jemand es berührt."
       }
+    },
+    "nebelturm": {
+      "id": "nebelturm",
+      "name": "Nebelturm",
+      "palette": "turm",
+      "map": [
+        "##m##T#######T##m#####T####",
+        "#.........#.......#.......#",
+        "#.........#.......#.......m",
+        "T.........................#",
+        "#.........#.......####T####",
+        "#.........#.......#.......#",
+        "###########.......m.......#",
+        "#########m#T##.##T#.......#",
+        "######m####.......#.......#",
+        "###T######m.......#.......T",
+        "#.....#####...............#",
+        "m.....##T##.......#.......#",
+        "#.................m.......m",
+        "#.....#m###.......#.......#",
+        "##########m###T#####T###T##"
+      ],
+      "start": {
+        "x": 2,
+        "y": 12,
+        "dir": 1
+      },
+      "intro": {
+        "title": "Nebelturm",
+        "text": "Blauer Stein, roter Teppich und eine Stille, die zuhört."
+      },
+      "objects": [
+        {
+          "id": "stairs_turm_down",
+          "type": "stairs",
+          "x": 1,
+          "y": 12,
+          "look": "down",
+          "msg": "Du steigst hinab in die Schratgruben.",
+          "to": {
+            "level": "schratgruben",
+            "x": 31,
+            "y": 9,
+            "dir": 3
+          }
+        },
+        {
+          "id": "sign_t1",
+          "type": "sign",
+          "x": 4,
+          "y": 10,
+          "text": "Nebelturm. Besucher werden gebeten, ihre Namen zu behalten. Der Nebel nimmt gern, was herumliegt.",
+          "title": "NEBEL-|TURM"
+        },
+        {
+          "id": "en_t1",
+          "type": "enemy",
+          "x": 8,
+          "y": 12,
+          "kind": "nebelgeist",
+          "kinds": [
+            "nebelgeist",
+            "nebelgeist"
+          ]
+        },
+        {
+          "id": "en_t2",
+          "type": "enemy",
+          "x": 14,
+          "y": 10,
+          "kind": "kultpriester",
+          "kinds": [
+            "kultist",
+            "kultpriester",
+            "kultist"
+          ]
+        },
+        {
+          "id": "sign_t2",
+          "type": "sign",
+          "x": 16,
+          "y": 9,
+          "text": "Thronsaal. Zutritt nur mit Turmschlüssel. Der Schlüssel liegt im Archiv, das Archiv liegt hinter dem Schreibsaal, und der Schreibsaal mag keine Gäste.",
+          "title": "THRON-|SAAL →"
+        },
+        {
+          "id": "door_tc",
+          "type": "door",
+          "x": 14,
+          "y": 7
+        },
+        {
+          "id": "en_t3",
+          "type": "enemy",
+          "x": 14,
+          "y": 4,
+          "kind": "kultpriester",
+          "kinds": [
+            "kultwaechter",
+            "kultpriester",
+            "nebelgeist"
+          ]
+        },
+        {
+          "id": "sign_t3",
+          "type": "sign",
+          "x": 12,
+          "y": 5,
+          "text": "Schreibsaal. Ruhe bitte. Das Gitter zur Schatzkammer öffnet der Hebel im Archiv.",
+          "title": "SCHREIB-|SAAL"
+        },
+        {
+          "id": "door_td",
+          "type": "door",
+          "x": 10,
+          "y": 3
+        },
+        {
+          "id": "en_t4",
+          "type": "enemy",
+          "x": 6,
+          "y": 3,
+          "kind": "nebelgeist",
+          "kinds": [
+            "nebelgeist",
+            "nebelgeist",
+            "nebelgeist"
+          ]
+        },
+        {
+          "id": "chest_t_key",
+          "type": "chest",
+          "x": 2,
+          "y": 2,
+          "loot": [
+            {
+              "item": "turm_schluessel",
+              "n": 1
+            },
+            {
+              "gold": 30
+            },
+            {
+              "item": "potion",
+              "n": 2
+            }
+          ]
+        },
+        {
+          "id": "lever_t1",
+          "type": "lever",
+          "x": 8,
+          "y": 1,
+          "gate": "gate_t1",
+          "msg": "Der Hebel gibt nach. Irgendwo im Turm hebt sich ein Gitter."
+        },
+        {
+          "id": "gate_t1",
+          "type": "gate",
+          "x": 18,
+          "y": 3,
+          "hint": "Ein Gitter aus blauem Stahl. Der Hebel dazu ist nicht hier."
+        },
+        {
+          "id": "chest_t2",
+          "type": "chest",
+          "x": 24,
+          "y": 2,
+          "loot": [
+            {
+              "gold": 50
+            },
+            {
+              "gear": {
+                "boost": 2
+              }
+            },
+            {
+              "item": "oelflasche",
+              "n": 2
+            },
+            {
+              "item": "gegengift",
+              "n": 1
+            }
+          ]
+        },
+        {
+          "id": "door_turm",
+          "type": "door",
+          "x": 18,
+          "y": 10,
+          "locked": true,
+          "key": "turm_schluessel"
+        },
+        {
+          "id": "en_tboss",
+          "type": "enemy",
+          "x": 22,
+          "y": 9,
+          "kind": "nebelhueter"
+        },
+        {
+          "id": "chest_t_boss",
+          "type": "chest",
+          "x": 24,
+          "y": 6,
+          "loot": [
+            {
+              "gold": 90
+            },
+            {
+              "item": "potion",
+              "n": 3
+            },
+            {
+              "gear": {
+                "boost": 3
+              }
+            }
+          ]
+        },
+        {
+          "id": "exit_turm",
+          "type": "exit",
+          "x": 24,
+          "y": 12,
+          "look": "up",
+          "title": "Der Nebel lichtet sich",
+          "say": "Vom Turmfenster aus siehst du zum ersten Mal über das ganze Moor. Im Norden steht eine Festung, die auf keiner Karte ist.",
+          "text": "Der Nebelhüter ist besiegt. Der Weg zur Moorfestung wird in einer späteren Version geöffnet."
+        }
+      ]
     }
   },
   "rest": {

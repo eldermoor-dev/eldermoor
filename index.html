@@ -51,7 +51,7 @@ button{font:inherit;color:inherit}
 #actionbar .ab[disabled]{opacity:.4;border-color:#5a4a30}
 #actionbar .wait{padding:8px;font-size:.84rem;background:var(--panel);border-radius:6px}
 #party{display:flex;gap:4px}
-.card{flex:1;min-width:0;background:var(--panel);border:1px solid #5a4a30;border-radius:5px;padding:3px;display:flex;gap:4px;align-items:center}
+.card{cursor:pointer;flex:1;min-width:0;background:var(--panel);border:1px solid #5a4a30;border-radius:5px;padding:3px;display:flex;gap:4px;align-items:center}
 .card canvas{width:32px;height:32px;image-rendering:pixelated;flex:none;border-radius:3px}
 .card .nm{font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card .rw{opacity:.7}
@@ -105,9 +105,11 @@ button{font:inherit;color:inherit}
 #modal-box select,#modal-box input[type=range],#modal-box input[type=text]{min-height:36px;background:#2a2116;color:var(--ink);border:1px solid var(--line);border-radius:6px;font:inherit}
 #modal-box input[type=text]{width:100%;min-width:0;padding:0 8px;margin-top:4px;-webkit-user-select:text;user-select:text}
 #modal-box .mapbar{margin-top:4px;flex-wrap:nowrap;align-items:center;justify-content:space-between}
-#modal-box .speech{text-align:center;margin:4px 0 10px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#211a11}
+#modal-box .speech{text-align:center;margin:4px 0 8px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#211a11}
 #modal-box .speech b{display:block;color:var(--amber);font:700 1.05rem Georgia,serif;letter-spacing:.05em;margin-bottom:4px}
 #modal-box .speech p{margin:0;font:italic 1.2rem/1.4 Georgia,serif;color:#f0dca8}
+#modal-box .headbtn{display:flex;align-items:center;gap:8px;text-align:left}
+#modal-box .headbtn img{width:44px;height:44px;image-rendering:pixelated;border-radius:4px;flex:none}
 #modal-box .row.nw{flex-wrap:nowrap}
 #modal-box .row.nw>div:first-child{flex:1 1 auto;min-width:0}
 #modal-box .row.nw>button{flex:none;white-space:nowrap;min-width:8.5em}

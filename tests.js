@@ -276,7 +276,7 @@ export async function runTests(data, env = {}) {
 
   await test('Schnellstart-Gruppe entspricht exakt der festen Gruppe aus Version 0.1.5', () => {
     const old = [['Berenn', 'Krieger', 'front', 34, 8, 5, 4, false], ['Sira', 'Schurke', 'front', 24, 7, 3, 7, false],
-      ['Odalys', 'Priester', 'back', 26, 5, 3, 3, false], ['Ivo', 'Magier', 'back', 18, 8, 1, 5, true]];
+      ['Odalys', 'Kleriker', 'back', 26, 5, 3, 3, false], ['Ivo', 'Magier', 'back', 18, 8, 1, 5, true]];
     const s = fresh();
     eq(s.heroes.length, 4, 'Anzahl');
     s.heroes.forEach((h, i) => {
@@ -291,7 +291,7 @@ export async function runTests(data, env = {}) {
     const g = L.newGame(data, 5, CUSTOM);
     eq(CUSTOM, copy, 'Eingabe darf nicht verändert werden');
     eq(g.heroes.map((h) => h.name), ['Gorm', 'Lia', 'Pip', 'Dura'], 'Namen (getrimmt)');
-    eq(g.heroes.map((h) => h.role), ['Krieger', 'Waldläufer', 'Magier', 'Priester'], 'Berufsnamen');
+    eq(g.heroes.map((h) => h.role), ['Krieger', 'Waldläufer', 'Magier', 'Kleriker'], 'Berufsnamen');
     eq(g.heroes.map((h) => h.row), ['front', 'back', 'front', 'back'], 'Reihen (Standard des Berufs, Pip überschrieben)');
     eq(g.heroes.map((h) => h.ranged), [false, true, true, false], 'Fernkampf');
     eq(g.heroes.map((h) => [h.maxHp, h.atk, h.def, h.init]), [[37, 9, 5, 3], [22, 7, 2, 8], [15, 8, 1, 6], [30, 5, 4, 2]], 'Werte = Beruf + Rasse');
@@ -341,7 +341,7 @@ export async function runTests(data, env = {}) {
     const st = L.deserialize(V1_SAVE, data);
     st.heroes.forEach((h, i) => {
       const o = v1.state.heroes[i];
-      for (const k of Object.keys(o)) eq(h[k], o[k], `Held ${i + 1}.${k} geändert`);
+      for (const k of Object.keys(o)) eq(h[k], k === 'role' && o[k] === 'Priester' ? 'Kleriker' : o[k], `Held ${i + 1}.${k} geändert`); // Priester heißt seit 0.16 Kleriker
       eq([h.race, h.look, h.level, h.xp], ['human', i * 7 + 3, 1, 0], `Held ${i + 1}: neue Felder`);
       eq([h.maxMp, h.mp], [L.deriveMp(data, h.cls, 1), L.deriveMp(data, h.cls, 1)], `Held ${i + 1}: Ressource voll`);
       const dv = L.deriveStats(data, h.race, h.cls);
@@ -1334,7 +1334,7 @@ export async function runTests(data, env = {}) {
     try {
       const tex = makeTextures(2);
       assert(W === 960 && H === 540, 'Auflösung');
-      assert(tex.wall[1].w === 256 && tex.wall[5].w === 256 && tex.floor.w === 128 && tex.sprites.schrat.w === 160, 'Texturgrößen');
+      assert(tex.wall[1].w === 256 && tex.wall[5].w === 256 && tex.floor.w === 128 && tex.sprites.schrat.w === 320, 'Texturgrößen');
       for (const w of [tex.wall[1], tex.wall[2], tex.wall[5], tex.floor, tex.ceil]) assert((w.w & (w.w - 1)) === 0 && w.data.every((v) => v < 64), 'Zweierpotenz und gültige Palettenindizes');
       const s = fresh();
       const lvl = L.getLevel(data, s);
@@ -1372,6 +1372,52 @@ export async function runTests(data, env = {}) {
     assert(data.enemies.schrat.hp === 80, 'Test-Boss unverändert');
   });
 
+  await test('Nebelturm (0.16): Übergang, Schlüssel vor dem Tor, Gegnerarten, Kleriker', () => {
+    const lv = data.levels.nebelturm, sg = data.levels.schratgruben;
+    assert(lv && lv.palette === 'turm' && data.palettes.turm, 'Level und Palette');
+    const up = sg.objects.find((o) => o.id === 'stairs_gruben_turm'), down = lv.objects.find((o) => o.id === 'stairs_turm_down');
+    assert(up && up.to.level === 'nebelturm' && down && down.to.level === 'schratgruben' && !sg.objects.some((o) => o.id === 'exit_gruben'), 'Treppen verbinden die Gebiete, Platzhalter entfernt');
+    const cell = (l, p) => l.map[p.y][p.x];
+    assert(cell(lv, up.to) === '.' && cell(sg, down.to) === '.', 'Ankunftsfelder sind Boden');
+    const door = lv.objects.find((o) => o.id === 'door_turm'), key = lv.objects.find((o) => o.id === 'chest_t_key');
+    assert(door.locked && door.key === 'turm_schluessel' && data.items.turm_schluessel && key.loot.some((l) => l.item === 'turm_schluessel') && key.x < door.x, 'Schlüssel liegt vor dem Tor');
+    for (const o of lv.objects.filter((x) => x.type === 'enemy')) for (const k of (o.kinds || [o.kind])) assert(data.enemies[k], 'Gegnerart ' + k);
+    for (const o of lv.objects) assert(lv.map[o.y][o.x] === '.', 'Objekt auf Boden: ' + o.id);
+    assert(data.enemies.nebelhueter.boss && data.enemies.nebelhueter.phases.length === 2 && data.enemies.nebelhueter.intro, 'Boss mit Phasen und Auftritt');
+    assert(data.classes.priest.name === 'Kleriker', 'Priester heißt Kleriker');
+    const s = L.newGame(data, 3); s.heroes[2].role = 'Priester'; L.syncStatic(s, data);
+    assert(s.heroes[2].role === data.classes[s.heroes[2].cls].name, 'alte Spielstände bekommen den neuen Berufsnamen');
+  });
+
+  await test('Gegnerzauber (0.16): Schadenszauber, Heilung, Fluch, Ansage großer Zauber', () => {
+    const mk = (kinds, seed) => {
+      const s = L.newGame(data, seed), eo = s.objs.find((o) => o.type === 'enemy');
+      eo.kind = kinds[0]; eo.kinds = kinds; eo.hp = data.enemies[kinds[0]].hp;
+      L.startCombat(s, data, eo);
+      return s;
+    };
+    const toEnemy = (s) => { let g = 0; while (L.currentActor(s) && L.currentActor(s).side === 'h' && g++ < 20) L.heroAction(s, data, { type: 'defend' }); return L.currentActor(s); };
+    // Nebelgeist: jeder 2. Zug Frosthauch (trifft immer)
+    let s = mk(['nebelgeist'], 11), casts = 0, all = [];
+    for (let n = 0; n < 6 && s.combat && !s.combat.over; n++) { if (!toEnemy(s)) break; const r = L.enemyStep(s, data, {}); all.push(...r.msgs); if (r.msgs.some((m) => /wirkt Frosthauch/.test(m))) { casts++; assert(r.msgs.some((m) => /Frosthauch trifft .* für \d+ Schaden/.test(m)), 'Zauber trifft immer'); } }
+    assert(casts >= 2, 'Nebelgeist zaubert regelmäßig: ' + casts);
+    assert(s.bestiary.nebelgeist.cast === true, 'Bestiarium merkt den Zauber');
+    // Kultpriester heilt verletzte Verbündete
+    s = mk(['kultpriester', 'kultwaechter'], 12);
+    s.combat.enemies[1].hp = 5; let healed = false;
+    for (let n = 0; n < 8 && s.combat && !s.combat.over && !healed; n++) { const a = toEnemy(s); if (!a) break; const r = L.enemyStep(s, data, {}); if (r.msgs.some((m) => /erholt sich um \d+ LP/.test(m))) healed = true; }
+    assert(healed && s.combat.enemies[1].hp > 5, 'Kultpriester heilt');
+    // Heilung entfällt, wenn niemand verletzt ist; Fluch trifft Helden mit Schwäche
+    s = mk(['kultpriester'], 13); let curse = false, heal = false;
+    for (let n = 0; n < 6 && s.combat && !s.combat.over; n++) { if (!toEnemy(s)) break; const r = L.enemyStep(s, data, {}); if (r.msgs.some((m) => /Dunkler Segen/.test(m))) heal = true; if (r.msgs.some((m) => /Fluch der Schwäche/.test(m))) curse = true; }
+    assert(!heal && curse, 'kein Heilzauber ohne Verletzte, Fluch kommt');
+    // Boss: Nebelspeer wird einen Zug vorher angesagt
+    s = mk(['nebelhueter'], 14); all = [];
+    for (let n = 0; n < 4 && s.combat && !s.combat.over; n++) { if (!toEnemy(s)) break; all.push(...L.enemyStep(s, data, {}).msgs); }
+    const iA = all.findIndex((m) => /sammelt Kraft für Nebelspeer/.test(m)), iC = all.findIndex((m) => /wirkt Nebelspeer/.test(m));
+    assert(iA >= 0 && iC > iA, 'Ansage vor dem großen Zauber');
+  });
+
   await test('Fallgitter und Hebel (0.15.1): Gitter sperrt, Hebel öffnet, Analyse, Karte', () => {
     const s = L.newGame(data, 5);
     s.levelId = 'schratgruben'; s.objs = JSON.parse(JSON.stringify(data.levels.schratgruben.objects));
@@ -1393,6 +1439,21 @@ export async function runTests(data, env = {}) {
     assert(L.analyzeLevel(lv2, 'schratgruben').unreachableChests.includes('chest_s2'), 'Ohne Hebel bleibt die Truhe unerreichbar (Gegenprobe)');
   });
 
+  await test('Schwerer Schlag (0.15.14): trifft nur die Vorderreihe, solange dort jemand steht', () => {
+    let ran = 0;
+    for (let seed = 1; seed <= 30; seed++) {
+      const s = L.newGame(data, seed), eo = s.objs.find((o) => o.type === 'enemy');
+      L.startCombat(s, data, eo);
+      let g = 0; while (L.currentActor(s) && L.currentActor(s).side === 'h' && g++ < 20) L.heroAction(s, data, { type: 'defend' });
+      const e = s.combat.enemies[0]; e.intent = 'heavy';
+      const hp0 = s.heroes.map((h) => h.hp);
+      if (!L.currentActor(s) || L.currentActor(s).side !== 'e') continue;
+      if (L.currentActor(s).idx !== 0) continue;
+      L.enemyStep(s, data, {}); ran++;
+      s.heroes.forEach((h, i) => { if (h.row === 'back') assert(h.hp === hp0[i], 'Hinterreihe unversehrt bei schwerem Schlag, Seed ' + seed); });
+    }
+    assert(ran >= 5, 'Test hat gegriffen: ' + ran);
+  });
   await test('Ölflasche und Gegengift (0.15.1): Wurf mit Elementfaktor, Gift nehmen, nur im Kampf, Vorrat sinkt', () => {
     const s = L.newGame(data, 11);
     s.inv.oelflasche = 2; s.inv.gegengift = 1;

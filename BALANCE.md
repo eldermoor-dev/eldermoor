@@ -32,6 +32,9 @@ Gegner (EP: jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die vol
 | Kultwächter-Hauptmann | 160 | 13 | 5 | 5 | 220 | 40 | zielt auf den schwächsten Helden; Richtspruch jeden 3. Zug, angekündigt (160 %); Treffer: Schwach 35 %; Boss, Phasen: Kultruf ab ≤ 65 % LP (Angriff 14), Letzte Bastion ab ≤ 30 % LP (Angriff 16) |
 | Erzkäfer | 34 | 11 | 4 | 7 | 45 | 7 | – |
 | Moorschrat | 190 | 13 | 3 | 5 | 200 | 40 | Schweren Schlag jeden 3. Zug, angekündigt (170 %); Treffer: Gift 30 %; Boss, Phasen: Wutrausch ab ≤ 60 % LP (Angriff 15), Letzte Kraft ab ≤ 25 % LP (Angriff 17) |
+| Nebelgeist | 30 | 10 | 2 | 8 | 70 | 10 | zielt auf die Hinterreihe; Zaubert: Frosthauch (jeden 2. Zug) |
+| Kultpriester | 40 | 8 | 3 | 5 | 85 | 16 | Zaubert: Dunkler Segen (jeden 2. Zug), Fluch der Schwäche (jeden 3. Zug) |
+| Nebelhüter | 280 | 15 | 5 | 6 | 320 | 80 | Zaubert: Nebelspeer (jeden 3. Zug, angekündigt); Boss, Phasen: Nebelwand ab ≤ 66 % LP (Angriff 16), Sturm der Schleier ab ≤ 33 % LP (Angriff 17) |
 
 ## Rassen (Modifikatoren)
 
@@ -49,7 +52,7 @@ Gegner (EP: jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die vol
 |---|---|---|---|---|---|---|---|
 | Krieger | vorn | nein | 34 | 8 | 5 | 4 | 60/8/7/3 |
 | Schurke | vorn | nein | 24 | 7 | 3 | 7 | 40/8/4/5 |
-| Priester | hinten | nein | 26 | 5 | 3 | 3 | 45/5/4/3 |
+| Kleriker | hinten | nein | 26 | 5 | 3 | 3 | 45/5/4/3 |
 | Magier | hinten | ja | 18 | 8 | 1 | 5 | 30/9/2/4 |
 | Waldläufer | hinten | ja | 24 | 7 | 2 | 6 | 40/8/3/5 |
 
@@ -61,7 +64,7 @@ Angriff und Verteidigen schenken 1 Punkt Ressource zurück; nach jedem Kampf ist
 |---|---|---|---|---|
 | Krieger | Ausdauer 10 / 28 | Wuchtschlag | 4 | 160 % Schaden, 35 % Chance auf Betäubung (Gegner setzt 1 Zug aus). |
 | Schurke | Ausdauer 10 / 28 | Hinterhalt | 4 | Trifft immer, 140 % Schaden, vergiftet 3 Runden (2 Schaden je Runde). |
-| Priester | Mana 12 / 39 | Heilende Hand | 5 | Heilt einen Helden um 20 LP und nimmt Gift. |
+| Kleriker | Mana 12 / 39 | Heilende Hand | 5 | Heilt einen Helden um 20 LP und nimmt Gift. |
 | Magier | Mana 12 / 39 | Feuerblitz | 5 | Magischer Treffer: 180 % Schaden. 40 % Chance auf Brennen (3 Runden, 3 Schaden je Runde). |
 | Waldläufer | Ausdauer 10 / 28 | Gezielter Schuss | 4 | Trifft immer, 150 % Schaden, schwächt 2 Runden (−25 % Angriff). |
 
@@ -97,7 +100,7 @@ Angriff und Verteidigen schenken 1 Punkt Ressource zurück; nach jedem Kampf ist
 | 9 | 56 | 13 | 6 | 11 |
 | 10 | 60 | 14 | 6 | 11 |
 
-### Priester
+### Kleriker
 
 | Stufe | LP | Angriff | Verteidigung | Initiative |
 |---|---|---|---|---|
@@ -148,27 +151,27 @@ Angriff und Verteidigen schenken 1 Punkt Ressource zurück; nach jedem Kampf ist
 |---|---|---|---|
 | Mensch | Krieger | 34/8/5/4 | 88/15/11/6 |
 | Mensch | Schurke | 24/7/3/7 | 60/14/6/11 |
-| Mensch | Priester | 26/5/3/3 | 66/9/6/5 |
+| Mensch | Kleriker | 26/5/3/3 | 66/9/6/5 |
 | Mensch | Magier | 18/8/1/5 | 45/16/2/8 |
 | Mensch | Waldläufer | 24/7/2/6 | 60/14/4/10 |
 | Elf | Krieger | 32/8/5/6 | 86/15/11/8 |
 | Elf | Schurke | 22/7/3/9 | 58/14/6/13 |
-| Elf | Priester | 24/5/3/5 | 64/9/6/7 |
+| Elf | Kleriker | 24/5/3/5 | 64/9/6/7 |
 | Elf | Magier | 16/8/1/7 | 43/16/2/10 |
 | Elf | Waldläufer | 22/7/2/8 | 58/14/4/12 |
 | Zwerg | Krieger | 38/8/6/3 | 92/15/12/5 |
 | Zwerg | Schurke | 28/7/4/6 | 64/14/7/10 |
-| Zwerg | Priester | 30/5/4/2 | 70/9/7/4 |
+| Zwerg | Kleriker | 30/5/4/2 | 70/9/7/4 |
 | Zwerg | Magier | 22/8/2/4 | 49/16/3/7 |
 | Zwerg | Waldläufer | 28/7/3/5 | 64/14/5/9 |
 | Ork | Krieger | 37/9/5/3 | 91/16/11/5 |
 | Ork | Schurke | 27/8/3/6 | 63/15/6/10 |
-| Ork | Priester | 29/6/3/2 | 69/10/6/4 |
+| Ork | Kleriker | 29/6/3/2 | 69/10/6/4 |
 | Ork | Magier | 21/9/1/4 | 48/17/2/7 |
 | Ork | Waldläufer | 27/8/2/5 | 63/15/4/9 |
 | Gnom | Krieger | 31/8/5/5 | 85/15/11/7 |
 | Gnom | Schurke | 21/7/3/8 | 57/14/6/12 |
-| Gnom | Priester | 23/5/3/4 | 63/9/6/6 |
+| Gnom | Kleriker | 23/5/3/4 | 63/9/6/6 |
 | Gnom | Magier | 15/8/1/6 | 42/16/2/9 |
 | Gnom | Waldläufer | 21/7/2/7 | 57/14/4/11 |
 
@@ -201,3 +204,6 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 | Kultwächter | 25 % | – |
 | Kultwächter-Hauptmann | 100 %, Boost 2 | Siegelpanzer oder Nebelmantel (100 %, nur einmal) |
 | Moorschrat | 100 %, Boost 2 | Schratdorn oder Wurzelstab (100 %, nur einmal) |
+| Nebelgeist | 15 % | – |
+| Kultpriester | 25 % | – |
+| Nebelhüter | 100 %, Boost 3 | – |
