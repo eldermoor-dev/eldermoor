@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPort
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.16.8';
+const VERSION = '0.16.12';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -359,7 +359,7 @@ function doMove(rel) {
     S.target.x = g.player.x + 0.5; S.target.y = g.player.y + 0.5;
     beginTween();
     (r.events || []).forEach(onEvent);
-    if (r.encounter) startCombatUI(r.encounter);
+    if (r.encounter) startCombatUI(r.encounter, r.ambush);
   } else if (r.encounter) startCombatUI(r.encounter);
   else if (rel === 'f' && r.blocker && ['door', 'chest', 'lever', 'gate', 'secret'].includes(r.blocker.type)) { // gegen Tür, Truhe, Hebel laufen = benutzen
     S.held = []; S.nextAllowed = performance.now() + 350;
@@ -381,7 +381,7 @@ function doTurn(d) {
   S.target.a += d * Math.PI / 2;
   beginTween(170);
   S.sfx.play('step');
-  if (r.encounter) startCombatUI(r.encounter);
+  if (r.encounter) startCombatUI(r.encounter, r.ambush);
 }
 async function onEvent(ev) {
   if (ev.type === 'stairs') {
@@ -432,14 +432,14 @@ function announcePhases(c) {
     showEvent(p.name, p.msg || ''); S.sfx.play('sting'); vib([60, 40, 60]);
   });
 }
-function startCombatUI(enemyObj) {
+function startCombatUI(enemyObj, ambush) {
   if (S.game.combat) return;
   S.held = []; S.queued = null;
-  startCombat(S.game, S.data, enemyObj);
+  startCombat(S.game, S.data, enemyObj, { ambush: !!ambush });
   S.clog = []; S.annKey = null; S.phaseShown = {};
   S.foe = 0;
   const name = S.game.combat.enemies.map((e) => e.name).join(', ');
-  say(`${name} ${S.game.combat.enemies.length > 1 ? 'greifen' : 'greift'} an!`);
+  say(`${name} ${S.game.combat.enemies.length > 1 ? 'greifen' : 'greift'} ${ambush ? 'aus dem Hinterhalt ' : ''}an!`);
   if (!introOnce('intro:' + enemyObj.id, S.data.enemies[enemyObj.kind] && S.data.enemies[enemyObj.kind].intro)) S.sfx.play('miss');
   vib(40);
   renderAll();

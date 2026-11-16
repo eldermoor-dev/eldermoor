@@ -1244,6 +1244,50 @@ export async function runTests(data, env = {}) {
     assert(back.objs.some((o) => o.id === 'stairs_gruft') && !back.objs.some((o) => o.id === 'exit_pfad'), 'Ausgang ersetzt');
   });
 
+  await test('Entdeckt-werden (0.16.10): Gegner bis 2 Felder in Sichtlinie greifen an, Wand verdeckt, Überfall = Gegner zuerst', () => {
+    const s = fresh(70);
+    const lvl = data.levels[s.levelId];
+    // freie Fläche suchen: 5 Felder in einer Zeile Boden
+    let spot = null;
+    for (let y = 0; y < lvl.map.length && !spot; y++) for (let x = 0; x + 5 < lvl.map[0].length && !spot; x++) if ([0, 1, 2, 3, 4, 5].every((i) => L.cellChar(lvl, x + i, y) === '.' && !s.objs.some((o) => o.x === x + i && o.y === y))) spot = { x, y };
+    assert(spot, 'freie Zeile');
+    s.objs = s.objs.filter((o) => o.type !== 'enemy');
+    s.objs.push({ id: 'tst_en', type: 'enemy', kind: 'skeleton', x: spot.x + 4, y: spot.y, hp: 30 });
+    s.player = { x: spot.x, y: spot.y, dir: 1 };
+    assert(!L.spottedEnemy(s, data), '4 Felder: unentdeckt');
+    s.player.x = spot.x + 1;
+    assert(!L.spottedEnemy(s, data), '3 Felder: unentdeckt');
+    s.player.x = spot.x + 2;
+    let sp = L.spottedEnemy(s, data); assert(sp && sp.enemy.id === 'tst_en' && !sp.ambush, '2 Felder voraus: entdeckt, kein Überfall');
+    s.player.dir = 0; // blickt zur Seite
+    sp = L.spottedEnemy(s, data); assert(sp && sp.ambush, 'Gegner seitlich: Überfall');
+    const t = L.turn(s, data, 0); assert(t.encounter && t.ambush, 'Drehen löst aus');
+    // Gegner zuerst in Runde 1
+    L.startCombat(s, data, sp.enemy, { ambush: true });
+    eq(L.currentActor(s).side, 'e', 'Überfall: Gegner beginnt');
+    s.combat = null;
+    L.startCombat(s, data, sp.enemy, {});
+    assert(s.combat.ambush === false, 'ohne Überfall normal');
+    // Wand dazwischen verdeckt
+    s.combat = null; s.player = { x: spot.x + 2, y: spot.y, dir: 1 };
+    s.objs.push({ id: 'tst_door', type: 'door', x: spot.x + 3, y: spot.y, open: false, locked: false });
+    assert(!L.spottedEnemy(s, data), 'geschlossene Tür verdeckt');
+    // besiegt: kein Auslöser
+    s.objs.find((o) => o.id === 'tst_door').open = true; s.objs.find((o) => o.id === 'tst_en').dead = true;
+    assert(!L.spottedEnemy(s, data), 'toter Gegner löst nicht aus');
+  });
+
+  await test('Ankunft (0.16.9): nach jedem Gebietswechsel blickt die Gruppe nie gegen eine Wand', () => {
+    for (const lvl of Object.values(data.levels)) for (const o of lvl.objects) if (o.to) {
+      const s = fresh(68); s.objs.push({ id: 'tmp_st', type: 'stairs', x: 1, y: 1, to: o.to });
+      const r = L.changeArea(s, data, 'tmp_st'); assert(r.ok, o.id + ' erreichbar');
+      const d = [[0, -1], [1, 0], [0, 1], [-1, 0]][s.player.dir];
+      assert(L.cellChar(data.levels[o.to.level], s.player.x + d[0], s.player.y + d[1]) === '.', `${o.id}: Blick gegen Wand`);
+    }
+    const s = fresh(69); L.changeArea(s, data, 'stairs_moor'); L.changeArea(s, data, 'stairs_pfad');
+    eq(s.player.dir, 2, 'Moorpfad: Blick nach Süden in den Gang');
+  });
+
   await test('Wandtafeln (0.16.8): lesbar vom Feld vor der Wand und einem Feld davor, nur mit Blick zur Tafel, blockieren nie', () => {
     const s = fresh(66);
     L.changeArea(s, data, 'stairs_moor'); L.changeArea(s, data, 'stairs_pfad'); // Tafel sign_pfad1 bei (3,2), face 2 (Südwand)
@@ -1468,10 +1512,21 @@ export async function runTests(data, env = {}) {
     const tex = makeTextures();
     const o = { id: 'x', type: 'enemy', x: 3, y: 3, kind: 'kultist', kinds: ['kultist', 'skeleton', 'skeleton'] };
     const all = buildSprites([o], tex, 0);
-    eq(all.length, 3, 'drei Gestalten'); eq(all[0].tex, tex.sprites.schrat, 'Kultist zuerst');
+    eq(all.length, 3, 'drei Gestalten'); assert(all[0].tex === tex.sprites.kultist && all[1].tex === tex.sprites.skeleton, 'Kultist zuerst');
     const after = buildSprites([o], tex, 0, 0, { x: ['skeleton', 'skeleton'] });
     eq(after.length, 2, 'zwei Gestalten'); assert(after.every((s) => s.tex === tex.sprites.skeleton), 'nur noch Skelette');
     eq(buildSprites([o], tex, 0, 0, { x: 2 }).length, 2, 'Zahl funktioniert weiter');
+  });
+
+  await test('Kampffiguren (0.16.12): jede Gegnerart der Daten hat ein eigenes Bild, Wolf/Kultist/Turmwache nicht mehr Ersatzbild', () => {
+    const tex = makeTextures();
+    const seen = new Map();
+    for (const k of Object.keys(data.enemies)) {
+      const o = { id: 'x_' + k, type: 'enemy', x: 3, y: 3, kind: k };
+      const sp = buildSprites([o], tex, 0)[0]; assert(sp && sp.tex && sp.tex.w >= 64, 'Bild für ' + k);
+      if (['wolf', 'kultist', 'turmwache', 'kultwaechter', 'hauptmann', 'skeleton'].includes(k)) { assert(sp.tex !== tex.sprites.schrat, k + ' ohne Ersatzbild'); assert(!seen.has(sp.tex), k + ' teilt Bild mit ' + seen.get(sp.tex)); seen.set(sp.tex, k); }
+    }
+    for (const k of ['skeleton', 'guard', 'turmwache', 'captain', 'wolf', 'kultist']) { const d = tex.sprites[k].data; let n = 0; for (const v of d) if (v !== 255) n++; assert(n > 1500, k + ' hat Fläche: ' + n); }
   });
 
   await test('Schratgruben (0.15): Treppe hin und zurück, Schlüsseltruhe vor dem Tor, Boss, Gegner bekannt', () => {

@@ -216,6 +216,14 @@ export function newGame(data, seed = 20260101, party = null) {
 }
 
 // Gebietswechsel über ein Treppen-Objekt (type 'stairs', to: {level, x, y, dir}) im aktuellen Gebiet
+// Ankunftsrichtung (0.16.9): Blick nie direkt gegen eine Wand. Ist das Feld vor dem Spieler Wand, wird zur Richtung mit dem längsten freien Weg gedreht.
+export function arrivalDir(target, to) {
+  const run = (d) => { let n = 0, x = to.x, y = to.y; while (n < 30 && cellChar(target, x += DIRS[d].dx, y += DIRS[d].dy) === '.') n++; return n; };
+  if (run(to.dir) > 0) return to.dir;
+  let best = to.dir, bn = 0;
+  for (let d = 0; d < 4; d++) { const n = run(d); if (n > bn) { bn = n; best = d; } }
+  return best;
+}
 export function changeArea(state, data, stairsId) {
   const st = state.objs.find((o) => o.id === stairsId && o.type === 'stairs');
   if (!st || !st.to) return { ok: false, msg: 'Hier führt nichts weiter.' };
@@ -228,7 +236,7 @@ export function changeArea(state, data, stairsId) {
   delete state.areas[to.level];
   state.levelId = to.level;
   state.objs = a.objs; state.seen = a.seen; state.notes = a.notes || [];
-  state.player = { x: to.x, y: to.y, dir: to.dir };
+  state.player = { x: to.x, y: to.y, dir: arrivalDir(target, to) };
   markSeen(state, data);
   return { ok: true, msg: st.msg || `Du erreichst: ${target.name}.`, levelName: target.name };
 }
@@ -264,6 +272,32 @@ export function enemyInFront(state) {
   const f = frontCell(state);
   const b = blockerAt(state, f.x, f.y);
   return b && b.type === 'enemy' ? b : null;
+}
+
+// Entdeckt-werden (0.16.10, Nutzerwunsch): ein lebender Gegner in Sichtlinie und höchstens data.spot.range Feldern (Chebyshev) greift an.
+// Steht er nicht in Blickrichtung (gleiche Zeile/Spalte vor der Gruppe), ist es ein Überfall: die Gegner ziehen in Runde 1 zuerst.
+export function spottedEnemy(state, data) {
+  const range = (data.spot && data.spot.range) || 2;
+  const lvl = getLevel(data, state), p = state.player, d = DIRS[p.dir];
+  const at = (x, y) => state.objs.filter((o) => o.x === x && o.y === y);
+  const blocked = (x, y) => isWallChar(cellChar(lvl, x, y)) || at(x, y).some((o) => (o.type === 'door' && !o.open) || (o.type === 'secret' && !o.open) || (o.type === 'lever' && o.wall));
+  let best = null, bd = 99;
+  for (const o of state.objs) {
+    if (o.type !== 'enemy' || o.dead) continue;
+    const dx = o.x - p.x, dy = o.y - p.y, dist = Math.max(Math.abs(dx), Math.abs(dy));
+    if (dist === 0 || dist > range || dist >= bd) continue;
+    const ax = p.x + 0.5, ay = p.y + 0.5, n = Math.ceil(Math.hypot(dx, dy) * 10);
+    let seen = true;
+    for (let i = 1; i < n && seen; i++) {
+      const cx = Math.floor(ax + dx * i / n), cy = Math.floor(ay + dy * i / n);
+      if ((cx === p.x && cy === p.y) || (cx === o.x && cy === o.y)) continue;
+      if (blocked(cx, cy)) seen = false;
+    }
+    if (seen) { best = o; bd = dist; }
+  }
+  if (!best) return null;
+  const ahead = (best.x - p.x) * d.dy === 0 && (best.y - p.y) * d.dx === 0 && ((best.x - p.x) * d.dx + (best.y - p.y) * d.dy) > 0;
+  return { enemy: best, ambush: !ahead };
 }
 
 export function markSeen(state, data) {
@@ -319,13 +353,17 @@ export function tryMove(state, data, rel) {
   const stairs = state.objs.find((o) => o.type === 'stairs' && o.x === nx && o.y === ny);
   if (stairs) { res.events.push({ type: 'stairs', id: stairs.id }); return res; }
   res.encounter = enemyInFront(state);
+  if (!res.encounter) { const sp = spottedEnemy(state, data); if (sp) { res.encounter = sp.enemy; res.ambush = sp.ambush; } }
   return res;
 }
 
 export function turn(state, data, delta) {
   state.player.dir = (state.player.dir + delta + 4) % 4;
   markSeen(state, data);
-  return { encounter: enemyInFront(state) };
+  const front = enemyInFront(state);
+  if (front) return { encounter: front };
+  const sp = spottedEnemy(state, data);
+  return sp ? { encounter: sp.enemy, ambush: sp.ambush } : { encounter: null };
 }
 
 // ---------- Interaktion ----------
@@ -698,7 +736,7 @@ function buildOrder(state, data) {
   const list = [];
   const slowed = (side, i) => (c.status[side + i] && c.status[side + i].slow ? -100 : 0);
   state.heroes.forEach((h, i) => { if (h.hp > 0) list.push({ side: 'h', idx: i, key: heroInit(data, h, state) + rand(state) * 4 + 0.5 + slowed('h', i) }); });
-  c.enemies.forEach((e, i) => { if (e.hp > 0) list.push({ side: 'e', idx: i, key: enemyOf(data, e).init + rand(state) * 4 + slowed('e', i) }); });
+  c.enemies.forEach((e, i) => { if (e.hp > 0) list.push({ side: 'e', idx: i, key: enemyOf(data, e).init + rand(state) * 4 + slowed('e', i) + (c.ambush && c.round === 1 ? 1000 : 0) }); });
   list.sort((a, b) => b.key - a.key);
   c.order = list.map(({ side, idx }) => ({ side, idx }));
   c.pos = 0;
@@ -763,10 +801,10 @@ function noteBestiary(state, kind, what, val) {
   else r[what] = true;
 }
 
-export function startCombat(state, data, enemyObj) {
+export function startCombat(state, data, enemyObj, opts = {}) {
   state.combat = {
     enemies: group(data, enemyObj),
-    order: [], pos: 0, round: 1, defending: {}, status: {}, over: null
+    order: [], pos: 0, round: 1, defending: {}, status: {}, over: null, ambush: !!opts.ambush
   };
   for (const e of state.combat.enemies) noteBestiary(state, e.kind, 'seen');
   buildOrder(state, data);

@@ -449,46 +449,106 @@ function genSign(seed, title) {
   return t;
 }
 
-// ---------- 0.16.8: Wandtafeln, Türschilder (als Abziehbild auf der Wandfläche) und Rahmen offener Türen ----------
-function drawTitle(set, title, y0, ink) { // bis 2 Zeilen à 8 Zeichen, 5×7-Pixelschrift, mittig; liefert die Zeilenzahl
-  const lines = String(title || '').toUpperCase().split('|').slice(0, 2).filter(Boolean);
-  lines.forEach((ln, li) => {
-    const chars = [...ln].slice(0, 8), w = chars.length * 6 - 1, x0 = Math.round(32 - w / 2);
-    chars.forEach((ch, ci) => {
-      const g = (FONT[ch] || FONT[' ']).split('/');
-      for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) if (g[r][c] === '1') set(x0 + ci * 6 + c, y0 + li * 9 + r, ink);
-    });
-  });
-  return lines.length;
+// ---------- 0.16.8/0.16.11: Wandtafeln, Türschilder (Abziehbild auf der Wandfläche) und Rahmen offener Türen ----------
+// Schilder werden in 192×192 (3× Grundtextur) ohne Weichzeichnen gemalt: scharfe Schrift. Stile: Form, Material, Schriftfarbe, Schriftart.
+const PLQ = 192;
+export const PLAQUE_STYLES = {
+  wood: { shape: 'rect', mat: 'wood', sh: 5.4, edge: 1.4, ink: ['wood', 0.2], font: 'block', nails: true },
+  dark: { shape: 'rect', mat: 'wood', sh: 2.4, edge: 0.6, ink: ['glow', 6.3], font: 'bold', nails: true, gild: true },
+  stone: { shape: 'slab', mat: 'stone', sh: 4.8, edge: 2.2, ink: ['stone', 0.6], font: 'wide' },
+  iron: { shape: 'rect', mat: 'iron', sh: 3.8, edge: 1.4, ink: ['glow', 6], font: 'block', rivets: true },
+  moss: { shape: 'rect', mat: 'wood', sh: 4.0, edge: 1.2, ink: ['wood', 0.2], font: 'slant', moss: true },
+  arrow: { shape: 'arrow', mat: 'wood', sh: 5.0, edge: 1.4, ink: ['wood', 0.2], font: 'bold', nails: true },
+  arch: { shape: 'arch', mat: 'stone', sh: 4.2, edge: 1.8, ink: ['stone', 0.4], font: 'shadow' },
+  banner: { shape: 'banner', mat: 'moss', sh: 3.4, edge: 1.2, ink: ['glow', 6.4], font: 'bold' },
+  small: { shape: 'rect', mat: 'wood', sh: 4.6, edge: 1.2, ink: ['wood', 0.2], font: 'block', scale: 2, nails: true }
+};
+const STYLE_ORDER = Object.keys(PLAQUE_STYLES);
+function styleFor(o) { // Daten: o.style; sonst fester Wert aus der Objekt-ID
+  if (o.style && PLAQUE_STYLES[o.style]) return o.style;
+  let h = 0; for (const ch of String(o.id || o.title || '')) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return STYLE_ORDER[h % STYLE_ORDER.length];
 }
 const titleLines = (title) => Math.max(1, String(title || '').split('|').slice(0, 2).filter(Boolean).length);
-// Holztafel mit Titel. kind 'wall' = Tafel auf Augenhöhe, 'door' = Schild oben über dem Türblatt. Rest durchsichtig (255).
-function genPlaque(title, kind, seed) {
-  const t = mk(255);
-  const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
-  const n = titleLines(title), h = n * 9 + 4, y0 = kind === 'door' ? 2 : Math.round(31 - h / 2);
-  for (let y = y0; y < y0 + h; y++) for (let x = 5; x <= 58; x++) {
-    const edge = y === y0 || y === y0 + h - 1 || x === 5 || x === 58;
-    set(x, y, P('wood', edge ? 1.6 : 5.4 + hash(x >> 2, y >> 2, seed) * 0.6));
+function plaqueMetrics(title, kind, st) {
+  const lines = String(title || '').toUpperCase().split('|').slice(0, 2).filter(Boolean);
+  const cw = st.font === 'wide' ? 8 : 6;
+  const maxC = Math.max(1, ...lines.map((l) => [...l].slice(0, 8).length));
+  let s = st.scale || Math.min(3, Math.floor(150 / (cw * maxC)));
+  if (kind === 'door') s = Math.min(s, lines.length > 1 ? 2 : 3);
+  s = Math.max(2, s);
+  const padX = 5 * s + (st.shape === 'arrow' ? 5 * s : 0) + (st.shape === 'arch' ? 2 * s : 0), padT = 3 * s + (st.shape === 'arch' ? 5 * s : 0), padB = 3 * s + (st.shape === 'banner' ? 7 * s : 0);
+  const textW = maxC * cw * s - s, w = Math.min(176, textW + 2 * padX), h = lines.length * 9 * s - 2 * s + padT + padB;
+  return { lines, cw, s, w, h, padT, padX };
+}
+// malt Tafel + Schrift in buf (N×N, 255 = durchsichtig). kind 'wall': Tafel auf Augenhöhe, 'door': Schild ganz oben.
+function paintPlaque(buf, N, title, kind, styleName, seed) {
+  const st = PLAQUE_STYLES[styleName] || PLAQUE_STYLES.wood, m = plaqueMetrics(title, kind, st), { s } = m;
+  const set = (x, y, v) => { if (x >= 0 && x < N && y >= 0 && y < N) buf[y * N + x] = v; };
+  const x0 = Math.round((N - m.w) / 2), y0 = kind === 'door' ? 6 : Math.round(N / 2 - m.h / 2), x1 = x0 + m.w - 1, y1 = y0 + m.h - 1, cx = (x0 + x1) / 2;
+  const bt = Math.max(3, s), tipW = st.shape === 'arrow' ? 5 * s : 0, bodyR = x1 - tipW, cy = (y0 + y1) / 2, nd = st.shape === 'banner' ? 7 * s : 0;
+  const rad = Math.min(m.w, m.h) * 0.42;
+  const inside = (x, y) => {
+    if (x < x0 || x > x1 || y < y0 || y > y1) return false;
+    if (st.shape === 'slab') { const nt = Math.floor(hash(x >> 3, 1, seed) * 4), nb = Math.floor(hash(x >> 3, 2, seed) * 4); if (y < y0 + nt || y > y1 - nb) return false; const c = 7; if ((x - x0) + (y - y0) < c || (x1 - x) + (y - y0) < c || (x - x0) + (y1 - y) < c || (x1 - x) + (y1 - y) < c) return false; }
+    if (st.shape === 'arrow' && x > bodyR) return Math.abs(y - cy) <= (m.h / 2) * (1 - (x - bodyR) / tipW);
+    if (st.shape === 'arch') { const r = rad; if (y < y0 + r && x < x0 + r && Math.hypot(x - (x0 + r), y - (y0 + r)) > r) return false; if (y < y0 + r && x > x1 - r && Math.hypot(x - (x1 - r), y - (y0 + r)) > r) return false; }
+    if (st.shape === 'banner' && y > y1 - nd * (1 - Math.abs(x - cx) / (m.w / 2))) return false;
+    return true;
+  };
+  const isEdge = (x, y) => !inside(x - bt, y) || !inside(x + bt, y) || !inside(x, y - bt) || !inside(x, y + bt);
+  const mark = new Uint8Array(N * N);
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+    if (!inside(x, y)) continue;
+    mark[y * N + x] = 1;
+    let v;
+    if (isEdge(x, y)) v = P(st.mat, st.edge + hash(x >> 1, y >> 1, seed + 5) * 0.5);
+    else {
+      const grain = st.mat === 'wood' ? hash(x >> 4, y, seed) * 0.5 + hash(x >> 2, y >> 2, seed + 1) * 0.4 : hash(x >> 2, y >> 2, seed + 1) * 0.9;
+      v = P(st.mat, st.sh + grain);
+      if (st.moss && (hash(x >> 3, y >> 3, seed + 7) > 0.78 || (y - y0 < 3 * s && hash(x >> 2, 3, seed + 8) > 0.45))) v = P('moss', 3 + hash(x, y, seed + 9) * 1.5);
+    }
+    set(x, y, v);
   }
-  if (kind !== 'door') { for (const nx of [7, 56]) for (const ny of [y0 + 2, y0 + h - 3]) set(nx, ny, P('iron', 5)); for (let x = 6; x <= 59; x++) set(x, y0 + h, P('stone', 0)); } // Nägel, Schatten
-  drawTitle(set, title, y0 + 3, P('wood', 0.2));
-  return t;
+  if (st.gild) for (let y = y0 + bt + 2; y <= y1 - bt - 2; y++) for (let x = x0 + bt + 2; x <= x1 - bt - 2; x++) if (mark[y * N + x] && (y === y0 + bt + 2 || y === y1 - bt - 2 || x === x0 + bt + 2 || x === x1 - bt - 2)) set(x, y, P('glow', 3.4));
+  const spots = [];
+  if (st.nails) spots.push([x0 + bt + 2, y0 + bt + 2], [Math.min(x1 - bt - 2, bodyR - bt - 2), y0 + bt + 2], [x0 + bt + 2, y1 - bt - 2], [Math.min(x1 - bt - 2, bodyR - bt - 2), y1 - bt - 2]);
+  if (st.rivets) for (const rx of [x0 + 2 * bt + 2, x1 - 2 * bt - 2, cx]) for (const ry of [y0 + bt + 2, y1 - bt - 2]) spots.push([Math.round(rx), ry]);
+  for (const [nx, ny] of spots) for (let dy = 0; dy < 3; dy++) for (let dx = 0; dx < 3; dx++) set(nx + dx, ny + dy, P(st.rivets ? 'stone' : 'iron', dx + dy < 1 ? 6 : 4));
+  if (kind !== 'door') for (let y = y0; y <= y1 + 3; y++) for (let x = x0; x <= x1 + 3; x++) if (!mark[y * N + x] && y > y0 + 2 && x > x0 + 2 && ((y > 2 && mark[(y - 3) * N + x]) || (x > 2 && mark[y * N + x - 3]))) if (buf[y * N + x] === 255) set(x, y, P('stone', 0));
+  // Schrift
+  const ink = P(st.ink[0], st.ink[1]), tcx = st.shape === 'arrow' ? (x0 + bodyR) / 2 : cx, ty0 = y0 + m.padT;
+  m.lines.forEach((ln, li) => {
+    const chars = [...ln].slice(0, 8), w = chars.length * m.cw * s - s, lx = Math.round(tcx - w / 2), ly = ty0 + li * 9 * s;
+    chars.forEach((ch, ci) => {
+      const g = (FONT[ch] || FONT[' ']).split('/'), gx = lx + ci * m.cw * s + (st.font === 'wide' ? s : 0);
+      for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) {
+        if (g[r][c] !== '1') continue;
+        const sh = st.font === 'slant' ? Math.round((3 - r) * s * 0.4) : 0, ex = st.font === 'bold' ? Math.max(1, s >> 1) : 0;
+        const px = gx + c * s + sh, py = ly + r * s;
+        if (st.font === 'shadow') for (let yy = 0; yy < s; yy++) for (let xx = 0; xx < s; xx++) set(px + xx + 1 + (s >> 2), py + yy + 1 + (s >> 2), P(st.mat, st.sh + 2.2));
+        for (let yy = 0; yy < s + ex; yy++) for (let xx = 0; xx < s + ex; xx++) set(px + xx, py + yy, ink);
+      }
+    });
+  });
+  return m;
+}
+function genPlaque(title, kind, styleName, seed) {
+  const buf = new Uint8Array(PLQ * PLQ).fill(255);
+  paintPlaque(buf, PLQ, title, kind, styleName, seed);
+  return { w: PLQ, h: PLQ, data: buf, noWrap: true };
 }
 // Rahmen einer offenen Tür (Sprite, 1×1 Feld): Pfosten, Sturz (mit Raumname), Türblatt nach innen aufgeklappt an der linken Seite.
-function genDoorFrame(title, seed) {
+function genDoorFrame(title, styleName, seed) {
   const t = mk(255);
   const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
-  const lh = title ? titleLines(title) * 9 + 5 : 7; // Höhe des Sturzes
+  const st = PLAQUE_STYLES[styleName] || PLAQUE_STYLES.wood;
+  const lh = title ? Math.ceil((plaqueMetrics(title, 'door', st).h + 12) / 3) : 7; // Höhe des Sturzes
   for (let y = 0; y < TEX; y++) for (let x = 0; x < TEX; x++) {
     const post = x <= 4 || x >= 59, lintel = y < lh;
     if (!post && !lintel) continue;
     const edge = (post && (x === 4 || x === 59)) || (lintel && y === lh - 1);
     set(x, y, P('wood', edge ? 1.2 : 2.8 + hash(x >> 1, y >> 3, seed) * 1.2));
-  }
-  if (title) {
-    for (let y = 1; y < lh - 2; y++) for (let x = 5; x <= 58; x++) set(x, y, P('wood', y === 1 || y === lh - 3 || x === 5 || x === 58 ? 1.6 : 5.4 + hash(x >> 2, y >> 2, seed + 1) * 0.6));
-    drawTitle(set, title, 4, P('wood', 0.2));
   }
   for (let x = 5; x <= 17; x++) { // Türblatt: an der Angel (x=5) volle Höhe, zur freien Kante hin perspektivisch kürzer
     const k = (x - 5) / 12, top = Math.round(lh + k * 7), bot = Math.round(63 - k * 6);
@@ -502,11 +562,14 @@ function genDoorFrame(title, seed) {
     }
   }
   for (let y = 33; y <= 36; y++) set(15, y, P('iron', 6)); // Türring
-  return t;
+  const hd = smoothSprite(t, 3); // 192×192
+  if (title) paintPlaque(hd.data, hd.w, title, 'door', styleName, seed + 1);
+  hd.noWrap = true;
+  return hd;
 }
 function cachedTex(tex, bucket, key, make) {
   const c = tex[bucket] || (tex[bucket] = {});
-  return c[key] || (c[key] = (() => { const t = make(); t.noWrap = true; return smoothSprite(t, 4); })());
+  return c[key] || (c[key] = make());
 }
 // Abziehbilder für den Raycaster: Map (Zellindex*4 + Seite) → Textur. Seite: 0 = Nordseite der Wandzelle, 1 = Ost, 2 = Süd, 3 = West.
 // Tafel (sign.face = Richtung vom Bodenfeld zur Wand) und Raumname auf geschlossenen Türen (door.title, beide Seiten des Durchgangs).
@@ -517,9 +580,9 @@ export function buildDecals(lvl, objs, tex) {
   for (const o of objs) {
     if (o.type === 'sign' && o.face != null && o.title) {
       const wx = o.x + DX[o.face], wy = o.y + DY[o.face];
-      if (wallAt(wx, wy)) out.set((wy * w + wx) * 4 + (o.face + 2) % 4, cachedTex(tex, 'plaques', 'w:' + o.title, () => genPlaque(o.title, 'wall', 131)));
+      if (wallAt(wx, wy)) out.set((wy * w + wx) * 4 + (o.face + 2) % 4, cachedTex(tex, 'plaques', 'w:' + styleFor(o) + o.title, () => genPlaque(o.title, 'wall', styleFor(o), 131)));
     } else if (o.type === 'door' && !o.open && o.title) {
-      const t = cachedTex(tex, 'plaques', 'd:' + o.title, () => genPlaque(o.title, 'door', 133));
+      const t = cachedTex(tex, 'plaques', 'd:' + styleFor(o) + o.title, () => genPlaque(o.title, 'door', styleFor(o), 133));
       const ns = wallAt(o.x - 1, o.y) && wallAt(o.x + 1, o.y); // Durchgang Nord–Süd
       for (const f of ns ? [0, 2] : [1, 3]) out.set((o.y * w + o.x) * 4 + f, t);
     }
@@ -800,32 +863,137 @@ function genLever(used, seed) {
   return t;
 }
 
-function genSkeleton(seed) {
-  const t = mk(255);
-  const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
-  const bone = (x, y, s) => P('stone', s + hash(x, y, seed) * 0.8);
-  for (let y = 6; y <= 20; y++) for (let x = 24; x <= 40; x++) { const dx = (x - 32) / 8.5, dy = (y - 13) / 7.5; if (dx * dx + dy * dy <= 1) set(x, y, bone(x, y, 6)); }
-  for (let y = 21; y <= 25; y++) for (let x = 27; x <= 37; x++) set(x, y, bone(x, y, 5));
-  for (const ex of [28, 35]) for (let y = 11; y <= 15; y++) for (let x = ex; x <= ex + 2; x++) set(x, y, P('ceil', 0));
-  for (const ex of [29, 36]) set(ex, 13, P('glow', 6));
-  for (let y = 26; y <= 44; y++) for (let x = 31; x <= 33; x++) set(x, y, bone(x, y, 4.5));
-  for (let i = 0; i < 5; i++) { const y = 28 + i * 3; for (let x = 22; x <= 42; x++) { const k = Math.abs(x - 32); if (k >= 3 && k <= 10 - i) set(x, y, bone(x, y, 4.5 - k * 0.1)); } }
-  for (let y = 45; y <= 60; y++) for (const lx of [27, 36]) for (let x = lx; x <= lx + 2; x++) set(x, y, bone(x, y, 4));
-  for (let y = 28; y <= 52; y++) for (const ax of [20, 43]) for (let x = ax; x <= ax + 2; x++) set(x, y, bone(x, y, 3.5));
+// ---------- 0.16.12: neue Kampffiguren (128×128, kontinuierlich abgetastet): Skelett, Kultwächter, Turmwache, Hauptmann, Wolf, Kultist ----------
+function paintFigure(seed, build) {
+  const SN = 128, k = 64 / SN, t = { w: SN, h: SN, data: new Uint8Array(SN * SN).fill(255) };
+  const ell = (px, py, cx, cy, rx, ry) => ((px - cx) / rx) ** 2 + ((py - cy) / ry) ** 2;
+  const cap = (px, py, ax, ay, bx, by, r0, r1) => { const vx = bx - ax, vy = by - ay, q = Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / (vx * vx + vy * vy || 1))); return Math.hypot(px - ax - vx * q, py - ay - vy * q) <= r0 + (r1 - r0) * q; };
+  const lit = (px, py) => ((px - 32) * 0.9 + (py - 34) * 0.3) / 18; // Licht von links oben
+  const nz = (x, y, s2 = 0) => hash(x, y, seed + s2);
+  const lock = new Uint8Array(SN * SN); // 1 = kein Umriss (Leuchten)
+  for (let y = 0; y < SN; y++) for (let x = 0; x < SN; x++) {
+    const px = (x + 0.5) * k, py = (y + 0.5) * k;
+    const r = build({ ell, cap, lit, nz, px, py, x, y, vn: (a, b, c) => vnoise(a, b, c, seed) });
+    if (!r) continue;
+    t.data[y * SN + x] = P(r[0], r[1]);
+    if (r[0] === 'glow') lock[y * SN + x] = 1;
+  }
+  const copy = t.data.slice();
+  for (let y = 1; y < SN - 1; y++) for (let x = 1; x < SN - 1; x++) { const i = y * SN + x; if (copy[i] !== 255 && !lock[i] && (copy[i - 1] === 255 || copy[i + 1] === 255 || copy[i - SN] === 255 || copy[i + SN] === 255)) t.data[i] = P(MATS[copy[i] >> 3], Math.max(0, (copy[i] & 7) - 2.6)); }
+  t.noWrap = true;
   return t;
 }
 
-function genGuard(seed, boss) {
-  const t = mk(255);
-  const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
-  for (let y = 22; y <= 62; y++) { const w = 8 + Math.round((y - 22) * 0.35); for (let x = 32 - w; x <= 32 + w; x++) set(x, y, P(boss ? 'wood' : 'iron', (boss ? 2.4 : 3.2) + hash(x, y, seed) * 0.9 - (x > 32 ? 0.7 : 0) - (y > 54 ? 0.8 : 0))); }
-  for (let y = 6; y <= 24; y++) { const w = 7 - Math.max(0, 14 - y) * 0.15; for (let x = Math.round(32 - w); x <= 32 + w; x++) set(x, y, P('iron', 4 + hash(x, y, seed + 1) * 0.8 - (x > 32 ? 0.8 : 0))); }
-  for (let y = 13; y <= 15; y++) for (let x = 26; x <= 38; x++) set(x, y, P('ceil', 0));
-  set(29, 14, P('glow', 6)); set(35, 14, P('glow', 6));
-  for (let y = 24; y <= 46; y++) for (let x = 12; x <= 17; x++) set(x, y, P('iron', 3 + hash(x, y, seed + 2) - (x < 14 ? 0.6 : 0)));
-  for (let y = 34; y <= 50; y++) for (let x = 46; x <= 48; x++) set(x, y, P('iron', 5 - (y > 46 ? 1 : 0)));
-  if (boss) for (let y = 26; y <= 32; y++) for (let x = 29; x <= 35; x++) set(x, y, P('glow', 4 + (y === 29 ? 1.5 : 0)));
-  return t;
+function genSkeleton(seed) { // Gruftskelett: Rosthelm, Rippen, rostiges Schwert, Rundschild, glühende Augen
+  return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y }) => {
+    const dx = px - 32, l = lit(px, py), n = nz(x >> 1, y >> 1);
+    const bone = (b) => ['stone', b - l * 1.3 + n * 0.8];
+    // Augen und Gebiss zuerst (liegen oben auf)
+    if (ell(px, py, 28.3, 13.4, 1.1, 1.4) <= 1 || ell(px, py, 35.7, 13.4, 1.1, 1.4) <= 1) return ['glow', 7];
+    if (ell(px, py, 28.3, 13, 2.5, 3) <= 1 || ell(px, py, 35.7, 13, 2.5, 3) <= 1 || ell(px, py, 32, 16.8, 1, 1.7) <= 1) return ['ceil', 0];
+    if (py > 19.2 && py < 21.8 && Math.abs(dx) < 4.6 && Math.floor(px * 1.7) % 2 === 0) return ['ceil', 0];
+    if (ell(px, py, 32, 12, 8.6, 9) <= 1 && py < 11.4) return Math.abs(dx) < 1 && py > 10 ? ['iron', 4.5] : ['iron', 3.5 - l * 1.4 + n * 0.8];
+    if (Math.abs(dx) < 0.9 && py >= 11 && py < 16.5 && ell(px, py, 32, 12, 8.6, 9) <= 1) return ['iron', 3.2];
+    if (ell(px, py, 32, 12.6, 8, 8.4) <= 1 || ell(px, py, 32, 19.6, 5.4, 2.8) <= 1) return bone(6.2);
+    // Schwert (rechts im Bild) mit Parierstange, Griff, Fehlstellen in der Klinge
+    if (cap(px, py, 49.5, 43, 49.5, 5, 1.3, 0.5) && !(Math.abs(py - 20) < 0.6 && px > 50)) return ['iron', px > 49.5 ? 4.6 : 6.3];
+    if (cap(px, py, 45.2, 43.5, 53.8, 43.5, 1.1, 1.1)) return ['iron', 3.4];
+    if (cap(px, py, 49.5, 44, 49.5, 51, 0.95, 0.95)) return ['wood', 2];
+    // rechter Arm (Schwertarm), linker Arm mit Schild
+    if (cap(px, py, 43, 25.5, 48, 35, 1.6, 1.3) || cap(px, py, 48, 35, 49.5, 44, 1.3, 1.1)) return bone(4.2);
+    const sd = ell(px, py, 13, 42, 6.8, 9.5);
+    if (sd <= 1) return ell(px, py, 13, 42, 2, 2.6) <= 1 ? ['iron', 5.8] : sd > 0.68 ? ['iron', 2 + n * 0.6] : ['wood', 3.1 - l + n * 0.9 - (Math.abs(py - 42) < 0.5 ? 1.2 : 0)];
+    if (cap(px, py, 21, 25.5, 16, 36, 1.6, 1.3) || cap(px, py, 16, 36, 14, 45, 1.3, 1.1)) return bone(4.2);
+    // Rumpf: Wirbelsäule, Rippenbögen, Schultern, Becken, Lendenschurz, Beine
+    if (cap(px, py, 21, 25.3, 43, 25.3, 1.8, 1.8)) return bone(5);
+    if (cap(px, py, 32, 21, 32, 46, 1.4, 1.4)) return bone(4.4);
+    for (let i = 0; i < 6; i++) { const w = 10.5 - i * 1.1, yy = 27.4 + i * 3.1 + (Math.abs(dx) / w) ** 2 * 2.2; if (Math.abs(dx) > 2 && Math.abs(dx) < w && Math.abs(py - yy) < 0.95) return bone(4.8 - i * 0.1); }
+    if (ell(px, py, 32, 47.2, 7.4, 3.6) <= 1) return bone(4.3);
+    const bot = 57 + Math.sin(px * 1.9 + seed) * 1.3;
+    if (py > 45 && py < bot && Math.abs(dx) < 6 - (py - 45) * 0.06) return ['wood', 1.8 + n * 1.2 - l * 0.6];
+    if (cap(px, py, 28, 49, 26.5, 61.5, 1.9, 1.5) || cap(px, py, 36, 49, 37.5, 61.5, 1.9, 1.5) || ell(px, py, 25.6, 62.4, 3.4, 1.3) <= 1 || ell(px, py, 38.4, 62.4, 3.4, 1.3) <= 1) return bone(4);
+    return null;
+  });
+}
+
+// Kultwächter, Turmwache und Hauptmann: gepanzerte Kultkrieger. v: 'wacht' (Hellebarde, kleine Hörner) · 'turm' (Turmschild, Speer, Wangenplatten) · 'haupt' (Umhang, Zweihänder, große Hörner, Siegel)
+function genGuard(seed, v = 'wacht') {
+  const haupt = v === 'haupt', turm = v === 'turm', arm = turm ? 5 : haupt ? 3.2 : 3.6;
+  return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y }) => {
+    const dx = px - 32, l = lit(px, py), n = nz(x >> 1, y >> 1);
+    const A = (b) => ['iron', b + (arm - 3.6) - l * 1.5 + n * 0.7];
+    if (ell(px, py, 28.8, 13.8, 1.2, 1) <= 1 || ell(px, py, 35.2, 13.8, 1.2, 1) <= 1) return ['glow', 7];
+    if (Math.abs(dx) <= 6.4 && py >= 12.3 && py <= 15.2 && ell(px, py, 32, 13, 8.6, 9.8) <= 1) return ['ceil', 0];
+    // Hörner und Helmzier
+    if (haupt && (cap(px, py, 24.4, 9, 18.6, 1.5, 2, 0.5) || cap(px, py, 39.6, 9, 45.4, 1.5, 2, 0.5))) return ['stone', 6.2 - l * 0.8];
+    if (v === 'wacht' && (cap(px, py, 25, 8.5, 22, 3, 1.5, 0.4) || cap(px, py, 39, 8.5, 42, 3, 1.5, 0.4))) return ['stone', 6 - l * 0.8];
+    if (cap(px, py, 32, 2.5, 32, 8, 1.2, 2.4) && !turm) return A(5.6);
+    if (turm && ell(px, py, 32, 4, 2.6, 5.5) <= 1) return ['glow', 4.2 + n];
+    if (ell(px, py, 32, 13.2, 8.6, 9.8) <= 1) return A(4.4 + (turm && Math.abs(dx) > 6.5 ? -0.6 : 0));
+    // Waffe
+    if (haupt) { if (cap(px, py, 50.5, -1, 50.5, 49, 1.8, 1.3)) return ['iron', px > 50.5 ? 4.6 : 6.5]; if (cap(px, py, 44.2, 48, 56.8, 48, 1.3, 1.3)) return ['iron', 3.2]; if (cap(px, py, 50.5, 49, 50.5, 60, 1.1, 1.1)) return ['wood', 2]; }
+    else { if (cap(px, py, 51, -0.5, 51, 7, 1.1, 0.2)) return ['iron', 6.4]; if (!turm && ell(px, py, 55.5, 12.5, 5.2, 6.8) <= 1 && px > 52) return ['iron', px > 57.5 ? 6.6 : 5 + n * 0.5]; if (cap(px, py, 51, 6, 51, 63, 0.95, 0.95)) return ['wood', 2.4 - l * 0.5]; }
+    // Turmschild links
+    if (turm) { const sd = ell(px, py, 13.5, 38.5, 8.2, 17); if (sd <= 1) { if ((Math.abs(px - 13.5) < 1.1 && py > 27 && py < 49) || (Math.abs(py - 37) < 1.1 && Math.abs(px - 13.5) < 5.5)) return ['glow', 4.6]; return sd > 0.72 ? ['iron', 2.2 + n * 0.5] : ['stone', 4 - l + n * 0.9]; } }
+    // Arme, Schulterplatten, Hände
+    if (cap(px, py, 20.5, 27, 15.8, 39.5, 3.3, 2.8) || cap(px, py, 43.5, 27, 49.8, 40.5, 3.3, 2.8) || ell(px, py, 50.6, 41, 2.6, 2.8) <= 1) return A(3.2);
+    if (ell(px, py, 20, 25.2, 6.6, 4.6) <= 1 || ell(px, py, 44, 25.2, 6.6, 4.6) <= 1) return A(4.8);
+    if (haupt && (cap(px, py, 19, 21.5, 15.6, 14.5, 1.5, 0.2) || cap(px, py, 45, 21.5, 48.4, 14.5, 1.5, 0.2))) return ['iron', 5.8];
+    // Brustpanzer mit Siegel, Gürtel, Wappenrock, Beine, Stiefel
+    if (haupt && Math.abs(Math.hypot(dx, py - 32) - 3.7) < 0.8) return ['glow', 6.6];
+    if (py > 43.8 && py < 46.6 && Math.abs(dx) < 11) return Math.abs(dx) < 1.8 ? ['glow', 5] : ['wood', 1.6 + n * 0.6];
+    if (ell(px, py, 32, 34, 11.8, 13.2) <= 1 && py < 46) return A(Math.abs(dx) < 0.7 ? 5.4 : 4);
+    const hem = 58 + Math.sin(px * 1.6 + seed) * 1.4;
+    if (py > 46 && py < hem && Math.abs(dx) < 6.8 + (py - 46) * 0.12) return Math.abs(dx) < 0.9 ? ['glow', turm ? 4.2 : 3.4] : [turm ? 'stone' : 'wood', (turm ? 3.2 : 2.2) + n * 0.8 - l * 0.6];
+    if (cap(px, py, 28, 46, 27, 60, 3.4, 3) || cap(px, py, 36, 46, 37, 60, 3.4, 3) || ell(px, py, 26.2, 61.8, 4.4, 2.2) <= 1 || ell(px, py, 37.8, 61.8, 4.4, 2.2) <= 1) return A(2.6);
+    // Umhang des Hauptmanns (hinter allem)
+    if (haupt && py > 23 && py < 63 && Math.abs(dx) < 12.5 + (py - 23) * 0.24) return ['wood', 1.6 + (vnoiseCol(px, seed)) * 1.2 - l * 0.5];
+    return null;
+  });
+}
+const vnoiseCol = (px, seed) => 0.5 + 0.5 * Math.sin(px * 1.9 + seed); // senkrechte Falten
+
+function genWolf(seed) { // Sumpfwolf: geduckt, Zähne gefletscht, gelbe Augen, struppiges Fell
+  return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y, vn }) => {
+    const dx = px - 32, l = lit(px, py), fur = (vn(px * 3, py * 0.9, 6) - 0.5) * 1.6 + nz(x, y) * 0.5;
+    const F = (b) => ['iron', b - l * 1.3 + fur];
+    if (ell(px, py, 27, 19.8, 2.8, 1.4) <= 1 || ell(px, py, 37, 19.8, 2.8, 1.4) <= 1) return ['glow', ell(px, py, 27, 19.8, 0.9, 0.9) <= 1 || ell(px, py, 37, 19.8, 0.9, 0.9) <= 1 ? 3 : 7];
+    if (cap(px, py, 22.8, 16.8, 30, 18.6, 0.8, 0.8) || cap(px, py, 41.2, 16.8, 34, 18.6, 0.8, 0.8)) return ['ceil', 0];
+    if (ell(px, py, 32, 33.6, 4.3, 2.8) <= 1) return (cap(px, py, 29, 32, 29.4, 36.6, 0.9, 0.25) || cap(px, py, 35, 32, 34.6, 36.6, 0.9, 0.25) || cap(px, py, 30.6, 36, 30.8, 33.8, 0.6, 0.2) || cap(px, py, 33.4, 36, 33.2, 33.8, 0.6, 0.2)) ? ['stone', 7] : py > 35 ? ['flesh', 2.2] : ['ceil', 0];
+    if (ell(px, py, 32, 31.4, 2.4, 1.6) <= 1) return ['ceil', 0];
+    if (ell(px, py, 32, 28, 5.8, 6.4) <= 1) return ['stone', 5.4 - l * 0.8 + fur * 0.5];
+    if (cap(px, py, 24, 15.5, 22, 5, 3, 0.4) || cap(px, py, 40, 15.5, 42, 5, 3, 0.4)) return F(2.4);
+    if (ell(px, py, 32, 22, 10.4, 9.4) <= 1) return F(3.9);
+    if (cap(px, py, 24.2, 38, 22, 60, 3.9, 3) || cap(px, py, 39.8, 38, 42, 60, 3.9, 3)) return F(3.3);
+    if (ell(px, py, 21.6, 61.9, 4.6, 2.3) <= 1 || ell(px, py, 42.4, 61.9, 4.6, 2.3) <= 1) return ['stone', 3.4 + fur * 0.4];
+    if (ell(px, py, 32, 41, 10, 8) <= 1) return ['stone', 4.6 - l * 0.8 + fur * 0.6];
+    if (cap(px, py, 32, 29, 32, 41, 7.4, 8.6)) return F(3.7);
+    if (ell(px, py, 18, 52, 6.4, 9.4) <= 1 || ell(px, py, 46, 52, 6.4, 9.4) <= 1) return F(2.8);
+    if (ell(px, py, 32, 49, 17, 12.5) <= 1) return Math.abs(dx) < 9 && py > 52 ? ['stone', 3.8 + fur * 0.5] : F(3.1);
+    if (cap(px, py, 47, 52, 56, 37, 2.8, 1.1)) return F(2.4);
+    return null;
+  });
+}
+
+function genKultist(seed) { // Moorkultist: schwarze Kutte, Knochenmaske, krummer Dolch, Laterne mit Irrlicht
+  return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y }) => {
+    const dx = px - 32, l = lit(px, py), n = nz(x >> 1, y >> 1);
+    const C = (b) => ['ceil', b - l * 0.9 + n * 0.5];
+    if (ell(px, py, 29, 14.8, 1.5, 0.9) <= 1 || ell(px, py, 35, 14.8, 1.5, 0.9) <= 1) return ['glow', 7];
+    if (ell(px, py, 32, 15.4, 5.2, 6.2) <= 1) return Math.abs(py - 19.6) < 0.5 && Math.abs(dx) < 2.6 ? ['ceil', 0] : ['stone', 6 - l + n * 0.6];
+    if (ell(px, py, 32, 13.4, 8.4, 9.6) <= 1) return C(1.8);
+    // Dolch (rechts erhoben) mit leuchtender Spitze
+    if (cap(px, py, 50, 25, 51.5, 8, 1.5, 0.3)) return py < 11 ? ['glow', 6.4] : ['iron', px > 50.5 ? 4.6 : 6.3];
+    if (cap(px, py, 47, 26, 53.5, 26, 1, 1)) return ['iron', 3];
+    if (cap(px, py, 43, 24.5, 48, 33, 3.2, 2.6) || cap(px, py, 48, 33, 50, 26.5, 2.6, 2.1)) return C(2.6);
+    if (ell(px, py, 16, 41.6, 3.2, 3.4) <= 1) return ['glow', 6.4 + n * 0.5];
+    if (cap(px, py, 22.5, 25, 17, 38, 3.2, 2.6)) return C(2.6);
+    if (ell(px, py, 32, 23.5, 13, 5.4) <= 1) return C(2.4);
+    if (Math.abs(Math.hypot(dx, py - 33) - 3.1) < 0.75) return ['glow', 4.8];
+    const hem = 62.5 - 1.8 * Math.abs(Math.sin(px * 1.3 + seed));
+    if (py > 21 && py < hem && Math.abs(dx) < 7.6 + (py - 21) * 0.3) return py > 57 && Math.abs(dx) > 1 && ((Math.floor(px * 1.5) % 3) === 0) ? ['glow', 3.4] : py > 44 && py < 46.4 ? ['wood', 1.6] : C(2.2 - Math.abs(Math.sin(px * 2.1 + seed)) * 0.9 + (py - 40) * 0.01);
+    return null;
+  });
 }
 
 function genPortal(seed) {
@@ -920,7 +1088,7 @@ export function makeTextures(detail = 1) {
     wall: { [WALL_STONE]: stoneW, [WALL_SECRET]: genSecretWall(stoneW, 301), [WALL_SWITCH]: genSwitchWall(stoneW, false), [WALL_SWITCH_ON]: genSwitchWall(stoneW, true), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
     ceil: genCeil(53, nf),
-    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm(genWisp(121)), skeleton: sm(genSkeleton(171)), guard: sm(genGuard(181, false)), captain: sm(genGuard(191, true)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genRobed(251, 'priester')), hueter: sm2(genRobed(261, 'hueter')), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genGuard(183, 'turm')), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genRobed(251, 'priester')), hueter: sm2(genRobed(261, 'hueter')), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
@@ -1085,7 +1253,7 @@ export function buildGrid(lvl, objs) {
   for (const o of objs) { if (o.type === 'secret' && !o.open) grid[o.y * w + o.x] = WALL_SECRET; else if (o.type === 'lever' && o.wall) grid[o.y * w + o.x] = o.used ? WALL_SWITCH_ON : WALL_SWITCH; }
   return { grid, gw: w, gh: h };
 }
-const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' || k === 'turmwache' ? tex.sprites.guard : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
+const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'turmwache' ? tex.sprites.turmwache : k === 'wolf' ? tex.sprites.wolf : k === 'kultist' ? tex.sprites.kultist : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
 const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' ? 1 : 0.9); // Bosse stehen größer im Gang
 export const GROUP_SCALE = 0.78, GROUP_GAP = 0.44, CHEST_SCALE = 0.62; // 0.16.4: Gruppen vorher 0.62/0.36, Truhe 0.5 (Nutzer: zu klein, hinter der Leiste)
 export const spriteScale = (k, n) => (n > 1 ? GROUP_SCALE : bossScale(k));
@@ -1139,7 +1307,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
     else if (o.type === 'door' && o.open && grid) { // offene Tür: Rahmen + aufgeklapptes Blatt, nur beim Blick längs des Durchgangs (sonst stünde der Rahmen quer)
       const wl = (x, y) => x < 0 || y < 0 || x >= grid.gw || y >= grid.gh || grid.grid[y * grid.gw + x] !== 0;
       const ns = wl(o.x - 1, o.y) && wl(o.x + 1, o.y);
-      out.push({ x: o.x, y: o.y, tex: cachedTex(tex, 'frames', o.title || '', () => genDoorFrame(o.title, 137)), scale: 1, axis: ns ? [0, 1] : [1, 0] });
+      out.push({ x: o.x, y: o.y, tex: cachedTex(tex, 'frames', styleFor(o) + (o.title || ''), () => genDoorFrame(o.title, styleFor(o), 137)), scale: 1, axis: ns ? [0, 1] : [1, 0] });
     }
     else if (o.type === 'runestone') out.push({ x: o.x, y: o.y, tex: tex.sprites.runeStone, scale: 0.9 });
     else if (o.type === 'merchant') out.push({ x: o.x, y: o.y, tex: tex.sprites.merchant, scale: 0.8 });

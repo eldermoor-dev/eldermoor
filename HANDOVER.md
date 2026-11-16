@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.16.8 (16.11.2026). 0.16.3 vom Nutzer auf dem Galaxy S25 durchgetestet (siehe Abschnitt 0.16.4). Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.16.12 (16.11.2026). 0.16.3 vom Nutzer auf dem Galaxy S25 durchgetestet (siehe Abschnitt 0.16.4). Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -542,3 +542,31 @@ Nutzerwünsche (15.11.): Schilder nur an der Wand statt im Raum, Raumnamen über
 - Abziehbilder werden gegenüber der Wandtextur gespiegelt gezeichnet (sonst Spiegelschrift auf allen vier Seiten). Hinweis: die Spiegelung der normalen Wandtexturen ist vermutlich auf allen Seiten umgekehrt, fällt aber bei Rauschtexturen nicht auf (Vermutung, nicht geprüft).
 - Tests: 87 grün (Wandtafel-Lesbarkeit/Daten, Türtitel; zwei alte Tafel-Tests ersetzt). Optik headless geprüft; Gerätetest steht aus.
 - Plan unverändert: 0.16.9 Figuren (Skelett, Hauptmann, Nebelhüter auf Thron, Turmwache), 0.16.10 mittlere Gebiete schwerer, 0.17 Talente.
+
+## 0.16.9 – Ankunftsrichtung (16.11.2026)
+Nutzerfund: Durch das Tor hinter Hedda (Moorrand → Moorpfad) stand die Gruppe mit Blick gegen die Wand. Neu: `arrivalDir` in `changeArea` – ist das Feld vor der Ankunft Wand, dreht die Gruppe zur Richtung mit dem längsten freien Weg (Moorpfad: Süden). Alle 12 Übergänge per Test geprüft (kein Blick gegen Wand). Alles andere wie 0.16.8; Gerätetest steht aus.
+- Plan verschoben: 0.16.10 Figuren (Skelett, Hauptmann, Nebelhüter auf Thron, Turmwache), 0.16.11 mittlere Gebiete schwerer, 0.17 Talente.
+
+## 0.16.10 – Gegner entdecken die Gruppe (16.11.2026)
+Nutzerwunsch: Man darf nicht einfach an Monstern vorbeigehen. Entscheidungen des Nutzers: Auslöser = Gegner in Sichtlinie bis 2 Felder; keine Ausnahmen (auch Bosse/Wächter); Überfall = Gegner beginnen mit Angriff.
+- `spottedEnemy` (logic.js): nach jedem Schritt und jeder Drehung löst der nächste lebende Gegner mit Chebyshev-Abstand ≤ `game.json → spot.range` (2) und freier Sichtlinie (Wand, geschlossene Tür, Geheimwand verdecken) den Kampf aus. Steht er nicht in Blickrichtung (gleiche Zeile/Spalte vor der Gruppe), ist es ein Überfall: `startCombat(..., {ambush:true})`, in Runde 1 haben die Gegner den ersten Zug (`buildOrder`). Meldung „… greifen aus dem Hinterhalt an!“.
+- Kein Rückzug möglich (Flucht gibt es nicht): jede Bewegung/Drehung nahe an einem lebenden Gegner löst aus.
+- Bekannt, nicht geändert: Ankunftsfelder liegen bei Boss Kultgruft (en_boss, Abstand 2 vom Ankunftsfeld aus Schratgruben) und Schratgruben-Boss (Abstand 2 vom Ankunftsfeld aus Nebelturm) nahe; relevant nur, wenn der Boss noch lebt.
+- Balance (BALANCE.md/SIM.md) unverändert; ein Überfall verschlechtert die Lage der Gruppe, Einfluss nicht simuliert.
+- Tests: 89 grün. Gerätetest steht aus. Plan: 0.16.11 Figuren, 0.16.12 mittlere Gebiete schwerer, 0.17 Talente.
+
+## 0.16.11 – Schilder scharf und abwechslungsreich (16.11.2026)
+Nutzerwunsch: Schilder zu unscharf; sollen in Farbe, Form, Größe, Schriftart und Schriftzug wechseln.
+- Tafeln, Türschilder und Türrahmen werden in 192×192 (3× Grundtextur) ohne Weichzeichnen gemalt (`paintPlaque`, `genPlaque`, `genDoorFrame`).
+- 9 Stile (`PLAQUE_STYLES` in render.js): wood, dark (Gold auf dunklem Holz), stone (Platte), iron (Nieten, goldene Schrift), moss (bemoost, Schrägschrift), arrow (Pfeilbrett), arch (Grabstein-Bogen), banner (Banner), small (kleine Tafel). Form, Material, Schriftfarbe, Schriftart (block, bold, wide, slant, shadow) und Größe folgen dem Stil und der Textlänge. Zuordnung per `style` an jedem Schild/jeder Tür in game.json; ohne Eintrag wählt `styleFor` einen festen Stil aus der Objekt-ID.
+- Farben folgen der Gebietspalette (Nebelturm wirkt bläulich).
+- Tests: 89 grün; Optik headless geprüft; Gerätetest steht aus.
+- Plan: 0.16.12 Figuren, 0.16.13 mittlere Gebiete schwerer, 0.17 Talente.
+
+## 0.16.12 – Neue Kampffiguren (16.11.2026)
+Nutzerwunsch: Monster besser und gefährlicher aussehen lassen, auch die Skelette.
+- Neu gezeichnet (128×128, `paintFigure` mit kontinuierlicher Abtastung, dunkler Umriss, leuchtende Augen): **Skelett** (Rosthelm, Rippen, Rostschwert, Rundschild), **Kultwächter** (Panzer, Hörner, Hellebarde), **Turmwache** (eigenes Bild: Turmschild, Speer, Kamm), **Hauptmann** (Umhang, Zweihänder, große Hörner, Siegel), **Sumpfwolf** und **Moorkultist** (beide hatten bisher das Ersatzbild des Moorschrats; jetzt eigene Bilder).
+- Unverändert: Erzkäfer, Moorlicht, Nebelgeist, Kultpriester, Bosse Moorschrat/Grubenschrat/Nebelhüter. Nebelhüter auf dem Thron und Neuzeichnung des Hüters bleiben offen (Plan: 0.16.13).
+- Farben folgen der Gebietspalette (Gruft grau, Gruben bräunlich, Turm bläulich).
+- Test: jede Gegnerart hat ein Bild; Wolf/Kultist/Turmwache/Kultwächter/Hauptmann/Skelett teilen kein Bild. 90 Tests grün; Optik headless geprüft; Gerätetest steht aus.
+- Plan: 0.16.13 Nebelhüter neu + Thron, 0.16.14 mittlere Gebiete schwerer, 0.17 Talente.
