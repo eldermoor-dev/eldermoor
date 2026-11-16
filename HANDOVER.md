@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.16.13 (16.11.2026). 0.16.3 vom Nutzer auf dem Galaxy S25 durchgetestet (siehe Abschnitt 0.16.4). Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.16.14 (16.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -577,3 +577,19 @@ Nutzerfund (Gerät, Sumpfwolf): „kann mich nicht bewegen und nicht angreifen�
 - **Sumpfwolf:** neues Bild im Profil auf vier Beinen, schwarzes Fell, grüne Moosflecken, gesträubter Rücken, gelbe Augen, gefletschte Zähne; im Bild 1,3× größer (`spriteScale`).
 - Tests: 91 grün. Gerätetest steht aus.
 - Plan: 0.16.14 Nebelhüter neu + Thron, 0.16.15 mittlere Gebiete schwerer, 0.17 Talente.
+
+## Gerätetest 0.16.8–0.16.13 (Nutzer, Galaxy S25, 16.11.2026)
+- Ablauf: Spielstand Slot 3 (Moorpfad) geladen, Testliste (31 Punkte) abgegangen, Screenshots aus der Kultgruft (Türschilder KAPELLE, HALLE; Schild „NUR MIT SIEGEL“; Kampf gewonnen, Stufe 5). Abschlussmeldung des Nutzers: **„Es passt alles“** (Gesamtaussage; Einzelpunkte wie Wolfkampf Nr. 13 und Boss-Rückweg Nr. 31 wurden nicht einzeln gemeldet).
+- Das gemeldete „kann nicht angreifen“ (Sumpfwolf) trat im Test nicht mehr auf; die Ursache bleibt ungeklärt (nicht nachstellbar, 0.16.13 enthält Gegenmaßnahmen).
+- **Nutzerwunsch (16.11.):** Schrift auf Türschildern/Tafeln lesbar, aber „geht noch schärfer“ (HALLE aus 3–4 Feldern Abstand schwer lesbar).
+  - Befund und Umsetzung: siehe Abschnitt 0.16.14.
+- Plan (Nutzer sagte „Bauen“): **0.16.14 Schilder schärfer** (gebaut), 0.16.15 Nebelhüter neu + Thron, 0.16.16 mittlere Gebiete schwerer, 0.17 Talente.
+
+## 0.16.14 – Schilder schärfer (16.11.2026)
+Nutzerwunsch: Schrift auf Türschildern „geht noch schärfer“ (HALLE aus 3–4 Feldern schwer lesbar, dünn und schräg wirkend).
+- **Ursache (aus dem Code belegt, am Spielstand des Nutzers nicht geprüft):** Türen sind keine festen Objekte (`STATIC_TYPES`), `syncStatic` zog `title` und `style` nicht nach. Ein Spielstand aus der Zeit vor 0.16.11 hat Türen ohne `style`; `styleFor` wählt dann einen Zufallsstil aus der Objekt-ID (z. B. Schrägschrift „moss“ statt „dark“ für HALLE). Das passt zu den Bildern des Nutzers (HALLE dunkel und schräg, KAPELLE als Holztafel statt Steinplatte). Tafeln an Wänden waren nicht betroffen (feste Objekte). In einem frischen Spiel sah HALLE im Testbrowser schon scharf aus (gold auf dunklem Holz).
+- **Fix 1 (`syncStatic`, logic.js):** zieht `title` und `style` aller nicht festen Objekte aus game.json nach (Türzustand, Truhen, Gegner unverändert). Ohne Speicherversionswechsel. Neuer Test mit alter Tür ohne Stil.
+- **Fix 2 (render.js):** Strichstärke bei allen Schriftarten `max(1, s>>1)` (vorher nur bold/shadow-Verbreiterung nur bei bold); einzeilige Titel bis Faktor 4 (Tür und Wand), zweizeilige wie vorher; Tafelbreite darf 176 nicht überschreiten (Faktor wird sonst gesenkt). `plaqueMetrics` ist exportiert (Test). HALLE: Faktor 3 → 4.
+- Nebenwirkung: Schriftarten „block“, „wide“, „slant“ und „bold“ unterscheiden sich in der Strichstärke nicht mehr (Form, Farbe, Material bleiben). Nicht gebaut: zweite, verkleinerte Fassung für große Abstände (erst prüfen, ob es nötig ist).
+- Tests: 93 grün (2 neu). Optik headless vorher/nachher im Testbrowser verglichen (Kultgruft, Tür HALLE aus 4 Feldern). **Nicht auf Gerät getestet.**
+- Plan: 0.16.15 Nebelhüter neu + Thron, 0.16.16 mittlere Gebiete schwerer, 0.17 Talente.
