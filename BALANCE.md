@@ -29,7 +29,7 @@ Gegner (EP: jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die vol
 | Gegner | LP | Angriff | Verteidigung | Initiative | EP | Gold | Verhalten |
 |---|---|---|---|---|---|---|---|
 | Moorschrat | 80 | 13 | 3 | 5 | 120 | 15 | Schweren Schlag jeden 3. Zug, angekündigt (170 %); Treffer: Gift 30 %; Boss, Phasen: Wutrausch ab ≤ 60 % LP (Angriff 15), Letzte Kraft ab ≤ 25 % LP (Angriff 17) |
-| Sumpfwolf | 26 | 9 | 1 | 8 | 35 | 6 | zielt auf den schwächsten Helden |
+| Sumpfwolf | 26 | 9 | 1 | 8 | 35 | 6 | zielt auf den schwächsten Helden; Treffer: Blutung 25 % |
 | Moorkultist | 20 | 7 | 2 | 4 | 30 | 8 | zielt auf die Hinterreihe; Treffer: Schwach 35 % |
 | Moorlicht | 18 | 6 | 0 | 10 | 28 | 5 | zielt auf die Hinterreihe; Treffer: Verlangsamt 40 % |
 | Gruftskelett | 24 | 9 | 2 | 6 | 40 | 6 | zielt auf den schwächsten Helden |
@@ -39,7 +39,7 @@ Gegner (EP: jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die vol
 | Moorschrat | 190 | 13 | 3 | 5 | 200 | 40 | Schweren Schlag jeden 3. Zug, angekündigt (170 %); Treffer: Gift 30 %; Boss, Phasen: Wutrausch ab ≤ 60 % LP (Angriff 15), Letzte Kraft ab ≤ 25 % LP (Angriff 17) |
 | Nebelgeist | 62 | 16 | 3 | 9 | 70 | 10 | zielt auf die Hinterreihe; Zaubert: Frosthauch (jeden 2. Zug) |
 | Kultpriester | 80 | 13 | 4 | 5 | 85 | 16 | Zaubert: Dunkler Segen (jeden 2. Zug), Fluch der Schwäche (jeden 3. Zug) |
-| Turmwache | 95 | 17 | 8 | 4 | 100 | 18 | zielt auf die Hinterreihe; Schildstoß jeden 3. Zug, angekündigt (160 %) |
+| Turmwache | 95 | 17 | 8 | 4 | 100 | 18 | zielt auf die Hinterreihe; Schildstoß jeden 3. Zug, angekündigt (160 %); Treffer: Verflucht 30 % |
 | Nebelhüter | 480 | 26 | 8 | 6 | 320 | 80 | Zaubert: Nebelspeer (jeden 3. Zug, angekündigt); Boss, Phasen: Nebelwand ab ≤ 66 % LP (Angriff 27), Sturm der Schleier ab ≤ 33 % LP (Angriff 28) |
 
 ## Rassen (Modifikatoren)
@@ -71,7 +71,7 @@ Angriff und Verteidigen schenken 1 Punkt Ressource zurück; nach jedem Kampf ist
 |---|---|---|---|---|
 | Krieger | Ausdauer 10 / 38 | Wuchtschlag | 4 | 160 % Schaden, 35 % Chance auf Betäubung (Gegner setzt 1 Zug aus). |
 | Schurke | Ausdauer 10 / 38 | Hinterhalt | 4 | Trifft immer, 140 % Schaden, vergiftet 3 Runden (2 Schaden je Runde). |
-| Kleriker | Mana 12 / 54 | Heilende Hand | 5 | Heilt einen Helden um 20 LP und nimmt Gift. |
+| Kleriker | Mana 12 / 54 | Heilende Hand | 5 | Heilt einen Helden um 20 LP und nimmt Gift und Blutung. |
 | Magier | Mana 12 / 54 | Feuerblitz | 5 | Magischer Treffer: 180 % Schaden. 40 % Chance auf Brennen (3 Runden, 3 Schaden je Runde). |
 | Waldläufer | Ausdauer 10 / 38 | Gezielter Schuss | 4 | Trifft immer, 150 % Schaden, schwächt 2 Runden (−25 % Angriff). |
 | Alchemist | Mana 12 / 48 | Brandflasche | 4 | Wurf mit Feuerschaden: 130 %. 50 % Chance auf Brennen (3 Runden, 2 Schaden je Runde). |

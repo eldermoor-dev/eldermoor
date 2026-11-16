@@ -3,13 +3,13 @@
 import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
+  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.17.0';
+const VERSION = '0.18.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -29,7 +29,7 @@ const S = {
   debug: { god: false }, itemMode: false, abMode: false, spMode: false, spSel: 0, foe: 0, invUse: null, draft: null, fps: 60, frameMs: 0, lastRender: 0,
   installEvent: null, loadMs: null, hadController: false
 };
-if (new URLSearchParams(location.search).has('dev')) { window.__S = S; S.snapCam = () => snapCam(); S.fn = { startCombatUI: (o) => startCombatUI(o), showEvent: (a, b) => showEvent(a, b), openShop: (id) => openShop(id, true) }; } // nur für automatische Tests (?dev)
+if (new URLSearchParams(location.search).has('dev')) { window.__S = S; S.snapCam = () => snapCam(); S.fn = { renderCombat: () => renderCombat(), startCombatUI: (o) => startCombatUI(o), showEvent: (a, b) => showEvent(a, b), openShop: (id) => openShop(id, true) }; } // nur für automatische Tests (?dev)
 
 // ---------------------------------------------------------------- Fehlerlog
 const ERR = { list: [], saveT: 0 };
@@ -360,8 +360,10 @@ function doMove(rel) {
     S.target.x = g.player.x + 0.5; S.target.y = g.player.y + 0.5;
     beginTween();
     (r.events || []).forEach(onEvent);
+    if (r.notes) { S.held = []; r.notes.forEach((t) => { say(t); toast(t, 5000); }); S.sfx.play('warn'); vib([40, 40, 40]); S.nextAllowed = performance.now() + 500; }
     if (r.encounter) startCombatUI(r.encounter, r.ambush);
   } else if (r.encounter) startCombatUI(r.encounter);
+  else if (r.trapWarn) { S.held = []; S.queued = null; S.nextAllowed = performance.now() + 700; say(r.msg); toast(r.msg, 5000); S.sfx.play('warn'); }
   else if (rel === 'f' && r.blocker && ['door', 'chest', 'lever', 'gate', 'secret'].includes(r.blocker.type)) { // gegen Tür, Truhe, Hebel laufen = benutzen
     S.held = []; S.nextAllowed = performance.now() + 350;
     act('interact');
@@ -382,6 +384,7 @@ function doTurn(d) {
   S.target.a += d * Math.PI / 2;
   beginTween(170);
   S.sfx.play('step');
+  if (r.notes) { r.notes.forEach((t) => { say(t); toast(t, 5000); }); S.sfx.play('warn'); vib([40, 40, 40]); }
   if (r.encounter) startCombatUI(r.encounter, r.ambush);
 }
 async function onEvent(ev) {
@@ -396,6 +399,13 @@ async function onEvent(ev) {
     renderAll();
     introOnce('area:' + S.game.levelId, S.lvl.intro);
     await saveSlot('auto', true);
+    return;
+  }
+  if (ev.type === 'trap') { // Falle ausgelöst: Meldung groß, Erschütterung, Leisten neu
+    S.held = []; S.queued = null; S.nextAllowed = performance.now() + 900;
+    ev.msgs.forEach(say); toast(ev.msgs.join(' '), 7000);
+    S.sfx.play('hurt'); vib([120, 60, 120]);
+    renderAll();
     return;
   }
   if (ev.type === 'exitAgain') {
@@ -590,6 +600,15 @@ function onViewTap(e) {
   }
   if (best >= 0) { S.foe = best; renderCombat(); }
 }
+// Kombinationsangriff möglich? (aktueller Held gegen diesen Gegner, mit Angriff oder einer bekannten Fähigkeit)
+function comboHint(cur, ei) {
+  const c = S.game.combat;
+  if (!cur || cur.side !== 'h' || !c.enemies[ei] || c.enemies[ei].hp <= 0) return '';
+  const h = S.game.heroes[cur.idx];
+  let cb = comboFor(S.game, S.data, cur.idx, ei), via = 'Angriff';
+  if (!cb) for (const sp of knownSpells(S.data, h)) { if (sp.kind !== 'damage') continue; const x = comboFor(S.game, S.data, cur.idx, ei, sp); if (x) { cb = x; via = sp.name; break; } }
+  return cb ? `<em class="combo">✚ Kombi: ${esc(cb.name)} (${esc(via)})</em>` : '';
+}
 function onEnemyBox(e) {
   const row = e.target.closest('[data-e]');
   if (!row || !S.game.combat) return;
@@ -750,7 +769,7 @@ function renderCombat() {
   eb.innerHTML = warnBar + (cur ? `<div class="turnbar ${cur.side === 'h' ? 'hero' : 'foe'}">${cur.side === 'h' ? 'Am Zug: ' + esc(curName) + (multi ? ' · Gegner antippen = Ziel' : '') : 'Gegner am Zug: ' + esc(curName)}</div>` : '') + c.enemies.map((e) => {
     const pct = Math.round(100 * e.hp / e.maxHp);
     const ei = c.enemies.indexOf(e);
-    return `<div class="en${e.hp <= 0 ? ' dead' : ''}${multi && ei === S.foe && e.hp > 0 ? ' sel' : ''}" data-e="${ei}"><b>${esc(e.name)} ${stIcons('e', ei)}</b><span>${e.hp}/${e.maxHp} LP</span><div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div>${e.intent === 'heavy' ? '<em class="warn">⚠ Schwerer Schlag</em>' : ''}</div>`;
+    return `<div class="en${e.hp <= 0 ? ' dead' : ''}${multi && ei === S.foe && e.hp > 0 ? ' sel' : ''}" data-e="${ei}"><b>${esc(e.name)} ${stIcons('e', ei)}</b><span>${e.hp}/${e.maxHp} LP</span><div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div>${e.intent === 'heavy' ? '<em class="warn">⚠ Schwerer Schlag</em>' : ''}${comboHint(cur, ei)}</div>`;
   }).join('') + `<div class="order">Runde ${c.round}: ` + c.order.map((o, i) => {
     const nm = o.side === 'h' ? S.game.heroes[o.idx].name : c.enemies[o.idx].name;
     return `<span class="${(i === c.pos ? 'now' : i < c.pos ? 'done' : '') + (o.side === 'e' ? ' foe' : '')}">${esc(nm)}</span>`;
@@ -780,7 +799,7 @@ function renderCombat() {
   const sel = known[S.spSel];
   if (S.abMode && sel && sel.kind === 'heal' && !sel.all) {
     html += '<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">' + S.game.heroes.map((h, i) =>
-      `<button class="ab" data-c="abheal:${i}" ${h.hp > 0 && (h.hp < h.maxHp || (sel.cleanse && statusOf(S.game, 'h', i)[sel.cleanse])) ? '' : 'disabled'}>${esc(sel.name)} → ${esc(h.name)}</button>`).join('') + '</div>';
+      `<button class="ab" data-c="abheal:${i}" ${h.hp > 0 && (h.hp < h.maxHp || canCleanse(sel, statusOf(S.game, 'h', i))) ? '' : 'disabled'}>${esc(sel.name)} → ${esc(h.name)}</button>`).join('') + '</div>';
   }
   ab.innerHTML = html;
 }
@@ -816,6 +835,8 @@ function helpHtml() {
   return `<h2>Steuerung &amp; Info</h2>
   <h3>Links: Bewegung</h3><p>↑ Vor, ↓ Zurück, ← → seitwärts, ↶ ↷ um 90° drehen. Gedrückt halten wiederholt die Bewegung.</p>
   <h3>Rechts: Aktionen</h3><p>◉ Interagieren (Türen, Truhen, Hebel, Gegner ansprechen; Türen und Truhen gehen auch auf, wenn du gegen sie läufst oder sie direkt vor dir antippst), ⚔ Angriff, ✦ Fähigkeit (nur im Kampf, kostet Mana oder Ausdauer). Bei mehreren Gegnern: Gegner antippen = Ziel wählen, „Alle“ trifft jeden Gegner mit 60 % Schaden, ▣ Inventar, ☻ Charakter (dort „Talente“: ab Stufe 2 gibt jede Stufe einen Punkt; drei Zweige je Beruf, außerdem neue Fähigkeiten).</p>
+  <h3>Kombinationsangriffe</h3><p>Automatisch, wenn ein Held einen Gegner trifft, der einen passenden Status von einem <b>anderen</b> Helden trägt. Im Kampf zeigt „✚ Kombi“ am Gegner, was gerade möglich ist.</p>${S.data.combos.map((c) => `<p class="muted" style="margin:2px 0">✚ <b>${esc(c.name)}</b>: ${esc(c.desc)}</p>`).join('')}
+  <h3>Fallen</h3><p>Fallen verraten sich durch eine feine Spur am Boden oder eine Warnung an der Wand. ◉ auf das Feld vor dir untersucht den Boden, ein zweites ◉ entschärft die Falle. Helden mit Fallen-Talent (Schurke, Waldläufer, Alchemist) bemerken und entschärfen sie eher. Ausgelöste Fallen kosten LP, töten aber niemanden.</p>
   <h3>Menü (☰ rechts unten)</h3><p>Karte (auf eine erkundete Zelle tippen setzt oder entfernt eine Notiz), Rasten, Speichern, Laden, Einstellungen. Oben rechts zeigt der Kompass die Blickrichtung.</p>
   <h3>Kampf</h3><p>Rundenbasiert. Die Zugreihenfolge steht oben. Hinterreihe-Helden ohne Fernkampf treffen nur halb so hart.</p>
   <h3>Rast</h3><p>Menü → Rasten (oder im Inventar beim Proviant). Mit Proviant erholt sich die Gruppe vollständig, auch Bewusstlose. Ohne Proviant nur zu 30 %. Nicht im Kampf, nicht wenn ein Gegner in Sichtweite ist, und erst ab 10 Schritten Abstand zum nächsten Gegner (Weg zählt, nicht Luftlinie).</p>
@@ -1031,6 +1052,7 @@ function mapSymKind(o) {
   if (o.type === 'gate') return o.open ? 'gateOpen' : 'gate';
   if (o.type === 'lever') return o.used ? 'leverUsed' : 'lever';
   if (o.type === 'enemy') return o.dead ? null : 'enemy';
+  if (o.type === 'trap') return o.disarmed || !o.spotted ? null : o.sprung ? 'trapUsed' : 'trap'; // nur entdeckte Fallen
   return ['stairs', 'exit', 'sign', 'merchant', 'runestone'].includes(o.type) ? o.type : null;
 }
 const MAP_LEGEND = [
@@ -1038,7 +1060,7 @@ const MAP_LEGEND = [
   ['door', 'Tür, geschlossen'], ['doorLocked', 'Tür, verschlossen'], ['doorOpen', 'Tür, offen'],
   ['chest', 'Truhe'], ['chestOpen', 'Truhe, geöffnet'], ['gate', 'Gitter, geschlossen'], ['gateOpen', 'Gitter, offen'],
   ['lever', 'Hebel'], ['leverUsed', 'Hebel, benutzt'], ['stairs', 'Treppe / Durchgang'], ['exit', 'Ausgang (Ende des Gebiets)'],
-  ['sign', 'Hinweistafel'], ['runestone', 'Runenstein'], ['merchant', 'Händler'], ['enemy', 'Gegner'],
+  ['sign', 'Hinweistafel'], ['runestone', 'Runenstein'], ['merchant', 'Händler'], ['enemy', 'Gegner'], ['trap', 'Falle, entdeckt'], ['trapUsed', 'Falle, ausgelöst'],
 ];
 function drawMapSym(c, k, x0, y0, cs, horiz = true, dir = 1) {
   const cx = x0 + cs / 2, cy = y0 + cs / 2;
@@ -1060,6 +1082,8 @@ function drawMapSym(c, k, x0, y0, cs, horiz = true, dir = 1) {
   else if (k === 'gate' || k === 'gateOpen') { c.strokeStyle = k === 'gateOpen' ? '#6b5a3a' : '#9aa4b4'; c.lineWidth = 2; for (let i = 1; i < 4; i++) { c.beginPath(); c.moveTo(x0 + i * cs / 4, y0 + 2); c.lineTo(x0 + i * cs / 4, y0 + cs - 2); c.stroke(); } }
   else if (k === 'lever' || k === 'leverUsed') { c.fillStyle = k === 'leverUsed' ? '#6b5a3a' : '#d9a441'; c.fillRect(cx - 2, cy - cs * 0.3, 4, cs * 0.6); }
   else if (k === 'sign') { c.fillStyle = '#c89a5a'; c.fillRect(cx - cs * 0.25, cy - cs * 0.2, cs * 0.5, cs * 0.3); }
+  else if (k === 'trap') txt('!', '#ff5a3c');
+  else if (k === 'trapUsed') txt('!', '#7a6a5a');
   else if (k === 'merchant') txt('$', '#e0b040');
   else if (k === 'enemy') txt('×', '#d05040');
   else if (k === 'note') { c.fillStyle = '#ffe066'; c.beginPath(); c.moveTo(cx, y0 + 3); c.lineTo(x0 + cs - 3, cy); c.lineTo(cx, y0 + cs - 3); c.lineTo(x0 + 3, cy); c.fill(); }

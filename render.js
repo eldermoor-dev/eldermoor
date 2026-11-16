@@ -932,6 +932,25 @@ function genKaefer(seed) {
   return t;
 }
 
+// Falle am Boden (0.18.0): 'faint' = feine Spur (drei dunkle Schlitze, leicht zu übersehen), 'seen' = entdeckt (rote Markierung + Warnzeichen), 'sprung' = ausgelöst (Speere ragen heraus)
+function genTrap(mode, seed) {
+  const t = mk(255);
+  const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
+  if (mode === 'faint') {
+    for (const cx of [20, 32, 44]) for (let x = cx - 3; x <= cx + 3; x++) set(x, 62, P('stone', 0.4 + hash(x, 1, seed) * 0.5));
+    for (let x = 14; x <= 50; x++) if (hash(x, 2, seed) > 0.72) set(x, 63, P('stone', 0.8));
+  } else if (mode === 'seen') {
+    for (let x = 12; x <= 52; x++) for (let y = 58; y <= 63; y++) { const edge = x === 12 || x === 52 || y === 58 || y === 63; set(x, y, edge ? P('glow', 6.5) : (x + y) % 4 < 2 ? P('glow', 3.2) : P('stone', 0.6)); }
+    for (let y = 30; y <= 50; y++) for (let x = 29; x <= 35; x++) { const w = 3 - Math.floor((y - 30) / 9); if (Math.abs(x - 32) <= Math.max(1, w) && y <= 45) set(x, y, P('glow', 7)); }
+    for (let y = 49; y <= 53; y++) for (let x = 30; x <= 34; x++) set(x, y, P('glow', 7));
+    for (let y = 28; y <= 55; y++) for (let x = 26; x <= 38; x++) if (t.data[y * TEX + x] === 255 && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => { const v = t.data[(y + b) * TEX + x + a]; return v !== 255 && v !== P('stone', 0); })) set(x, y, P('stone', 0));
+  } else {
+    for (let x = 12; x <= 52; x++) set(x, 63, P('stone', 0.5));
+    for (const cx of [18, 25, 32, 39, 46]) { const h = 16 + Math.floor(hash(cx, 3, seed) * 8); for (let y = 63 - h; y <= 62; y++) { const w = y < 63 - h + 4 ? 0 : 1; for (let x = cx - w; x <= cx + w; x++) set(x, y, P('iron', x < cx ? 5.5 : 3.2)); } }
+  }
+  t.noWrap = true;
+  return t;
+}
 function genLever(used, seed) {
   // Wandhebel auf Steinsockel: Griff oben (bereit) oder unten (umgelegt)
   const t = mk(255);
@@ -1229,7 +1248,7 @@ export function makeTextures(detail = 1) {
     wall: { [WALL_STONE]: stoneW, [WALL_SECRET]: genSecretWall(stoneW, 301), [WALL_SWITCH]: genSwitchWall(stoneW, false), [WALL_SWITCH_ON]: genSwitchWall(stoneW, true), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
     ceil: genCeil(53, nf),
-    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genGuard(183, 'turm')), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genRobed(251, 'priester')), hueter: sm2(genRobed(261, 'hueter')), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), trapSprung: genTrap('sprung', 401), chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genGuard(183, 'turm')), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genRobed(251, 'priester')), hueter: sm2(genRobed(261, 'hueter')), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
@@ -1434,7 +1453,8 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
   const rx = Math.cos(angle), ry = Math.sin(angle); // „rechts“ aus Sicht der Kamera
   const fx = Math.sin(angle), fy = -Math.cos(angle); // „vorn“
   for (const o of objs) {
-    if (o.type === 'chest') out.push({ x: o.x, y: o.y, tex: o.open ? tex.sprites.chestOpen : tex.sprites.chest, scale: CHEST_SCALE });
+    if (o.type === 'trap') { if (!o.disarmed) out.push({ x: o.x, y: o.y, tex: o.sprung ? tex.sprites.trapSprung : o.spotted ? tex.sprites.trapSeen : tex.sprites.trapFaint, scale: 1 }); }
+    else if (o.type === 'chest') out.push({ x: o.x, y: o.y, tex: o.open ? tex.sprites.chestOpen : tex.sprites.chest, scale: CHEST_SCALE });
     else if (o.type === 'enemy' && !o.dead) {
       const tot = Array.isArray(o.kinds) ? Math.min(3, o.kinds.length) : 1;
       const av = alive && alive[o.id] != null ? alive[o.id] : null, kindList = Array.isArray(av) ? av : null;

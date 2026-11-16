@@ -333,8 +333,11 @@
         "kind": "heal",
         "cost": 5,
         "heal": 20,
-        "cleanse": "poison",
-        "desc": "Heilt einen Helden um 20 LP und nimmt Gift.",
+        "cleanse": [
+          "poison",
+          "bleed"
+        ],
+        "desc": "Heilt einen Helden um 20 LP und nimmt Gift und Blutung.",
         "runes": [
           "sowilo"
         ]
@@ -500,6 +503,16 @@
       "name": "Verlangsamt",
       "icon": "⌛",
       "desc": "Handelt in der nächsten Runde als Letzter."
+    },
+    "bleed": {
+      "name": "Blutung",
+      "icon": "🩸",
+      "desc": "Schaden am Ende des eigenen Zugs, Held bleibt dabei mindestens bei 1 LP."
+    },
+    "curse": {
+      "name": "Verflucht",
+      "icon": "☽",
+      "desc": "Verteidigung −30 %."
     }
   },
   "progression": {
@@ -628,6 +641,12 @@
       },
       "gearDrop": {
         "chance": 15
+      },
+      "onHit": {
+        "status": "bleed",
+        "chance": 25,
+        "turns": 2,
+        "power": 2
       }
     },
     "kultist": {
@@ -952,6 +971,11 @@
       },
       "gearDrop": {
         "chance": 25
+      },
+      "onHit": {
+        "status": "curse",
+        "chance": 30,
+        "turns": 2
       }
     },
     "nebelhueter": {
@@ -1715,6 +1739,22 @@
             "y": 6,
             "dir": 1
           }
+        },
+        {
+          "id": "trap_p1",
+          "type": "trap",
+          "x": 14,
+          "y": 7,
+          "kind": "spikes"
+        },
+        {
+          "id": "sign_trap_p1",
+          "type": "sign",
+          "x": 13,
+          "y": 7,
+          "text": "In den Stein geritzt: „Vorsicht. Der Boden beißt.“",
+          "title": "VORSICHT",
+          "face": 0
         }
       ],
       "intro": {
@@ -1977,6 +2017,22 @@
             "y": 7,
             "dir": 1
           }
+        },
+        {
+          "id": "trap_g1",
+          "type": "trap",
+          "x": 16,
+          "y": 6,
+          "kind": "rune"
+        },
+        {
+          "id": "sign_trap_g1",
+          "type": "sign",
+          "x": 17,
+          "y": 6,
+          "text": "Mit Kreide an die Wand geschrieben: „Achte auf den Boden. Die Zeichen schlafen nur.“",
+          "title": "ACHTE|BODEN",
+          "face": 2
         }
       ],
       "intro": {
@@ -2271,6 +2327,38 @@
             "y": 12,
             "dir": 1
           }
+        },
+        {
+          "id": "trap_s1",
+          "type": "trap",
+          "x": 8,
+          "y": 7,
+          "kind": "spikes"
+        },
+        {
+          "id": "sign_trap_s1",
+          "type": "sign",
+          "x": 7,
+          "y": 7,
+          "text": "Eine Warnung der Bergleute: „Tritt leise. Die Schrate haben den Stollen gesichert.“",
+          "title": "TRITT|LEISE",
+          "face": 0
+        },
+        {
+          "id": "trap_s2",
+          "type": "trap",
+          "x": 12,
+          "y": 3,
+          "kind": "gas"
+        },
+        {
+          "id": "sign_trap_s2",
+          "type": "sign",
+          "x": 12,
+          "y": 4,
+          "text": "Ein eingeritzter Totenschädel und ein Wort: „Gift“.",
+          "title": "GIFT",
+          "face": 3
         }
       ],
       "intro": {
@@ -2576,6 +2664,22 @@
           "title": "ARCHIV",
           "style": "iron",
           "face": 2
+        },
+        {
+          "id": "trap_t1",
+          "type": "trap",
+          "x": 6,
+          "y": 12,
+          "kind": "rune"
+        },
+        {
+          "id": "sign_trap_t1",
+          "type": "sign",
+          "x": 6,
+          "y": 12,
+          "text": "Über dem Durchgang glimmen feine Zeichen. Jemand hat darunter geschrieben: „Nicht blind hindurch.“",
+          "title": "RUNEN",
+          "face": 0
         }
       ]
     }
@@ -2690,7 +2794,13 @@
       "kind": "damage",
       "cost": 6,
       "mult": 230,
-      "desc": "230 % Schaden."
+      "desc": "230 % Schaden, Blutung 3 Runden (4 Schaden je Runde).",
+      "inflict": {
+        "status": "bleed",
+        "chance": 100,
+        "turns": 3,
+        "power": 4
+      }
     },
     "warcry": {
       "name": "Erschütternder Ruf",
@@ -2711,7 +2821,13 @@
       "cost": 6,
       "mult": 250,
       "sure": true,
-      "desc": "Trifft immer, 250 % Schaden."
+      "desc": "Trifft immer, 250 % Schaden, Blutung 3 Runden (4 Schaden je Runde).",
+      "inflict": {
+        "status": "bleed",
+        "chance": 100,
+        "turns": 3,
+        "power": 4
+      }
     },
     "poisoncloud": {
       "name": "Giftwolke",
@@ -2740,8 +2856,12 @@
       "kind": "heal",
       "cost": 8,
       "heal": 45,
-      "cleanse": "poison",
-      "desc": "Heilt einen Helden um 45 LP und nimmt Gift."
+      "cleanse": [
+        "poison",
+        "bleed",
+        "curse"
+      ],
+      "desc": "Heilt einen Helden um 45 LP und nimmt Gift, Blutung und Fluch."
     },
     "cleansing": {
       "name": "Reinigendes Licht",
@@ -2749,8 +2869,12 @@
       "all": true,
       "cost": 9,
       "heal": 18,
-      "cleanse": "poison",
-      "desc": "Heilt alle Helden um 18 LP und nimmt Gift."
+      "cleanse": [
+        "poison",
+        "bleed",
+        "curse"
+      ],
+      "desc": "Heilt alle Helden um 18 LP und nimmt Gift, Blutung und Fluch."
     },
     "holyfire": {
       "name": "Heiliges Feuer",
@@ -2801,7 +2925,12 @@
       "cost": 8,
       "mult": 230,
       "sure": true,
-      "desc": "Trifft immer, 230 % Schaden."
+      "desc": "Trifft immer, 230 % Schaden, verflucht 3 Runden (Verteidigung −30 %).",
+      "inflict": {
+        "status": "curse",
+        "chance": 100,
+        "turns": 3
+      }
     },
     "pierce": {
       "name": "Durchschlag",
@@ -2856,8 +2985,12 @@
       "kind": "heal",
       "cost": 7,
       "heal": 32,
-      "cleanse": "poison",
-      "desc": "Heilt einen Helden um 32 LP und nimmt Gift."
+      "cleanse": [
+        "poison",
+        "bleed",
+        "curse"
+      ],
+      "desc": "Heilt einen Helden um 32 LP und nimmt Gift, Blutung und Fluch."
     },
     "splinter": {
       "name": "Splitterbombe",
@@ -3206,9 +3339,10 @@
             {
               "id": "r_gold",
               "name": "Tascheninhalt",
-              "desc": "+15 % Gold aus Kämpfen.",
+              "desc": "+15 % Gold aus Kämpfen. Fallen: +30 % entdecken und entschärfen.",
               "fx": {
-                "gold": 15
+                "gold": 15,
+                "trap": 30
               }
             },
             {
@@ -3223,10 +3357,11 @@
             {
               "id": "r_glueck",
               "name": "Glückspilz",
-              "desc": "+20 % Gold, +1 Verteidigung.",
+              "desc": "+20 % Gold, +1 Verteidigung. Fallen: weitere +25 %.",
               "fx": {
                 "gold": 20,
-                "def": 1
+                "def": 1,
+                "trap": 25
               }
             },
             {
@@ -3517,10 +3652,11 @@
             {
               "id": "g_fuss",
               "name": "Leichter Schritt",
-              "desc": "+1 Initiative, 6 % Ausweichen.",
+              "desc": "+1 Initiative, 6 % Ausweichen. Fallen: +25 % entdecken und entschärfen.",
               "fx": {
                 "init": 1,
-                "dodge": 6
+                "dodge": 6,
+                "trap": 25
               }
             },
             {
@@ -3534,10 +3670,11 @@
             {
               "id": "g_netz",
               "name": "Netzwerfer",
-              "desc": "+10 % Ausweichen, +1 Initiative.",
+              "desc": "+10 % Ausweichen, +1 Initiative. Fallen: weitere +25 %.",
               "fx": {
                 "dodge": 10,
-                "init": 1
+                "init": 1,
+                "trap": 25
               }
             },
             {
@@ -3690,11 +3827,12 @@
             {
               "id": "a_kuehl",
               "name": "Kühler Kopf",
-              "desc": "+4 % Ausweichen, +8 LP, +4 Mana.",
+              "desc": "+4 % Ausweichen, +8 LP, +4 Mana. Fallen: +20 % entdecken und entschärfen.",
               "fx": {
                 "dodge": 4,
                 "hp": 8,
-                "mp": 4
+                "mp": 4,
+                "trap": 20
               }
             },
             {
@@ -3724,6 +3862,83 @@
       "atk": 115,
       "gold": 120,
       "xp": 115
+    }
+  },
+  "combos": [
+    {
+      "id": "shatter",
+      "name": "Zerschmettern",
+      "status": "slow",
+      "by": "melee",
+      "mult": 150,
+      "consume": true,
+      "desc": "Nahkampftreffer auf einen verlangsamten Gegner: +50 % Schaden, die Verlangsamung endet."
+    },
+    {
+      "id": "ignite",
+      "name": "Entzünden",
+      "status": "poison",
+      "by": "fire",
+      "mult": 150,
+      "consume": true,
+      "desc": "Feuer auf einen vergifteten Gegner: +50 % Schaden, das Gift verpufft."
+    },
+    {
+      "id": "execute",
+      "name": "Gnadenstoß",
+      "status": "stun",
+      "by": "any",
+      "mult": 140,
+      "desc": "Treffer auf einen betäubten Gegner: +40 % Schaden."
+    },
+    {
+      "id": "wound",
+      "name": "Offene Wunde",
+      "status": "bleed",
+      "by": "ranged",
+      "mult": 135,
+      "desc": "Fernkampftreffer auf einen blutenden Gegner: +35 % Schaden."
+    },
+    {
+      "id": "doom",
+      "name": "Verdammnis",
+      "status": "curse",
+      "by": "melee",
+      "mult": 130,
+      "desc": "Nahkampftreffer auf einen verfluchten Gegner: +30 % Schaden."
+    },
+    {
+      "id": "expose",
+      "name": "Blöße",
+      "status": "weak",
+      "by": "melee",
+      "mult": 125,
+      "desc": "Nahkampftreffer auf einen geschwächten Gegner: +25 % Schaden."
+    }
+  ],
+  "traps": {
+    "spot": 35,
+    "disarm": 55,
+    "kinds": {
+      "spikes": {
+        "name": "Speerfalle",
+        "pct": 25,
+        "rows": "front",
+        "text": "Klack! Speere schießen aus dem Boden."
+      },
+      "gas": {
+        "name": "Giftnebel",
+        "pct": 15,
+        "rows": "all",
+        "text": "Es zischt. Grüner Nebel quillt aus den Fugen."
+      },
+      "rune": {
+        "name": "Runenfalle",
+        "pct": 18,
+        "rows": "all",
+        "mp": 3,
+        "text": "Eine Rune flammt unter euren Füßen auf."
+      }
     }
   }
 }

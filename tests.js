@@ -1819,7 +1819,7 @@ export async function runTests(data, env = {}) {
 
   const failed = results.filter((r) => !r.ok).length;
   await test('Talente (0.17.0): Daten vollständig – 6 Berufe × 3 Zweige × 4 Talente, Freischaltungen existieren', () => {
-    const FX = new Set(['hp', 'mp', 'atk', 'def', 'init', 'crit', 'dodge', 'resist', 'gold', 'abil', 'soak', 'heal', 'regen', 'backfull']);
+    const FX = new Set(['hp', 'mp', 'atk', 'def', 'init', 'crit', 'dodge', 'resist', 'gold', 'abil', 'soak', 'heal', 'regen', 'backfull', 'trap']);
     const ids = new Set();
     eq(data.talents.cost, [1, 1, 2, 2], 'Kosten');
     for (const c of Object.keys(data.classes)) {
@@ -1908,6 +1908,60 @@ export async function runTests(data, env = {}) {
     eq(L.diffPct(hd, data, 'gold'), 120, 'Gold-Faktor'); eq(L.diffPct({}, data, 'atk'), 100, 'ohne Feld = Normal');
     assert(L.validateState(hd, data).length === 0, 'gültig');
     const bad = JSON.parse(JSON.stringify(hd)); bad.difficulty = 'x'; assert(L.validateState(bad, data).some((e) => /Schwierigkeit/.test(e)), 'ungültiger Grad erkannt');
+  });
+  await test('Status (0.18.0): Blutung zieht LP am Zugende, Fluch senkt Verteidigung um 30 %, Heilzauber nehmen beides', () => {
+    for (const k of ['bleed', 'curse']) assert(data.statuses[k] && data.statuses[k].icon, `Status ${k} fehlt`);
+    const s = fresh(3); put(s, 15, 7, 1); L.startCombat(s, data, L.enemyInFront(s));
+    s.combat.status.h0 = { bleed: { t: 2, p: 3 } }; s.combat.status.h1 = { curse: { t: 2 } };
+    assert(L.canCleanse(data.classes.priest.ability, s.combat.status.h0), 'Heilende Hand nimmt Blutung');
+    assert(!L.canCleanse(data.classes.priest.ability, s.combat.status.h1), 'Heilende Hand nimmt keinen Fluch');
+    assert(L.canCleanse(data.spells.great_heal, s.combat.status.h1), 'Große Heilung nimmt Fluch');
+    let bled = false;
+    for (let i = 0; i < 12 && !bled && s.combat && !s.combat.over; i++) { const a = L.currentActor(s); const r = a.side === 'h' ? L.heroAction(s, data, { type: 'defend' }) : L.enemyStep(s, data, { god: true }); if (r.msgs.some((m) => /Blutungsschaden/.test(m))) bled = true; }
+    assert(bled, 'Blutungsschaden gemeldet');
+  });
+  await test('Kombinationsangriffe (0.18.0): nur mit Status eines ANDEREN Helden, Faktor wirkt, Verbrauch, Daten gültig', () => {
+    for (const cb of data.combos) { assert(data.statuses[cb.status], `Kombi ${cb.id}: Status`); assert(['melee', 'ranged', 'any', ...Object.keys(data.elements)].includes(cb.by), `Kombi ${cb.id}: by`); assert(cb.mult > 100 && cb.name && cb.desc, `Kombi ${cb.id}: Werte`); }
+    const s = fresh(3); put(s, 15, 7, 1); L.startCombat(s, data, L.enemyInFront(s));
+    s.combat.status.e0 = { stun: { t: 1, by: 0 } };
+    eq(L.comboFor(s, data, 0, 0), null, 'eigener Status zählt nicht');
+    eq(L.comboFor(s, data, 1, 0).id, 'execute', 'Gnadenstoß für einen anderen Helden');
+    s.combat.status.e0 = { poison: { t: 3, p: 2, by: 1 } };
+    eq(L.comboFor(s, data, 3, 0), null, 'Magier-Grundangriff ohne Feuer: keine Kombi');
+    eq(L.comboFor(s, data, 3, 0, data.classes.mage.ability).id, 'ignite', 'Feuerblitz auf Gift: Entzünden');
+    s.combat.status.e0 = { stun: { t: 1 } }; eq(L.comboFor(s, data, 1, 0), null, 'Status ohne Urheber (z. B. vom Gegner selbst) zählt nicht');
+    // echter Ablauf: Schurke vergiftet, Magier entzündet → Meldung und Gift weg
+    const t = fresh(8); put(t, 15, 7, 1); L.startCombat(t, data, L.enemyInFront(t)); t.combat.enemies[0].hp = t.combat.enemies[0].maxHp = 9999;
+    let done = false;
+    for (let i = 0; i < 40 && !done; i++) {
+      const a = L.currentActor(t); if (a.side === 'e') { L.enemyStep(t, data, { god: true }); continue; }
+      const h = t.heroes[a.idx]; h.mp = h.maxMp;
+      const r = h.cls === 'rogue' ? L.heroAction(t, data, { type: 'ability', target: 0 }) : h.cls === 'mage' && L.comboFor(t, data, a.idx, 0, data.classes.mage.ability) ? L.heroAction(t, data, { type: 'ability', target: 0 }) : L.heroAction(t, data, { type: 'defend' });
+      if (r.msgs && r.msgs.some((m) => /Kombination „Entzünden“/.test(m))) { done = true; assert(!(t.combat.status.e0 || {}).poison, 'Gift verbraucht'); }
+    }
+    assert(done, 'Kombination im echten Kampf ausgelöst');
+  });
+  await test('Fallen (0.18.0): Daten, Auslösen (nie unter 1 LP), Warnung bei entdeckter Falle, Untersuchen, Entschärfen, Talent', () => {
+    let n = 0;
+    for (const [id, lvl] of Object.entries(data.levels)) for (const o of lvl.objects) if (o.type === 'trap') { n++; assert(data.traps.kinds[o.kind], `${id}/${o.id}: Art`); eq(L.cellChar(lvl, o.x, o.y), '.', `${id}/${o.id}: liegt auf Boden`); assert(!lvl.objects.some((q) => q !== o && q.x === o.x && q.y === o.y && !(q.type === 'sign' && q.face != null)), `${id}/${o.id}: Feld frei`); assert(!(lvl.start.x === o.x && lvl.start.y === o.y), `${id}/${o.id}: nicht am Start`); }
+    assert(n >= 5, 'mindestens fünf Fallen');
+    const mk = () => { const s = fresh(2); s.objs.push({ id: 'tt', type: 'trap', x: 3, y: s.player.y, kind: 'spikes' }); s.player.x = 2; s.player.dir = 1; return s; };
+    const lv = data.levels[data.startLevel];
+    const s = mk(); assert(L.cellChar(lv, 3, s.player.y) === '.', 'Testfeld ist Boden'); s.objs.find((o) => o.id === 'tt').checked = true;
+    s.heroes[0].hp = 2;
+    const r = L.tryMove(s, data, 'f'); assert(r.moved && r.events.some((e) => e.type === 'trap'), 'unentdeckte Falle löst aus');
+    eq(s.heroes[0].hp, 1, 'niemand fällt unter 1 LP'); eq(s.heroes[2].hp, s.heroes[2].maxHp, 'Speerfalle trifft nur die Vorderreihe');
+    assert(s.objs.find((o) => o.id === 'tt').sprung && !L.trapAt(s, 3, s.player.y), 'ausgelöst = harmlos');
+    const w = mk(); w.objs.find((o) => o.id === 'tt').spotted = true;
+    const r1 = L.tryMove(w, data, 'f'); assert(!r1.moved && r1.trapWarn, 'entdeckte Falle: erst Warnung');
+    const r2 = L.tryMove(w, data, 'f'); assert(r2.moved && r2.events.some((e) => e.type === 'trap'), 'zweites Mal: hineintreten');
+    const u = mk(); const i1 = L.interact(u, data); assert(/untersuchst den Boden/.test(i1.msg) && u.objs.find((o) => o.id === 'tt').spotted, '◉ untersucht den Boden');
+    let ok = 0, fail = 0;
+    for (let seed = 1; seed <= 60; seed++) { const q = L.newGame(data, seed); q.objs.push({ id: 'tt', type: 'trap', x: 3, y: q.player.y, kind: 'spikes', spotted: true }); q.player.x = 2; q.player.dir = 1; const d = L.interact(q, data); if (d.ok) { ok++; assert(q.objs.find((o) => o.id === 'tt').disarmed, 'entschärft'); } else { fail++; assert(q.objs.find((o) => o.id === 'tt').sprung, 'misslungen = ausgelöst'); } }
+    assert(ok > 20 && fail > 8, `Entschärfen ohne Talent etwa 55 % (${ok}/60)`);
+    const tl = fresh(2); eq(L.trapSkill(tl, data), 0, 'ohne Talent 0'); tl.heroes[1].level = 5; tl.heroes[1].tal = { r_gold: true }; eq(L.trapSkill(tl, data), 30, 'Schurke mit Talent: 30');
+    let seen = 0; for (let seed = 1; seed <= 60; seed++) { const q = L.newGame(data, seed); q.objs.push({ id: 'tt', type: 'trap', x: 3, y: q.player.y, kind: 'spikes' }); q.player.x = 2; q.player.dir = 0; if ((L.turn(q, data, 1).notes || []).length) seen++; }
+    assert(seen > 8 && seen < 40, `Bemerken ohne Talent etwa 35 % (${seen}/60)`);
   });
   return { results, passed: results.length - failed, failed };
 }

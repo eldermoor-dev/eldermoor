@@ -1,11 +1,12 @@
 # CHANGELOG – Die Schatten von Eldermoor
 
-Quelle: HANDOVER.md (Stand 0.17.0, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
+Quelle: HANDOVER.md (Stand 0.18.0, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
 ## 0.16.x (Inhaltsphase, Nebelturm und Nacharbeiten)
 | Version | Änderungen | Status |
 |---|---|---|
+| 0.18.0 | Blutung und Fluch, sechs Kombinationsangriffe, Fallen (entdecken, untersuchen, entschärfen, Talent), fünf Fallen mit Wandhinweis; Tests 102 | headless, Gerät offen |
 | 0.17.0 | Talente (72, Stufe 15), Alchemist, Schwierigkeit Normal/Schwer, mittlere Gebiete schwerer, Bosse ganz im Bild, Nebelhüter mit Thron; Tests 99 | headless, Gerät offen |
 | 0.16.17 | Kampfbild: Blick zum Boden geneigt + Größenanpassung; Eck-Treppen nur ein Bogen; Gegnergruppen auch im Gang nebeneinander; Tests 93 | headless, Gerät offen |
 | 0.16.16 | Moorkultist neu (192 px: Widderhörner, Reißzähne, Sägedolch, Zauberhand, Augen-Siegel) und Moorlicht neu (Flamme mit Geistergesicht, Greifarme, Funken); Tests 93 | headless, Gerät offen |

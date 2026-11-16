@@ -20,8 +20,8 @@ function decideSmart(s, data) {
   // Heilung / Entgiftung
   const needy = s.heroes.map((x, i) => ({ x, i })).filter((q) => q.x.hp > 0).sort((p, q) => p.x.hp / p.x.maxHp - q.x.hp / q.x.maxHp);
   if (ab && ab.kind === 'heal' && h.mp >= ab.cost) {
-    const t = needy.find((q) => q.x.hp / q.x.maxHp <= 0.6 || (ab.cleanse && L.statusOf(s, 'h', q.i)[ab.cleanse]));
-    if (t && (t.x.hp < t.x.maxHp || (ab.cleanse && L.statusOf(s, 'h', t.i)[ab.cleanse]))) return { type: 'ability', target: t.i };
+    const t = needy.find((q) => q.x.hp / q.x.maxHp <= 0.6 || L.canCleanse(ab, L.statusOf(s, 'h', q.i)));
+    if (t && (t.x.hp < t.x.maxHp || L.canCleanse(ab, L.statusOf(s, 'h', t.i)))) return { type: 'ability', target: t.i };
   }
   if ((s.inv.potion || 0) > 0 && h.hp / h.maxHp <= 0.35) return { type: 'item', item: 'potion', hero: a.idx }; // seit 0.15.10 trinkt nur der Held am Zug selbst
   // angesagter Gegnerzauber (Boss): wer angeschlagen ist, verteidigt
