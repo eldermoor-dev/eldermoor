@@ -860,6 +860,21 @@ function genRobed(seed, kind) {
     if (hueter && part === 'robe' && Math.abs(Math.hypot(dx, py - 31) - 3.6) < 0.8) { mat = 'glow'; sh = 6.8; } // Siegel auf der Brust
     t.data[y * SN + x] = P(mat, sh);
   }
+  if (hueter) for (let y = 0; y < SN; y++) for (let x = 0; x < SN; x++) { // 0.17.0: Thron hinter der Gestalt (Steinlehne mit Spitzbogen, Armlehnen, Stufen); nur auf freie Pixel, die Figur bleibt davor
+    const i = y * SN + x;
+    if (t.data[i] !== 255) continue;
+    const px = (x + 0.5) * k, py = (y + 0.5) * k, ax = Math.abs(px - 32);
+    const topY = 2.5 + ax * ax * 0.045 + (ax > 12 ? (ax - 12) * 1.2 : 0); // Spitzbogen-Lehne, außen abfallend
+    const back = ax <= 15.5 && py >= topY && py <= 60;
+    const arm = ax >= 12.5 && ax <= 19.5 && py >= 40 && py <= 56 && !(ax < 15.5 && py < 43);
+    const step = py >= 58.5 && ax <= 23 - (py - 58.5) * 0.2;
+    const spike = (Math.abs(ax - 9) < 1.2 && py >= topY - 3.2 && py < topY + 0.2) || (ax < 1.4 && py >= 0.4 && py < topY + 0.2);
+    if (!(back || arm || step || spike)) continue;
+    const edge = (back && (ax > 14 || py < topY + 1.4)) || (arm && (py < 41.6 || ax > 18)) || (step && py < 59.8);
+    const inset = back && ax < 11 && py > topY + 4 && py < 52 && !edge;
+    const v = edge ? 3.6 : inset ? 0.7 + hash(x >> 2, y >> 2, seed) * 0.4 : 1.7 + hash(x >> 1, y >> 1, seed + 3) * 0.7 + (px > 32 ? -0.3 : 0.2);
+    t.data[i] = P('stone', v);
+  }
   const copy = t.data.slice(); // dunkler Umriss
   for (let y = 1; y < SN - 1; y++) for (let x = 1; x < SN - 1; x++) { const i = y * SN + x; if (copy[i] !== 255 && (copy[i] >> 3) !== 7 && (copy[i - 1] === 255 || copy[i + 1] === 255 || copy[i - SN] === 255 || copy[i + SN] === 255)) t.data[i] = P(MATS[copy[i] >> 3], Math.max(0, (copy[i] & 7) - 2.5)); }
   for (const ex of [29.6, 34.4]) for (let y = 0; y < SN; y++) for (let x = 0; x < SN; x++) { // Augen
@@ -1427,7 +1442,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
       const offs = groupOffsets(n, n > 1 && isNarrowAt(grid, o.x, o.y, angle));
       for (let i = 0; i < n; i++) {
         const { lat, dep } = offs[i];
-        out.push({ x: o.x + rx * lat + fx * dep, y: o.y + ry * lat + fy * dep, tex: spriteFor(tex, kindList ? kindList[i] : kindOf(o, i)), scale: spriteScale(kindList ? kindList[i] : kindOf(o, i), n) * (bossScale(kindList ? kindList[i] : kindOf(o, i)) > 0.9 && n <= 1 ? 1 : combatFit) * (1 + 0.02 * Math.sin(time * 3 + i)) });
+        out.push({ x: o.x + rx * lat + fx * dep, y: o.y + ry * lat + fy * dep, tex: spriteFor(tex, kindList ? kindList[i] : kindOf(o, i)), scale: spriteScale(kindList ? kindList[i] : kindOf(o, i), n) * combatFit * (1 + 0.02 * Math.sin(time * 3 + i)) });
       }
     }
     else if (o.type === 'lever' && !o.wall) out.push({ x: o.x, y: o.y, tex: o.used ? tex.sprites.leverDown : tex.sprites.leverUp, scale: 0.75 });

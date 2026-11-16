@@ -207,14 +207,14 @@ function viewTarget(now) {
   const c = g.combat;
   if (c && !c.over) {
     const hud = hudTopPx(now), tY = 1 + VIEW_BACK, floor = 0.5 * f / tY;
-    if (c.enemies.some((e) => e.hp > 0 && S.data.enemies[e.kind].boss)) return { back: 0, hz: 0.5 }; // Bosse bleiben formatfüllend (wirken bedrohlich)
+    // 0.17.0: auch Bosse werden ganz ins Bild gesetzt (Kopf war oben abgeschnitten); sie bleiben dank Skalierung 1,0–1,2 trotzdem die größten Figuren
     const groups = {};
     c.enemies.forEach((e) => { if (e.hp > 0) (groups[e.objId] = groups[e.objId] || []).push(e.kind); });
     let maxS = 0.5;
     for (const ks of Object.values(groups)) for (const k of ks) maxS = Math.max(maxS, spriteScale(k, ks.length));
     const hMax = f / tY * maxS;
     // 0.16.17 (Nutzer): Blick wie bei der Truhe leicht nach unten – die Füße stehen knapp über der Leiste, passt die Figur nicht, wird sie verkleinert (Kopf bleibt im Bild)
-    const feetY = hud - H * 0.015, avail = feetY - H * 0.03, fit = Math.max(0.55, Math.min(1, avail / hMax));
+    const feetY = hud - H * 0.015, avail = feetY - H * 0.03, fit = Math.max(0.5, Math.min(1, avail / hMax));
     return { back: VIEW_BACK, hz: Math.max(0.08, Math.min(0.62, (feetY - floor) / H)), fit };
   }
   if (!S.tween) {
@@ -815,7 +815,7 @@ function openMenu() {
 function helpHtml() {
   return `<h2>Steuerung &amp; Info</h2>
   <h3>Links: Bewegung</h3><p>↑ Vor, ↓ Zurück, ← → seitwärts, ↶ ↷ um 90° drehen. Gedrückt halten wiederholt die Bewegung.</p>
-  <h3>Rechts: Aktionen</h3><p>◉ Interagieren (Türen, Truhen, Hebel, Gegner ansprechen; Türen und Truhen gehen auch auf, wenn du gegen sie läufst oder sie direkt vor dir antippst), ⚔ Angriff, ✦ Fähigkeit (nur im Kampf, kostet Mana oder Ausdauer). Bei mehreren Gegnern: Gegner antippen = Ziel wählen, „Alle“ trifft jeden Gegner mit 60 % Schaden, ▣ Inventar, ☻ Charakter.</p>
+  <h3>Rechts: Aktionen</h3><p>◉ Interagieren (Türen, Truhen, Hebel, Gegner ansprechen; Türen und Truhen gehen auch auf, wenn du gegen sie läufst oder sie direkt vor dir antippst), ⚔ Angriff, ✦ Fähigkeit (nur im Kampf, kostet Mana oder Ausdauer). Bei mehreren Gegnern: Gegner antippen = Ziel wählen, „Alle“ trifft jeden Gegner mit 60 % Schaden, ▣ Inventar, ☻ Charakter (dort „Talente“: ab Stufe 2 gibt jede Stufe einen Punkt; drei Zweige je Beruf, außerdem neue Fähigkeiten).</p>
   <h3>Menü (☰ rechts unten)</h3><p>Karte (auf eine erkundete Zelle tippen setzt oder entfernt eine Notiz), Rasten, Speichern, Laden, Einstellungen. Oben rechts zeigt der Kompass die Blickrichtung.</p>
   <h3>Kampf</h3><p>Rundenbasiert. Die Zugreihenfolge steht oben. Hinterreihe-Helden ohne Fernkampf treffen nur halb so hart.</p>
   <h3>Rast</h3><p>Menü → Rasten (oder im Inventar beim Proviant). Mit Proviant erholt sich die Gruppe vollständig, auch Bewusstlose. Ohne Proviant nur zu 30 %. Nicht im Kampf, nicht wenn ein Gegner in Sichtweite ist, und erst ab 10 Schritten Abstand zum nächsten Gegner (Weg zählt, nicht Luftlinie).</p>

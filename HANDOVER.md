@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.16.17 (16.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.17.0 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -626,3 +626,15 @@ Nutzerwünsche: „Beim Monsterkampf wieder wie bei der Truhe Blick leicht runte
 - Plan unverändert: Paket A Talente (0.17.0, Start auf „Bauen“), Paket B Nebelhüter + Thron, mittlere Gebiete schwerer, Balance; Paket C Moorfestung.
 - Nachtrag 0.16.17 (Nutzer: „Undeutlich, besser wieder nur Schriftzug, Schilder unnötig“): Wandtafeln und Türschilder sind **abgeschafft**; `genPlaque` malt nur noch Schrift (helle Buchstaben, dunkle Kontur) direkt auf Wand bzw. Tür. `PLAQUE_STYLES`/`style` in game.json bleiben vorerst bestehen, werden aber nicht mehr gezeichnet. Headless gesehen, **nicht auf Gerät getestet**. Offen: Schrift am Bildrand wird bei Nahsicht angeschnitten (Perspektive, kein Fehler der Textur) – bei Störung melden.
 - Bestätigt (Gerät): Moorkultist und Moorlicht sehen gut aus.
+
+## 0.17.0 – Talente, Alchemist, Stufe 15, Schwierigkeit, Gebietsstärke, Thron (17.11.2026)
+Nutzer: „Bauen. Erstmal möglichst viel bauen, dann teste ich einzeln; nicht jedes Mal eine neue Version zum Testen, sondern warten.“ Alles unten ist nur headless geprüft (Node 99 Tests, Chrome/Playwright), **nicht auf Gerät getestet**.
+- **Stufe 15**: `progression.maxLevel` 15, EP-Schwellen bis 9200 kumulativ (…, 3200, 4000, 5000, 6200, 7600, 9200).
+- **Talente** (`data.talents`): 6 Berufe × 3 Zweige × 4 Talente = 72. Kosten 1/1/2/2, das 4. Talent ab Stufe 8, Reihenfolge im Zweig. Punkte = Stufe − 1 − ausgegeben (nicht gespeichert, daher keine Speicher-Migration). `hero.tal = {id: true}`. Wirkungen `fx`: hp, mp, atk, def, init (Werte), crit/dodge/resist/gold/abil (Prozent), soak, heal, regen, backfull; `unlock` = neue Fähigkeit (4. Talent jedes Zweigs, 18 neue Zähler in `data.spells`, erscheinen im Zauber-Menü). Rechnen: `talentSum`, `heroAtk/Def/Init`, `refreshHeroStats` (LP/Ressource), `learnTalent`, `respecTalents` (kostet 20 Gold × Stufe), Krit ×1,5 in `calcDamage` (Würfel nur bei Krit-Talent, damit alte Läufe gleich bleiben), Ausweichen/Schadensminderung in `enemyStep`, Statusabwehr in `addStatus`, Gold-Bonus in `finishVictory`. Oberfläche: Charakterfenster → „Talente“ je Held (Tabs, drei Spalten, Tippen = lernen, Zurücksetzen).
+- **Alchemist** (sechster Beruf, `potionGiver`): Hinterreihe, Fernkampf, Brandflasche; gibt als Einziger im Kampf Tränke/Gegengift an andere (Knopfzeilen je Held). Porträt, Ausrüstungslisten (Magier-Stäbe) ergänzt. Wirkt noch nicht in der Simulation (sim.js nutzt die Schnellgruppe).
+- **Schwierigkeit** (`data.difficulty`, `state.difficulty`, Auswahl im Neues-Spiel-Fenster): Normal; Schwer = Gegner +30 % LP, +15 % Angriff, Beute +20 % Gold, +15 % EP. Feld optional → alte Stände = Normal.
+- **Mittlere Gebiete schwerer** (`levels.<id>.foe` in Prozent): Moorpfad 125/115, Kultgruft 150/130, Schratgruben 175/145 (LP/Angriff), wirkt zusätzlich zur Schwierigkeit. SIM.md neu (3000 Läufe): „klug“ schafft die Kampagne weiter zu 100 %, „nur Angriff“ 0 %; Schaden je Kampf bei „klug“ ca. 5–30 %, Bosse 24–31 %.
+- **Kampfbild**: auch Bosse werden jetzt ganz ins Bild gesetzt (Kopf war abgeschnitten). **Nebelhüter** sitzt vor einem Steinthron (Lehne mit Spitzbogen, Armlehnen, Stufen).
+- Tests: 99 grün (neu: Talentdaten, Punkte/Reihenfolge/Stufensperre, Zurücksetzen, Ausweichen, Krit/Alchemist, Schwierigkeit). BALANCE.md und SIM.md neu erzeugt.
+- Offen/nicht gebaut: Moorfestung (Akt 2), Aushangbrett/Taverne/Heldentausch/Reservehelden, Fallen, Siegel, Runen-Reisenetz, Alchemisten-Küche in der Siedlung. Die Simulation berücksichtigt Talente nicht (Spieler mit Talenten sind stärker als die Simulation zeigt).
+- Offene Gerätetests 0.16.17 + 0.17.0 (Nutzer testet gesammelt): Kampfbild (Einzel, Gruppe, Boss), Eck-Treppen, Schriftzug statt Tafeln, Talente lernen/zurücksetzen, neue Fähigkeiten im Kampf, Alchemist (Neues Spiel → Eigene Gruppe) mit Trankgabe, Schwer-Start, Nebelhüter mit Thron.

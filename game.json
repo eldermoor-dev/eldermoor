@@ -1720,6 +1720,10 @@
       "intro": {
         "title": "Moorpfad",
         "text": "Nebel kriecht über den Weg. Irgendwo tropft es."
+      },
+      "foe": {
+        "hp": 125,
+        "atk": 115
       }
     },
     "kultgruft": {
@@ -1978,6 +1982,10 @@
       "intro": {
         "title": "Kultgruft",
         "text": "Kalte Luft. Wer hier liegt, liegt nicht still."
+      },
+      "foe": {
+        "hp": 150,
+        "atk": 130
       }
     },
     "schratgruben": {
@@ -2268,6 +2276,10 @@
       "intro": {
         "title": "Schratgruben",
         "text": "Erz, Staub und Holz, das knarrt, ohne dass jemand es berührt."
+      },
+      "foe": {
+        "hp": 175,
+        "atk": 145
       }
     },
     "nebelturm": {

@@ -917,7 +917,12 @@ function addStatus(state, data, side, idx, inf, msgs) {
   msgs.push(`${actorName(state, side, idx)}: ${nm}${(inf.status === 'poison' || inf.status === 'burn') ? ` (${inf.turns} Runden, ${inf.power} Schaden je Runde)` : (inf.status === 'weak' || inf.status === 'slow') ? ` (${inf.turns} Runden)` : ''}.`);
 }
 // Schwierigkeit (0.17.0): data.difficulty[state.difficulty] = { name, hp, atk, gold, xp } in Prozent; fehlt es, gilt Normal (100 %).
-export const diffPct = (state, data, key) => ((data.difficulty && data.difficulty[(state && state.difficulty) || 'normal']) || {})[key] || 100;
+// Gebietszuschlag (0.17.0): data.levels.<id>.foe = { hp, atk } in Prozent (Gegner der mittleren Gebiete sind stärker), wirkt zusätzlich zum Schwierigkeitsgrad.
+const areaPct = (state, data, key) => { const l = state && data.levels[state.levelId]; return (l && l.foe && l.foe[key]) || 100; };
+export const diffPct = (state, data, key) => {
+  const d = ((data.difficulty && data.difficulty[(state && state.difficulty) || 'normal']) || {})[key] || 100;
+  return key === 'hp' || key === 'atk' ? Math.round((d * areaPct(state, data, key)) / 100) : d;
+};
 const foeAtk = (state, data, atk) => { const p = diffPct(state, data, 'atk'); return p === 100 ? atk : Math.max(1, Math.round((atk * p) / 100)); };
 const effAtk = (state, side, idx, atk) => (statusOf(state, side, idx).weak ? Math.max(1, Math.floor((atk * 3) / 4)) : atk);
 
