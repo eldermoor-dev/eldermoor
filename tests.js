@@ -4,7 +4,7 @@
 // Handy:   Einstellungen → Selbsttest (läuft dieselbe Testsuite im Browser)
 
 import * as L from './logic.js';
-import { makeTextures, Raycaster, buildGrid, buildSprites, setResolution, drawPortrait, W, H } from './render.js';
+import { makeTextures, Raycaster, buildGrid, buildSprites, setResolution, drawPortrait, PLAQUE_STYLES, plaqueMetrics, W, H } from './render.js';
 
 const FILES = ['index.html', 'main.js', 'render.js', 'logic.js', 'audio.js', 'store.js', 'tests.js', 'game.json', 'sw.js', 'manifest.webmanifest'];
 
@@ -1321,6 +1321,29 @@ export async function runTests(data, env = {}) {
     const d = { id: 'door_x', type: 'door', x: 1, y: 1, open: false, title: 'TEST' };
     s.objs.push(d); d.open = true;
     assert(s.objs.includes(d) && d.open === true && L.blockerAt(s, 1, 1) === null || !L.blockerAt(s, 1, 1) || L.blockerAt(s, 1, 1).type !== 'door', 'offene Tür blockiert nicht');
+  });
+
+  await test('Türschilder (0.16.14): alte Stände ohne `style`/`title` an Türen bekommen sie aus game.json, Zustand bleibt', () => {
+    const s = fresh(68);
+    L.jumpToLevel(s, data, 'kultgruft');
+    const door = s.objs.find((o) => o.id === 'door_boss');
+    assert(door && data.levels.kultgruft.objects.find((o) => o.id === 'door_boss').style, 'Tür und Stil in game.json vorhanden');
+    delete door.style; delete door.title; door.open = true;
+    const back = L.deserialize(JSON.parse(JSON.stringify(L.serialize(s))), data);
+    const d2 = back.objs.find((o) => o.id === 'door_boss');
+    eq(d2.style, 'dark', 'Stil nachgezogen'); eq(d2.title, 'HALLE', 'Titel nachgezogen'); assert(d2.open === true, 'Türzustand bleibt');
+    eq(L.syncStatic(back, data), 0, 'zweiter Abgleich ändert nichts');
+  });
+
+  await test('Schilder (0.16.14): Tafelbreite nie über 176, Schriftfaktor 2–4, kurze Türtitel groß', () => {
+    for (const lvl of Object.values(data.levels)) for (const o of lvl.objects) {
+      if (!o.title || (o.type !== 'sign' && o.type !== 'door')) continue;
+      const st = PLAQUE_STYLES[o.style || 'wood'];
+      const m = plaqueMetrics(o.title, o.type === 'door' ? 'door' : 'wall', st);
+      assert(m.w <= 176 && m.s >= 2 && m.s <= 4, `${o.id}: Breite ${m.w}, Faktor ${m.s}`);
+      const maxC = Math.max(...m.lines.map((x) => [...x].length)); assert(m.s * m.cw * maxC - m.s + 2 * m.padX <= 176 || m.s === 2, `${o.id}: Text passt in die Tafel`);
+    }
+    eq(plaqueMetrics('HALLE', 'door', PLAQUE_STYLES.dark).s, 4, 'HALLE auf der Tür: Faktor 4');
   });
 
   await test('Alte Stände bekommen neue feste Objekte (Treppe, Auftrag), Truhenzustand bleibt', () => {

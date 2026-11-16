@@ -1302,7 +1302,7 @@ export function validateState(state, data) {
 }
 
 // Gleicht feste Objekte (Treppen, Tafeln, Händler, Ausgänge) und neu hinzugekommene Objekte aller bekannten Gebiete mit game.json ab.
-// So bekommen alte Spielstände Neuerungen (z. B. eine neue Treppe) ohne neue Speicherversion. Truhen, Türen und Gegner behalten ihren Zustand.
+// So bekommen alte Spielstände Neuerungen (z. B. eine neue Treppe) ohne neue Speicherversion. Truhen, Türen und Gegner behalten ihren Zustand (nur `title` und `style` werden aus game.json nachgezogen).
 const STATIC_TYPES = new Set(['stairs', 'sign', 'merchant', 'exit', 'runestone']);
 export function syncStatic(state, data) {
   for (const h of state.heroes || []) if (h && data.classes[h.cls] && h.role !== data.classes[h.cls].name) h.role = data.classes[h.cls].name; // umbenannte Berufe (Priester → Kleriker)
@@ -1317,6 +1317,7 @@ export function syncStatic(state, data) {
       const i = a.objs.findIndex((x) => x && x.id === o.id);
       if (i < 0) { a.objs.push(freshObj(data, o)); n++; }
       else if (STATIC_TYPES.has(o.type) && a.objs[i].type === o.type && JSON.stringify(a.objs[i]) !== JSON.stringify(o)) { a.objs[i] = clone(o); n++; }
+      else if (!STATIC_TYPES.has(o.type)) for (const k of ['title', 'style']) if (o[k] !== undefined && a.objs[i][k] !== o[k]) { a.objs[i][k] = o[k]; n++; } // 0.16.14: Beschriftung/Stil von Türen u. a. nachziehen (alte Stände ohne `style` zeigten einen Zufallsstil)
     }
   }
   return n;

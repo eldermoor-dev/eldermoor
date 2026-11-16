@@ -470,15 +470,22 @@ function styleFor(o) { // Daten: o.style; sonst fester Wert aus der Objekt-ID
   return STYLE_ORDER[h % STYLE_ORDER.length];
 }
 const titleLines = (title) => Math.max(1, String(title || '').split('|').slice(0, 2).filter(Boolean).length);
-function plaqueMetrics(title, kind, st) {
+export function plaqueMetrics(title, kind, st) {
   const lines = String(title || '').toUpperCase().split('|').slice(0, 2).filter(Boolean);
   const cw = st.font === 'wide' ? 8 : 6;
   const maxC = Math.max(1, ...lines.map((l) => [...l].slice(0, 8).length));
-  let s = st.scale || Math.min(3, Math.floor(150 / (cw * maxC)));
-  if (kind === 'door') s = Math.min(s, lines.length > 1 ? 2 : 3);
+  // 0.16.14: einzeilige Titel bis Faktor 4 (größere Buchstaben), zweizeilige wie bisher
+  let s = st.scale || Math.min(lines.length > 1 ? 3 : 4, Math.floor(150 / (cw * maxC)));
+  if (kind === 'door') s = Math.min(s, lines.length > 1 ? 2 : 4);
   s = Math.max(2, s);
-  const padX = 5 * s + (st.shape === 'arrow' ? 5 * s : 0) + (st.shape === 'arch' ? 2 * s : 0), padT = 3 * s + (st.shape === 'arch' ? 5 * s : 0), padB = 3 * s + (st.shape === 'banner' ? 7 * s : 0);
-  const textW = maxC * cw * s - s, w = Math.min(176, textW + 2 * padX), h = lines.length * 9 * s - 2 * s + padT + padB;
+  const dims = (k) => {
+    const padX = 5 * k + (st.shape === 'arrow' ? 5 * k : 0) + (st.shape === 'arch' ? 2 * k : 0), padT = 3 * k + (st.shape === 'arch' ? 5 * k : 0), padB = 3 * k + (st.shape === 'banner' ? 7 * k : 0);
+    const textW = maxC * cw * k - k;
+    return { padX, padT, padB, textW, w: textW + 2 * padX };
+  };
+  while (s > 2 && dims(s).w > 176) s--; // Tafel darf nicht breiter als 176 werden (Text sonst am Rand abgeschnitten)
+  const { padX, padT, padB, textW } = dims(s);
+  const w = Math.min(176, textW + 2 * padX), h = lines.length * 9 * s - 2 * s + padT + padB;
   return { lines, cw, s, w, h, padT, padX };
 }
 // malt Tafel + Schrift in buf (N×N, 255 = durchsichtig). kind 'wall': Tafel auf Augenhöhe, 'door': Schild ganz oben.
@@ -524,7 +531,7 @@ function paintPlaque(buf, N, title, kind, styleName, seed) {
       const g = (FONT[ch] || FONT[' ']).split('/'), gx = lx + ci * m.cw * s + (st.font === 'wide' ? s : 0);
       for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) {
         if (g[r][c] !== '1') continue;
-        const sh = st.font === 'slant' ? Math.round((3 - r) * s * 0.4) : 0, ex = st.font === 'bold' ? Math.max(1, s >> 1) : 0;
+        const sh = st.font === 'slant' ? Math.round((3 - r) * s * 0.4) : 0, ex = Math.max(1, s >> 1); // 0.16.14: alle Schriftarten dicker, damit die Striche aus der Ferne nicht wegbrechen
         const px = gx + c * s + sh, py = ly + r * s;
         if (st.font === 'shadow') for (let yy = 0; yy < s; yy++) for (let xx = 0; xx < s; xx++) set(px + xx + 1 + (s >> 2), py + yy + 1 + (s >> 2), P(st.mat, st.sh + 2.2));
         for (let yy = 0; yy < s + ex; yy++) for (let xx = 0; xx < s + ex; xx++) set(px + xx, py + yy, ink);
