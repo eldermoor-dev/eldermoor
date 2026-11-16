@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.16.14 (16.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.16.15 (16.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -593,3 +593,16 @@ Nutzerwunsch: Schrift auf Türschildern „geht noch schärfer“ (HALLE aus 3�
 - Nebenwirkung: Schriftarten „block“, „wide“, „slant“ und „bold“ unterscheiden sich in der Strichstärke nicht mehr (Form, Farbe, Material bleiben). Nicht gebaut: zweite, verkleinerte Fassung für große Abstände (erst prüfen, ob es nötig ist).
 - Tests: 93 grün (2 neu). Optik headless vorher/nachher im Testbrowser verglichen (Kultgruft, Tür HALLE aus 4 Feldern). **Nicht auf Gerät getestet.**
 - Plan: 0.16.15 Nebelhüter neu + Thron, 0.16.16 mittlere Gebiete schwerer, 0.17 Talente.
+
+## Gerätetest 0.16.14 (Nutzer, Galaxy S25, 16.11.2026, Screenshots 23:30/23:31)
+- Ergebnis „Schildertest“: Text der Meldung kam leer an (nur „Ergebnis Schildertest:“), nicht ausgewertet.
+- Fund 1: „Türen immer noch falsch“. Screenshot Moorpfad-Eingang: der Steinbogen (`stairs_pfad_west`) stand als frontales Bild vor der Westwand statt in der Wand. Ursache (aus dem Code belegt): alle 13 Treppen/Ausgänge liegen vor genau einer Wand (oder in einer Ecke); `passAxis` liefert dort `null`, das Sprite hat keine Perspektive. Ob der Nutzer mit „Türen“ nur diesen Bogen oder auch echte Türen meint, ist **nicht gesichert** (echte Türen nicht erneut geprüft).
+- Fund 2: „Bei Kampf immer noch nicht der Gegner zu sehen, war vorher besser“. Screenshot: Kampf mit zwei Moorlichtern, Blick gegen eine Wand, kein Gegner im Bild. Ursachen: `spot.range` 2 mit Chebyshev-Abstand (Gegner konnte schräg stehen, die Gruppe dreht sich nur zur größeren Achse) und `VIEW_BACK` 0,45 (Kamera wich im Kampf zurück).
+- Nutzerwunsch: Kampfdistanz wieder 1 Feld.
+
+## 0.16.15 – Kampfdistanz 1 Feld, Bögen in der Wand (16.11.2026)
+- **Kampfdistanz:** `game.json → spot.range` 2 → 1; `spottedEnemy` misst jetzt in Schritten (|dx|+|dy|), also nur gerade Nachbarfelder, nie schräg. Damit steht der Gegner bei Kampfbeginn immer auf dem Nachbarfeld und die Gruppe blickt ihn an (`dirToward` exakt). Überfall bleibt (Gegner seitlich/hinten neben der Gruppe: Gegner beginnen). Hinweis: Wer an einem Gegner schräg vorbeigeht, löst erst auf dem geraden Nachbarfeld aus.
+- **Kamera im Kampf:** `VIEW_BACK` 0,45 → 0 (Gegner genau 1 Feld entfernt wie vor 0.16.4); die Blickneigung (`view.horizon`) bleibt, damit Köpfe/Füße nach Möglichkeit sichtbar sind. Bosse unverändert. Bei sehr großen Figuren (Skelett) liegen die Füße teils hinter der Meldungsleiste (Headless-Bild), das ist der Preis der kürzeren Distanz.
+- **Bögen/Treppen/Ausgänge in der Wand:** neue Funktion `passFaces` (render.js). Liegt ein `stairs`/`exit` an einer Wand (oder Ecke), wird sein Bild als Wand-Abziehbild auf die Wandfläche gelegt (richtige Perspektive, `buildDecals`), das Sprite entfällt. Zwei gegenüberliegende Wände (Durchgang) und frei stehende Felder behalten das Sprite mit Achse. Freistehend bleiben: `stairs_gruft_down` (Kultgruft), `exit_turm`. Ecken (`stairs_moor`, `stairs_down`, `stairs_gruben_up`): Bild auf beiden Wänden.
+- Tests: 93 grün (Test „Entdeckt-werden“ auf 1 Feld umgeschrieben, Diagonale neu). Optik im Testbrowser (Desktop-Chrome headless) geprüft: Bogen Moorpfad, Kampf Moorlicht/Skelett. **Nicht auf Gerät getestet.** BALANCE.md/SIM.md unverändert (keine Werte geändert); der Einfluss der Distanz auf die Balance ist nicht simuliert.
+- Plan: 0.16.16 Nebelhüter neu + Thron, 0.16.17 mittlere Gebiete schwerer, 0.17 Talente.

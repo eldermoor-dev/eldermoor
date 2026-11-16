@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPort
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.16.14';
+const VERSION = '0.16.15';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -188,7 +188,7 @@ function updateTween(now) {
 // Die Leiste unten (Meldungen, Aktionen, Heldenkarten) deckt das untere Bilddrittel ab. Damit Gegner und Truhen nicht dahinter
 // verschwinden: im Kampf weicht die Kamera einen halben Schritt zurück und neigt den Blick so, dass die Füße über der Leiste stehen
 // (Bosse: unverändert nah und formatfüllend). Vor einer Truhe senkt sich der Blick.
-const VIEW_BACK = 0.45;
+const VIEW_BACK = 0; // 0.16.15: Gegner stehen wieder genau 1 Feld vor der Gruppe (vorher 0,45 Feld zurückgewichen = zu weit weg); nur der Blick neigt sich
 function viewCam() {
   const a = S.cam.a, b = S.vb || 0;
   return { x: S.cam.x - Math.sin(a) * b, y: S.cam.y + Math.cos(a) * b, a };

@@ -1244,7 +1244,7 @@ export async function runTests(data, env = {}) {
     assert(back.objs.some((o) => o.id === 'stairs_gruft') && !back.objs.some((o) => o.id === 'exit_pfad'), 'Ausgang ersetzt');
   });
 
-  await test('Entdeckt-werden (0.16.10): Gegner bis 2 Felder in Sichtlinie greifen an, Wand verdeckt, Überfall = Gegner zuerst', () => {
+  await test('Entdeckt-werden (0.16.15): Gegner auf dem Nachbarfeld (1 Feld) in Sichtlinie greift an, Wand verdeckt, Überfall = Gegner zuerst', () => {
     const s = fresh(70);
     const lvl = data.levels[s.levelId];
     // freie Fläche suchen: 5 Felder in einer Zeile Boden
@@ -1258,9 +1258,12 @@ export async function runTests(data, env = {}) {
     s.player.x = spot.x + 1;
     assert(!L.spottedEnemy(s, data), '3 Felder: unentdeckt');
     s.player.x = spot.x + 2;
-    let sp = L.spottedEnemy(s, data); assert(sp && sp.enemy.id === 'tst_en' && !sp.ambush, '2 Felder voraus: entdeckt, kein Überfall');
+    assert(!L.spottedEnemy(s, data), '2 Felder: unentdeckt (Kampfdistanz ist 1 Feld)');
+    s.player.x = spot.x + 3;
+    let sp = L.spottedEnemy(s, data); assert(sp && sp.enemy.id === 'tst_en' && !sp.ambush, '1 Feld voraus: entdeckt, kein Überfall');
     s.player.dir = 0; // blickt zur Seite
     sp = L.spottedEnemy(s, data); assert(sp && sp.ambush, 'Gegner seitlich: Überfall');
+    eq(L.dirToward(s.player, sp.enemy), 1, 'Gruppe wendet sich dem Gegner zu');
     const t = L.turn(s, data, 0); assert(t.encounter && t.ambush, 'Drehen löst aus');
     // Gegner zuerst in Runde 1
     L.startCombat(s, data, sp.enemy, { ambush: true });
@@ -1268,12 +1271,14 @@ export async function runTests(data, env = {}) {
     s.combat = null;
     L.startCombat(s, data, sp.enemy, {});
     assert(s.combat.ambush === false, 'ohne Überfall normal');
-    // Wand dazwischen verdeckt
+    // schräg (Nachbarfeld diagonal): kein Auslöser, damit der Gegner nie außerhalb des Bilds steht
     s.combat = null; s.player = { x: spot.x + 2, y: spot.y, dir: 1 };
-    s.objs.push({ id: 'tst_door', type: 'door', x: spot.x + 3, y: spot.y, open: false, locked: false });
-    assert(!L.spottedEnemy(s, data), 'geschlossene Tür verdeckt');
+    const en = s.objs.find((o) => o.id === 'tst_en'); en.x = spot.x + 3; en.y = spot.y + 1;
+    if (L.cellChar(lvl, spot.x + 3, spot.y + 1) === '.') assert(!L.spottedEnemy(s, data), 'diagonal: unentdeckt');
+    en.x = spot.x + 3; en.y = spot.y;
+    assert(L.spottedEnemy(s, data), 'gerade Nachbarfeld: entdeckt');
     // besiegt: kein Auslöser
-    s.objs.find((o) => o.id === 'tst_door').open = true; s.objs.find((o) => o.id === 'tst_en').dead = true;
+    en.dead = true;
     assert(!L.spottedEnemy(s, data), 'toter Gegner löst nicht aus');
   });
 

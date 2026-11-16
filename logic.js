@@ -274,7 +274,7 @@ export function enemyInFront(state) {
   return b && b.type === 'enemy' ? b : null;
 }
 
-// Entdeckt-werden (0.16.10, Nutzerwunsch): ein lebender Gegner in Sichtlinie und höchstens data.spot.range Feldern (Chebyshev) greift an.
+// Entdeckt-werden (0.16.10, Nutzerwunsch): ein lebender Gegner in Sichtlinie und höchstens data.spot.range Feldern Abstand (0.16.15: 1 Feld, nur gerade Nachbarfelder) greift an.
 // Steht er nicht in Blickrichtung (gleiche Zeile/Spalte vor der Gruppe), ist es ein Überfall: die Gegner ziehen in Runde 1 zuerst.
 // Himmelsrichtung (0=N,1=O,2=S,3=W) vom Spieler zum Gegner: die Achse mit dem größeren Abstand
 export function dirToward(p, o) {
@@ -283,14 +283,14 @@ export function dirToward(p, o) {
   return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : Math.abs(dy) > Math.abs(dx) ? (dy > 0 ? 2 : 0) : p.dir;
 }
 export function spottedEnemy(state, data) {
-  const range = (data.spot && data.spot.range) || 2;
+  const range = (data.spot && data.spot.range) || 1;
   const lvl = getLevel(data, state), p = state.player, d = DIRS[p.dir];
   const at = (x, y) => state.objs.filter((o) => o.x === x && o.y === y);
   const blocked = (x, y) => isWallChar(cellChar(lvl, x, y)) || at(x, y).some((o) => (o.type === 'door' && !o.open) || (o.type === 'secret' && !o.open) || (o.type === 'lever' && o.wall));
   let best = null, bd = 99;
   for (const o of state.objs) {
     if (o.type !== 'enemy' || o.dead) continue;
-    const dx = o.x - p.x, dy = o.y - p.y, dist = Math.max(Math.abs(dx), Math.abs(dy));
+    const dx = o.x - p.x, dy = o.y - p.y, dist = Math.abs(dx) + Math.abs(dy); // Feldabstand in Schritten (0.16.15: nur gerade Nachbarfelder, nie schräg – sonst steht der Gegner außerhalb des Bilds)
     if (dist === 0 || dist > range || dist >= bd) continue;
     const ax = p.x + 0.5, ay = p.y + 0.5, n = Math.ceil(Math.hypot(dx, dy) * 10);
     let seen = true;

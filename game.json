@@ -2521,7 +2521,7 @@
       ]
     }
   },
-  "spot": { "range": 2 },
+  "spot": { "range": 1 },
   "rest": {
     "hungryPct": 30,
     "enemyDistance": 10,

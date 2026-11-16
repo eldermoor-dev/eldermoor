@@ -580,11 +580,26 @@ function cachedTex(tex, bucket, key, make) {
 }
 // Abziehbilder für den Raycaster: Map (Zellindex*4 + Seite) → Textur. Seite: 0 = Nordseite der Wandzelle, 1 = Ost, 2 = Süd, 3 = West.
 // Tafel (sign.face = Richtung vom Bodenfeld zur Wand) und Raumname auf geschlossenen Türen (door.title, beide Seiten des Durchgangs).
+// Treppen/Ausgänge, die an einer Wand liegen (0.16.15): Bogen/Treppe sitzt IN der Wand (Abziehbild, richtige Perspektive) statt als frontales Bild davor.
+// Liefert die Richtungen (0=N,1=O,2=S,3=W) vom Feld zu den angrenzenden Wänden; leer, wenn das Feld frei steht oder ein Durchgang zwischen zwei gegenüberliegenden Wänden ist (dort bleibt das Sprite mit Achse).
+export function passFaces(wl, o) {
+  const W = [wl(o.x, o.y - 1), wl(o.x + 1, o.y), wl(o.x, o.y + 1), wl(o.x - 1, o.y)];
+  if ((W[1] && W[3]) || (W[0] && W[2])) return [];
+  return [0, 1, 2, 3].filter((f) => W[f]);
+}
+function passTex(tex, o) {
+  if (o.type === 'stairs') return o.look === 'down' ? tex.sprites.stairsDown : o.look === 'up' ? tex.sprites.stairsUp : o.look === 'path' ? tex.sprites.arch : tex.sprites.portal;
+  return o.look === 'down' ? tex.sprites.stairsDown : o.look === 'up' ? tex.sprites.stairsUp : o.look === 'path' ? tex.sprites.arch : tex.sprites.runeStone;
+}
 export function buildDecals(lvl, objs, tex) {
   const w = lvl.map[0].length, h = lvl.map.length, out = new Map();
   const wallAt = (x, y) => x < 0 || y < 0 || x >= w || y >= h || lvl.map[y][x] !== '.';
   const DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
   for (const o of objs) {
+    if (o.type === 'stairs' || o.type === 'exit') {
+      for (const f of passFaces(wallAt, o)) { const wx = o.x + DX[f], wy = o.y + DY[f]; if (wx >= 0 && wy >= 0 && wx < w && wy < h) out.set((wy * w + wx) * 4 + (f + 2) % 4, passTex(tex, o)); }
+      continue;
+    }
     if (o.type === 'sign' && o.face != null && o.title) {
       const wx = o.x + DX[o.face], wy = o.y + DY[o.face];
       if (wallAt(wx, wy)) out.set((wy * w + wx) * 4 + (o.face + 2) % 4, cachedTex(tex, 'plaques', 'w:' + styleFor(o) + o.title, () => genPlaque(o.title, 'wall', styleFor(o), 131)));
@@ -1326,8 +1341,10 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
     }
     else if (o.type === 'runestone') out.push({ x: o.x, y: o.y, tex: tex.sprites.runeStone, scale: 0.9 });
     else if (o.type === 'merchant') out.push({ x: o.x, y: o.y, tex: tex.sprites.merchant, scale: 0.8 });
-    else if (o.type === 'stairs') out.push({ x: o.x, y: o.y, tex: o.look === 'down' ? tex.sprites.stairsDown : o.look === 'up' ? tex.sprites.stairsUp : o.look === 'path' ? tex.sprites.arch : tex.sprites.portal, scale: 0.9, axis: passAxis(grid, o) });
-    else if (o.type === 'exit') out.push({ x: o.x, y: o.y, tex: o.look === 'down' ? tex.sprites.stairsDown : o.look === 'up' ? tex.sprites.stairsUp : o.look === 'path' ? tex.sprites.arch : tex.sprites.runeStone, scale: 0.9, axis: passAxis(grid, o) });
+    else if (o.type === 'stairs' || o.type === 'exit') {
+      if (grid && passFaces((x, y) => x < 0 || y < 0 || x >= grid.gw || y >= grid.gh || grid.grid[y * grid.gw + x] !== 0, o).length) continue; // liegt an einer Wand: als Wand-Abziehbild (buildDecals)
+      out.push({ x: o.x, y: o.y, tex: passTex(tex, o), scale: 0.9, axis: passAxis(grid, o) });
+    }
   }
   return out;
 }
