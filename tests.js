@@ -1963,6 +1963,36 @@ export async function runTests(data, env = {}) {
     let seen = 0; for (let seed = 1; seed <= 60; seed++) { const q = L.newGame(data, seed); q.objs.push({ id: 'tt', type: 'trap', x: 3, y: q.player.y, kind: 'spikes' }); q.player.x = 2; q.player.dir = 0; if ((L.turn(q, data, 1).notes || []).length) seen++; }
     assert(seen > 8 && seen < 40, `Bemerken ohne Talent etwa 35 % (${seen}/60)`);
   });
+  await test('Steine und Druckplatten (0.19.0): schieben, ziehen, Platte hält Gitter nur unter Last, Stein entschärft Falle, Rätsel lösbar', () => {
+    const s = L.newGame(data, 3); L.jumpToLevel(s, data, 'schratgruben');
+    const b = s.objs.find((o) => o.id === 'boulder_s1'), pl = s.objs.find((o) => o.id === 'plate_s1'), gate = s.objs.find((o) => o.id === 'gate_s2');
+    assert(b && pl && gate && !gate.open, 'Rätselobjekte vorhanden, Gitter zu');
+    s.player = { x: 12, y: 11, dir: 2 };
+    eq(L.blockerAt(s, 12, 12), b, 'Stein versperrt das Feld');
+    let r = L.tryMove(s, data, 'f'); assert(r.moved && b.x === 12 && b.y === 13 && s.player.y === 12, 'schieben nach Süden');
+    r = L.tryMove(s, data, 'f'); assert(!r.moved && /nicht weiter/.test(r.msg), 'an der Wand geht es nicht weiter');
+    r = L.interact(s, data); assert(r.moved && b.y === 12 && s.player.y === 11, 'ziehen: Stein folgt, Gruppe geht zurück');
+    L.tryMove(s, data, 'f'); // wieder nach Süden schieben
+    s.player = { x: 11, y: 13, dir: 1 };
+    L.tryMove(s, data, 'f'); r = L.tryMove(s, data, 'f');
+    eq([b.x, b.y], [14, 13], 'Stein liegt auf der Platte');
+    assert(pl.down && gate.open, 'Platte belastet, Gitter offen');
+    assert(r.events.some((e) => e.type === 'mech' && e.msgs.some((m) => /Gitter/.test(m))), 'Meldung zum Gitter');
+    s.player = { x: 10, y: 12, dir: 3 }; assert(L.tryMove(s, data, 'f').moved, 'durch das offene Gitter');
+    const ch = L.interact(s, data); assert(/Truhe geöffnet/.test(ch.msg), 'Truhe hinter dem Gitter erreichbar');
+    // nur die Gruppe auf der Platte: Gitter fällt wieder zu, wenn sie weggeht
+    const q = L.newGame(data, 3); L.jumpToLevel(q, data, 'schratgruben'); const g2 = q.objs.find((o) => o.id === 'gate_s2');
+    q.player = { x: 13, y: 13, dir: 1 }; L.tryMove(q, data, 'f'); assert(g2.open, 'Gruppe auf der Platte öffnet');
+    q.player.dir = 3; L.tryMove(q, data, 'f'); assert(!g2.open, 'Gruppe weg: Gitter zu');
+    // Stein auf Falle: löst aus, niemand verletzt
+    const w = fresh(2); const y = w.player.y; w.objs.push({ id: 'bb', type: 'boulder', x: 3, y }, { id: 'tt', type: 'trap', x: 4, y, kind: 'spikes' }); w.player.x = 2; w.player.dir = 1;
+    assert(L.cellChar(data.levels[data.startLevel], 4, y) === '.', 'Testfeld frei');
+    const hp = w.heroes.map((h) => h.hp); L.tryMove(w, data, 'f');
+    assert(w.objs.find((o) => o.id === 'tt').sprung, 'Falle durch Stein ausgelöst'); eq(w.heroes.map((h) => h.hp), hp, 'niemand verletzt');
+    for (const id of ['kultgruft', 'schratgruben']) { const a = L.analyzeLevel(data, id); assert(a.ok, `${id}: weiterhin lösbar (${JSON.stringify(a)})`); }
+    const k = L.newGame(data, 3); L.jumpToLevel(k, data, 'kultgruft'); const sec = k.objs.find((o) => o.id === 'secret_g1');
+    k.player = { x: 5, y: 4, dir: 1 }; assert(!sec.open && /Stein gibt nach/.test(L.interact(k, data).msg) && sec.open, 'Geheimkammer öffnet über den lockeren Stein');
+  });
   return { results, passed: results.length - failed, failed };
 }
 

@@ -1772,10 +1772,10 @@
       "palette": "keller",
       "map": [
         "###########m#T#############",
-        "##########......###########",
-        "##########......###########",
-        "##mT######m#.T#m########m##",
-        "#.....####......########..#",
+        "##....####......###########",
+        "##....####......###########",
+        "##mT#.####m#.T#m########m##",
+        "#......###......########..#",
         "m.....m##m......mT####T#..#",
         "#.........................m",
         "m.....###m......m##m####..#",
@@ -2033,6 +2033,51 @@
           "text": "Mit Kreide an die Wand geschrieben: „Achte auf den Boden. Die Zeichen schlafen nur.“",
           "title": "ACHTE|BODEN",
           "face": 2
+        },
+        {
+          "id": "secret_g1",
+          "type": "secret",
+          "x": 5,
+          "y": 3,
+          "hint": "Die Wand klingt hohl. Der Riss ist zu gerade für einen Zufall."
+        },
+        {
+          "id": "switch_g1",
+          "type": "lever",
+          "wall": true,
+          "x": 6,
+          "y": 4,
+          "gate": "secret_g1",
+          "msg": "Der Stein gibt nach. Hinter euch schabt Stein über Stein."
+        },
+        {
+          "id": "sign_secret_g1",
+          "type": "sign",
+          "x": 2,
+          "y": 4,
+          "text": "Jemand hat ein Auge in den Stein geritzt. Es blickt nach Osten, auf die Mauer am Ende des Raums.",
+          "title": "AUGE",
+          "face": 0
+        },
+        {
+          "id": "chest_g_secret",
+          "type": "chest",
+          "x": 2,
+          "y": 1,
+          "loot": [
+            {
+              "gold": 60
+            },
+            {
+              "item": "potion",
+              "n": 2
+            },
+            {
+              "gear": {
+                "boost": 2
+              }
+            }
+          ]
         }
       ],
       "intro": {
@@ -2059,10 +2104,10 @@
         "r................................rr",
         "r#....#rrr.....rrrr.....oorr.....rr",
         "r####T#rrr.....rrrr.....rorr.....rr",
-        "rrrrrrrrrrroorrorrrrr.oorrrr.....rr",
-        "rrrrrrrrorrrrrrrrrror.rorrrrrrrrror",
-        "rrrrrrrrrrrrrrrr...........rrrrrrro",
-        "orororrrorrorrrr...........rrrrrrrr",
+        "rrrrrrrrrrro.rrorrrrr.oorrrr.....rr",
+        "rrrrrrrror.....rrrror.rorrrrrrrrror",
+        "rrrrrrrr.......r...........rrrrrrro",
+        "orororrror.....r...........rrrrrrrr",
         "rrrorrorrrorrrororrorrrrorrroorrorr"
       ],
       "start": {
@@ -2359,6 +2404,56 @@
           "text": "Ein eingeritzter Totenschädel und ein Wort: „Gift“.",
           "title": "GIFT",
           "face": 3
+        },
+        {
+          "id": "gate_s2",
+          "type": "gate",
+          "x": 9,
+          "y": 12,
+          "hint": "Ein Fallgitter. Kein Hebel weit und breit, nur eine Steinplatte im Boden."
+        },
+        {
+          "id": "plate_s1",
+          "type": "plate",
+          "x": 14,
+          "y": 13,
+          "gate": "gate_s2",
+          "hold": true
+        },
+        {
+          "id": "boulder_s1",
+          "type": "boulder",
+          "x": 12,
+          "y": 12
+        },
+        {
+          "id": "sign_plate_s1",
+          "type": "sign",
+          "x": 11,
+          "y": 11,
+          "text": "Zwergenrunen, tief gemeißelt: „Was schwer ist, hält die Tür.“",
+          "title": "LAST|HALT",
+          "face": 0
+        },
+        {
+          "id": "chest_s_plate",
+          "type": "chest",
+          "x": 8,
+          "y": 12,
+          "loot": [
+            {
+              "gold": 80
+            },
+            {
+              "item": "ration",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 2
+              }
+            }
+          ]
         }
       ],
       "intro": {

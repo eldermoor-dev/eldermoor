@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.18.0 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.19.0 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -651,3 +651,14 @@ Alles nur headless geprüft (Node 102 Tests, Chrome/Playwright), **nicht auf Ger
 - **Fallen** (Objekt `trap`, `data.traps`): Speerfalle (Vorderreihe 25 % Max-LP), Giftnebel (alle 15 %), Runenfalle (alle 18 %, −3 Mana/Ausdauer); niemand fällt unter 1 LP. Entdecken: Wurf 35 % + Talent, wenn die Falle geradeaus liegt (1 Feld, mit Talent ≥ 40 zwei Felder, ein Wurf je Falle, `scanTraps` nach Schritt und Drehung); immer durch ◉ auf das Feld davor; sonst feine Spur am Boden und Warnschrift an der Wand. Entdeckte Falle: erster Schritt warnt nur, zweiter tritt hinein; ◉ entschärft (55 % + Talent, max. 95 %, Fehlschlag = halber Schaden). Talent-Wirkung `trap` bei Schurke (Gauner), Waldläufer (Fallensteller), Alchemist (Sprengmeister). Karte zeigt entdeckte Fallen („!“). Fünf Fallen mit Wandhinweis: Moorpfad (14,7), Kultgruft (16,6), Schratgruben (8,7) und (12,3), Nebelturm (6,12). Alte Spielstände bekommen sie über `syncStatic`.
 - Dev-Haken `S.fn.renderCombat` ergänzt. Tests 102 (neu: Status, Kombinationen, Fallen). BALANCE.md und SIM.md neu (klug 100 %, nur Angriff 0 %).
 - Offene Gerätetests zusätzlich: Blutung/Fluch sichtbar, Kombi-Hinweis und -Meldung, je eine Falle (übersehen, bemerken, untersuchen, entschärfen), Fallen auf der Karte.
+
+## 0.19.0 – Druckplatten, bewegliche Steine, Geheimkammer (17.11.2026)
+Nur headless geprüft (Node 103 Tests, Chrome/Playwright), **nicht auf Gerät getestet**.
+- **Beweglicher Stein** (`boulder`): versperrt das Feld. Von vorn dagegenlaufen schiebt ihn ein Feld (`tryMove`), ◉ zieht ihn (`pullBoulder`: Gruppe geht einen Schritt zurück, Stein folgt) – dadurch keine Sackgassen. Nicht auf Treppen, Ausgänge, Truhen, andere Blocker. Rollt er auf eine Falle, löst sie ohne Schaden aus (zweiter Lösungsweg für Fallen).
+- **Druckplatte** (`plate`, `gate`, `hold`): belastet durch Gruppe oder Stein (`updatePlates` nach jedem Schritt/Zug). `hold: true` = Ziel nur offen, solange belastet (niemand wird eingeklemmt: steht die Gruppe im Gitter, bleibt es offen); ohne `hold` rastet es ein. Ereignis `mech` in main.js (Meldung, Ton).
+- **Schratgruben**: neuer Rätselraum südlich der Mittelhalle (Eingang (12,10), Raum x 10–14, y 11–13): Stein (12,12) auf Platte (14,13) schieben → Gitter (9,12) → Truhe (8,12). Hinweis „LAST HALT“ an der Wand.
+- **Kultgruft**: Geheimkammer (x 2–5, y 1–2) hinter Geheimwand (5,3); lockerer Stein (6,4) in der Ostwand des Startraums öffnet sie; Hinweis „AUGE“ an der Nordwand; Truhe (2,1).
+- `analyzeLevel` kennt Druckplatten (erreichbar = Ziel offen). Karte/Legende: Platte, belastete Platte, Stein. Hilfe-Abschnitt „Steine und Druckplatten“.
+- Tests 103 (neu: Schieben, Ziehen, Platte/Gitter, Stein auf Falle, Geheimkammer, Lösbarkeit).
+- Offene Gerätetests zusätzlich: Stein schieben/ziehen (Bedienung mit Daumen, Kamera beim Ziehen), Platte/Gitter, Geheimkammer finden.
+- Nächster Schritt laut Plan: 0.20 Truhenarten, Geheimräume/falscher Schatz, Talente außerhalb des Kampfes.

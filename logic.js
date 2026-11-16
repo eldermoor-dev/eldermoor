@@ -253,7 +253,7 @@ export function blockerAt(state, x, y) {
     if (o.type === 'door' && !o.open) return o;
     if (o.type === 'chest' && !o.open) return o; // geöffnete Truhen sind begehbar
     if ((o.type === 'gate' || o.type === 'secret') && !o.open) return o; // secret = Geheimwand: sieht aus wie Mauer mit feinem Riss
-    if (o.type === 'lever') return o;
+    if (o.type === 'lever' || o.type === 'boulder') return o; // boulder = beweglicher Stein (0.19.0)
     if (o.type === 'merchant' || o.type === 'runestone' || (o.type === 'sign' && o.face == null)) return o; // Tafel mit face hängt an der Wand und versperrt nichts (0.16.8)
     if (o.type === 'enemy' && !o.dead) return o;
   }
@@ -338,7 +338,16 @@ export function tryMove(state, data, rel) {
   const d = rel === 'f' ? p.dir : rel === 'b' ? (p.dir + 2) % 4 : rel === 'l' ? (p.dir + 3) % 4 : (p.dir + 1) % 4;
   const nx = p.x + DIRS[d].dx, ny = p.y + DIRS[d].dy;
   if (isWallChar(cellChar(lvl, nx, ny))) return { moved: false, wall: true };
-  const b = blockerAt(state, nx, ny);
+  let b = blockerAt(state, nx, ny);
+  const pushNotes = [];
+  if (b && b.type === 'boulder') {
+    if (rel !== 'f') return { moved: false, msg: 'Ein schwerer Stein. Von vorn dagegenlaufen schiebt ihn, ◉ zieht ihn.', blocker: b };
+    const tx = nx + DIRS[d].dx, ty = ny + DIRS[d].dy;
+    if (!freeFor(state, data, tx, ty)) return { moved: false, msg: 'Der Stein lässt sich nicht weiter schieben. ◉ zieht ihn zurück.', blocker: b };
+    moveBoulder(state, data, b, tx, ty, pushNotes);
+    pushNotes.unshift('Der Stein schabt ein Feld weiter.');
+    b = null;
+  }
   if (b) {
     if (b.type === 'enemy' && rel === 'f') return { moved: false, encounter: b };
     return { moved: false, msg: blockedText(b), blocker: b };
@@ -351,6 +360,8 @@ export function tryMove(state, data, rel) {
   markSeen(state, data);
   const res = { moved: true, events: [] };
   if (tr0) res.events.push({ type: 'trap', id: tr0.id, msgs: springTrap(state, data, tr0) });
+  const pm = [...pushNotes, ...updatePlates(state, data)];
+  if (pushNotes.length || pm.length) res.events.push({ type: 'mech', msgs: pm, push: true });
   const ex = state.objs.find((o) => o.type === 'exit' && o.x === nx && o.y === ny);
   if (ex && !state.flags[ex.id]) {
     state.flags[ex.id] = true;
@@ -362,6 +373,47 @@ export function tryMove(state, data, rel) {
   if (!res.encounter) { const sp = spottedEnemy(state, data); if (sp) { res.encounter = sp.enemy; res.ambush = sp.ambush; } }
   if (!res.encounter) { const notes = scanTraps(state, data); if (notes.length) res.notes = notes; }
   return res;
+}
+
+// ---------- Druckplatten und bewegliche Steine (0.19.0) ----------
+// plate: { id, type: 'plate', x, y, gate: <Gitter/Geheimwand>, hold? } – versperrt nichts. Belastet durch die Gruppe oder einen Stein.
+//   hold: true = das Ziel ist nur offen, solange die Platte belastet ist (Stein draufschieben); sonst rastet es beim ersten Betreten ein.
+// boulder: { id, type: 'boulder', x, y } – versperrt das Feld. Dagegenlaufen schiebt ihn ein Feld weiter, ◉ zieht ihn (Gruppe geht einen Schritt zurück).
+//   Ein Stein löst eine Falle aus, ohne dass jemand Schaden nimmt.
+const freeFor = (state, data, x, y) => !isWallChar(cellChar(getLevel(data, state), x, y)) && !blockerAt(state, x, y) && !state.objs.some((o) => o.x === x && o.y === y && (o.type === 'stairs' || o.type === 'exit' || (o.type === 'chest')));
+export function updatePlates(state, data) {
+  const msgs = [], p = state.player;
+  for (const pl of state.objs) {
+    if (pl.type !== 'plate') continue;
+    const down = (p.x === pl.x && p.y === pl.y) || state.objs.some((o) => o.type === 'boulder' && o.x === pl.x && o.y === pl.y);
+    const gate = state.objs.find((o) => o.id === pl.gate);
+    if (down && !pl.down) msgs.push('Die Steinplatte sinkt mit einem Knirschen ein.');
+    if (!down && pl.down && pl.hold) msgs.push('Die Platte hebt sich wieder.');
+    pl.down = down;
+    if (!gate) continue;
+    if (pl.hold) {
+      const want = down || (p.x === gate.x && p.y === gate.y); // niemand wird eingeklemmt
+      if (want !== !!gate.open) { gate.open = want; msgs.push(want ? 'In der Nähe hebt sich ein Gitter.' : 'Das Gitter fällt rasselnd wieder zu.'); }
+    } else if (down && !gate.open) { gate.open = true; pl.latched = true; msgs.push('Etwas rastet ein. In der Nähe öffnet sich ein Durchgang.'); }
+  }
+  return msgs;
+}
+function moveBoulder(state, data, b, x, y, msgs) {
+  b.x = x; b.y = y;
+  const t = trapAt(state, x, y);
+  if (t) { t.sprung = true; t.spotted = true; msgs.push(`Der Stein rollt auf eine Falle (${data.traps.kinds[t.kind].name}). Sie löst aus, ohne jemanden zu treffen.`); }
+}
+export function pullBoulder(state, data, b) {
+  const p = state.player, back = (p.dir + 2) % 4, bx = p.x + DIRS[back].dx, by = p.y + DIRS[back].dy;
+  if (!freeFor(state, data, bx, by)) return { msg: 'Hinter euch ist kein Platz, um den Stein zu ziehen. Dagegenlaufen schiebt ihn.', sfx: 'bump' };
+  const ox = p.x, oy = p.y, msgs = ['Ihr zieht den Stein ein Feld zurück.'];
+  p.x = bx; p.y = by; state.steps++;
+  const t = trapAt(state, bx, by);
+  if (t) msgs.push(...springTrap(state, data, t));
+  moveBoulder(state, data, b, ox, oy, msgs);
+  markSeen(state, data);
+  msgs.push(...updatePlates(state, data));
+  return { msg: msgs.join(' '), sfx: 'door', changed: true, moved: true };
 }
 
 // ---------- Fallen (0.18.0) ----------
@@ -486,6 +538,7 @@ export function interact(state, data) {
     o.open = true;
     return { msg: 'Die Tür öffnet sich knarrend.', sfx: 'door', changed: true };
   }
+  if (o.type === 'boulder') return pullBoulder(state, data, o);
   if (o.type === 'gate') return { msg: o.hint || 'Das Gitter sitzt fest. Es muss einen Hebel geben.', sfx: 'bump' };
   if (o.type === 'secret') return { msg: o.hint || 'Die Wand klingt hohl. Der Riss ist zu gerade für einen Zufall.', sfx: 'bump' };
   if (o.type === 'lever') { // wall: true = versteckter Schalter (lockerer Stein in der Mauer); Ziel ist ein Gitter oder eine Geheimwand
@@ -1595,6 +1648,9 @@ export function analyzeLevel(data, levelId) {
     const reach = bfs();
     for (const lv of lvl.objects.filter((o) => o.type === 'lever')) {
       if (!gatesOpen.has(lv.gate) && DIRS.some((d) => reach.has(`${lv.x + d.dx},${lv.y + d.dy}`))) { gatesOpen.add(lv.gate); changed = true; }
+    }
+    for (const pl of lvl.objects.filter((o) => o.type === 'plate')) { // Druckplatte: erreichbar = Ziel lässt sich öffnen (Steine sind schieb- und ziehbar)
+      if (!gatesOpen.has(pl.gate) && reach.has(`${pl.x},${pl.y}`)) { gatesOpen.add(pl.gate); changed = true; }
     }
     for (const c of chests) {
       if (opened.has(c.id)) continue;

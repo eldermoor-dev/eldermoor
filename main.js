@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPort
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.18.0';
+const VERSION = '0.19.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -333,6 +333,7 @@ function act(name) {
       if (r.encounter) { startCombatUI(r.encounter); break; }
       if (r.shop) { if (r.msg) say(r.msg); S.shopTalk = r.msg || null; S.held = []; S.shopTab = 'buy'; S.shopSure = null; openShop(r.shop, true); break; }
       say(r.msg); if (r.sfx) S.sfx.play(r.sfx);
+      if (r.moved) { S.target.x = g.player.x + 0.5; S.target.y = g.player.y + 0.5; beginTween(); toast(r.msg, 5000); } // Stein gezogen: Gruppe steht ein Feld weiter hinten
       if (r.long) toast(r.msg, 8000);
       if (r.changed) vib(20);
       renderAll();
@@ -364,7 +365,7 @@ function doMove(rel) {
     if (r.encounter) startCombatUI(r.encounter, r.ambush);
   } else if (r.encounter) startCombatUI(r.encounter);
   else if (r.trapWarn) { S.held = []; S.queued = null; S.nextAllowed = performance.now() + 700; say(r.msg); toast(r.msg, 5000); S.sfx.play('warn'); }
-  else if (rel === 'f' && r.blocker && ['door', 'chest', 'lever', 'gate', 'secret'].includes(r.blocker.type)) { // gegen Tür, Truhe, Hebel laufen = benutzen
+  else if (rel === 'f' && r.blocker && ['door', 'chest', 'lever', 'gate', 'secret'].includes(r.blocker.type) && !r.msg) { // gegen Tür, Truhe, Hebel laufen = benutzen
     S.held = []; S.nextAllowed = performance.now() + 350;
     act('interact');
   } else if (rel === 'f' && r.wall && wallSignAhead(g, S.data) && wallSignAhead(g, S.data).x === g.player.x && wallSignAhead(g, S.data).y === g.player.y) { // gegen die Wand mit Tafel laufen = lesen
@@ -399,6 +400,13 @@ async function onEvent(ev) {
     renderAll();
     introOnce('area:' + S.game.levelId, S.lvl.intro);
     await saveSlot('auto', true);
+    return;
+  }
+  if (ev.type === 'mech') { // Stein geschoben / Druckplatte
+    S.held = []; S.nextAllowed = performance.now() + 350;
+    if (ev.msgs.length) { ev.msgs.forEach(say); toast(ev.msgs.join(' '), 5000); }
+    S.sfx.play('door'); vib(25);
+    renderAll();
     return;
   }
   if (ev.type === 'trap') { // Falle ausgelöst: Meldung groß, Erschütterung, Leisten neu
@@ -837,6 +845,7 @@ function helpHtml() {
   <h3>Rechts: Aktionen</h3><p>◉ Interagieren (Türen, Truhen, Hebel, Gegner ansprechen; Türen und Truhen gehen auch auf, wenn du gegen sie läufst oder sie direkt vor dir antippst), ⚔ Angriff, ✦ Fähigkeit (nur im Kampf, kostet Mana oder Ausdauer). Bei mehreren Gegnern: Gegner antippen = Ziel wählen, „Alle“ trifft jeden Gegner mit 60 % Schaden, ▣ Inventar, ☻ Charakter (dort „Talente“: ab Stufe 2 gibt jede Stufe einen Punkt; drei Zweige je Beruf, außerdem neue Fähigkeiten).</p>
   <h3>Kombinationsangriffe</h3><p>Automatisch, wenn ein Held einen Gegner trifft, der einen passenden Status von einem <b>anderen</b> Helden trägt. Im Kampf zeigt „✚ Kombi“ am Gegner, was gerade möglich ist.</p>${S.data.combos.map((c) => `<p class="muted" style="margin:2px 0">✚ <b>${esc(c.name)}</b>: ${esc(c.desc)}</p>`).join('')}
   <h3>Fallen</h3><p>Fallen verraten sich durch eine feine Spur am Boden oder eine Warnung an der Wand. ◉ auf das Feld vor dir untersucht den Boden, ein zweites ◉ entschärft die Falle. Helden mit Fallen-Talent (Schurke, Waldläufer, Alchemist) bemerken und entschärfen sie eher. Ausgelöste Fallen kosten LP, töten aber niemanden.</p>
+  <h3>Steine und Druckplatten</h3><p>Schwere Steine lassen sich schieben (von vorn dagegenlaufen) und ziehen (◉, die Gruppe geht dabei einen Schritt zurück). Eine Druckplatte hält ein Gitter nur offen, solange etwas Schweres auf ihr liegt.</p>
   <h3>Menü (☰ rechts unten)</h3><p>Karte (auf eine erkundete Zelle tippen setzt oder entfernt eine Notiz), Rasten, Speichern, Laden, Einstellungen. Oben rechts zeigt der Kompass die Blickrichtung.</p>
   <h3>Kampf</h3><p>Rundenbasiert. Die Zugreihenfolge steht oben. Hinterreihe-Helden ohne Fernkampf treffen nur halb so hart.</p>
   <h3>Rast</h3><p>Menü → Rasten (oder im Inventar beim Proviant). Mit Proviant erholt sich die Gruppe vollständig, auch Bewusstlose. Ohne Proviant nur zu 30 %. Nicht im Kampf, nicht wenn ein Gegner in Sichtweite ist, und erst ab 10 Schritten Abstand zum nächsten Gegner (Weg zählt, nicht Luftlinie).</p>
@@ -1052,6 +1061,8 @@ function mapSymKind(o) {
   if (o.type === 'gate') return o.open ? 'gateOpen' : 'gate';
   if (o.type === 'lever') return o.used ? 'leverUsed' : 'lever';
   if (o.type === 'enemy') return o.dead ? null : 'enemy';
+  if (o.type === 'plate') return o.down ? 'plateDown' : 'plate';
+  if (o.type === 'boulder') return 'boulder';
   if (o.type === 'trap') return o.disarmed || !o.spotted ? null : o.sprung ? 'trapUsed' : 'trap'; // nur entdeckte Fallen
   return ['stairs', 'exit', 'sign', 'merchant', 'runestone'].includes(o.type) ? o.type : null;
 }
@@ -1060,7 +1071,7 @@ const MAP_LEGEND = [
   ['door', 'Tür, geschlossen'], ['doorLocked', 'Tür, verschlossen'], ['doorOpen', 'Tür, offen'],
   ['chest', 'Truhe'], ['chestOpen', 'Truhe, geöffnet'], ['gate', 'Gitter, geschlossen'], ['gateOpen', 'Gitter, offen'],
   ['lever', 'Hebel'], ['leverUsed', 'Hebel, benutzt'], ['stairs', 'Treppe / Durchgang'], ['exit', 'Ausgang (Ende des Gebiets)'],
-  ['sign', 'Hinweistafel'], ['runestone', 'Runenstein'], ['merchant', 'Händler'], ['enemy', 'Gegner'], ['trap', 'Falle, entdeckt'], ['trapUsed', 'Falle, ausgelöst'],
+  ['sign', 'Hinweistafel'], ['runestone', 'Runenstein'], ['merchant', 'Händler'], ['enemy', 'Gegner'], ['plate', 'Druckplatte'], ['plateDown', 'Druckplatte, belastet'], ['boulder', 'Beweglicher Stein'], ['trap', 'Falle, entdeckt'], ['trapUsed', 'Falle, ausgelöst'],
 ];
 function drawMapSym(c, k, x0, y0, cs, horiz = true, dir = 1) {
   const cx = x0 + cs / 2, cy = y0 + cs / 2;
@@ -1082,6 +1093,8 @@ function drawMapSym(c, k, x0, y0, cs, horiz = true, dir = 1) {
   else if (k === 'gate' || k === 'gateOpen') { c.strokeStyle = k === 'gateOpen' ? '#6b5a3a' : '#9aa4b4'; c.lineWidth = 2; for (let i = 1; i < 4; i++) { c.beginPath(); c.moveTo(x0 + i * cs / 4, y0 + 2); c.lineTo(x0 + i * cs / 4, y0 + cs - 2); c.stroke(); } }
   else if (k === 'lever' || k === 'leverUsed') { c.fillStyle = k === 'leverUsed' ? '#6b5a3a' : '#d9a441'; c.fillRect(cx - 2, cy - cs * 0.3, 4, cs * 0.6); }
   else if (k === 'sign') { c.fillStyle = '#c89a5a'; c.fillRect(cx - cs * 0.25, cy - cs * 0.2, cs * 0.5, cs * 0.3); }
+  else if (k === 'plate' || k === 'plateDown') { c.strokeStyle = k === 'plateDown' ? '#9fb86a' : '#c8c0a8'; c.lineWidth = 2; c.strokeRect(x0 + cs * 0.2, y0 + cs * 0.2, cs * 0.6, cs * 0.6); }
+  else if (k === 'boulder') { c.fillStyle = '#a89c88'; c.beginPath(); c.arc(cx, cy, cs * 0.32, 0, 7); c.fill(); }
   else if (k === 'trap') txt('!', '#ff5a3c');
   else if (k === 'trapUsed') txt('!', '#7a6a5a');
   else if (k === 'merchant') txt('$', '#e0b040');

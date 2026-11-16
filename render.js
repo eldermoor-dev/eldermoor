@@ -951,6 +951,35 @@ function genTrap(mode, seed) {
   t.noWrap = true;
   return t;
 }
+// Druckplatte (0.19.0): helle, deutlich sichtbare Steinplatte am Boden; belastet = eingesunken und dunkler
+function genPlate(down, seed) {
+  const t = mk(255);
+  const y0 = down ? 60 : 57;
+  for (let y = y0; y <= 63; y++) for (let x = 8; x <= 56; x++) {
+    const edge = y === y0 || x === 8 || x === 56;
+    t.data[y * TEX + x] = P('stone', edge ? (down ? 2.2 : 6.2) : (down ? 1.4 : 4.4) + hash(x >> 1, y, seed) * 0.8);
+  }
+  if (!down) for (let x = 8; x <= 56; x++) t.data[63 * TEX + x] = P('stone', 0.4);
+  t.noWrap = true;
+  return t;
+}
+// Beweglicher Stein: runder, zerfurchter Felsbrocken mit Licht von links oben
+function genBoulder(seed) {
+  const t = mk(255);
+  for (let y = 0; y < TEX; y++) for (let x = 0; x < TEX; x++) {
+    const dx = (x - 32) / 25, dy = (y - 40) / 23, a = Math.atan2(dy, dx);
+    const rr = 1 + 0.07 * Math.sin(a * 3 + seed) + 0.05 * Math.sin(a * 7 + 1.3) - (dy > 0.75 ? (dy - 0.75) * 0.9 : 0);
+    const d = Math.hypot(dx, dy);
+    if (d > rr) continue;
+    const light = 0.5 - dx * 0.35 - dy * 0.45, crack = Math.abs(Math.sin(x * 0.31 + y * 0.17 + seed) + Math.sin(y * 0.4 - x * 0.12)) < 0.12;
+    let v = 2.2 + light * 3.4 + hash(x >> 1, y >> 1, seed) * 1.0 + hash(x >> 3, y >> 3, seed + 2) * 0.8;
+    if (crack) v -= 1.6;
+    if (d > rr - 0.08) v = 0.6;
+    t.data[y * TEX + x] = P('stone', Math.max(0.2, Math.min(7, v)));
+  }
+  t.noWrap = true;
+  return t;
+}
 function genLever(used, seed) {
   // Wandhebel auf Steinsockel: Griff oben (bereit) oder unten (umgelegt)
   const t = mk(255);
@@ -1248,7 +1277,7 @@ export function makeTextures(detail = 1) {
     wall: { [WALL_STONE]: stoneW, [WALL_SECRET]: genSecretWall(stoneW, 301), [WALL_SWITCH]: genSwitchWall(stoneW, false), [WALL_SWITCH_ON]: genSwitchWall(stoneW, true), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
     ceil: genCeil(53, nf),
-    sprites: { trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), trapSprung: genTrap('sprung', 401), chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genGuard(183, 'turm')), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genRobed(251, 'priester')), hueter: sm2(genRobed(261, 'hueter')), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), trapSprung: genTrap('sprung', 401), chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genGuard(183, 'turm')), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genRobed(251, 'priester')), hueter: sm2(genRobed(261, 'hueter')), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
@@ -1453,7 +1482,9 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
   const rx = Math.cos(angle), ry = Math.sin(angle); // „rechts“ aus Sicht der Kamera
   const fx = Math.sin(angle), fy = -Math.cos(angle); // „vorn“
   for (const o of objs) {
-    if (o.type === 'trap') { if (!o.disarmed) out.push({ x: o.x, y: o.y, tex: o.sprung ? tex.sprites.trapSprung : o.spotted ? tex.sprites.trapSeen : tex.sprites.trapFaint, scale: 1 }); }
+    if (o.type === 'plate') out.push({ x: o.x, y: o.y, tex: o.down ? tex.sprites.plateDown : tex.sprites.plate, scale: 1 });
+    else if (o.type === 'boulder') out.push({ x: o.x, y: o.y, tex: tex.sprites.boulder, scale: 0.78 });
+    else if (o.type === 'trap') { if (!o.disarmed) out.push({ x: o.x, y: o.y, tex: o.sprung ? tex.sprites.trapSprung : o.spotted ? tex.sprites.trapSeen : tex.sprites.trapFaint, scale: 1 }); }
     else if (o.type === 'chest') out.push({ x: o.x, y: o.y, tex: o.open ? tex.sprites.chestOpen : tex.sprites.chest, scale: CHEST_SCALE });
     else if (o.type === 'enemy' && !o.dead) {
       const tot = Array.isArray(o.kinds) ? Math.min(3, o.kinds.length) : 1;
