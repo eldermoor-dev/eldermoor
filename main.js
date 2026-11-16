@@ -5,11 +5,11 @@ import {
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
   buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
 } from './logic.js';
-import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, groupOffsets, isNarrowAt } from './render.js';
+import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.16.16';
+const VERSION = '0.16.17';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -213,9 +213,9 @@ function viewTarget(now) {
     let maxS = 0.5;
     for (const ks of Object.values(groups)) for (const k of ks) maxS = Math.max(maxS, spriteScale(k, ks.length));
     const hMax = f / tY * maxS;
-    const hzFeet = hud - H * 0.015 - floor, hzHead = H * 0.03 + hMax - floor;
-    const hz = hzHead <= hzFeet ? hzFeet : hzHead;
-    return { back: VIEW_BACK, hz: Math.max(0.22, Math.min(0.62, hz / H)) };
+    // 0.16.17 (Nutzer): Blick wie bei der Truhe leicht nach unten – die Füße stehen knapp über der Leiste, passt die Figur nicht, wird sie verkleinert (Kopf bleibt im Bild)
+    const feetY = hud - H * 0.015, avail = feetY - H * 0.03, fit = Math.max(0.55, Math.min(1, avail / hMax));
+    return { back: VIEW_BACK, hz: Math.max(0.08, Math.min(0.62, (feetY - floor) / H)), fit };
   }
   if (!S.tween) {
     const p = g.player, d = [[0, -1], [1, 0], [0, 1], [-1, 0]][p.dir];
@@ -230,9 +230,10 @@ function viewTarget(now) {
 function updateViewAdjust(now) {
   const t = viewTarget(now), dt = Math.min(100, now - (S.vAt || now));
   S.vAt = now;
-  if (S.vh == null) { S.vh = t.hz; S.vb = t.back; return; }
+  if (S.vh == null) { S.vh = t.hz; S.vb = t.back; S.vfit = t.fit || 1; setCombatFit(S.vfit); return; }
   const k = Math.min(1, dt / 140);
   S.vh += (t.hz - S.vh) * k; S.vb += (t.back - S.vb) * k;
+  S.vfit = (S.vfit || 1) + ((t.fit || 1) - (S.vfit || 1)) * k; setCombatFit(S.vfit);
 }
 
 // ---------------------------------------------------------------- Hauptschleife

@@ -599,9 +599,14 @@ function cachedTex(tex, bucket, key, make) {
 // Treppen/Ausgänge, die an einer Wand liegen (0.16.15): Bogen/Treppe sitzt IN der Wand (Abziehbild, richtige Perspektive) statt als frontales Bild davor.
 // Liefert die Richtungen (0=N,1=O,2=S,3=W) vom Feld zu den angrenzenden Wänden; leer, wenn das Feld frei steht oder ein Durchgang zwischen zwei gegenüberliegenden Wänden ist (dort bleibt das Sprite mit Achse).
 export function passFaces(wl, o) {
-  const W = [wl(o.x, o.y - 1), wl(o.x + 1, o.y), wl(o.x, o.y + 1), wl(o.x - 1, o.y)];
+  const DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
+  const W = [0, 1, 2, 3].map((f) => wl(o.x + DX[f], o.y + DY[f]));
   if ((W[1] && W[3]) || (W[0] && W[2])) return [];
-  return [0, 1, 2, 3].filter((f) => W[f]);
+  const faces = [0, 1, 2, 3].filter((f) => W[f]);
+  if (faces.length <= 1) return faces;
+  // Ecke (0.16.17): nur EIN Bild – auf der Wand, auf die der längste freie Gang zuläuft (Nutzer: „4 Bögen??“ bei zwei Eck-Treppen)
+  const run = (f) => { let n = 0; while (n < 40 && !wl(o.x - DX[f] * (n + 1), o.y - DY[f] * (n + 1))) n++; return n; };
+  return [faces.reduce((a, b) => (run(b) > run(a) ? b : a))];
 }
 function passTex(tex, o) {
   if (o.type === 'stairs') return o.look === 'down' ? tex.sprites.stairsDown : o.look === 'up' ? tex.sprites.stairsUp : o.look === 'path' ? tex.sprites.arch : tex.sprites.portal;
@@ -1351,14 +1356,16 @@ export function buildGrid(lvl, objs) {
 const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'turmwache' ? tex.sprites.turmwache : k === 'wolf' ? tex.sprites.wolf : k === 'kultist' ? tex.sprites.kultist : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
 const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' ? 1 : 0.9); // Bosse stehen größer im Gang
 export const GROUP_SCALE = 0.78, GROUP_GAP = 0.44, CHEST_SCALE = 0.62; // 0.16.4: Gruppen vorher 0.62/0.36, Truhe 0.5 (Nutzer: zu klein, hinter der Leiste)
+let combatFit = 1; // 0.16.17: im Kampf verkleinert die Kamera zu große Figuren so, dass sie samt Füßen über der Leiste ins Bild passen
+export const setCombatFit = (v) => { combatFit = v; };
 export const spriteScale = (k, n) => (n > 1 ? GROUP_SCALE : bossScale(k)) * (k === 'wolf' ? 1.3 : 1); // Wolf ist niedrig gebaut: größer ansetzen
 // Aufstellung einer Gruppe (0.16.4b): lat = seitlich (rechts +), dep = Tiefe (vom Betrachter weg). Im engen Gang (links und rechts Wand)
 // stehen die Gegner gestaffelt hintereinander statt nebeneinander, sonst ragen sie in die Wände (Nutzer-Screenshot 0.16.4).
 export function groupOffsets(n, narrow) {
   if (n <= 1) return [{ lat: 0, dep: 0 }];
   if (!narrow) return Array.from({ length: n }, (_, i) => ({ lat: (i - (n - 1) / 2) * GROUP_GAP, dep: 0 }));
-  if (n === 2) return [{ lat: -0.12, dep: 0 }, { lat: 0.18, dep: 0.42 }];
-  return [{ lat: 0, dep: 0 }, { lat: -0.22, dep: 0.42 }, { lat: 0.22, dep: 0.42 }];
+  // 0.16.17: auch im engen Gang nebeneinander (Nutzer: „Monster nebeneinander, sonst verdecken sie sich“), dichter gesetzt
+  return Array.from({ length: n }, (_, i) => ({ lat: (i - (n - 1) / 2) * 0.34, dep: 0 }));
 }
 // Eng = beide Nachbarfelder quer zur Blickrichtung sind Wand (grid aus buildGrid: 0 = frei)
 export function isNarrowAt(g, x, y, angle) {
@@ -1394,7 +1401,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
       const offs = groupOffsets(n, n > 1 && isNarrowAt(grid, o.x, o.y, angle));
       for (let i = 0; i < n; i++) {
         const { lat, dep } = offs[i];
-        out.push({ x: o.x + rx * lat + fx * dep, y: o.y + ry * lat + fy * dep, tex: spriteFor(tex, kindList ? kindList[i] : kindOf(o, i)), scale: spriteScale(kindList ? kindList[i] : kindOf(o, i), n) * (1 + 0.02 * Math.sin(time * 3 + i)) });
+        out.push({ x: o.x + rx * lat + fx * dep, y: o.y + ry * lat + fy * dep, tex: spriteFor(tex, kindList ? kindList[i] : kindOf(o, i)), scale: spriteScale(kindList ? kindList[i] : kindOf(o, i), n) * (bossScale(kindList ? kindList[i] : kindOf(o, i)) > 0.9 && n <= 1 ? 1 : combatFit) * (1 + 0.02 * Math.sin(time * 3 + i)) });
       }
     }
     else if (o.type === 'lever' && !o.wall) out.push({ x: o.x, y: o.y, tex: o.used ? tex.sprites.leverDown : tex.sprites.leverUp, scale: 0.75 });

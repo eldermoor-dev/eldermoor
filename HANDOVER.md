@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.16.16 (16.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.16.17 (16.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -615,3 +615,12 @@ Nutzer (Gerät, Screenshot 23:33, Kampf mit 2 Moorkultisten + Moorlicht): „Seh
 - Bekannt/offen: Das Moorlicht wirkt im Testbild noch etwas wolkig (Flammenrand durch Rauschen); Feinschliff nach Gerätetest. Alle Kultisten teilen dasselbe Bild (Seed 311), keine Varianten. Kultpriester, Nebelgeist, Erzkäfer, Bosse unverändert.
 - Tests 93 grün (Test „Kampffiguren“ um Größen erweitert). Optik im Testbrowser (Desktop-Chrome headless), **nicht auf Gerät getestet**. Keine Werte geändert, BALANCE.md/SIM.md unverändert.
 - Plan: 0.16.17 Nebelhüter neu + Thron, 0.16.18 mittlere Gebiete schwerer, 0.17 Talente.
+
+## 0.16.17 – Kampfbild und Bögen (16.11.2026)
+Nutzerwünsche: „Beim Monsterkampf wieder wie bei der Truhe Blick leicht runter, damit die Monster ganz zu sehen sind“; „4 Bögen??“ (Eck-Treppen); „Monster nebeneinander, sonst verdecken sie sich“; „Moorlicht sieht gut aus“ (Gerätemeldung, keine weitere Politur nötig).
+- main.js `viewTarget`: im Kampf Horizont zum Boden der Figuren geneigt plus `fit` (verkleinert nur zu große Figuren, min. 0,55, Boss mit n≤1 ausgenommen); render.js `setCombatFit`, wirkt in `buildSprites`.
+- render.js `passFaces`: Treppen/Ausgänge in Ecken bekommen nur EIN Wandbild (Wand am Ende des längsten freien Gangs). Headless in test1 geprüft: eine Treppe = ein Bogen.
+- render.js `groupOffsets`: auch im engen Gang stehen Gegner nebeneinander (Abstand 0,34), nicht mehr gestaffelt.
+- Tests 93 grün (Node). Alles nur headless (Chrome/Playwright) gesehen, **nicht auf Gerät getestet**.
+- Offene Gerätetests: Kampfbild bei Einzelgegner, Zweier-/Dreiergruppe im engen Gang und im Freien; Eck-Treppen in test1/Moorrand; ob echte Türen noch falsch wirken.
+- Plan unverändert: Paket A Talente (0.17.0, Start auf „Bauen“), Paket B Nebelhüter + Thron, mittlere Gebiete schwerer, Balance; Paket C Moorfestung.
