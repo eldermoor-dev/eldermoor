@@ -3,13 +3,13 @@
 import {
   DIRS, DIR_NAMES, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, castOutside, jumpToLevel, resetArea, grantXp, knownSpells, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
+  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
 } from './logic.js';
-import { Raycaster, makeTextures, buildGrid, buildSprites, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, groupOffsets, isNarrowAt } from './render.js';
+import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, groupOffsets, isNarrowAt } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.16.7';
+const VERSION = '0.16.8';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -254,7 +254,7 @@ function frame(now) {
   const { grid, gw, gh } = buildGrid(S.lvl, S.game.objs);
   updateViewAdjust(now);
   const vc = viewCam();
-  S.rc.render({ px: vc.x, py: vc.y, angle: vc.a, horizon: S.vh * H, grid, gw, gh, sprites: buildSprites(S.game.objs, S.tex, now / 1000, S.cam.a, aliveMap(), { grid, gw, gh }), time: now / 1000 });
+  S.rc.render({ px: vc.x, py: vc.y, angle: vc.a, horizon: S.vh * H, grid, gw, gh, decals: buildDecals(S.lvl, S.game.objs, S.tex), sprites: buildSprites(S.game.objs, S.tex, now / 1000, S.cam.a, aliveMap(), { grid, gw, gh }), time: now / 1000 });
   S.ctx.putImageData(S.img, 0, 0);
   S.frameMs = S.frameMs * 0.9 + (performance.now() - t0) * 0.1;
   if (S.loadMs == null) S.loadMs = Math.round(performance.now());
@@ -362,6 +362,9 @@ function doMove(rel) {
     if (r.encounter) startCombatUI(r.encounter);
   } else if (r.encounter) startCombatUI(r.encounter);
   else if (rel === 'f' && r.blocker && ['door', 'chest', 'lever', 'gate', 'secret'].includes(r.blocker.type)) { // gegen Tür, Truhe, Hebel laufen = benutzen
+    S.held = []; S.nextAllowed = performance.now() + 350;
+    act('interact');
+  } else if (rel === 'f' && r.wall && wallSignAhead(g, S.data) && wallSignAhead(g, S.data).x === g.player.x && wallSignAhead(g, S.data).y === g.player.y) { // gegen die Wand mit Tafel laufen = lesen
     S.held = []; S.nextAllowed = performance.now() + 350;
     act('interact');
   } else {
@@ -506,9 +509,11 @@ function readSignByTap(e) {
   let best = null, bd = 1;
   for (const o of g.objs) {
     if (o.type !== 'sign' && o.type !== 'runestone') continue;
-    const sx = o.x + 0.5 - S.cam.x, sy = o.y + 0.5 - S.cam.y;
+    const fd = o.type === 'sign' && o.face != null ? [[0, -1], [1, 0], [0, 1], [-1, 0]][o.face] : [0, 0]; // Wandtafel: Mitte der Wandfläche
+    const sx = o.x + 0.5 + fd[0] * 0.45 - S.cam.x, sy = o.y + 0.5 + fd[1] * 0.45 - S.cam.y;
     const tX = inv * (dirY * sx - dirX * sy), tY = inv * (-plY * sx + plX * sy);
     if (tY <= 0.3 || tY > 2.6) continue;
+    if (fd[0] * dirX + fd[1] * dirY < 0.5 && (fd[0] || fd[1])) continue; // Wandtafel nur, wenn man auf sie blickt
     const d = Math.abs(0.5 * (1 + tX / tY) - fx), tol = 0.06 + 0.25 / tY;
     if (d > tol || d >= bd) continue;
     let clear = true;

@@ -449,6 +449,84 @@ function genSign(seed, title) {
   return t;
 }
 
+// ---------- 0.16.8: Wandtafeln, Türschilder (als Abziehbild auf der Wandfläche) und Rahmen offener Türen ----------
+function drawTitle(set, title, y0, ink) { // bis 2 Zeilen à 8 Zeichen, 5×7-Pixelschrift, mittig; liefert die Zeilenzahl
+  const lines = String(title || '').toUpperCase().split('|').slice(0, 2).filter(Boolean);
+  lines.forEach((ln, li) => {
+    const chars = [...ln].slice(0, 8), w = chars.length * 6 - 1, x0 = Math.round(32 - w / 2);
+    chars.forEach((ch, ci) => {
+      const g = (FONT[ch] || FONT[' ']).split('/');
+      for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) if (g[r][c] === '1') set(x0 + ci * 6 + c, y0 + li * 9 + r, ink);
+    });
+  });
+  return lines.length;
+}
+const titleLines = (title) => Math.max(1, String(title || '').split('|').slice(0, 2).filter(Boolean).length);
+// Holztafel mit Titel. kind 'wall' = Tafel auf Augenhöhe, 'door' = Schild oben über dem Türblatt. Rest durchsichtig (255).
+function genPlaque(title, kind, seed) {
+  const t = mk(255);
+  const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
+  const n = titleLines(title), h = n * 9 + 4, y0 = kind === 'door' ? 2 : Math.round(31 - h / 2);
+  for (let y = y0; y < y0 + h; y++) for (let x = 5; x <= 58; x++) {
+    const edge = y === y0 || y === y0 + h - 1 || x === 5 || x === 58;
+    set(x, y, P('wood', edge ? 1.6 : 5.4 + hash(x >> 2, y >> 2, seed) * 0.6));
+  }
+  if (kind !== 'door') { for (const nx of [7, 56]) for (const ny of [y0 + 2, y0 + h - 3]) set(nx, ny, P('iron', 5)); for (let x = 6; x <= 59; x++) set(x, y0 + h, P('stone', 0)); } // Nägel, Schatten
+  drawTitle(set, title, y0 + 3, P('wood', 0.2));
+  return t;
+}
+// Rahmen einer offenen Tür (Sprite, 1×1 Feld): Pfosten, Sturz (mit Raumname), Türblatt nach innen aufgeklappt an der linken Seite.
+function genDoorFrame(title, seed) {
+  const t = mk(255);
+  const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
+  const lh = title ? titleLines(title) * 9 + 5 : 7; // Höhe des Sturzes
+  for (let y = 0; y < TEX; y++) for (let x = 0; x < TEX; x++) {
+    const post = x <= 4 || x >= 59, lintel = y < lh;
+    if (!post && !lintel) continue;
+    const edge = (post && (x === 4 || x === 59)) || (lintel && y === lh - 1);
+    set(x, y, P('wood', edge ? 1.2 : 2.8 + hash(x >> 1, y >> 3, seed) * 1.2));
+  }
+  if (title) {
+    for (let y = 1; y < lh - 2; y++) for (let x = 5; x <= 58; x++) set(x, y, P('wood', y === 1 || y === lh - 3 || x === 5 || x === 58 ? 1.6 : 5.4 + hash(x >> 2, y >> 2, seed + 1) * 0.6));
+    drawTitle(set, title, 4, P('wood', 0.2));
+  }
+  for (let x = 5; x <= 17; x++) { // Türblatt: an der Angel (x=5) volle Höhe, zur freien Kante hin perspektivisch kürzer
+    const k = (x - 5) / 12, top = Math.round(lh + k * 7), bot = Math.round(63 - k * 6);
+    for (let y = top; y <= bot; y++) {
+      const v01 = (y - top) / (bot - top);
+      let v = P('wood', 3.6 - k * 1.4 + hash(x, y >> 3, seed + 2) * 0.9);
+      if ((v01 > 0.12 && v01 < 0.2) || (v01 > 0.8 && v01 < 0.88)) v = P('iron', 3.4 - k);
+      if (x === 17) v = P('wood', 5.2); // helle Vorderkante des Blatts
+      if (y === top || y === bot) v = P('wood', 1.2);
+      set(x, y, v);
+    }
+  }
+  for (let y = 33; y <= 36; y++) set(15, y, P('iron', 6)); // Türring
+  return t;
+}
+function cachedTex(tex, bucket, key, make) {
+  const c = tex[bucket] || (tex[bucket] = {});
+  return c[key] || (c[key] = (() => { const t = make(); t.noWrap = true; return smoothSprite(t, 4); })());
+}
+// Abziehbilder für den Raycaster: Map (Zellindex*4 + Seite) → Textur. Seite: 0 = Nordseite der Wandzelle, 1 = Ost, 2 = Süd, 3 = West.
+// Tafel (sign.face = Richtung vom Bodenfeld zur Wand) und Raumname auf geschlossenen Türen (door.title, beide Seiten des Durchgangs).
+export function buildDecals(lvl, objs, tex) {
+  const w = lvl.map[0].length, h = lvl.map.length, out = new Map();
+  const wallAt = (x, y) => x < 0 || y < 0 || x >= w || y >= h || lvl.map[y][x] !== '.';
+  const DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
+  for (const o of objs) {
+    if (o.type === 'sign' && o.face != null && o.title) {
+      const wx = o.x + DX[o.face], wy = o.y + DY[o.face];
+      if (wallAt(wx, wy)) out.set((wy * w + wx) * 4 + (o.face + 2) % 4, cachedTex(tex, 'plaques', 'w:' + o.title, () => genPlaque(o.title, 'wall', 131)));
+    } else if (o.type === 'door' && !o.open && o.title) {
+      const t = cachedTex(tex, 'plaques', 'd:' + o.title, () => genPlaque(o.title, 'door', 133));
+      const ns = wallAt(o.x - 1, o.y) && wallAt(o.x + 1, o.y); // Durchgang Nord–Süd
+      for (const f of ns ? [0, 2] : [1, 3]) out.set((o.y * w + o.x) * 4 + f, t);
+    }
+  }
+  return out;
+}
+
 function genStairs(kind, seed) {
   // Steinbogen wie beim Pfad, darin eine gut lesbare Treppe
   const t = mk(255);
@@ -914,7 +992,7 @@ export class Raycaster {
     }
 
     // Wände
-    const grid = view.grid, gw = view.gw, gh = view.gh;
+    const grid = view.grid, gw = view.gw, gh = view.gh, decals = view.decals || null;
     const step = q === 'low' ? 2 : 1;
     for (let x = 0; x < W; x += step) {
       const camX = 2 * (x + step * 0.5) / W - 1;
@@ -945,9 +1023,12 @@ export class Raycaster {
       const tbl = this.shadeTbl[Math.min(7, dropFor(dist) + side)];
       const texStep = WN / lineH;
       let texPos = (y0 - startRaw) * texStep;
+      const dec = decals ? decals.get((mapY * gw + mapX) * 4 + (side === 0 ? (stepX > 0 ? 3 : 1) : (stepY > 0 ? 0 : 2))) : null;
+      const dN = dec ? dec.w : 0, dX = dec ? Math.max(0, dN - 1 - Math.min(dN - 1, Math.floor(texX * dN / WN))) : 0 /* gespiegelt: die Wandtextur-Spiegelung gilt für Beschriftung nicht */, dStep = dec ? dN / lineH : 0;
       for (let y = y0; y <= y1; y++) {
-        const c = tbl[td[((texPos | 0) & WM) * WN + texX]];
+        let c = tbl[td[((texPos | 0) & WM) * WN + texX]];
         texPos += texStep;
+        if (dec) { const dv = dec.data[Math.min(dN - 1, ((y - startRaw) * dStep) | 0) * dN + dX]; if (dv !== 255) c = tbl[dv]; }
         const o = y * W + x;
         buf[o] = c;
         if (step === 2) buf[o + 1] = c;
@@ -969,7 +1050,9 @@ export class Raycaster {
     for (const { s, tX, tY } of list) {
       const td = s.tex.data, TN = s.tex.w;
       const screenX = Math.floor(W / 2 * (1 + tX / tY));
-      const sprH = Math.floor(focal / tY * s.scale), sprW = sprH;
+      let wf = 1; // Durchgänge stehen fest im Raum: Breite nach Blickwinkel zur Durchgangsachse
+      if (s.axis) { const len = Math.hypot(s.x + 0.5 - px, s.y + 0.5 - py) || 1; wf = Math.max(0.12, Math.min(1, Math.abs(((s.x + 0.5 - px) * s.axis[0] + (s.y + 0.5 - py) * s.axis[1]) / len))); }
+      const sprH = Math.floor(focal / tY * s.scale), sprW = Math.max(1, Math.floor(sprH * wf));
       if (sprH < 2) continue;
       const bottom = Math.floor(half + 0.5 * focal / tY), top = bottom - sprH;
       const x0 = screenX - (sprW >> 1);
@@ -1027,6 +1110,14 @@ function signTex(tex, o) { // ein Schild-Sprite je Titel, einmal erzeugt
   const c = tex.signs || (tex.signs = {});
   return c[key] || (c[key] = key ? (() => { const t = genSign(131, key); t.noWrap = true; return smoothSprite(t, 4); })() : tex.sprites.sign);
 }
+// Achse eines Durchgangs (Tor, Treppe, Ausgang) aus den Nachbarwänden; null = frei stehend. Das Sprite wird damit schmaler, wenn man schräg/seitlich vorbeigeht, statt sich zur Kamera zu drehen.
+function passAxis(grid, o) {
+  if (!grid) return null;
+  const wl = (x, y) => x < 0 || y < 0 || x >= grid.gw || y >= grid.gh || grid.grid[y * grid.gw + x] !== 0;
+  if (wl(o.x - 1, o.y) && wl(o.x + 1, o.y)) return [0, 1];
+  if (wl(o.x, o.y - 1) && wl(o.x, o.y + 1)) return [1, 0];
+  return null;
+}
 export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = null) { // alive: {objId: Arten (Liste) oder Anzahl der lebenden Gegner} im Kampf; grid: für enge Gänge
   const out = [];
   const rx = Math.cos(angle), ry = Math.sin(angle); // „rechts“ aus Sicht der Kamera
@@ -1044,11 +1135,16 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
       }
     }
     else if (o.type === 'lever' && !o.wall) out.push({ x: o.x, y: o.y, tex: o.used ? tex.sprites.leverDown : tex.sprites.leverUp, scale: 0.75 });
-    else if (o.type === 'sign') out.push({ x: o.x, y: o.y, tex: signTex(tex, o), scale: 0.7 });
+    else if (o.type === 'sign' && o.face == null) out.push({ x: o.x, y: o.y, tex: signTex(tex, o), scale: 0.7 }); // mit face: Tafel hängt an der Wand (buildDecals)
+    else if (o.type === 'door' && o.open && grid) { // offene Tür: Rahmen + aufgeklapptes Blatt, nur beim Blick längs des Durchgangs (sonst stünde der Rahmen quer)
+      const wl = (x, y) => x < 0 || y < 0 || x >= grid.gw || y >= grid.gh || grid.grid[y * grid.gw + x] !== 0;
+      const ns = wl(o.x - 1, o.y) && wl(o.x + 1, o.y);
+      out.push({ x: o.x, y: o.y, tex: cachedTex(tex, 'frames', o.title || '', () => genDoorFrame(o.title, 137)), scale: 1, axis: ns ? [0, 1] : [1, 0] });
+    }
     else if (o.type === 'runestone') out.push({ x: o.x, y: o.y, tex: tex.sprites.runeStone, scale: 0.9 });
     else if (o.type === 'merchant') out.push({ x: o.x, y: o.y, tex: tex.sprites.merchant, scale: 0.8 });
-    else if (o.type === 'stairs') out.push({ x: o.x, y: o.y, tex: o.look === 'down' ? tex.sprites.stairsDown : o.look === 'up' ? tex.sprites.stairsUp : o.look === 'path' ? tex.sprites.arch : tex.sprites.portal, scale: 0.9 });
-    else if (o.type === 'exit') out.push({ x: o.x, y: o.y, tex: o.look === 'down' ? tex.sprites.stairsDown : o.look === 'up' ? tex.sprites.stairsUp : o.look === 'path' ? tex.sprites.arch : tex.sprites.runeStone, scale: 0.9 });
+    else if (o.type === 'stairs') out.push({ x: o.x, y: o.y, tex: o.look === 'down' ? tex.sprites.stairsDown : o.look === 'up' ? tex.sprites.stairsUp : o.look === 'path' ? tex.sprites.arch : tex.sprites.portal, scale: 0.9, axis: passAxis(grid, o) });
+    else if (o.type === 'exit') out.push({ x: o.x, y: o.y, tex: o.look === 'down' ? tex.sprites.stairsDown : o.look === 'up' ? tex.sprites.stairsUp : o.look === 'path' ? tex.sprites.arch : tex.sprites.runeStone, scale: 0.9, axis: passAxis(grid, o) });
   }
   return out;
 }

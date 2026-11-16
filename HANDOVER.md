@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.16.7 (15.11.2026). 0.16.3 vom Nutzer auf dem Galaxy S25 durchgetestet (siehe Abschnitt 0.16.4). Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.16.8 (16.11.2026). 0.16.3 vom Nutzer auf dem Galaxy S25 durchgetestet (siehe Abschnitt 0.16.4). Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -532,3 +532,13 @@ Arbeitsregel: nichts als getestet bezeichnen, was nicht geprüft wurde; Gerätet
 - **Alte Spielstände:** Gegnergruppen liegen im Spielstand. Wer den Turm schon betreten hat, behält die alten Gruppen (Werte der Arten gelten aber neu). Zum Testen: neues Debug-Werkzeug **„Dieses Gebiet zurücksetzen“** (Menü → Debug; `resetArea` in logic.js: Gegner, Truhen, Türen, Hebel wie neu, Boss-Auftritt wieder möglich, Karte bleibt).
 - Tests 86. BALANCE.md und SIM.md neu erzeugt. Speicherstand v6.
 
+
+## 0.16.8 – Türen und Tafeln (16.11.2026)
+Nutzerwünsche (15.11.): Schilder nur an der Wand statt im Raum, Raumnamen über den Türen, offene Türen bleiben sichtbar. Entscheidung 3 (Nebelhüter-Schwierigkeit) vom Nutzer nach Test von 0.16.7 bestätigt: Kampf bis Runde 9, keine Tränke, keiner bewusstlos, „passend“ – Werte bleiben. Der Rest der Testliste 0.16.4–0.16.7 vom Nutzer als „passt“ gemeldet (Stufe im Kampf nur geschätzt, „muss nicht stimmen“).
+- **Wandtafeln:** Jedes Schild hat `face` (0=N,1=O,2=S,3=W = Richtung vom Bodenfeld zur Wand) und hängt als Abziehbild an der Wand (`buildDecals`, `genPlaque`). Blockiert nicht mehr. Lesbar mit Blick zur Tafel vom Feld davor oder einem Feld dahinter (`wallSignAhead`), auch durch Gegenlaufen oder Antippen. Alle 14 Schilder neu platziert; Titel in `title` (`|` = Zeilenumbruch).
+- **Türschilder:** Alle 8 Türen haben `title` (z. B. „KULT-|GRUFT“), sichtbar über geschlossener Tür (Abziehbild) und im Rahmen der offenen Tür.
+- **Offene Tür:** bleibt als Rahmen mit aufgeklapptem Türblatt stehen (`genDoorFrame`).
+- **Fund des Nutzers (16.11.):** Tore drehten sich beim Vorbeigehen um 90°, weil Sprites zur Kamera zeigen. Jetzt haben Türen, Treppen und Ausgänge eine `axis` (aus Nachbarwänden, `passAxis`); die Breite folgt dem Blickwinkel zur Durchgangsachse (min. 12 %).
+- Abziehbilder werden gegenüber der Wandtextur gespiegelt gezeichnet (sonst Spiegelschrift auf allen vier Seiten). Hinweis: die Spiegelung der normalen Wandtexturen ist vermutlich auf allen Seiten umgekehrt, fällt aber bei Rauschtexturen nicht auf (Vermutung, nicht geprüft).
+- Tests: 87 grün (Wandtafel-Lesbarkeit/Daten, Türtitel; zwei alte Tafel-Tests ersetzt). Optik headless geprüft; Gerätetest steht aus.
+- Plan unverändert: 0.16.9 Figuren (Skelett, Hauptmann, Nebelhüter auf Thron, Turmwache), 0.16.10 mittlere Gebiete schwerer, 0.17 Talente.

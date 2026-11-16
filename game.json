@@ -1491,7 +1491,8 @@
           "x": 3,
           "y": 2,
           "text": "Moorpfad. Nach Osten liegt die alte Kultgruft. Wer nachts allein geht, folgt keinem Licht.",
-          "title": "MOORPFAD|→ GRUFT"
+          "title": "MOORPFAD|→ GRUFT",
+          "face": 2
         },
         {
           "id": "en_p1",
@@ -1517,7 +1518,8 @@
           "x": 9,
           "y": 3,
           "text": "Kratzspuren am Pfahl. Darunter hat jemand geschrieben: Irrlichter meiden Eisen, nicht Feuer.",
-          "title": "ACHTUNG|IRRLICHT"
+          "title": "ACHTUNG|IRRLICHT",
+          "face": 3
         },
         {
           "id": "chest_p1",
@@ -1606,7 +1608,8 @@
           "x": 19,
           "y": 5,
           "text": "Das Eisentor der Kultgruft. Das Schloss ist neu, der Rost drumherum alt.",
-          "title": "EISENTOR"
+          "title": "EISENTOR",
+          "face": 1
         },
         {
           "id": "chest_p3",
@@ -1629,7 +1632,8 @@
           "x": 20,
           "y": 4,
           "locked": true,
-          "key": "gruft_key"
+          "key": "gruft_key",
+          "title": "KULT-|GRUFT"
         },
         {
           "id": "chest_p4",
@@ -1709,10 +1713,11 @@
         {
           "id": "sign_g1",
           "type": "sign",
-          "x": 3,
-          "y": 5,
+          "x": 4,
+          "y": 4,
           "text": "Es riecht nach Kerzenwachs und feuchter Erde. Die alten Zellen werden wieder benutzt.",
-          "title": "ALTE|ZELLEN"
+          "title": "ALTE|ZELLEN",
+          "face": 0
         },
         {
           "id": "en_g1",
@@ -1731,7 +1736,8 @@
           "x": 15,
           "y": 5,
           "text": "In den Stein geritzt: Nur wer das Siegel des Kults trägt, darf in die Halle des Hauptmanns.",
-          "title": "NUR MIT|SIEGEL"
+          "title": "NUR MIT|SIEGEL",
+          "face": 1
         },
         {
           "id": "en_g2",
@@ -1750,7 +1756,8 @@
           "type": "door",
           "x": 12,
           "y": 3,
-          "locked": false
+          "locked": false,
+          "title": "KAPELLE"
         },
         {
           "id": "en_g3",
@@ -1790,7 +1797,8 @@
           "type": "door",
           "x": 12,
           "y": 9,
-          "locked": false
+          "locked": false,
+          "title": "ZELLEN"
         },
         {
           "id": "en_g4",
@@ -1863,7 +1871,8 @@
           "x": 20,
           "y": 6,
           "locked": true,
-          "key": "gruft_siegel"
+          "key": "gruft_siegel",
+          "title": "HALLE"
         },
         {
           "id": "en_boss",
@@ -1959,10 +1968,11 @@
         {
           "id": "sign_s1",
           "type": "sign",
-          "x": 3,
+          "x": 2,
           "y": 6,
           "text": "Schratgruben. Betreten auf eigene Gefahr. Die Gefahr ist eigen, die Haftung nicht.",
-          "title": "SCHRAT-|GRUBEN"
+          "title": "SCHRAT-|GRUBEN",
+          "face": 0
         },
         {
           "id": "en_s1",
@@ -1981,7 +1991,8 @@
           "x": 14,
           "y": 5,
           "text": "Stollen 2: Erz. Stollen 3: mehr Erz. Stollen 4: der Grund, warum es keinen Stollen 5 gibt.",
-          "title": "STOLLEN|2 3 4"
+          "title": "STOLLEN|2 3 4",
+          "face": 0
         },
         {
           "id": "chest_s1",
@@ -2034,7 +2045,8 @@
           "x": 19,
           "y": 9,
           "text": "Wer den Schlüssel will, geht nach Süden. Wer überleben will, geht nach Süden mit Plan.",
-          "title": "SÜDEN|→"
+          "title": "SÜDEN|→",
+          "face": 2
         },
         {
           "id": "en_s3",
@@ -2110,7 +2122,8 @@
           "x": 27,
           "y": 7,
           "locked": true,
-          "key": "gruben_schluessel"
+          "key": "gruben_schluessel",
+          "title": "LAGER"
         },
         {
           "id": "sign_s4",
@@ -2118,7 +2131,8 @@
           "x": 23,
           "y": 5,
           "text": "Hier wohnt der Schrat. Bitte klopfen. Er antwortet nicht, aber er hört zu.",
-          "title": "BITTE|KLOPFEN"
+          "title": "BITTE|KLOPFEN",
+          "face": 1
         },
         {
           "id": "en_sboss",
@@ -2171,7 +2185,8 @@
           "x": 22,
           "y": 5,
           "text": "Nordstollen. Gesperrt. Der Hebel steht, wie üblich, ganz woanders.",
-          "title": "NORD-|STOLLEN"
+          "title": "NORD-|STOLLEN",
+          "face": 0
         },
         {
           "id": "stairs_gruben_turm",
@@ -2244,7 +2259,8 @@
           "x": 4,
           "y": 10,
           "text": "Nebelturm. Besucher werden gebeten, ihre Namen zu behalten. Der Nebel nimmt gern, was herumliegt.",
-          "title": "NEBEL-|TURM"
+          "title": "NEBEL-|TURM",
+          "face": 0
         },
         {
           "id": "en_t1",
@@ -2271,16 +2287,18 @@
         {
           "id": "sign_t2",
           "type": "sign",
-          "x": 16,
+          "x": 17,
           "y": 9,
           "text": "Thronsaal. Zutritt nur mit Turmschlüssel. Der Schlüssel liegt im Archiv, das Archiv liegt hinter dem Schreibsaal, und der Schreibsaal mag keine Gäste.",
-          "title": "THRON-|SAAL →"
+          "title": "THRON-|SAAL →",
+          "face": 1
         },
         {
           "id": "door_tc",
           "type": "door",
           "x": 14,
-          "y": 7
+          "y": 7,
+          "title": "SCHREIB-|SAAL"
         },
         {
           "id": "en_t3",
@@ -2297,16 +2315,18 @@
         {
           "id": "sign_t3",
           "type": "sign",
-          "x": 12,
+          "x": 11,
           "y": 5,
           "text": "Schreibsaal. Ruhe bitte. Das Gitter zur Schatzkammer öffnet der Hebel im Archiv.",
-          "title": "SCHREIB-|SAAL"
+          "title": "SCHREIB-|SAAL",
+          "face": 3
         },
         {
           "id": "door_td",
           "type": "door",
           "x": 10,
-          "y": 3
+          "y": 3,
+          "title": "ARCHIV"
         },
         {
           "id": "en_t4",
@@ -2387,7 +2407,8 @@
           "x": 18,
           "y": 10,
           "locked": true,
-          "key": "turm_schluessel"
+          "key": "turm_schluessel",
+          "title": "THRON-|SAAL"
         },
         {
           "id": "en_tboss",
@@ -2472,7 +2493,8 @@
           "x": 6,
           "y": 5,
           "text": "Archiv. Bestand: 412 Bände, 3 Regale, 1 Wand zu viel. Wer hier Ordnung sucht, drücke, was locker sitzt.",
-          "title": "ARCHIV"
+          "title": "ARCHIV",
+          "face": 2
         }
       ]
     }

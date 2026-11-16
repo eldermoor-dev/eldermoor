@@ -250,7 +250,7 @@ export function blockerAt(state, x, y) {
     if (o.type === 'chest' && !o.open) return o; // geöffnete Truhen sind begehbar
     if ((o.type === 'gate' || o.type === 'secret') && !o.open) return o; // secret = Geheimwand: sieht aus wie Mauer mit feinem Riss
     if (o.type === 'lever') return o;
-    if (o.type === 'merchant' || o.type === 'sign' || o.type === 'runestone') return o;
+    if (o.type === 'merchant' || o.type === 'runestone' || (o.type === 'sign' && o.face == null)) return o; // Tafel mit face hängt an der Wand und versperrt nichts (0.16.8)
     if (o.type === 'enemy' && !o.dead) return o;
   }
   return null;
@@ -347,10 +347,23 @@ function addLoot(state, data, loot) {
   return parts.join(', ');
 }
 
+// Wandtafel (sign.face = Richtung vom Bodenfeld zur Wand, 0=N 1=O 2=S 3=W): lesbar, wenn die Gruppe auf dem Feld vor der Wand
+// oder ein Feld dahinter steht und zur Tafel blickt.
+export function wallSignAhead(state, data) {
+  const p = state.player, d = DIRS[p.dir], lvl = getLevel(data, state);
+  const at = (x, y) => state.objs.find((o) => o.type === 'sign' && o.face === p.dir && o.x === x && o.y === y);
+  const here = at(p.x, p.y);
+  if (here) return here;
+  const fx = p.x + d.dx, fy = p.y + d.dy;
+  if (isWallChar(cellChar(lvl, fx, fy)) || blockerAt(state, fx, fy)) return null;
+  return at(fx, fy) || null;
+}
 export function interact(state, data) {
   const f = frontCell(state);
   const o = blockerAt(state, f.x, f.y);
   if (!o) {
+    const ws = wallSignAhead(state, data);
+    if (ws) return { msg: ws.text, sfx: 'ui', long: true };
     const p = state.player, f2 = { x: f.x + DIRS[p.dir].dx, y: f.y + DIRS[p.dir].dy };
     const b2 = blockerAt(state, f2.x, f2.y);
     if (b2 && b2.type === 'sign' && cellChar(getLevel(data, state), f.x, f.y) === '.') return { msg: b2.text, sfx: 'ui', long: true }; // Tafeln lassen sich aus bis zu 2 Feldern Abstand lesen

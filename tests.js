@@ -1200,10 +1200,12 @@ export async function runTests(data, env = {}) {
     const r2 = L.interact(s, data); assert(r2.shop && !r2.msg, 'Auftrag nur einmal');
     L.changeArea(s, data, 'stairs_pfad'); eq(s.levelId, 'moorpfad', 'Moorpfad erreicht');
     eq(s.player.x, 2, 'Ankunft'); 
-    // Tafel blockiert und liest sich vor
-    s.player = { x: 2, y: 2, dir: 1 };
-    const m = L.tryMove(s, data, 'f'); assert(!m.moved && /tafel/i.test(m.msg), 'Tafel blockiert: ' + JSON.stringify(m) + JSON.stringify(s.objs.find((o) => o.id === 'sign_pfad1')));
+    // Wandtafel (0.16.8): blockiert nicht, liest sich vor, wenn man vor der Wand steht und hinsieht
+    const sg = s.objs.find((o) => o.id === 'sign_pfad1'); assert(sg && sg.face === 2, 'Tafel hängt an der Südwand');
+    s.player = { x: 3, y: 2, dir: 2 };
     const r3 = L.interact(s, data); assert(r3.msg && r3.long && /Moorpfad/.test(r3.msg), 'Tafel lesen');
+    s.player = { x: 2, y: 2, dir: 1 };
+    assert(L.tryMove(s, data, 'f').moved, 'Tafel an der Wand steht nicht im Weg');
     // Tor ohne Schlüssel zu, mit Schlüssel auf
     s.player = { x: 19, y: 4, dir: 1 };
     const door = s.objs.find((o) => o.id === 'door_gruft'); assert(door.locked, 'Tor verschlossen');
@@ -1242,15 +1244,39 @@ export async function runTests(data, env = {}) {
     assert(back.objs.some((o) => o.id === 'stairs_gruft') && !back.objs.some((o) => o.id === 'exit_pfad'), 'Ausgang ersetzt');
   });
 
-  await test('Hinweistafeln: lesbar aus höchstens 2 Feldern (Interagieren), nicht aus 3', () => {
+  await test('Wandtafeln (0.16.8): lesbar vom Feld vor der Wand und einem Feld davor, nur mit Blick zur Tafel, blockieren nie', () => {
     const s = fresh(66);
-    L.changeArea(s, data, 'stairs_moor'); L.changeArea(s, data, 'stairs_pfad'); // Tafel sign_pfad1 bei (3,2)
-    s.player = { x: 2, y: 2, dir: 1 };
-    assert(/Moorpfad/.test(L.interact(s, data).msg), 'aus 1 Feld');
-    s.player = { x: 1, y: 2, dir: 1 };
-    const r2 = L.interact(s, data); assert(/Moorpfad/.test(r2.msg) && r2.long, 'aus 2 Feldern');
-    s.player = { x: 0, y: 2, dir: 1 }; // Wand
-    assert(!/Moorpfad/.test(L.interact(s, data).msg), 'aus Wand nicht');
+    L.changeArea(s, data, 'stairs_moor'); L.changeArea(s, data, 'stairs_pfad'); // Tafel sign_pfad1 bei (3,2), face 2 (Südwand)
+    s.player = { x: 3, y: 2, dir: 2 };
+    assert(L.wallSignAhead(s, data), 'vor der Wand erkannt');
+    assert(/Moorpfad/.test(L.interact(s, data).msg), 'vom Feld vor der Wand');
+    s.player = { x: 3, y: 1, dir: 2 };
+    const r2 = L.interact(s, data); assert(/Moorpfad/.test(r2.msg) && r2.long, 'ein Feld davor');
+    s.player = { x: 3, y: 0, dir: 2 };
+    assert(!/Moorpfad/.test(L.interact(s, data).msg || ''), 'zwei Felder davor nicht');
+    s.player = { x: 3, y: 2, dir: 1 };
+    assert(!L.wallSignAhead(s, data), 'ohne Blick zur Tafel nicht');
+    // Alle Tafeln der Daten sind Wandtafeln mit Bodenfeld und Wand dahinter
+    for (const [id, lvl] of Object.entries(data.levels)) for (const o of lvl.objects) if (o.type === 'sign') {
+      assert([0, 1, 2, 3].includes(o.face), `${id}/${o.id}: face fehlt`);
+      assert(typeof o.title === 'string' && o.title.length > 1, `${o.id}: Titel`);
+      const d = [[0, -1], [1, 0], [0, 1], [-1, 0]][o.face];
+      const row = (r) => lvl.map[r] || '';
+      const isWall = (x, y) => { const c = row(y)[x]; return c === undefined || c !== '.'; };
+      assert(!isWall(o.x, o.y), `${o.id}: Standfeld ist Boden`);
+      assert(isWall(o.x + d[0], o.y + d[1]), `${o.id}: Wand in Blickrichtung`);
+    }
+  });
+
+  await test('Türschilder (0.16.8): Türen mit Titel, offene Türen bleiben als Objekt erhalten', () => {
+    const doors = Object.values(data.levels).flatMap((l) => l.objects.filter((o) => o.type === 'door'));
+    const titled = doors.filter((o) => o.title);
+    assert(titled.length >= 8, 'mindestens 8 beschriftete Türen: ' + titled.length);
+    for (const o of titled) assert(o.title.length <= 20, `${o.id}: Titel kurz`);
+    const s = fresh(67);
+    const d = { id: 'door_x', type: 'door', x: 1, y: 1, open: false, title: 'TEST' };
+    s.objs.push(d); d.open = true;
+    assert(s.objs.includes(d) && d.open === true && L.blockerAt(s, 1, 1) === null || !L.blockerAt(s, 1, 1) || L.blockerAt(s, 1, 1).type !== 'door', 'offene Tür blockiert nicht');
   });
 
   await test('Alte Stände bekommen neue feste Objekte (Treppe, Auftrag), Truhenzustand bleibt', () => {
