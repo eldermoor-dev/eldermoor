@@ -1456,7 +1456,7 @@ export function drawPortrait(ctx, role, seed, race) {
   const skin = race === 'ork' ? ORK_SKIN[Math.abs(seed) % ORK_SKIN.length] : SKIN[Math.abs(seed) % SKIN.length];
   const px = (x, y, w, h, c) => { ctx.fillStyle = hx(c); ctx.fillRect(x, y, w, h); };
   px(0, 0, 32, 32, '#1b1712');
-  px(0, 24, 32, 8, role === 'Krieger' ? '#6b7280' : role === 'Schurke' ? '#2f4a33' : (role === 'Priester' || role === 'Kleriker') ? '#e8e2d0' : role === 'Waldläufer' ? '#6b5532' : '#2c3e7a');
+  px(0, 24, 32, 8, role === 'Krieger' ? '#6b7280' : role === 'Schurke' ? '#2f4a33' : (role === 'Priester' || role === 'Kleriker') ? '#e8e2d0' : role === 'Waldläufer' ? '#6b5532' : role === 'Alchemist' ? '#3f6b5e' : '#2c3e7a');
   px(13, 22, 6, 4, skin);
   for (let y = 8; y <= 24; y++) { // Gesicht (Ellipse)
     const k = Math.sqrt(Math.max(0, 1 - Math.pow((y - 16) / 8.5, 2))) * 7.2;
@@ -1470,6 +1470,7 @@ export function drawPortrait(ctx, role, seed, race) {
   if (role === 'Krieger') { px(8, 6, 16, 6, '#8d95a3'); px(8, 12, 3, 8, '#8d95a3'); px(21, 12, 3, 8, '#8d95a3'); px(15, 12, 2, 6, '#8d95a3'); }
   else if (role === 'Schurke') { px(7, 5, 18, 7, '#2f4a33'); px(7, 12, 3, 12, '#2f4a33'); px(22, 12, 3, 12, '#2f4a33'); }
   else if ((role === 'Priester' || role === 'Kleriker')) { px(9, 5, 14, 5, '#e8e2d0'); px(14, 1, 4, 5, '#d9b44a'); px(15, 2, 2, 3, '#e8e2d0'); }
+  else if (role === 'Alchemist') { px(8, 6, 16, 5, '#7a4a2c'); px(8, 11, 3, 9, '#7a4a2c'); px(21, 11, 3, 9, '#7a4a2c'); px(9, 14, 6, 5, '#9fd4c4'); px(17, 14, 6, 5, '#9fd4c4'); px(15, 15, 2, 2, '#3a2a1a'); px(10, 15, 4, 3, '#1b1712'); px(18, 15, 4, 3, '#1b1712'); }
   else if (role === 'Waldläufer') { px(8, 5, 16, 6, '#6b5532'); px(6, 10, 20, 2, '#6b5532'); px(21, 1, 2, 7, '#b7d17a'); px(7, 12, 2, 8, '#6b5532'); px(23, 12, 2, 8, '#6b5532'); }
   else { for (let i = 0; i < 12; i++) px(16 - Math.round(i * 0.55), 1 + i, Math.round(1 + i * 1.1), 1, '#2c3e7a'); px(6, 12, 20, 2, '#2c3e7a'); px(14, 6, 4, 2, '#d9b44a'); }
 }

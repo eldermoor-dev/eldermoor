@@ -47,9 +47,10 @@
       "atk": 2,
       "classes": [
         "mage",
-        "priest"
+        "priest",
+        "alchemist"
       ],
-      "desc": "Waffe. +2 Angriff. Für Magier und Kleriker.",
+      "desc": "Waffe. +2 Angriff. Für Magier, Kleriker und Alchemisten.",
       "value": 24
     },
     "leather_armor": {
@@ -96,9 +97,10 @@
       "q": "unique",
       "classes": [
         "mage",
-        "priest"
+        "priest",
+        "alchemist"
       ],
-      "desc": "Einzigartige Waffe. +4 Angriff, +1 Initiative. Eine Wurzel, die noch Magie des Moors trägt. Für Magier und Kleriker."
+      "desc": "Einzigartige Waffe. +4 Angriff, +1 Initiative. Eine Wurzel, die noch Magie des Moors trägt. Für Magier, Kleriker und Alchemisten."
     },
     "gruft_key": {
       "name": "Gruftschlüssel",
@@ -134,7 +136,8 @@
       "q": "unique",
       "classes": [
         "rogue",
-        "mage"
+        "mage",
+        "alchemist"
       ],
       "desc": "Einzigartige Rüstung. +3 Verteidigung, +1 Initiative. Ein Mantel, der nach Nebel riecht. Für Schurke und Magier."
     },
@@ -431,6 +434,45 @@
         },
         "desc": "Trifft immer, 150 % Schaden, schwächt 2 Runden (−25 % Angriff)."
       }
+    },
+    "alchemist": {
+      "name": "Alchemist",
+      "desc": "Hinterreihe, wirft Flaschen. Darf als Einziger Tränke an Mitstreiter geben.",
+      "row": "back",
+      "ranged": true,
+      "base": {
+        "maxHp": 22,
+        "atk": 6,
+        "def": 2,
+        "init": 5
+      },
+      "growth": {
+        "maxHp": 36,
+        "atk": 7,
+        "def": 3,
+        "init": 4
+      },
+      "res": {
+        "name": "Mana",
+        "base": 12,
+        "growth": 26
+      },
+      "ability": {
+        "id": "flask",
+        "name": "Brandflasche",
+        "kind": "damage",
+        "cost": 4,
+        "mult": 130,
+        "element": "fire",
+        "inflict": {
+          "status": "burn",
+          "chance": 50,
+          "turns": 3,
+          "power": 2
+        },
+        "desc": "Wurf mit Feuerschaden: 130 %. 50 % Chance auf Brennen (3 Runden, 2 Schaden je Runde)."
+      },
+      "potionGiver": true
     }
   },
   "statuses": {
@@ -461,7 +503,7 @@
     }
   },
   "progression": {
-    "maxLevel": 10,
+    "maxLevel": 15,
     "xp": [
       100,
       250,
@@ -471,7 +513,12 @@
       1400,
       1900,
       2500,
-      3200
+      3200,
+      4000,
+      5000,
+      6200,
+      7600,
+      9200
     ]
   },
   "quickParty": [
@@ -2521,7 +2568,9 @@
       ]
     }
   },
-  "spot": { "range": 1 },
+  "spot": {
+    "range": 1
+  },
   "rest": {
     "hungryPct": 30,
     "enemyDistance": 10,
@@ -2611,6 +2660,200 @@
       "cost": 8,
       "heal": 10,
       "desc": "Heilt alle Helden um 10 LP."
+    },
+    "shieldbash": {
+      "name": "Schildstoß",
+      "kind": "damage",
+      "cost": 3,
+      "mult": 120,
+      "inflict": {
+        "status": "stun",
+        "chance": 60,
+        "turns": 1
+      },
+      "desc": "120 % Schaden, 60 % Chance auf Betäubung."
+    },
+    "fury": {
+      "name": "Zornhieb",
+      "kind": "damage",
+      "cost": 6,
+      "mult": 230,
+      "desc": "230 % Schaden."
+    },
+    "warcry": {
+      "name": "Erschütternder Ruf",
+      "kind": "damage",
+      "cost": 6,
+      "mult": 90,
+      "all": true,
+      "inflict": {
+        "status": "weak",
+        "chance": 100,
+        "turns": 2
+      },
+      "desc": "90 % Schaden gegen alle, schwächt sie 2 Runden."
+    },
+    "backstab": {
+      "name": "Meucheln",
+      "kind": "damage",
+      "cost": 6,
+      "mult": 250,
+      "sure": true,
+      "desc": "Trifft immer, 250 % Schaden."
+    },
+    "poisoncloud": {
+      "name": "Giftwolke",
+      "kind": "damage",
+      "cost": 6,
+      "mult": 60,
+      "all": true,
+      "inflict": {
+        "status": "poison",
+        "chance": 100,
+        "turns": 3,
+        "power": 2
+      },
+      "desc": "60 % Schaden gegen alle, vergiftet 3 Runden (2 Schaden je Runde)."
+    },
+    "daggers": {
+      "name": "Dolchhagel",
+      "kind": "damage",
+      "cost": 5,
+      "mult": 80,
+      "all": true,
+      "desc": "80 % Schaden gegen alle."
+    },
+    "great_heal": {
+      "name": "Große Heilung",
+      "kind": "heal",
+      "cost": 8,
+      "heal": 45,
+      "cleanse": "poison",
+      "desc": "Heilt einen Helden um 45 LP und nimmt Gift."
+    },
+    "cleansing": {
+      "name": "Reinigendes Licht",
+      "kind": "heal",
+      "all": true,
+      "cost": 9,
+      "heal": 18,
+      "cleanse": "poison",
+      "desc": "Heilt alle Helden um 18 LP und nimmt Gift."
+    },
+    "holyfire": {
+      "name": "Heiliges Feuer",
+      "kind": "damage",
+      "cost": 6,
+      "mult": 170,
+      "element": "fire",
+      "inflict": {
+        "status": "burn",
+        "chance": 50,
+        "turns": 3,
+        "power": 3
+      },
+      "desc": "Feuerschaden 170 %, 50 % Chance auf Brennen."
+    },
+    "firestorm": {
+      "name": "Feuersturm",
+      "kind": "damage",
+      "cost": 9,
+      "mult": 110,
+      "all": true,
+      "element": "fire",
+      "inflict": {
+        "status": "burn",
+        "chance": 50,
+        "turns": 3,
+        "power": 3
+      },
+      "desc": "110 % Feuerschaden gegen alle, 50 % Chance auf Brennen."
+    },
+    "icenova": {
+      "name": "Eisnova",
+      "kind": "damage",
+      "cost": 8,
+      "mult": 100,
+      "all": true,
+      "element": "ice",
+      "inflict": {
+        "status": "slow",
+        "chance": 60,
+        "turns": 2
+      },
+      "desc": "100 % Eisschaden gegen alle, 60 % Chance auf Verlangsamung."
+    },
+    "arcane": {
+      "name": "Arkanes Geschoss",
+      "kind": "damage",
+      "cost": 8,
+      "mult": 230,
+      "sure": true,
+      "desc": "Trifft immer, 230 % Schaden."
+    },
+    "pierce": {
+      "name": "Durchschlag",
+      "kind": "damage",
+      "cost": 6,
+      "mult": 220,
+      "sure": true,
+      "desc": "Trifft immer, 220 % Schaden."
+    },
+    "arrowrain": {
+      "name": "Pfeilregen",
+      "kind": "damage",
+      "cost": 6,
+      "mult": 85,
+      "all": true,
+      "inflict": {
+        "status": "slow",
+        "chance": 40,
+        "turns": 2
+      },
+      "desc": "85 % Schaden gegen alle, 40 % Chance auf Verlangsamung."
+    },
+    "poisonarrow": {
+      "name": "Giftpfeil",
+      "kind": "damage",
+      "cost": 4,
+      "mult": 130,
+      "inflict": {
+        "status": "poison",
+        "chance": 100,
+        "turns": 4,
+        "power": 3
+      },
+      "desc": "130 % Schaden, vergiftet 4 Runden (3 Schaden je Runde)."
+    },
+    "gasflask": {
+      "name": "Giftgas",
+      "kind": "damage",
+      "cost": 7,
+      "mult": 70,
+      "all": true,
+      "inflict": {
+        "status": "poison",
+        "chance": 100,
+        "turns": 3,
+        "power": 3
+      },
+      "desc": "70 % Schaden gegen alle, vergiftet 3 Runden (3 Schaden je Runde)."
+    },
+    "elixir": {
+      "name": "Elixier",
+      "kind": "heal",
+      "cost": 7,
+      "heal": 32,
+      "cleanse": "poison",
+      "desc": "Heilt einen Helden um 32 LP und nimmt Gift."
+    },
+    "splinter": {
+      "name": "Splitterbombe",
+      "kind": "damage",
+      "cost": 8,
+      "mult": 100,
+      "all": true,
+      "desc": "100 % Schaden gegen alle."
     }
   },
   "lootBases": [
@@ -2737,6 +2980,738 @@
           "item": "chain_mail"
         }
       ]
+    }
+  },
+  "talents": {
+    "cost": [
+      1,
+      1,
+      2,
+      2
+    ],
+    "gateLevel": 8,
+    "gateNode": 4,
+    "respecPerLevel": 20,
+    "classes": {
+      "warrior": [
+        {
+          "id": "bollwerk",
+          "name": "Bollwerk",
+          "desc": "Hält aus, was andere umwirft.",
+          "nodes": [
+            {
+              "id": "w_haut",
+              "name": "Zähe Haut",
+              "desc": "+8 LP, +1 Verteidigung.",
+              "fx": {
+                "hp": 8,
+                "def": 1
+              }
+            },
+            {
+              "id": "w_wille",
+              "name": "Eisenwille",
+              "desc": "Jeder Treffer gegen dich −1 Schaden.",
+              "fx": {
+                "soak": 1
+              }
+            },
+            {
+              "id": "w_wall",
+              "name": "Schildwall",
+              "desc": "+2 Verteidigung, +10 LP.",
+              "fx": {
+                "def": 2,
+                "hp": 10
+              }
+            },
+            {
+              "id": "w_stoss",
+              "name": "Schildstoß",
+              "desc": "Schaltet die Fähigkeit Schildstoß frei.",
+              "unlock": "shieldbash"
+            }
+          ]
+        },
+        {
+          "id": "berserker",
+          "name": "Berserker",
+          "desc": "Schlägt härter und öfter kritisch.",
+          "nodes": [
+            {
+              "id": "w_zorn",
+              "name": "Wut",
+              "desc": "+1 Angriff.",
+              "fx": {
+                "atk": 1
+              }
+            },
+            {
+              "id": "w_krit",
+              "name": "Blutrausch",
+              "desc": "+8 % kritische Treffer (150 % Schaden).",
+              "fx": {
+                "crit": 8
+              }
+            },
+            {
+              "id": "w_wucht",
+              "name": "Wuchtig",
+              "desc": "Fähigkeiten +20 % Schaden.",
+              "fx": {
+                "abil": 20
+              }
+            },
+            {
+              "id": "w_hieb",
+              "name": "Zornhieb",
+              "desc": "Schaltet die Fähigkeit Zornhieb frei.",
+              "unlock": "fury"
+            }
+          ]
+        },
+        {
+          "id": "anfuehrer",
+          "name": "Anführer",
+          "desc": "Gibt der Gruppe Takt und Ausdauer.",
+          "nodes": [
+            {
+              "id": "w_takt",
+              "name": "Schneller Fuß",
+              "desc": "+1 Initiative, +4 Ausdauer.",
+              "fx": {
+                "init": 1,
+                "mp": 4
+              }
+            },
+            {
+              "id": "w_atem",
+              "name": "Zweiter Atem",
+              "desc": "Angriff und Verteidigen geben +1 Ausdauer extra.",
+              "fx": {
+                "regen": 1
+              }
+            },
+            {
+              "id": "w_kraft",
+              "name": "Kampferfahren",
+              "desc": "+14 LP, +1 Angriff.",
+              "fx": {
+                "hp": 14,
+                "atk": 1
+              }
+            },
+            {
+              "id": "w_ruf",
+              "name": "Erschütternder Ruf",
+              "desc": "Schaltet die Fähigkeit Erschütternder Ruf frei.",
+              "unlock": "warcry"
+            }
+          ]
+        }
+      ],
+      "rogue": [
+        {
+          "id": "klinge",
+          "name": "Klingentänzer",
+          "desc": "Präzise Treffer an Schwachstellen.",
+          "nodes": [
+            {
+              "id": "r_scharf",
+              "name": "Scharfe Klinge",
+              "desc": "+1 Angriff.",
+              "fx": {
+                "atk": 1
+              }
+            },
+            {
+              "id": "r_krit",
+              "name": "Schwachstellen",
+              "desc": "+10 % kritische Treffer.",
+              "fx": {
+                "crit": 10
+              }
+            },
+            {
+              "id": "r_gift",
+              "name": "Tödliche Kunst",
+              "desc": "Fähigkeiten +20 % Schaden.",
+              "fx": {
+                "abil": 20
+              }
+            },
+            {
+              "id": "r_meuch",
+              "name": "Meucheln",
+              "desc": "Schaltet die Fähigkeit Meucheln frei.",
+              "unlock": "backstab"
+            }
+          ]
+        },
+        {
+          "id": "schatten",
+          "name": "Schatten",
+          "desc": "Wird selten getroffen.",
+          "nodes": [
+            {
+              "id": "r_flink",
+              "name": "Flink",
+              "desc": "+2 Initiative.",
+              "fx": {
+                "init": 2
+              }
+            },
+            {
+              "id": "r_aus",
+              "name": "Ausweichen",
+              "desc": "8 % Chance, einem Angriff auszuweichen.",
+              "fx": {
+                "dodge": 8
+              }
+            },
+            {
+              "id": "r_geist",
+              "name": "Schattenhaft",
+              "desc": "+8 % Ausweichen, +6 LP.",
+              "fx": {
+                "dodge": 8,
+                "hp": 6
+              }
+            },
+            {
+              "id": "r_wolke",
+              "name": "Giftwolke",
+              "desc": "Schaltet die Fähigkeit Giftwolke frei.",
+              "unlock": "poisoncloud"
+            }
+          ]
+        },
+        {
+          "id": "gauner",
+          "name": "Gauner",
+          "desc": "Findet immer noch etwas.",
+          "nodes": [
+            {
+              "id": "r_gold",
+              "name": "Tascheninhalt",
+              "desc": "+15 % Gold aus Kämpfen.",
+              "fx": {
+                "gold": 15
+              }
+            },
+            {
+              "id": "r_ausd",
+              "name": "Ausdauernd",
+              "desc": "+4 Ausdauer, +1 Ausdauer Rückgewinn.",
+              "fx": {
+                "mp": 4,
+                "regen": 1
+              }
+            },
+            {
+              "id": "r_glueck",
+              "name": "Glückspilz",
+              "desc": "+20 % Gold, +1 Verteidigung.",
+              "fx": {
+                "gold": 20,
+                "def": 1
+              }
+            },
+            {
+              "id": "r_hagel",
+              "name": "Dolchhagel",
+              "desc": "Schaltet die Fähigkeit Dolchhagel frei.",
+              "unlock": "daggers"
+            }
+          ]
+        }
+      ],
+      "priest": [
+        {
+          "id": "heiler",
+          "name": "Heiler",
+          "desc": "Bringt die Gruppe durch jeden Kampf.",
+          "nodes": [
+            {
+              "id": "p_hand",
+              "name": "Sanfte Hände",
+              "desc": "Heilzauber +4 LP.",
+              "fx": {
+                "heal": 4
+              }
+            },
+            {
+              "id": "p_quell",
+              "name": "Quelle des Lichts",
+              "desc": "+6 Mana.",
+              "fx": {
+                "mp": 6
+              }
+            },
+            {
+              "id": "p_gnade",
+              "name": "Gnade",
+              "desc": "Heilzauber +6 LP.",
+              "fx": {
+                "heal": 6
+              }
+            },
+            {
+              "id": "p_gross",
+              "name": "Große Heilung",
+              "desc": "Schaltet die Fähigkeit Große Heilung frei.",
+              "unlock": "great_heal"
+            }
+          ]
+        },
+        {
+          "id": "schuetzer",
+          "name": "Schützer",
+          "desc": "Schützt sich und die Gruppe.",
+          "nodes": [
+            {
+              "id": "p_haut",
+              "name": "Gesegnet",
+              "desc": "+1 Verteidigung, +8 LP.",
+              "fx": {
+                "def": 1,
+                "hp": 8
+              }
+            },
+            {
+              "id": "p_aura",
+              "name": "Heilige Aura",
+              "desc": "Jeder Treffer gegen dich −1 Schaden.",
+              "fx": {
+                "soak": 1
+              }
+            },
+            {
+              "id": "p_glaube",
+              "name": "Fester Glaube",
+              "desc": "+12 LP, +1 Verteidigung.",
+              "fx": {
+                "hp": 12,
+                "def": 1
+              }
+            },
+            {
+              "id": "p_rein",
+              "name": "Reinigendes Licht",
+              "desc": "Schaltet die Fähigkeit Reinigendes Licht frei.",
+              "unlock": "cleansing"
+            }
+          ]
+        },
+        {
+          "id": "eiferer",
+          "name": "Eiferer",
+          "desc": "Kämpft mit Keule und Glut.",
+          "nodes": [
+            {
+              "id": "p_keule",
+              "name": "Streitkolben",
+              "desc": "+1 Angriff.",
+              "fx": {
+                "atk": 1
+              }
+            },
+            {
+              "id": "p_front",
+              "name": "Kämpfende Kirche",
+              "desc": "Nahkampf aus der Hinterreihe richtet vollen Schaden an.",
+              "fx": {
+                "backfull": 1
+              }
+            },
+            {
+              "id": "p_eifer",
+              "name": "Heiliger Zorn",
+              "desc": "Fähigkeiten +15 % Schaden, +1 Angriff.",
+              "fx": {
+                "abil": 15,
+                "atk": 1
+              }
+            },
+            {
+              "id": "p_feuer",
+              "name": "Heiliges Feuer",
+              "desc": "Schaltet die Fähigkeit Heiliges Feuer frei.",
+              "unlock": "holyfire"
+            }
+          ]
+        }
+      ],
+      "mage": [
+        {
+          "id": "feuer",
+          "name": "Feuer",
+          "desc": "Zerstörung durch Glut.",
+          "nodes": [
+            {
+              "id": "m_glut",
+              "name": "Glut",
+              "desc": "Fähigkeiten +10 % Schaden.",
+              "fx": {
+                "abil": 10
+              }
+            },
+            {
+              "id": "m_mana",
+              "name": "Brennende Quelle",
+              "desc": "+4 Mana.",
+              "fx": {
+                "mp": 4
+              }
+            },
+            {
+              "id": "m_krit",
+              "name": "Flammenzunge",
+              "desc": "+8 % kritische Treffer, Fähigkeiten +10 % Schaden.",
+              "fx": {
+                "crit": 8,
+                "abil": 10
+              }
+            },
+            {
+              "id": "m_sturm",
+              "name": "Feuersturm",
+              "desc": "Schaltet die Fähigkeit Feuersturm frei.",
+              "unlock": "firestorm"
+            }
+          ]
+        },
+        {
+          "id": "frost",
+          "name": "Frost",
+          "desc": "Verlangsamt und hält auf Distanz.",
+          "nodes": [
+            {
+              "id": "m_kalt",
+              "name": "Kalte Hände",
+              "desc": "+4 Mana.",
+              "fx": {
+                "mp": 4
+              }
+            },
+            {
+              "id": "m_eis",
+              "name": "Eisblick",
+              "desc": "+1 Initiative, Fähigkeiten +10 % Schaden.",
+              "fx": {
+                "init": 1,
+                "abil": 10
+              }
+            },
+            {
+              "id": "m_panzer",
+              "name": "Eispanzer",
+              "desc": "+1 Verteidigung, +8 LP.",
+              "fx": {
+                "def": 1,
+                "hp": 8
+              }
+            },
+            {
+              "id": "m_nova",
+              "name": "Eisnova",
+              "desc": "Schaltet die Fähigkeit Eisnova frei.",
+              "unlock": "icenova"
+            }
+          ]
+        },
+        {
+          "id": "arkan",
+          "name": "Arkanist",
+          "desc": "Mehr Mana, mehr Zauber.",
+          "nodes": [
+            {
+              "id": "m_quell",
+              "name": "Arkane Quelle",
+              "desc": "+8 Mana.",
+              "fx": {
+                "mp": 8
+              }
+            },
+            {
+              "id": "m_fluss",
+              "name": "Fluss",
+              "desc": "Angriff und Verteidigen geben +1 Mana extra.",
+              "fx": {
+                "regen": 1
+              }
+            },
+            {
+              "id": "m_tief",
+              "name": "Tiefe Quelle",
+              "desc": "+10 Mana, +1 Angriff.",
+              "fx": {
+                "mp": 10,
+                "atk": 1
+              }
+            },
+            {
+              "id": "m_geschoss",
+              "name": "Arkanes Geschoss",
+              "desc": "Schaltet die Fähigkeit Arkanes Geschoss frei.",
+              "unlock": "arcane"
+            }
+          ]
+        }
+      ],
+      "ranger": [
+        {
+          "id": "schuetze",
+          "name": "Scharfschütze",
+          "desc": "Trifft, wohin er zielt.",
+          "nodes": [
+            {
+              "id": "g_auge",
+              "name": "Scharfes Auge",
+              "desc": "+1 Angriff.",
+              "fx": {
+                "atk": 1
+              }
+            },
+            {
+              "id": "g_krit",
+              "name": "Meisterschuss",
+              "desc": "+8 % kritische Treffer.",
+              "fx": {
+                "crit": 8
+              }
+            },
+            {
+              "id": "g_kraft",
+              "name": "Starker Bogen",
+              "desc": "Fähigkeiten +20 % Schaden.",
+              "fx": {
+                "abil": 20
+              }
+            },
+            {
+              "id": "g_durch",
+              "name": "Durchschlag",
+              "desc": "Schaltet die Fähigkeit Durchschlag frei.",
+              "unlock": "pierce"
+            }
+          ]
+        },
+        {
+          "id": "jaeger",
+          "name": "Fallensteller",
+          "desc": "Bleibt beweglich und zäh.",
+          "nodes": [
+            {
+              "id": "g_fuss",
+              "name": "Leichter Schritt",
+              "desc": "+1 Initiative, 6 % Ausweichen.",
+              "fx": {
+                "init": 1,
+                "dodge": 6
+              }
+            },
+            {
+              "id": "g_zaeh",
+              "name": "Wetterhart",
+              "desc": "15 % Chance, einen Status abzuwehren.",
+              "fx": {
+                "resist": 15
+              }
+            },
+            {
+              "id": "g_netz",
+              "name": "Netzwerfer",
+              "desc": "+10 % Ausweichen, +1 Initiative.",
+              "fx": {
+                "dodge": 10,
+                "init": 1
+              }
+            },
+            {
+              "id": "g_regen",
+              "name": "Pfeilregen",
+              "desc": "Schaltet die Fähigkeit Pfeilregen frei.",
+              "unlock": "arrowrain"
+            }
+          ]
+        },
+        {
+          "id": "natur",
+          "name": "Naturkundiger",
+          "desc": "Lebt vom Land.",
+          "nodes": [
+            {
+              "id": "g_hart",
+              "name": "Abgehärtet",
+              "desc": "+8 LP.",
+              "fx": {
+                "hp": 8
+              }
+            },
+            {
+              "id": "g_wald",
+              "name": "Waldläufer-Atem",
+              "desc": "+4 Ausdauer, +1 Ausdauer Rückgewinn.",
+              "fx": {
+                "mp": 4,
+                "regen": 1
+              }
+            },
+            {
+              "id": "g_kraeut",
+              "name": "Kräuterkunde",
+              "desc": "+14 LP, +1 Verteidigung.",
+              "fx": {
+                "hp": 14,
+                "def": 1
+              }
+            },
+            {
+              "id": "g_gift",
+              "name": "Giftpfeil",
+              "desc": "Schaltet die Fähigkeit Giftpfeil frei.",
+              "unlock": "poisonarrow"
+            }
+          ]
+        }
+      ],
+      "alchemist": [
+        {
+          "id": "gifte",
+          "name": "Giftmischer",
+          "desc": "Gifte und Gase.",
+          "nodes": [
+            {
+              "id": "a_saeure",
+              "name": "Scharfe Säure",
+              "desc": "Fähigkeiten +10 % Schaden.",
+              "fx": {
+                "abil": 10
+              }
+            },
+            {
+              "id": "a_hand",
+              "name": "Ruhige Hand",
+              "desc": "+8 % kritische Treffer.",
+              "fx": {
+                "crit": 8
+              }
+            },
+            {
+              "id": "a_dosis",
+              "name": "Starke Dosis",
+              "desc": "Fähigkeiten +20 % Schaden, +1 Angriff.",
+              "fx": {
+                "abil": 20,
+                "atk": 1
+              }
+            },
+            {
+              "id": "a_gas",
+              "name": "Giftgas",
+              "desc": "Schaltet die Fähigkeit Giftgas frei.",
+              "unlock": "gasflask"
+            }
+          ]
+        },
+        {
+          "id": "traenke",
+          "name": "Tränkemeister",
+          "desc": "Heilt mit Flaschen statt mit Gebeten.",
+          "nodes": [
+            {
+              "id": "a_balsam",
+              "name": "Balsam",
+              "desc": "Heilzauber +4 LP.",
+              "fx": {
+                "heal": 4
+              }
+            },
+            {
+              "id": "a_mana",
+              "name": "Reiche Vorräte",
+              "desc": "+6 Mana.",
+              "fx": {
+                "mp": 6
+              }
+            },
+            {
+              "id": "a_fest",
+              "name": "Starke Konstitution",
+              "desc": "+10 LP, +1 Verteidigung.",
+              "fx": {
+                "hp": 10,
+                "def": 1
+              }
+            },
+            {
+              "id": "a_elix",
+              "name": "Elixier",
+              "desc": "Schaltet die Fähigkeit Elixier frei.",
+              "unlock": "elixir"
+            }
+          ]
+        },
+        {
+          "id": "spreng",
+          "name": "Sprengmeister",
+          "desc": "Alles muss raus.",
+          "nodes": [
+            {
+              "id": "a_zuend",
+              "name": "Kurze Lunte",
+              "desc": "+1 Initiative, +1 Angriff.",
+              "fx": {
+                "init": 1,
+                "atk": 1
+              }
+            },
+            {
+              "id": "a_pulver",
+              "name": "Schwarzpulver",
+              "desc": "Fähigkeiten +15 % Schaden.",
+              "fx": {
+                "abil": 15
+              }
+            },
+            {
+              "id": "a_kuehl",
+              "name": "Kühler Kopf",
+              "desc": "+4 % Ausweichen, +8 LP, +4 Mana.",
+              "fx": {
+                "dodge": 4,
+                "hp": 8,
+                "mp": 4
+              }
+            },
+            {
+              "id": "a_bombe",
+              "name": "Splitterbombe",
+              "desc": "Schaltet die Fähigkeit Splitterbombe frei.",
+              "unlock": "splinter"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "difficulty": {
+    "normal": {
+      "name": "Normal",
+      "desc": "Wie bisher abgestimmt.",
+      "hp": 100,
+      "atk": 100,
+      "gold": 100,
+      "xp": 100
+    },
+    "hard": {
+      "name": "Schwer",
+      "desc": "Gegner haben 30 % mehr LP und 15 % mehr Angriff. Dafür 20 % mehr Gold und 15 % mehr Erfahrung.",
+      "hp": 130,
+      "atk": 115,
+      "gold": 120,
+      "xp": 115
     }
   }
 }

@@ -3,13 +3,13 @@
 import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
+  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.16.17';
+const VERSION = '0.17.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -763,14 +763,15 @@ function renderCombat() {
   const ch = S.game.heroes[a.idx], cab = S.data.classes[ch.cls].ability, cres = S.data.classes[ch.cls].res;
   const inv = S.game.inv, itemRows = [];
   { const row = (n, mk) => { const bs = mk(); if (n > 0 && bs.some((x) => x.ok)) itemRows.push(bs.map((x) => `<button class="ab" data-c="${x.c}" ${x.ok ? '' : 'disabled'}>${x.t}</button>`).join('')); }; // nur Zeilen zeigen, in denen etwas geht
-    row(inv.potion, () => [{ c: `heal:${a.idx}`, ok: ch.hp > 0 && ch.hp < ch.maxHp, t: `Heiltrank (${inv.potion}) trinken` }]);
-    row(inv.gegengift, () => [{ c: `cure:${a.idx}`, ok: ch.hp > 0 && !!statusOf(S.game, 'h', a.idx).poison, t: `Gegengift (${inv.gegengift}) nehmen` }]);
+    const giver = !!S.data.classes[ch.cls].potionGiver; // Alchemist (0.17.0): Tränke an alle Helden
+    row(inv.potion, () => giver ? S.game.heroes.map((h, i) => ({ c: `heal:${i}`, ok: h.hp > 0 && h.hp < h.maxHp, t: `Heiltrank (${inv.potion}) → ${esc(h.name)}` })) : [{ c: `heal:${a.idx}`, ok: ch.hp > 0 && ch.hp < ch.maxHp, t: `Heiltrank (${inv.potion}) trinken` }]);
+    row(inv.gegengift, () => giver ? S.game.heroes.map((h, i) => ({ c: `cure:${i}`, ok: h.hp > 0 && !!statusOf(S.game, 'h', i).poison, t: `Gegengift (${inv.gegengift}) → ${esc(h.name)}` })) : [{ c: `cure:${a.idx}`, ok: ch.hp > 0 && !!statusOf(S.game, 'h', a.idx).poison, t: `Gegengift (${inv.gegengift}) nehmen` }]);
     row(inv.oelflasche, () => S.game.combat.enemies.map((e, i) => ({ c: `throw:${i}`, ok: e.hp > 0, t: `Ölflasche (${inv.oelflasche}) → ${esc(e.name)}` }))); }
   const known = knownSpells(S.data, ch);
   const abBtn = known.length > 1 ? `<button class="ab" data-c="spells">✦ Zauber (${known.length})${S.spMode ? ' ▴' : ' ▾'}</button>` : cab ? `<button class="ab" data-c="sp:0" ${ch.mp >= cab.cost ? '' : 'disabled'}>✦ ${esc(cab.name)} (${cab.cost} ${esc(cres.name)})</button>` : '';
   let html = `<button class="ab" data-c="attack">⚔ Angriff</button><button class="ab${heavyNow.length ? ' pulse' : ''}" data-c="defend">⛨ Verteidigen</button><button class="ab" data-c="item" ${potions ? '' : 'disabled'}>Gegenstand (${potions})</button>${abBtn}${multi ? `<button class="ab" data-c="sweep">⚔ Alle (${SWEEP_MULT} %)</button>` : ''}<button class="ab" data-c="log">Protokoll</button>`;
   if (S.itemMode) {
-    html += itemRows.length ? itemRows.map((r) => `<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">${r}</div>`).join('') : `<div class="wait" style="flex:1 0 100%">${esc(ch.name)} hat volle LP und kein Gift. Heiltrank und Gegengift wirkt nur auf den, der dran ist.</div>`;
+    html += itemRows.length ? itemRows.map((r) => `<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">${r}</div>`).join('') : `<div class="wait" style="flex:1 0 100%">${esc(ch.name)} hat volle LP und kein Gift. Heiltrank und Gegengift wirkt nur auf den, der dran ist (Ausnahme: Alchemist).</div>`;
   }
   if (S.spMode && known.length > 1) {
     html += '<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">' + known.map((sp, i) =>
@@ -955,9 +956,27 @@ function openCharacter() {
   openModal(`<h2>Charaktere</h2><div class="grid4">` + g.heroes.map((h, i) =>
     `<div class="hc"><b>${esc(h.name)}</b><div class="muted">${esc(raceName(h.race))} · ${esc(h.role)}</div><div class="muted">${h.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}</div>
     <div>Stufe ${h.level}</div><div class="muted">${xpLine(h)}</div>
-    <div>LP ${h.hp}/${h.maxHp}</div><div>Angriff ${h.atk}${bonusTxt(gearBonus(S.data, h, S.game).atk)}</div><div>Verteidigung ${h.def}${bonusTxt(gearBonus(S.data, h, S.game).def)}</div><div>Initiative ${h.init}${bonusTxt(gearBonus(S.data, h, S.game).init)}</div><div>${h.ranged ? 'Fernkampf' : 'Nahkampf'}</div>${gearLines(h, i)}${charAbility(h)}</div>`).join('') +
+    <div>LP ${h.hp}/${h.maxHp}</div><div>Angriff ${h.atk}${bonusTxt(gearBonus(S.data, h, S.game).atk + talentSum(S.data, h, 'atk'))}</div><div>Verteidigung ${h.def}${bonusTxt(gearBonus(S.data, h, S.game).def + talentSum(S.data, h, 'def'))}</div><div>Initiative ${h.init}${bonusTxt(gearBonus(S.data, h, S.game).init + talentSum(S.data, h, 'init'))}</div><div>${h.ranged ? 'Fernkampf' : 'Nahkampf'}</div>${gearLines(h, i)}${charAbility(h)}<button class="mb" data-m="tal:${i}" style="margin-top:4px">Talente${talentPoints(S.data, h) > 0 ? ` (${talentPoints(S.data, h)} frei)` : ''}</button></div>`).join('') +
     `</div><p class="muted">Ausrüstung anlegen: Inventar → Gegenstand → „Ausrüsten“. Ablegen hier.</p><div class="acts">${closeBtn}</div>`, 'character');
 }
+
+
+// Talente (0.17.0): drei Zweige je Beruf, vier Einträge von oben nach unten. Tippen = lernen (wenn möglich).
+function openTalents(i) {
+  const g = S.game, h = g.heroes[i], d = S.data;
+  S.talHero = i;
+  const free = talentPoints(d, h);
+  const tabs = g.heroes.map((x, k) => `<button class="mb${k === i ? ' sel' : ''}" data-m="tal:${k}" style="padding:2px 8px;min-height:0">${esc(x.name)}${talentPoints(d, x) > 0 ? ' ●' : ''}</button>`).join('');
+  const why = { vorher: 'erst das Talent davor', stufe: `ab Stufe ${d.talents.gateLevel}`, punkte: 'zu wenige Punkte' };
+  const cols = talentBranches(d, h.cls).map((b) => `<div class="tcol"><b>${esc(b.name)}</b><div class="muted" style="font-size:.72em">${esc(b.desc)}</div>` + talentNodesOf(d, h, b).map((n) => {
+    const r = canLearnTalent(d, h, n.id), has = h.tal && h.tal[n.id];
+    const st = has ? '✓ gelernt' : r.ok ? `Lernen (${n.cost} ${n.cost === 1 ? 'Punkt' : 'Punkte'})` : `${n.cost} P · ${why[r.why] || ''}`;
+    return `<button class="tnode${has ? ' got' : r.ok ? ' can' : ''}" data-m="tl:${i}:${n.id}" ${has || !r.ok ? 'disabled' : ''}><b>${esc(n.name)}</b><span>${esc(n.desc)}</span><em>${esc(st)}</em></button>`;
+  }).join('') + '</div>').join('');
+  openModal(`<h2 style="margin:0 0 4px">Talente – ${esc(h.name)} (${esc(h.role)}, Stufe ${h.level})</h2><div class="acts" style="justify-content:flex-start;flex-wrap:wrap">${tabs}<span style="flex:1"></span><button class="mb" data-m="trs:${i}" style="padding:2px 8px;min-height:0" ${h.tal && Object.keys(h.tal).length ? '' : 'disabled'}>Zurücksetzen (${respecCost(d, h)} Gold)</button><button class="mb" data-m="char" style="padding:2px 8px;min-height:0">Zurück</button><button class="mb" data-m="close" style="padding:2px 8px;min-height:0">Schließen</button></div>
+    <p style="margin:4px 0">Freie Talentpunkte: <b>${free}</b> · 1 Punkt je Stufe, Kosten 1 / 1 / 2 / 2, das 4. Talent ab Stufe ${d.talents.gateLevel}.</p><div class="tgrid">${cols}</div>`, 'talents');
+}
+const talentNodesOf = (d, h, b) => b.nodes.map((n, ni) => ({ ...n, ni, cost: (d.talents.cost || [1, 1, 2, 2])[ni] || 1 }));
 
 function openMap() {
   const w = S.lvl.map[0].length, h = S.lvl.map.length;
@@ -1231,6 +1250,7 @@ async function onModalClick(e) {
     if (S.installEvent) { S.installEvent.prompt(); S.installEvent = null; }
     else toast('Chrome-Menü (⋮) → „App installieren“ bzw. „Zum Startbildschirm hinzufügen“.', 5000);
   } else if (m === 'selftest') openSelfTest();
+  else if (m.startsWith('diff:')) { S.newDiff = m.slice(5); openNewGame(); }
   else if (m === 'party-quick') startNewGame(null);
   else if (m === 'party-edit' || m === 'party-reset') openPartyEditor(true);
   else if (m === 'party-back') openNewGame();
@@ -1283,6 +1303,19 @@ async function onModalClick(e) {
     if (!(g.inv[S.invEquip] > 0)) S.invEquip = null;
     renderAll(); openInventory();
   }
+  else if (m.startsWith('tal:')) { if (g.combat) toast('Nicht im Kampf.'); else openTalents(+m.slice(4)); }
+  else if (m === 'char') openCharacter();
+  else if (m.startsWith('tl:')) {
+    const [, i, id] = m.split(':');
+    const r = learnTalent(g, S.data, +i, id);
+    if (r.msg) { say(r.msg); S.sfx.play('ui'); toast(r.msg); } else toast('Das geht nicht.');
+    renderAll(); openTalents(+i);
+  }
+  else if (m.startsWith('trs:')) {
+    const r = respecTalents(g, S.data, +m.slice(4));
+    if (r.msg) { say(r.msg); S.sfx.play('ui'); toast(r.msg); } else toast(r.error === 'gold' ? `Dafür fehlen ${r.cost} Gold.` : 'Das geht nicht.');
+    renderAll(); openTalents(+m.slice(4));
+  }
   else if (m.startsWith('uneq:')) {
     const [, i, s] = m.split(':');
     const r = unequipItem(g, S.data, +i, s);
@@ -1332,14 +1365,18 @@ function paintCanvases(attr, heroes) {
   });
 }
 function startNewGame(specs) {
-  const st = newGame(S.data, (Date.now() ^ Math.floor(Math.random() * 4294967296)) >>> 0, specs);
+  const st = newGame(S.data, (Date.now() ^ Math.floor(Math.random() * 4294967296)) >>> 0, specs, S.newDiff || 'normal');
   startGame(st);
   say('Du stehst im Testgewölbe. Vor dir liegt eine Tür. Mit ◉ Interagieren öffnest du sie.');
+}
+function diffPicker() {
+  const cur = S.newDiff || 'normal';
+  return `<div class="acts" style="justify-content:flex-start;flex-wrap:wrap"><span>Schwierigkeit:</span>${Object.entries(S.data.difficulty).map(([k, v]) => `<button class="mb${k === cur ? ' sel' : ''}" data-m="diff:${k}" style="padding:2px 10px;min-height:0">${esc(v.name)}</button>`).join('')}</div><div class="muted" style="font-size:.8em">${esc(S.data.difficulty[cur].desc)}</div>`;
 }
 function openNewGame() {
   const party = buildParty(S.data);
   const rows = party.map((h, i) => `<div class="qp"><canvas data-q="${i}" width="32" height="32"></canvas><div><b>${esc(h.name)}</b><div class="muted">${esc(raceName(h.race))} · ${esc(h.role)} · ${rowName(h.row)} · LP ${h.maxHp}</div></div></div>`).join('');
-  openModal(`<h2>Neues Spiel</h2><h3>Schnellstart-Gruppe</h3>${rows}
+  openModal(`<h2>Neues Spiel</h2>${diffPicker()}<h3>Schnellstart-Gruppe</h3>${rows}
     <div class="acts"><button class="mb primary" data-m="party-quick">Mit dieser Gruppe beginnen</button><button class="mb" data-m="party-edit">Eigene Gruppe erstellen</button><button class="mb" data-m="close">Zurück</button></div>`, 'newgame');
   paintCanvases('data-q', party);
 }

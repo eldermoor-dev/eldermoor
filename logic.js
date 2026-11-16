@@ -93,15 +93,10 @@ export function grantXp(state, data, amount, msgs = []) {
     h.xp = Math.min(cap, h.xp + amount);
     const to = levelForXp(data, h.xp);
     if (to > h.level) {
-      const st = deriveStats(data, h.race, h.cls, to);
-      const dHp = Math.max(0, st.maxHp - h.maxHp);
       h.level = to;
-      for (const k of STAT_KEYS) h[k] = st[k];
-      h.hp = Math.min(h.maxHp, h.hp + dHp);
-      const nMp = deriveMp(data, h.cls, to), dMp = Math.max(0, nMp - h.maxMp);
-      h.maxMp = nMp; h.mp = Math.min(nMp, h.mp + dMp);
+      refreshHeroStats(data, h); // Beruf + Rasse + Stufe + Talentboni
       ups.push({ hero: h.name, level: to });
-      msgs.push(`${h.name} steigt auf Stufe ${to} auf!`);
+      msgs.push(`${h.name} steigt auf Stufe ${to} auf!${talentPoints(data, h) > 0 && data.talents ? ' Neuer Talentpunkt!' : ''}`);
     }
   }
   return ups;
@@ -191,11 +186,12 @@ export function resetArea(state, data) {
   markSeen(state, data);
   return { ok: true };
 }
-export function newGame(data, seed = 20260101, party = null) {
+export function newGame(data, seed = 20260101, party = null, difficulty = 'normal') {
   const lvl = data.levels[data.startLevel];
   const a = freshArea(data, data.startLevel);
   const state = {
     rng: seed >>> 0,
+    difficulty: data.difficulty && data.difficulty[difficulty] ? difficulty : 'normal',
     levelId: data.startLevel,
     player: { x: lvl.start.x, y: lvl.start.y, dir: lvl.start.dir },
     heroes: buildParty(data, party || data.quickParty),
@@ -502,8 +498,66 @@ export function knownSpells(data, h) {
   const c = data.classes[h.cls], out = [];
   if (c.ability) out.push({ ...c.ability, level: 1 });
   for (const s of c.spells || []) if (h.level >= s.level && data.spells[s.id]) out.push({ id: s.id, level: s.level, ...data.spells[s.id] });
+  for (const n of learnedTalents(data, h)) if (n.unlock && data.spells[n.unlock]) out.push({ id: n.unlock, level: 1, talent: n.id, ...data.spells[n.unlock] });
   return out;
 }
+
+// ---------- Talente (0.17.0) ----------
+// data.talents = { cost: [1,1,2,2], gateLevel: 8, gateNode: 4, respecPerLevel: 20, classes: { <beruf>: [ { id, name, desc, nodes: [ {id, name, desc, fx?, unlock?} ×4 ] } ×3 ] } }
+// hero.tal = { <nodeId>: true } (fehlt bei alten Ständen = nichts gelernt). Talentpunkte: 1 je Stufe ab Stufe 2, abzüglich Kosten der gelernten Talente (nicht gespeichert, daher keine Migration).
+// Wirkungen (fx): hp, mp, atk, def, init (Werte), crit/dodge/resist/gold/abil (Prozent), soak (Schaden gegen dich −x), heal (Heilzauber +x), regen (Ressource extra), backfull (Nahkampf aus der Hinterreihe ohne Abzug).
+// Zweige sind der Reihe nach zu lernen; der vierte Eintrag braucht Stufe gateLevel.
+export const talentBranches = (data, cls) => (data.talents && data.talents.classes && data.talents.classes[cls]) || [];
+export const talentNodes = (data, cls) => { const out = [], cost = (data.talents && data.talents.cost) || [1, 1, 2, 2]; talentBranches(data, cls).forEach((b, bi) => b.nodes.forEach((n, ni) => out.push({ ...n, branch: b.id, bi, ni, cost: cost[ni] || 1 }))); return out; };
+export const learnedTalents = (data, h) => (h.tal ? talentNodes(data, h.cls).filter((n) => h.tal[n.id]) : []);
+export const talentSpent = (data, h) => learnedTalents(data, h).reduce((a, n) => a + n.cost, 0);
+export const talentPoints = (data, h) => Math.max(0, h.level - 1 - talentSpent(data, h));
+export const talentSum = (data, h, key) => { if (!h || !h.tal) return 0; let v = 0; for (const n of learnedTalents(data, h)) if (n.fx && n.fx[key]) v += n.fx[key]; return v; };
+export function canLearnTalent(data, h, nodeId) {
+  const n = talentNodes(data, h.cls).find((x) => x.id === nodeId);
+  if (!n) return { ok: false, why: 'unbekannt' };
+  if (h.tal && h.tal[nodeId]) return { ok: false, why: 'gelernt' };
+  if (n.ni > 0 && !(h.tal && h.tal[talentBranches(data, h.cls)[n.bi].nodes[n.ni - 1].id])) return { ok: false, why: 'vorher', node: n };
+  const gate = data.talents.gateLevel || 8;
+  if (n.ni + 1 >= (data.talents.gateNode || 4) && h.level < gate) return { ok: false, why: 'stufe', node: n, need: gate };
+  if (talentPoints(data, h) < n.cost) return { ok: false, why: 'punkte', node: n };
+  return { ok: true, node: n };
+}
+// Kampfwerte aus Beruf/Rasse/Stufe plus Talentboni (LP, Ressource); Verhältnisse der aktuellen LP/Ressource bleiben: Zuwachs wird gutgeschrieben.
+export function refreshHeroStats(data, h) {
+  const st = deriveStats(data, h.race, h.cls, h.level);
+  const maxHp = st.maxHp + talentSum(data, h, 'hp'), maxMp = deriveMp(data, h.cls, h.level) + talentSum(data, h, 'mp');
+  const dHp = Math.max(0, maxHp - h.maxHp), dMp = Math.max(0, maxMp - h.maxMp);
+  for (const k of STAT_KEYS) h[k] = st[k];
+  h.maxHp = maxHp; h.hp = Math.min(maxHp, h.hp + dHp);
+  h.maxMp = maxMp; h.mp = Math.min(maxMp, h.mp + dMp);
+}
+export function learnTalent(state, data, heroIdx, nodeId) {
+  if (state.combat) return { error: 'in-combat' };
+  const h = state.heroes[heroIdx];
+  if (!h) return { error: 'no-hero' };
+  const r = canLearnTalent(data, h, nodeId);
+  if (!r.ok) return { error: r.why, need: r.need };
+  h.tal = h.tal || {};
+  h.tal[nodeId] = true;
+  refreshHeroStats(data, h);
+  return { msg: `${h.name} lernt „${r.node.name}“.`, sfx: 'ui' };
+}
+export const respecCost = (data, h) => ((data.talents && data.talents.respecPerLevel) || 20) * h.level;
+export function respecTalents(state, data, heroIdx) {
+  if (state.combat) return { error: 'in-combat' };
+  const h = state.heroes[heroIdx];
+  if (!h || !h.tal || !Object.keys(h.tal).length) return { error: 'nothing' };
+  const cost = respecCost(data, h);
+  if (state.gold < cost) return { error: 'gold', cost };
+  state.gold -= cost;
+  h.tal = {};
+  const hp = h.hp;
+  refreshHeroStats(data, h);
+  h.maxHp = Math.max(1, h.maxHp); h.hp = Math.min(hp, h.maxHp); h.mp = Math.min(h.mp, h.maxMp);
+  return { msg: `${h.name} verlernt alle Talente (−${cost} Gold).`, sfx: 'ui' };
+}
+const backPen = (data, h) => h.row === 'back' && !h.ranged && !talentSum(data, h, 'backfull');
 
 // ---------- Ausrüstung (Schritt 5b) ----------
 // hero.equip = { weapon: itemId|null, armor: itemId|null } (optional; fehlt es, ist nichts angelegt).
@@ -516,9 +570,9 @@ export function gearBonus(data, h, state) {
   for (const s of SLOTS) { const it = h.equip && h.equip[s] && itemDef(state, data, h.equip[s]); if (it && it.kind === 'equip') { b.atk += it.atk || 0; b.def += it.def || 0; b.init += it.init || 0; } }
   return b;
 }
-export const heroAtk = (data, h, state) => h.atk + gearBonus(data, h, state).atk;
-export const heroDef = (data, h, state) => h.def + gearBonus(data, h, state).def;
-export const heroInit = (data, h, state) => h.init + gearBonus(data, h, state).init;
+export const heroAtk = (data, h, state) => h.atk + gearBonus(data, h, state).atk + talentSum(data, h, 'atk');
+export const heroDef = (data, h, state) => h.def + gearBonus(data, h, state).def + talentSum(data, h, 'def');
+export const heroInit = (data, h, state) => h.init + gearBonus(data, h, state).init + talentSum(data, h, 'init');
 export function canEquip(data, h, itemId, state) {
   const it = itemDef(state, data, itemId);
   return !!it && it.kind === 'equip' && SLOTS.includes(it.slot) && (!it.classes || it.classes.includes(h.cls));
@@ -808,8 +862,10 @@ function noteBestiary(state, kind, what, val) {
 }
 
 export function startCombat(state, data, enemyObj, opts = {}) {
+  const en = group(data, enemyObj), hp = diffPct(state, data, 'hp');
+  if (hp !== 100) for (const e of en) { e.hp = Math.max(1, Math.round((e.hp * hp) / 100)); e.maxHp = Math.max(1, Math.round((e.maxHp * hp) / 100)); }
   state.combat = {
-    enemies: group(data, enemyObj),
+    enemies: en,
     order: [], pos: 0, round: 1, defending: {}, status: {}, over: null, ambush: !!opts.ambush
   };
   for (const e of state.combat.enemies) noteBestiary(state, e.kind, 'seen');
@@ -836,11 +892,12 @@ export function calcDamage(state, atk, def, opts = {}) {
   if (opts.elem) d = Math.max(1, Math.floor((d * (100 + opts.elem)) / 100));
   if (opts.backMelee) d = Math.ceil(d / 2);
   if (opts.defending) d = Math.max(1, Math.floor(d / 2));
-  if (opts.trace) Object.assign(opts.trace, { atk, roll: r, red, mult: opts.mult || 0, elem: opts.elem || 0, elemName: opts.elemName || '', back: !!opts.backMelee, def: !!opts.defending, total: d });
+  if (opts.crit) d = Math.floor((d * 3) / 2);
+  if (opts.trace) Object.assign(opts.trace, { crit: !!opts.crit, atk, roll: r, red, mult: opts.mult || 0, elem: opts.elem || 0, elemName: opts.elemName || '', back: !!opts.backMelee, def: !!opts.defending, total: d });
   return d;
 }
 export function explain(tr) {
-  return `Angriff ${tr.atk} + Wurf ${tr.roll} − Rüstung ${tr.red}${tr.mult ? ` · ${tr.mult} %` : ''}${tr.elem ? ` · ${tr.elemName} ${tr.elem > 0 ? '+' : ''}${tr.elem} %` : ''}${tr.back ? ' · ½ Hinterreihe' : ''}${tr.def ? ' · ½ Verteidigung' : ''} = ${tr.total}`;
+  return `Angriff ${tr.atk} + Wurf ${tr.roll} − Rüstung ${tr.red}${tr.mult ? ` · ${tr.mult} %` : ''}${tr.elem ? ` · ${tr.elemName} ${tr.elem > 0 ? '+' : ''}${tr.elem} %` : ''}${tr.back ? ' · ½ Hinterreihe' : ''}${tr.def ? ' · ½ Verteidigung' : ''}${tr.crit ? ' · kritisch ×1,5' : ''} = ${tr.total}`;
 }
 
 // ---------- Statuswirkungen (nur im Kampf, werden nicht gespeichert) ----------
@@ -851,6 +908,7 @@ export function statusOf(state, side, idx) { return (state.combat && state.comba
 function addStatus(state, data, side, idx, inf, msgs) {
   if (!inf) return;
   if (inf.chance < 100 && rand(state) * 100 >= inf.chance) return;
+  if (side === 'h') { const rs = talentSum(data, state.heroes[idx], 'resist'); if (rs > 0 && rand(state) * 100 < rs) { msgs.push(`${state.heroes[idx].name} wehrt ${data.statuses[inf.status].name} ab.`); return; } }
   const c = state.combat, k = skey(side, idx);
   const st = c.status[k] || (c.status[k] = {});
   const cur = st[inf.status];
@@ -858,6 +916,9 @@ function addStatus(state, data, side, idx, inf, msgs) {
   const nm = data.statuses[inf.status].name;
   msgs.push(`${actorName(state, side, idx)}: ${nm}${(inf.status === 'poison' || inf.status === 'burn') ? ` (${inf.turns} Runden, ${inf.power} Schaden je Runde)` : (inf.status === 'weak' || inf.status === 'slow') ? ` (${inf.turns} Runden)` : ''}.`);
 }
+// Schwierigkeit (0.17.0): data.difficulty[state.difficulty] = { name, hp, atk, gold, xp } in Prozent; fehlt es, gilt Normal (100 %).
+export const diffPct = (state, data, key) => ((data.difficulty && data.difficulty[(state && state.difficulty) || 'normal']) || {})[key] || 100;
+const foeAtk = (state, data, atk) => { const p = diffPct(state, data, 'atk'); return p === 100 ? atk : Math.max(1, Math.round((atk * p) / 100)); };
 const effAtk = (state, side, idx, atk) => (statusOf(state, side, idx).weak ? Math.max(1, Math.floor((atk * 3) / 4)) : atk);
 
 // Ende des eigenen Zugs: Gift wirkt, Dauer sinkt. Rückgabe: true, wenn danach alle Gegner besiegt sind.
@@ -907,8 +968,13 @@ function finishVictory(state, data, msgs) {
     const obj = state.objs.find((o) => o.id === e.objId);
     if (obj) { obj.dead = true; obj.hp = 0; }
   }
+  const dg = diffPct(state, data, 'gold'), dx = diffPct(state, data, 'xp');
+  if (dg !== 100) gold = Math.floor((gold * dg) / 100);
+  if (dx !== 100) xp = Math.floor((xp * dx) / 100);
+  const gp = Math.min(60, state.heroes.reduce((a, h) => a + (h.hp > 0 ? talentSum(data, h, 'gold') : 0), 0));
+  if (gp > 0 && gold > 0) gold += Math.floor((gold * gp) / 100);
   state.gold += gold;
-  msgs.push(`Sieg! Beute: ${gold} Gold.`);
+  msgs.push(`Sieg! Beute: ${gold} Gold${gp > 0 ? ` (Talente +${gp} %)` : ''}.`);
   if (xp > 0) { msgs.push(`Erfahrung: +${xp} EP für jeden Helden, der noch steht.`); grantXp(state, data, xp, msgs); }
   rollDrops(state, data, c.enemies, msgs);
   for (const h of state.heroes) if (h.hp <= 0) { h.hp = 1; msgs.push(`${h.name} kommt mit 1 LP wieder zu sich.`); } // vorläufig, bis die Rast kommt (Schritt 5)
@@ -916,9 +982,10 @@ function finishVictory(state, data, msgs) {
   return gold;
 }
 
-function regen(h, msgs) {
-  if (h.mp < h.maxMp) h.mp = Math.min(h.maxMp, h.mp + MP_REGEN);
+function regen(h, msgs, data) {
+  if (h.mp < h.maxMp) h.mp = Math.min(h.maxMp, h.mp + MP_REGEN + (data ? talentSum(data, h, 'regen') : 0));
 }
+const rollCrit = (state, data, h) => { const c = talentSum(data, h, 'crit'); return c > 0 && rand(state) * 100 < c; };
 
 export function heroAction(state, data, act) {
   const c = state.combat;
@@ -933,16 +1000,16 @@ export function heroAction(state, data, act) {
     if (ti == null || !c.enemies[ti] || c.enemies[ti].hp <= 0) ti = c.enemies.findIndex((e) => e.hp > 0);
     const e = c.enemies[ti];
     const tr = {};
-    const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h, state)), enemyOf(data, e).def, { backMelee: h.row === 'back' && !h.ranged, trace: tr });
+    const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h, state)), enemyOf(data, e).def, { backMelee: backPen(data, h), crit: rollCrit(state, data, h), trace: tr });
     if (d === 0) { msgs.push(`${h.name} verfehlt ${e.name}.`); sfx = 'miss'; }
     else {
       e.hp = Math.max(0, e.hp - d);
-      const note = h.row === 'back' && !h.ranged ? ' (Hinterreihe, Nahkampf: halber Schaden)' : '';
+      const note = backPen(data, h) ? ' (Hinterreihe, Nahkampf: halber Schaden)' : '';
       msgs.push(`${h.name} trifft ${e.name} für ${d} Schaden${note}.${SEP}${explain(tr)}`);
       sfx = 'hit';
       if (e.hp === 0) msgs.push(`${e.name} bricht zusammen.`);
     }
-    regen(h, msgs);
+    regen(h, msgs, data);
   } else if (act.type === 'ability' || act.type === 'spell') {
     const ab = act.type === 'spell' ? knownSpells(data, h).find((s) => s.id === act.spell) : data.classes[h.cls].ability;
     if (!ab) return { error: 'no-ability' };
@@ -960,7 +1027,7 @@ export function heroAction(state, data, act) {
       const parts = [];
       for (const ti of targets) {
         const t = state.heroes[ti], stT = c.status['h' + ti];
-        const gain = Math.min(ab.heal, t.maxHp - t.hp);
+        const gain = Math.min(ab.heal + talentSum(data, h, 'heal'), t.maxHp - t.hp);
         t.hp += gain;
         parts.push(`${t.name}${gain > 0 ? ` +${gain}` : ''}`);
         if (ab.cleanse && stT && stT[ab.cleanse]) { delete stT[ab.cleanse]; msgs.push(`${t.name}: ${data.statuses[ab.cleanse].name} wird genommen.`); }
@@ -982,7 +1049,7 @@ export function heroAction(state, data, act) {
         const tr = {};
         const el = ab.element ? ((enemyOf(data, e).resist || {})[ab.element] || 0) : 0;
         if (el !== 0) noteBestiary(state, e.kind, 'resist', ab.element);
-        const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h, state)), enemyOf(data, e).def, { backMelee: h.row === 'back' && !h.ranged, mult: ab.mult, sure: !!ab.sure, elem: el, elemName: ab.element && data.elements[ab.element].name, trace: tr });
+        const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h, state)), enemyOf(data, e).def, { backMelee: backPen(data, h), mult: Math.floor((ab.mult * (100 + talentSum(data, h, 'abil'))) / 100), crit: rollCrit(state, data, h), sure: !!ab.sure, elem: el, elemName: ab.element && data.elements[ab.element].name, trace: tr });
         if (d === 0) { msgs.push(`${h.name} setzt ${ab.name} ein, verfehlt aber ${e.name}${list.length === 1 ? ` (−${ab.cost} ${rn})` : ''}.`); continue; }
         hit = true;
         e.hp = Math.max(0, e.hp - d);
@@ -1000,22 +1067,22 @@ export function heroAction(state, data, act) {
     let hit = false;
     for (const e of live) {
       const tr = {};
-      const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h, state)), enemyOf(data, e).def, { backMelee: h.row === 'back' && !h.ranged, mult: SWEEP_MULT, trace: tr });
+      const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h, state)), enemyOf(data, e).def, { backMelee: backPen(data, h), mult: SWEEP_MULT, trace: tr });
       if (d === 0) { msgs.push(`${h.name} verfehlt ${e.name}.`); continue; }
       hit = true; e.hp = Math.max(0, e.hp - d);
       msgs.push(`${h.name} trifft ${e.name} für ${d} Schaden.${SEP}${explain(tr)}`);
       if (e.hp === 0) msgs.push(`${e.name} bricht zusammen.`);
     }
     sfx = hit ? 'hit' : 'miss';
-    regen(h, msgs);
+    regen(h, msgs, data);
   } else if (act.type === 'defend') {
     c.defending[a.idx] = true;
     msgs.push(`${h.name} verteidigt.`);
     sfx = 'defend';
-    regen(h, msgs);
+    regen(h, msgs, data);
   } else if (act.type === 'item') {
     const iid = act.item || 'potion', it = data.items[iid];
-    if (it && !it.throw && act.hero !== a.idx) return { error: 'bad-target' }; // Gegenstände nutzt nur der Held, der gerade dran ist, an sich selbst
+    if (it && !it.throw && act.hero !== a.idx && !data.classes[h.cls].potionGiver) return { error: 'bad-target' }; // Gegenstände nutzt nur der Held, der gerade dran ist, an sich selbst
     if (it && it.cure) { // Gegengift: nimmt einen Status von einem Helden
       const t = state.heroes[act.hero], st = statusOf(state, 'h', act.hero);
       if (!(state.inv[iid] > 0) || !t || t.hp <= 0 || !st[it.cure]) return { error: 'bad-target' };
@@ -1096,7 +1163,7 @@ function enemyCast(state, data, ei, e, en, sp, msgs, opts) {
     if (opts.god) { msgs.push(`${sp.name} trifft ${t.name}, doch Debug-Unverwundbarkeit hält.`); sfx = 'hurt'; continue; }
     if (sp.kind === 'bolt') {
       const tr = {};
-      let d = calcDamage(state, effAtk(state, 'e', ei, en.atk), Math.floor(heroDef(data, t, state) / 2), { sure: true, defending: !!c.defending[ti], mult: sp.mult, trace: tr });
+      let d = calcDamage(state, effAtk(state, 'e', ei, foeAtk(state, data, en.atk)), Math.floor(heroDef(data, t, state) / 2), { sure: true, defending: !!c.defending[ti], mult: sp.mult, trace: tr });
       const cap = Math.max(1, Math.ceil(t.maxHp * (sp.all ? 0.4 : 0.5))); // ein Zauber nimmt höchstens die Hälfte der Max-LP (schützt den Magier)
       if (d > cap) { d = cap; tr.total = d; tr.cap = cap; }
       t.hp = Math.max(0, t.hp - d);
@@ -1129,10 +1196,16 @@ export function enemyStep(state, data, opts = {}) {
   if (sp) sfx = enemyCast(state, data, a.idx, e, en, sp, msgs, opts);
   else {
     const tr = {};
-    const d = calcDamage(state, effAtk(state, 'e', a.idx, en.atk), heroDef(data, t, state), { defending: !!c.defending[ti], mult: heavy ? hv.mult : 0, trace: tr });
+    let d = calcDamage(state, effAtk(state, 'e', a.idx, foeAtk(state, data, en.atk)), heroDef(data, t, state), { defending: !!c.defending[ti], mult: heavy ? hv.mult : 0, trace: tr });
+    let dodged = false;
+    if (d > 0) { // Talente: Ausweichen (Zufall nur bei Talent, damit alte Läufe gleich bleiben) und Schadensminderung
+      const dg = talentSum(data, t, 'dodge');
+      if (dg > 0 && rand(state) * 100 < dg) { d = 0; dodged = true; }
+      else { const sk = talentSum(data, t, 'soak'); if (sk > 0) { d = Math.max(1, d - sk); tr.soak = sk; } }
+    }
     const why = `${t.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}${c.defending[ti] ? ', verteidigt: halber Schaden' : ''}`;
     if (heavy) { msgs.push(`${e.name} setzt ${hv.name} ein!`); noteBestiary(state, e.kind, 'heavy'); }
-    if (d === 0) msgs.push(`${e.name} greift ${t.name} an (${why}) und verfehlt.`);
+    if (d === 0) msgs.push(dodged ? `${e.name} greift ${t.name} an, doch ${t.name} weicht aus.` : `${e.name} greift ${t.name} an (${why}) und verfehlt.`);
     else if (opts.god) { msgs.push(`${e.name} trifft ${t.name}, doch Debug-Unverwundbarkeit hält.`); sfx = 'hurt'; }
     else {
       t.hp = Math.max(0, t.hp - d);
@@ -1266,6 +1339,14 @@ export function validateState(state, data) {
     if (!Number.isInteger(hh.maxMp) || hh.maxMp < 0) err.push(`${n}: Max-Ressource ungültig`);
     else if (!Number.isInteger(hh.mp) || hh.mp < 0 || hh.mp > hh.maxMp) err.push(`${n}: Ressource ungültig`);
     if (typeof hh.hp !== 'number' || hh.hp < 0 || hh.hp > hh.maxHp) err.push(`${n}: LP ungültig`);
+    if (hh.tal != null) {
+      if (typeof hh.tal !== 'object' || Array.isArray(hh.tal)) err.push(`${n}: Talente ungültig`);
+      else {
+        const ids = new Set(talentNodes(data, hh.cls).map((x) => x.id));
+        for (const k of Object.keys(hh.tal)) if (!ids.has(k) || hh.tal[k] !== true) err.push(`${n}: Talent ${k} ungültig`);
+        if (talentSpent(data, hh) > hh.level - 1) err.push(`${n}: mehr Talente als Punkte`);
+      }
+    }
     if (hh.equip != null) {
       if (typeof hh.equip !== 'object') err.push(`${n}: Ausrüstung ungültig`);
       else for (const s of SLOTS) { const id = hh.equip[s]; if (id != null && !(itemDef(state, data, id) && itemDef(state, data, id).kind === 'equip' && itemDef(state, data, id).slot === s)) err.push(`${n}: Ausrüstung ${s} ungültig`); }
@@ -1273,6 +1354,7 @@ export function validateState(state, data) {
   });
   if (!state.inv || typeof state.inv !== 'object') err.push('Inventar ungültig');
   else for (const [k, v] of Object.entries(state.inv)) if (!itemDef(state, data, k) || !Number.isInteger(v) || v < 0) err.push(`Inventar: ${k} ungültig`);
+  if (state.difficulty != null && !(data.difficulty && data.difficulty[state.difficulty])) err.push('Schwierigkeitsgrad ungültig');
   if (!Number.isInteger(state.gold) || state.gold < 0) err.push('Gold ungültig');
   if (!Array.isArray(state.objs)) err.push('Objekte ungültig');
   if (!Array.isArray(state.seen) || state.seen.length !== w * h) err.push('Karte ungültig');

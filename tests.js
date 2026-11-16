@@ -232,9 +232,9 @@ export async function runTests(data, env = {}) {
   // Echter Spielstand, erzeugt mit dem Code von Version 0.1.5 (Spielstandformat 1): Berenn 30/34 LP, Position 8/3, 20 Gold, 1 Trank, Tür A offen, 1 Notiz
   const V1_SAVE = '{"format":"eldermoor-save","v":1,"savedAt":"2026-11-12T20:15:00.000Z","state":{"rng":4242,"levelId":"test1","player":{"x":8,"y":3,"dir":1},"heroes":[{"id":"h1","name":"Berenn","role":"Krieger","row":"front","maxHp":34,"atk":8,"def":5,"init":4,"ranged":false,"hp":30},{"id":"h2","name":"Sira","role":"Schurke","row":"front","maxHp":24,"atk":7,"def":3,"init":7,"ranged":false,"hp":24},{"id":"h3","name":"Odalys","role":"Priester","row":"back","maxHp":26,"atk":5,"def":3,"init":3,"ranged":false,"hp":26},{"id":"h4","name":"Ivo","role":"Magier","row":"back","maxHp":18,"atk":8,"def":1,"init":5,"ranged":true,"hp":18}],"inv":{"potion":1},"gold":20,"flags":{},"objs":[{"id":"door_a","type":"door","x":6,"y":3,"locked":false,"open":true},{"id":"chest_a","type":"chest","x":12,"y":1,"loot":[{"item":"iron_key","n":1},{"item":"potion","n":2},{"gold":12}],"open":false},{"id":"door_b","type":"door","x":12,"y":7,"locked":true,"key":"iron_key","open":false},{"id":"en1","type":"enemy","x":16,"y":7,"kind":"schrat","hp":80,"dead":false},{"id":"exit1","type":"exit","x":19,"y":7}],"seen":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"notes":[70],"combat":null,"steps":5}}';
 
-  await test('Rassen und Berufe: Tabellen vollständig, alle 25 Kombinationen gültig', () => {
+  await test('Rassen und Berufe: Tabellen vollständig, alle 30 Kombinationen gültig', () => {
     eq(Object.keys(data.races), ['human', 'elf', 'dwarf', 'ork', 'gnome'], 'Rassen');
-    eq(Object.keys(data.classes), ['warrior', 'rogue', 'priest', 'mage', 'ranger'], 'Berufe');
+    eq(Object.keys(data.classes), ['warrior', 'rogue', 'priest', 'mage', 'ranger', 'alchemist'], 'Berufe');
     assert(!data.heroes, 'game.json darf keine festen Helden mehr enthalten');
     for (const [k, c] of Object.entries(data.classes)) {
       assert(c.name && (c.row === 'front' || c.row === 'back') && typeof c.ranged === 'boolean', `Beruf ${k}: Felder`);
@@ -1380,8 +1380,8 @@ export async function runTests(data, env = {}) {
   // ---- Phase 2, Schritt 2: Stufen, Erfahrung, Wachstum, Migration v2→v3 ----
   await test('Stufen: Stufe 1 = alte Werte, Wachstum nie rückläufig, Stufe 10 plausibel', () => {
     const pr = data.progression;
-    eq(pr.maxLevel, 10, 'Höchststufe');
-    eq(pr.xp.length, 9, 'Schwellen für Stufe 2 bis 10');
+    eq(pr.maxLevel, 15, 'Höchststufe');
+    eq(pr.xp.length, 14, 'Schwellen für Stufe 2 bis 15');
     assert(pr.xp.every((v, i) => Number.isInteger(v) && v > (i ? pr.xp[i - 1] : 0)), 'Schwellen streng steigend');
     for (const r of Object.keys(data.races)) for (const c of Object.keys(data.classes)) {
       const c1 = L.deriveStats(data, r, c), c1b = L.deriveStats(data, r, c, 1);
@@ -1396,14 +1396,14 @@ export async function runTests(data, env = {}) {
     }
     const w10 = L.deriveStats(data, 'human', 'warrior', 10);
     eq([w10.maxHp, w10.atk, w10.def, w10.init], [88, 15, 11, 6], 'Mensch-Krieger Stufe 10 (Handrechnung: 34+54, 8+7, 5+6, 4+2)');
-    let threw = false; try { L.deriveStats(data, 'human', 'warrior', 11); } catch { threw = true; }
-    assert(threw, 'Stufe 11 abgelehnt');
+    let threw = false; try { L.deriveStats(data, 'human', 'warrior', 16); } catch { threw = true; }
+    assert(threw, 'Stufe 16 abgelehnt');
     threw = false; try { L.deriveStats(data, 'human', 'warrior', 1.5); } catch { threw = true; }
     assert(threw, 'Stufe 1,5 abgelehnt');
   });
 
   await test('Erfahrung: Schwellen, Aufstieg, LP-Zuwachs, Bewusstlose gehen leer aus, Höchststufe begrenzt', () => {
-    eq([0, 99, 100, 249, 250, 3199, 3200, 99999].map((x) => L.levelForXp(data, x)), [1, 1, 2, 2, 3, 9, 10, 10], 'levelForXp');
+    eq([0, 99, 100, 249, 250, 3199, 3200, 99999].map((x) => L.levelForXp(data, x)), [1, 1, 2, 2, 3, 9, 10, 15], 'levelForXp');
     const s = fresh(); s.heroes[2].hp = 0; s.heroes[0].hp = 10;
     const before = JSON.parse(JSON.stringify(s.heroes));
     const msgs = [];
@@ -1416,11 +1416,11 @@ export async function runTests(data, env = {}) {
     eq(b.hp, 10 + (d.maxHp - before[0].maxHp), 'LP steigen um den Zuwachs der Max-LP, keine Vollheilung');
     assert(msgs.some((m) => /Berenn steigt auf Stufe 2/.test(m)), 'Meldung');
     L.grantXp(s, data, 1000000, []);
-    eq([s.heroes[0].level, s.heroes[0].xp], [10, 3200], 'Höchststufe 10, EP gedeckelt');
-    const st10 = L.deriveStats(data, b.race, b.cls, 10);
-    eq(s.heroes[0].maxHp, st10.maxHp, 'Stufe-10-Werte');
+    eq([s.heroes[0].level, s.heroes[0].xp], [15, 9200], 'Höchststufe 15, EP gedeckelt');
+    const st10 = L.deriveStats(data, b.race, b.cls, 15);
+    eq(s.heroes[0].maxHp, st10.maxHp, 'Stufe-15-Werte');
     eq(L.xpForNext(data, s.heroes[0]), null, 'keine nächste Stufe');
-    eq(L.xpForNext(data, s.heroes[1]), null, 'auch Sira auf Stufe 10');
+    eq(L.xpForNext(data, s.heroes[1]), null, 'auch Sira auf Stufe 15');
     eq(L.grantXp(fresh(), data, 0, []).length, 0, '0 EP ändern nichts');
   });
 
@@ -1461,7 +1461,7 @@ export async function runTests(data, env = {}) {
       let msg = ''; try { L.deserialize(o, data); } catch (e) { msg = e.message; }
       assert(re.test(msg), `erwartet ${re}, erhalten „${msg}“`);
     };
-    bad((h) => { h.level = 11; }, /Stufe ungültig/);
+    bad((h) => { h.level = 16; }, /Stufe ungültig/);
     bad((h) => { h.level = 0; }, /Stufe ungültig/);
     bad((h) => { h.xp = -5; }, /Erfahrung ungültig/);
     bad((h) => { h.xp = 1.5; }, /Erfahrung ungültig/);
@@ -1818,6 +1818,97 @@ export async function runTests(data, env = {}) {
   }
 
   const failed = results.filter((r) => !r.ok).length;
+  await test('Talente (0.17.0): Daten vollständig – 6 Berufe × 3 Zweige × 4 Talente, Freischaltungen existieren', () => {
+    const FX = new Set(['hp', 'mp', 'atk', 'def', 'init', 'crit', 'dodge', 'resist', 'gold', 'abil', 'soak', 'heal', 'regen', 'backfull']);
+    const ids = new Set();
+    eq(data.talents.cost, [1, 1, 2, 2], 'Kosten');
+    for (const c of Object.keys(data.classes)) {
+      const br = L.talentBranches(data, c);
+      eq(br.length, 3, `${c}: drei Zweige`);
+      for (const b of br) {
+        eq(b.nodes.length, 4, `${c}/${b.id}: vier Talente`);
+        b.nodes.forEach((n, i) => {
+          assert(!ids.has(n.id), `Talent-ID doppelt: ${n.id}`); ids.add(n.id);
+          assert(n.name && n.desc, `${n.id}: Name/Beschreibung`);
+          for (const k of Object.keys(n.fx || {})) assert(FX.has(k), `${n.id}: unbekannte Wirkung ${k}`);
+          if (n.unlock) { assert(data.spells[n.unlock], `${n.id}: Fähigkeit ${n.unlock} fehlt`); assert(i === 3, `${n.id}: Freischaltung nur als 4. Talent`); }
+          else assert(n.fx && Object.keys(n.fx).length, `${n.id}: ohne Wirkung`);
+        });
+      }
+    }
+  });
+  await test('Talente: Punkte (1 je Stufe ab 2), Reihenfolge, Stufensperre, Kosten, Stat-Boni, Aufstieg', () => {
+    const s = fresh(); const h = s.heroes[0]; // Krieger
+    eq(L.talentPoints(data, h), 0, 'Stufe 1: kein Punkt');
+    eq(L.learnTalent(s, data, 0, 'w_haut').error, 'punkte', 'ohne Punkt nicht lernbar');
+    L.grantXp(s, data, 100, []); eq(L.talentPoints(data, h), 1, 'Stufe 2: ein Punkt');
+    eq(L.learnTalent(s, data, 0, 'w_wall').error, 'vorher', 'Reihenfolge im Zweig');
+    const hp0 = h.maxHp, def0 = L.heroDef(data, h, s);
+    assert(L.learnTalent(s, data, 0, 'w_haut').msg, 'erstes Talent lernbar');
+    eq([h.maxHp, h.hp, L.heroDef(data, h, s)], [hp0 + 8, hp0 + 8, def0 + 1], 'LP +8 (voll geheilt um Zuwachs), Verteidigung +1');
+    eq(L.talentPoints(data, h), 0, 'Punkt ausgegeben');
+    eq(L.learnTalent(s, data, 0, 'w_haut').error, 'gelernt', 'nicht doppelt');
+    L.grantXp(s, data, 100000, []); eq(h.level, 15, 'Stufe 15');
+    eq(L.talentPoints(data, h), 13, '14 Punkte − 1 ausgegeben');
+    assert(h.maxHp === L.deriveStats(data, h.race, h.cls, 15).maxHp + 8, 'Aufstieg behält Talent-LP');
+    L.learnTalent(s, data, 0, 'w_wille'); L.learnTalent(s, data, 0, 'w_wall');
+    eq(L.talentPoints(data, h), 13 - 1 - 2, 'Kosten 1/1/2');
+    assert(L.learnTalent(s, data, 0, 'w_stoss').msg, 'viertes Talent bei Stufe 15');
+    assert(L.knownSpells(data, h).some((x) => x.id === 'shieldbash'), 'Fähigkeit freigeschaltet');
+    const t = fresh(); t.heroes[0].level = 7; t.heroes[0].tal = { w_haut: true, w_wille: true, w_wall: true };
+    eq(L.canLearnTalent(data, t.heroes[0], 'w_stoss').why, 'stufe', 'viertes Talent erst ab Stufe 8');
+    assert(L.validateState(s, data).length === 0, 'Zustand gültig: ' + L.validateState(s, data).join(';'));
+    const bad = JSON.parse(JSON.stringify(s)); bad.heroes[0].tal.zzz = true; assert(L.validateState(bad, data).some((e) => /Talent/.test(e)), 'ungültiges Talent erkannt');
+    const bad2 = JSON.parse(JSON.stringify(s)); bad2.heroes[0].level = 3; assert(L.validateState(bad2, data).some((e) => /mehr Talente/.test(e)), 'mehr Talente als Punkte erkannt');
+  });
+  await test('Talente: Zurücksetzen kostet Gold, gibt alle Punkte zurück und nimmt Boni', () => {
+    const s = fresh(); L.grantXp(s, data, 450, []); const h = s.heroes[0];
+    L.learnTalent(s, data, 0, 'w_haut');
+    const cost = L.respecCost(data, h); eq(cost, 20 * h.level, 'Kosten');
+    s.gold = cost - 1; eq(L.respecTalents(s, data, 0).error, 'gold', 'zu wenig Gold');
+    s.gold = cost + 5; assert(L.respecTalents(s, data, 0).msg, 'Zurücksetzen klappt');
+    eq([s.gold, L.talentPoints(data, h), h.maxHp], [5, h.level - 1, L.deriveStats(data, h.race, h.cls, h.level).maxHp], 'Gold, Punkte, LP');
+    eq(L.respecTalents(s, data, 0).error, 'nothing', 'nichts mehr zu verlernen');
+  });
+  await test('Talente im Kampf: Ausweichen, Schadensminderung, Krit, Fähigkeitsbonus, Statusabwehr, Gold, Regeneration', () => {
+    const mk = (fx) => { const d = JSON.parse(JSON.stringify(data)); d.talents.classes.warrior[0].nodes[0].fx = fx; const s = L.newGame(d, 3); s.heroes[0].level = 5; s.heroes[0].tal = { w_haut: true }; return { d, s }; };
+    let { d, s } = mk({ dodge: 100 });
+    put(s, 15, 7, 1); L.startCombat(s, d, L.enemyInFront(s));
+    for (let i = 0; i < 30 && !s.combat.over; i++) { const a = L.currentActor(s); if (!a) break; if (a.side === 'h') L.heroAction(s, d, { type: 'defend' }); else { s.combat.enemies.forEach(() => 0); const r = L.enemyStep(s, d); if (r.msgs.some((m) => /weicht aus/.test(m))) { assert(s.heroes[0].hp === s.heroes[0].maxHp, 'Ausgewichen: keine LP verloren'); return; } } }
+    throw new Error('kein Ausweichen beobachtet (Zielwahl hat Berenn nie getroffen)');
+  });
+  await test('Talente: kritisch ×1,5, Fähigkeit +%, Gold-Bonus, Alchemist gibt Tränke an andere', () => {
+    const a = fresh(4), b = fresh(4);
+    const d1 = L.calcDamage(a, 20, 0, { sure: true }), d2 = L.calcDamage(b, 20, 0, { sure: true, crit: true });
+    eq(d2, Math.floor(d1 * 1.5), 'Krit ×1,5');
+    const d = JSON.parse(JSON.stringify(data)); d.talents.classes.warrior[1].nodes[2].fx = { abil: 100 };
+    const t = L.newGame(d, 9); t.heroes[0].level = 5; t.heroes[0].tal = { w_zorn: true, w_krit: true, w_wucht: true };
+    eq(L.talentSum(d, t.heroes[0], 'abil'), 100, 'Summe');
+    eq(L.talentSum(d, t.heroes[0], 'crit'), 8, 'Krit-Summe');
+    // Alchemist: Tränke an andere Helden im Kampf (alle anderen Berufe dürfen nur an sich selbst)
+    const s = L.newGame(d, 5, [{ name: 'Al', race: 'human', cls: 'alchemist' }, { name: 'B', race: 'human', cls: 'warrior' }, { name: 'C', race: 'human', cls: 'rogue' }, { name: 'D', race: 'human', cls: 'mage' }]);
+    s.inv.potion = 3; s.heroes[1].hp = 5;
+    put(s, 15, 7, 1); L.startCombat(s, d, L.enemyInFront(s));
+    for (let i = 0; i < 30; i++) { const c = L.currentActor(s); if (c.side === 'h' && s.heroes[c.idx].cls === 'alchemist') break; if (c.side === 'h') L.heroAction(s, d, { type: 'defend' }); else L.enemyStep(s, d); }
+    const cur = L.currentActor(s);
+    eq(s.heroes[cur.idx].cls, 'alchemist', 'Alchemist ist am Zug');
+    const r = L.heroAction(s, d, { type: 'item', item: 'potion', hero: 1 });
+    assert(!r.error, 'Alchemist darf Tränke weitergeben: ' + r.error);
+    const w = L.newGame(d, 6); w.inv.potion = 1; put(w, 15, 7, 1); L.startCombat(w, d, L.enemyInFront(w));
+    for (let i = 0; i < 30; i++) { const c = L.currentActor(w); if (c.side === 'h') break; L.enemyStep(w, d); }
+    eq(L.heroAction(w, d, { type: 'item', item: 'potion', hero: (L.currentActor(w).idx + 1) % 4 }).error, 'bad-target', 'andere Berufe nur an sich selbst');
+  });
+  await test('Schwierigkeit (0.17.0): Schwer = mehr LP/Angriff/Gold/EP, Normal unverändert, Speicherfeld geprüft', () => {
+    const n = L.newGame(data, 5), hd = L.newGame(data, 5, null, 'hard'), x = L.newGame(data, 5, null, 'quatsch');
+    eq([n.difficulty, hd.difficulty, x.difficulty], ['normal', 'hard', 'normal'], 'Schwierigkeit gesetzt, Unbekanntes wird Normal');
+    put(n, 15, 7, 1); put(hd, 15, 7, 1);
+    L.startCombat(n, data, L.enemyInFront(n)); L.startCombat(hd, data, L.enemyInFront(hd));
+    eq(n.combat.enemies[0].maxHp, data.enemies.schrat.hp, 'Normal: LP wie in den Daten');
+    eq(hd.combat.enemies[0].maxHp, Math.round(data.enemies.schrat.hp * 1.3), 'Schwer: +30 % LP');
+    eq(L.diffPct(hd, data, 'gold'), 120, 'Gold-Faktor'); eq(L.diffPct({}, data, 'atk'), 100, 'ohne Feld = Normal');
+    assert(L.validateState(hd, data).length === 0, 'gültig');
+    const bad = JSON.parse(JSON.stringify(hd)); bad.difficulty = 'x'; assert(L.validateState(bad, data).some((e) => /Schwierigkeit/.test(e)), 'ungültiger Grad erkannt');
+  });
   return { results, passed: results.length - failed, failed };
 }
 

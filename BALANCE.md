@@ -18,6 +18,11 @@ Kampfwerte = Berufswert + Rassenmodifikator + Wachstum je Stufe: `floor((Stufe �
 | 8 | 1900 | 500 |
 | 9 | 2500 | 600 |
 | 10 | 3200 | 700 |
+| 11 | 4000 | 800 |
+| 12 | 5000 | 1000 |
+| 13 | 6200 | 1200 |
+| 14 | 7600 | 1400 |
+| 15 | 9200 | 1600 |
 
 Gegner (EP: jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die volle Summe):
 
@@ -56,18 +61,20 @@ Gegner (EP: jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die vol
 | Kleriker | hinten | nein | 26 | 5 | 3 | 3 | 45/5/4/3 |
 | Magier | hinten | ja | 18 | 8 | 1 | 5 | 30/9/2/4 |
 | Waldläufer | hinten | ja | 24 | 7 | 2 | 6 | 40/8/3/5 |
+| Alchemist | hinten | ja | 22 | 6 | 2 | 5 | 36/7/3/4 |
 
 ## Fähigkeiten und Ressource (vorläufig, Schritt 3a)
 
 Angriff und Verteidigen schenken 1 Punkt Ressource zurück; nach jedem Kampf ist sie voll.
 
-| Beruf | Ressource (Stufe 1 / Stufe 10) | Fähigkeit | Kosten | Wirkung |
+| Beruf | Ressource (Stufe 1 / Stufe 15) | Fähigkeit | Kosten | Wirkung |
 |---|---|---|---|---|
-| Krieger | Ausdauer 10 / 28 | Wuchtschlag | 4 | 160 % Schaden, 35 % Chance auf Betäubung (Gegner setzt 1 Zug aus). |
-| Schurke | Ausdauer 10 / 28 | Hinterhalt | 4 | Trifft immer, 140 % Schaden, vergiftet 3 Runden (2 Schaden je Runde). |
-| Kleriker | Mana 12 / 39 | Heilende Hand | 5 | Heilt einen Helden um 20 LP und nimmt Gift. |
-| Magier | Mana 12 / 39 | Feuerblitz | 5 | Magischer Treffer: 180 % Schaden. 40 % Chance auf Brennen (3 Runden, 3 Schaden je Runde). |
-| Waldläufer | Ausdauer 10 / 28 | Gezielter Schuss | 4 | Trifft immer, 150 % Schaden, schwächt 2 Runden (−25 % Angriff). |
+| Krieger | Ausdauer 10 / 38 | Wuchtschlag | 4 | 160 % Schaden, 35 % Chance auf Betäubung (Gegner setzt 1 Zug aus). |
+| Schurke | Ausdauer 10 / 38 | Hinterhalt | 4 | Trifft immer, 140 % Schaden, vergiftet 3 Runden (2 Schaden je Runde). |
+| Kleriker | Mana 12 / 54 | Heilende Hand | 5 | Heilt einen Helden um 20 LP und nimmt Gift. |
+| Magier | Mana 12 / 54 | Feuerblitz | 5 | Magischer Treffer: 180 % Schaden. 40 % Chance auf Brennen (3 Runden, 3 Schaden je Runde). |
+| Waldläufer | Ausdauer 10 / 38 | Gezielter Schuss | 4 | Trifft immer, 150 % Schaden, schwächt 2 Runden (−25 % Angriff). |
+| Alchemist | Mana 12 / 48 | Brandflasche | 4 | Wurf mit Feuerschaden: 130 %. 50 % Chance auf Brennen (3 Runden, 2 Schaden je Runde). |
 
 ## Werte je Stufe (Mensch, keine Rassenmodifikatoren)
 
@@ -85,6 +92,11 @@ Angriff und Verteidigen schenken 1 Punkt Ressource zurück; nach jedem Kampf ist
 | 8 | 76 | 13 | 9 | 6 |
 | 9 | 82 | 14 | 10 | 6 |
 | 10 | 88 | 15 | 11 | 6 |
+| 11 | 94 | 16 | 12 | 7 |
+| 12 | 100 | 16 | 12 | 7 |
+| 13 | 106 | 17 | 13 | 7 |
+| 14 | 112 | 18 | 14 | 7 |
+| 15 | 118 | 19 | 14 | 8 |
 
 ### Schurke
 
@@ -100,6 +112,11 @@ Angriff und Verteidigen schenken 1 Punkt Ressource zurück; nach jedem Kampf ist
 | 8 | 52 | 12 | 5 | 10 |
 | 9 | 56 | 13 | 6 | 11 |
 | 10 | 60 | 14 | 6 | 11 |
+| 11 | 64 | 15 | 7 | 12 |
+| 12 | 68 | 15 | 7 | 12 |
+| 13 | 72 | 16 | 7 | 13 |
+| 14 | 76 | 17 | 8 | 13 |
+| 15 | 80 | 18 | 8 | 14 |
 
 ### Kleriker
 
@@ -115,6 +132,11 @@ Angriff und Verteidigen schenken 1 Punkt Ressource zurück; nach jedem Kampf ist
 | 8 | 57 | 8 | 5 | 5 |
 | 9 | 62 | 9 | 6 | 5 |
 | 10 | 66 | 9 | 6 | 5 |
+| 11 | 71 | 10 | 7 | 6 |
+| 12 | 75 | 10 | 7 | 6 |
+| 13 | 80 | 11 | 7 | 6 |
+| 14 | 84 | 11 | 8 | 6 |
+| 15 | 89 | 12 | 8 | 7 |
 
 ### Magier
 
@@ -130,6 +152,11 @@ Angriff und Verteidigen schenken 1 Punkt Ressource zurück; nach jedem Kampf ist
 | 8 | 39 | 14 | 2 | 7 |
 | 9 | 42 | 15 | 2 | 8 |
 | 10 | 45 | 16 | 2 | 8 |
+| 11 | 48 | 17 | 3 | 9 |
+| 12 | 51 | 17 | 3 | 9 |
+| 13 | 54 | 18 | 3 | 9 |
+| 14 | 57 | 19 | 3 | 10 |
+| 15 | 60 | 20 | 3 | 10 |
 
 ### Waldläufer
 
@@ -145,36 +172,66 @@ Angriff und Verteidigen schenken 1 Punkt Ressource zurück; nach jedem Kampf ist
 | 8 | 52 | 12 | 4 | 9 |
 | 9 | 56 | 13 | 4 | 10 |
 | 10 | 60 | 14 | 4 | 10 |
+| 11 | 64 | 15 | 5 | 11 |
+| 12 | 68 | 15 | 5 | 11 |
+| 13 | 72 | 16 | 5 | 12 |
+| 14 | 76 | 17 | 5 | 12 |
+| 15 | 80 | 18 | 6 | 13 |
 
-## Alle 25 Kombinationen auf Stufe 1 und Stufe 10
+### Alchemist
 
-| Rasse | Beruf | Stufe 1 (LP/Ang/Vert/Init) | Stufe 10 (LP/Ang/Vert/Init) |
+| Stufe | LP | Angriff | Verteidigung | Initiative |
+|---|---|---|---|---|
+| 1 | 22 | 6 | 2 | 5 |
+| 2 | 25 | 6 | 2 | 5 |
+| 3 | 29 | 7 | 2 | 5 |
+| 4 | 32 | 8 | 2 | 6 |
+| 5 | 36 | 8 | 3 | 6 |
+| 6 | 40 | 9 | 3 | 7 |
+| 7 | 43 | 10 | 3 | 7 |
+| 8 | 47 | 10 | 4 | 7 |
+| 9 | 50 | 11 | 4 | 8 |
+| 10 | 54 | 12 | 4 | 8 |
+| 11 | 58 | 13 | 5 | 9 |
+| 12 | 61 | 13 | 5 | 9 |
+| 13 | 65 | 14 | 5 | 9 |
+| 14 | 68 | 15 | 5 | 10 |
+| 15 | 72 | 15 | 6 | 10 |
+
+## Alle 25 Kombinationen auf Stufe 1 und Stufe 15
+
+| Rasse | Beruf | Stufe 1 (LP/Ang/Vert/Init) | Stufe 15 (LP/Ang/Vert/Init) |
 |---|---|---|---|
-| Mensch | Krieger | 34/8/5/4 | 88/15/11/6 |
-| Mensch | Schurke | 24/7/3/7 | 60/14/6/11 |
-| Mensch | Kleriker | 26/5/3/3 | 66/9/6/5 |
-| Mensch | Magier | 18/8/1/5 | 45/16/2/8 |
-| Mensch | Waldläufer | 24/7/2/6 | 60/14/4/10 |
-| Elf | Krieger | 32/8/5/6 | 86/15/11/8 |
-| Elf | Schurke | 22/7/3/9 | 58/14/6/13 |
-| Elf | Kleriker | 24/5/3/5 | 64/9/6/7 |
-| Elf | Magier | 16/8/1/7 | 43/16/2/10 |
-| Elf | Waldläufer | 22/7/2/8 | 58/14/4/12 |
-| Zwerg | Krieger | 38/8/6/3 | 92/15/12/5 |
-| Zwerg | Schurke | 28/7/4/6 | 64/14/7/10 |
-| Zwerg | Kleriker | 30/5/4/2 | 70/9/7/4 |
-| Zwerg | Magier | 22/8/2/4 | 49/16/3/7 |
-| Zwerg | Waldläufer | 28/7/3/5 | 64/14/5/9 |
-| Ork | Krieger | 37/9/5/3 | 91/16/11/5 |
-| Ork | Schurke | 27/8/3/6 | 63/15/6/10 |
-| Ork | Kleriker | 29/6/3/2 | 69/10/6/4 |
-| Ork | Magier | 21/9/1/4 | 48/17/2/7 |
-| Ork | Waldläufer | 27/8/2/5 | 63/15/4/9 |
-| Gnom | Krieger | 31/8/5/5 | 85/15/11/7 |
-| Gnom | Schurke | 21/7/3/8 | 57/14/6/12 |
-| Gnom | Kleriker | 23/5/3/4 | 63/9/6/6 |
-| Gnom | Magier | 15/8/1/6 | 42/16/2/9 |
-| Gnom | Waldläufer | 21/7/2/7 | 57/14/4/11 |
+| Mensch | Krieger | 34/8/5/4 | 118/19/14/8 |
+| Mensch | Schurke | 24/7/3/7 | 80/18/8/14 |
+| Mensch | Kleriker | 26/5/3/3 | 89/12/8/7 |
+| Mensch | Magier | 18/8/1/5 | 60/20/3/10 |
+| Mensch | Waldläufer | 24/7/2/6 | 80/18/6/13 |
+| Mensch | Alchemist | 22/6/2/5 | 72/15/6/10 |
+| Elf | Krieger | 32/8/5/6 | 116/19/14/10 |
+| Elf | Schurke | 22/7/3/9 | 78/18/8/16 |
+| Elf | Kleriker | 24/5/3/5 | 87/12/8/9 |
+| Elf | Magier | 16/8/1/7 | 58/20/3/12 |
+| Elf | Waldläufer | 22/7/2/8 | 78/18/6/15 |
+| Elf | Alchemist | 20/6/2/7 | 70/15/6/12 |
+| Zwerg | Krieger | 38/8/6/3 | 122/19/15/7 |
+| Zwerg | Schurke | 28/7/4/6 | 84/18/9/13 |
+| Zwerg | Kleriker | 30/5/4/2 | 93/12/9/6 |
+| Zwerg | Magier | 22/8/2/4 | 64/20/4/9 |
+| Zwerg | Waldläufer | 28/7/3/5 | 84/18/7/12 |
+| Zwerg | Alchemist | 26/6/3/4 | 76/15/7/9 |
+| Ork | Krieger | 37/9/5/3 | 121/20/14/7 |
+| Ork | Schurke | 27/8/3/6 | 83/19/8/13 |
+| Ork | Kleriker | 29/6/3/2 | 92/13/8/6 |
+| Ork | Magier | 21/9/1/4 | 63/21/3/9 |
+| Ork | Waldläufer | 27/8/2/5 | 83/19/6/12 |
+| Ork | Alchemist | 25/7/2/4 | 75/16/6/9 |
+| Gnom | Krieger | 31/8/5/5 | 115/19/14/9 |
+| Gnom | Schurke | 21/7/3/8 | 77/18/8/15 |
+| Gnom | Kleriker | 23/5/3/4 | 86/12/8/8 |
+| Gnom | Magier | 15/8/1/6 | 57/20/3/11 |
+| Gnom | Waldläufer | 21/7/2/7 | 77/18/6/14 |
+| Gnom | Alchemist | 19/6/2/6 | 69/15/6/11 |
 
 ## Beute
 
