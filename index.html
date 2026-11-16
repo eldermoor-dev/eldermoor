@@ -55,7 +55,10 @@ button{font:inherit;color:inherit}
 .card canvas{width:32px;height:32px;image-rendering:pixelated;flex:none;border-radius:3px}
 .card .nm{font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card .rw{opacity:.7}
-.card .hp{font-size:.66rem;opacity:.85}
+.card .hp{font-size:.64rem;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:clip}
+.card .pc{display:flex;flex-direction:column;align-items:center;flex:none;gap:1px}
+.card .rs-mp{color:#8fc0ff}.card .rs-au{color:#e8c860}
+.card .pc small{font-size:.5rem;line-height:1;opacity:.75}
 .card.act{outline:2px solid var(--amber)}
 .card.dead{opacity:.45;filter:grayscale(1)}
 .bar{height:6px;background:#2b241a;border-radius:3px;overflow:hidden}

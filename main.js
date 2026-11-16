@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPort
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.19.0';
+const VERSION = '0.19.1';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -711,10 +711,12 @@ function renderParty() {
     const pct = Math.round(100 * h.hp / h.maxHp);
     const card = document.createElement('div');
     card.className = 'card' + (h.hp <= 0 ? ' dead' : '') + (cur && cur.side === 'h' && cur.idx === i ? ' act' : '');
-    card.append(makePortrait(h));
+    const pc = document.createElement('div'); pc.className = 'pc'; // 0.19.1: Reihe steht unter dem Porträt, damit der Name nicht abgeschnitten wird (Gerätefoto: „Berenn · vo…“)
+    const rw = document.createElement('small'); rw.textContent = h.row === 'front' ? 'vorn' : 'hinten';
+    pc.append(makePortrait(h), rw); card.append(pc);
     const info = document.createElement('div');
     info.style.cssText = 'flex:1;min-width:0';
-    info.innerHTML = `<div class="nm">${esc(h.name)} <span class="rw">· ${h.row === 'front' ? 'vorn' : 'hinten'}</span> ${stIcons('h', i)}</div><div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div><div class="hp">${h.hp}/${h.maxHp} · ${h.mp}/${h.maxMp} ${esc(S.data.classes[h.cls].res.name === 'Mana' ? 'MP' : 'AU')}</div>`;
+    info.innerHTML = `<div class="nm">${esc(h.name)} ${stIcons('h', i)}</div><div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div><div class="hp">${h.hp}/${h.maxHp} · <span class="${S.data.classes[h.cls].res.name === 'Mana' ? 'rs-mp' : 'rs-au'}">${h.mp}/${h.maxMp}</span></div>`; // 0.19.1: Einheit entfällt (wurde am Rand abgeschnitten) – Mana blau, Ausdauer gelb
     card.append(info);
     card.addEventListener('click', () => { // Kopf antippen = Heilziel wählen (nur wenn gerade ein Ziel für Heilzauber gefragt ist)
       const b = $('#actionbar') && $(`#actionbar [data-c="abheal:${i}"]`);
@@ -842,7 +844,7 @@ function openMenu() {
 function helpHtml() {
   return `<h2>Steuerung &amp; Info</h2>
   <h3>Links: Bewegung</h3><p>↑ Vor, ↓ Zurück, ← → seitwärts, ↶ ↷ um 90° drehen. Gedrückt halten wiederholt die Bewegung.</p>
-  <h3>Rechts: Aktionen</h3><p>◉ Interagieren (Türen, Truhen, Hebel, Gegner ansprechen; Türen und Truhen gehen auch auf, wenn du gegen sie läufst oder sie direkt vor dir antippst), ⚔ Angriff, ✦ Fähigkeit (nur im Kampf, kostet Mana oder Ausdauer). Bei mehreren Gegnern: Gegner antippen = Ziel wählen, „Alle“ trifft jeden Gegner mit 60 % Schaden, ▣ Inventar, ☻ Charakter (dort „Talente“: ab Stufe 2 gibt jede Stufe einen Punkt; drei Zweige je Beruf, außerdem neue Fähigkeiten).</p>
+  <h3>Rechts: Aktionen</h3><p>◉ Interagieren (Türen, Truhen, Hebel, Gegner ansprechen; Türen und Truhen gehen auch auf, wenn du gegen sie läufst oder sie direkt vor dir antippst), ⚔ Angriff, ✦ Fähigkeit (nur im Kampf, kostet Mana oder Ausdauer). Bei mehreren Gegnern: Gegner antippen = Ziel wählen, „Alle“ trifft jeden Gegner mit 60 % Schaden, ▣ Inventar (Heldenleiste: LP · Mana in Blau bzw. Ausdauer in Gelb), ☻ Charakter (dort „Talente“: ab Stufe 2 gibt jede Stufe einen Punkt; drei Zweige je Beruf, außerdem neue Fähigkeiten).</p>
   <h3>Kombinationsangriffe</h3><p>Automatisch, wenn ein Held einen Gegner trifft, der einen passenden Status von einem <b>anderen</b> Helden trägt. Im Kampf zeigt „✚ Kombi“ am Gegner, was gerade möglich ist.</p>${S.data.combos.map((c) => `<p class="muted" style="margin:2px 0">✚ <b>${esc(c.name)}</b>: ${esc(c.desc)}</p>`).join('')}
   <h3>Fallen</h3><p>Fallen verraten sich durch eine feine Spur am Boden oder eine Warnung an der Wand. ◉ auf das Feld vor dir untersucht den Boden, ein zweites ◉ entschärft die Falle. Helden mit Fallen-Talent (Schurke, Waldläufer, Alchemist) bemerken und entschärfen sie eher. Ausgelöste Fallen kosten LP, töten aber niemanden.</p>
   <h3>Steine und Druckplatten</h3><p>Schwere Steine lassen sich schieben (von vorn dagegenlaufen) und ziehen (◉, die Gruppe geht dabei einen Schritt zurück). Eine Druckplatte hält ein Gitter nur offen, solange etwas Schweres auf ihr liegt.</p>
