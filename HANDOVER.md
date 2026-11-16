@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.16.12 (16.11.2026). 0.16.3 vom Nutzer auf dem Galaxy S25 durchgetestet (siehe Abschnitt 0.16.4). Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.16.13 (16.11.2026). 0.16.3 vom Nutzer auf dem Galaxy S25 durchgetestet (siehe Abschnitt 0.16.4). Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -570,3 +570,10 @@ Nutzerwunsch: Monster besser und gefährlicher aussehen lassen, auch die Skelett
 - Farben folgen der Gebietspalette (Gruft grau, Gruben bräunlich, Turm bläulich).
 - Test: jede Gegnerart hat ein Bild; Wolf/Kultist/Turmwache/Kultwächter/Hauptmann/Skelett teilen kein Bild. 90 Tests grün; Optik headless geprüft; Gerätetest steht aus.
 - Plan: 0.16.13 Nebelhüter neu + Thron, 0.16.14 mittlere Gebiete schwerer, 0.17 Talente.
+
+## 0.16.13 – Wolf neu, Blick zum Gegner (16.11.2026)
+Nutzerfund (Gerät, Sumpfwolf): „kann mich nicht bewegen und nicht angreifen“; Wolf sieht albern aus, soll vierbeinig und hundeähnlich sein, schwarz mit grünen Moosflecken.
+- **Angriff:** Das gemeldete „kann nicht angreifen“ ließ sich im Testbrowser NICHT nachstellen (Angriff per Klick und per Touch-Tipp, Überfall und normaler Start, mehrere Runden). Ursache nicht gesichert. Vermutung (nicht geprüft): Der Wolf stand seitlich außerhalb des Bildes und die Drehung ist im Kampf gesperrt. Maßnahmen: Die Gruppe wendet sich beim Kampfstart dem Gegner zu (`dirToward`, Achse mit größerem Abstand); die Sperrmeldung nennt jetzt die Kampfknöpfe (Angriff, Verteidigen, Gegenstand, Fähigkeit). Bitte beim nächsten Test genau notieren: welcher Knopf, welche Meldung, wessen Zug.
+- **Sumpfwolf:** neues Bild im Profil auf vier Beinen, schwarzes Fell, grüne Moosflecken, gesträubter Rücken, gelbe Augen, gefletschte Zähne; im Bild 1,3× größer (`spriteScale`).
+- Tests: 91 grün. Gerätetest steht aus.
+- Plan: 0.16.14 Nebelhüter neu + Thron, 0.16.15 mittlere Gebiete schwerer, 0.17 Talente.

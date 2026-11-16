@@ -1518,6 +1518,12 @@ export async function runTests(data, env = {}) {
     eq(buildSprites([o], tex, 0, 0, { x: 2 }).length, 2, 'Zahl funktioniert weiter');
   });
 
+  await test('Kampfstart (0.16.12): Gruppe wendet sich dem Gegner zu', () => {
+    eq(L.dirToward({ x: 5, y: 5, dir: 0 }, { x: 8, y: 5 }), 1, 'Osten'); eq(L.dirToward({ x: 5, y: 5, dir: 0 }, { x: 5, y: 8 }), 2, 'Süden');
+    eq(L.dirToward({ x: 5, y: 5, dir: 0 }, { x: 2, y: 6 }), 3, 'Westen (größere Achse)'); eq(L.dirToward({ x: 5, y: 5, dir: 2 }, { x: 5, y: 3 }), 0, 'Norden');
+    eq(L.dirToward({ x: 5, y: 5, dir: 3 }, { x: 6, y: 6 }), 3, 'gleich weit: Blick bleibt');
+  });
+
   await test('Kampffiguren (0.16.12): jede Gegnerart der Daten hat ein eigenes Bild, Wolf/Kultist/Turmwache nicht mehr Ersatzbild', () => {
     const tex = makeTextures();
     const seen = new Map();

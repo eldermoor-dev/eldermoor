@@ -276,6 +276,12 @@ export function enemyInFront(state) {
 
 // Entdeckt-werden (0.16.10, Nutzerwunsch): ein lebender Gegner in Sichtlinie und höchstens data.spot.range Feldern (Chebyshev) greift an.
 // Steht er nicht in Blickrichtung (gleiche Zeile/Spalte vor der Gruppe), ist es ein Überfall: die Gegner ziehen in Runde 1 zuerst.
+// Himmelsrichtung (0=N,1=O,2=S,3=W) vom Spieler zum Gegner: die Achse mit dem größeren Abstand
+export function dirToward(p, o) {
+  const dx = o.x - p.x, dy = o.y - p.y;
+  if (dx === 0 && dy === 0) return p.dir;
+  return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : Math.abs(dy) > Math.abs(dx) ? (dy > 0 ? 2 : 0) : p.dir;
+}
 export function spottedEnemy(state, data) {
   const range = (data.spot && data.spot.range) || 2;
   const lvl = getLevel(data, state), p = state.player, d = DIRS[p.dir];

@@ -1,7 +1,7 @@
 // Die Schatten von Eldermoor – Spielsteuerung, Oberfläche, Eingabe
 // Autor: eldermoor-dev
 import {
-  DIRS, DIR_NAMES, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
+  DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
   buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
 } from './logic.js';
@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPort
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.16.12';
+const VERSION = '0.16.13';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -352,7 +352,7 @@ function frontEnemy() {
 }
 function doMove(rel) {
   const g = S.game;
-  if (g.combat) { say('Im Kampf kannst du dich nicht bewegen.'); S.held = []; return; }
+  if (g.combat) { say('Im Kampf geht das nicht. Nutze unten Angriff, Verteidigen, Gegenstand oder Fähigkeit.'); S.held = []; return; }
   const r = tryMove(g, S.data, rel);
   if (r.moved) {
     S.sfx.play('step'); vib(8);
@@ -375,7 +375,7 @@ function doMove(rel) {
 }
 function doTurn(d) {
   const g = S.game;
-  if (g.combat) { say('Im Kampf kannst du dich nicht drehen.'); S.held = []; return; }
+  if (g.combat) { say('Im Kampf geht das nicht. Nutze unten Angriff, Verteidigen, Gegenstand oder Fähigkeit.'); S.held = []; return; }
   const r = turn(g, S.data, d);
   renderCompass();
   S.target.a += d * Math.PI / 2;
@@ -436,6 +436,10 @@ function startCombatUI(enemyObj, ambush) {
   if (S.game.combat) return;
   S.held = []; S.queued = null;
   startCombat(S.game, S.data, enemyObj, { ambush: !!ambush });
+  { // Die Gruppe wendet sich dem Gegner zu (0.16.12): bei Entdeckung von der Seite blickt sie in seine Richtung
+    const nd = dirToward(S.game.player, enemyObj), od = S.game.player.dir, dd = ((nd - od + 5) % 4) - 1;
+    if (dd !== 0) { S.game.player.dir = nd; S.target.a += dd * Math.PI / 2; beginTween(220); renderCompass(); }
+  }
   S.clog = []; S.annKey = null; S.phaseShown = {};
   S.foe = 0;
   const name = S.game.combat.enemies.map((e) => e.name).join(', ');

@@ -953,24 +953,32 @@ function genGuard(seed, v = 'wacht') {
 }
 const vnoiseCol = (px, seed) => 0.5 + 0.5 * Math.sin(px * 1.9 + seed); // senkrechte Falten
 
-function genWolf(seed) { // Sumpfwolf: geduckt, Zähne gefletscht, gelbe Augen, struppiges Fell
+function genWolf(seed) { // Sumpfwolf: vierbeinig im Profil (blickt nach links), schwarzes Fell mit grünen Moosflecken, gesträubter Rücken, gefletschte Zähne
   return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y, vn }) => {
-    const dx = px - 32, l = lit(px, py), fur = (vn(px * 3, py * 0.9, 6) - 0.5) * 1.6 + nz(x, y) * 0.5;
-    const F = (b) => ['iron', b - l * 1.3 + fur];
-    if (ell(px, py, 27, 19.8, 2.8, 1.4) <= 1 || ell(px, py, 37, 19.8, 2.8, 1.4) <= 1) return ['glow', ell(px, py, 27, 19.8, 0.9, 0.9) <= 1 || ell(px, py, 37, 19.8, 0.9, 0.9) <= 1 ? 3 : 7];
-    if (cap(px, py, 22.8, 16.8, 30, 18.6, 0.8, 0.8) || cap(px, py, 41.2, 16.8, 34, 18.6, 0.8, 0.8)) return ['ceil', 0];
-    if (ell(px, py, 32, 33.6, 4.3, 2.8) <= 1) return (cap(px, py, 29, 32, 29.4, 36.6, 0.9, 0.25) || cap(px, py, 35, 32, 34.6, 36.6, 0.9, 0.25) || cap(px, py, 30.6, 36, 30.8, 33.8, 0.6, 0.2) || cap(px, py, 33.4, 36, 33.2, 33.8, 0.6, 0.2)) ? ['stone', 7] : py > 35 ? ['flesh', 2.2] : ['ceil', 0];
-    if (ell(px, py, 32, 31.4, 2.4, 1.6) <= 1) return ['ceil', 0];
-    if (ell(px, py, 32, 28, 5.8, 6.4) <= 1) return ['stone', 5.4 - l * 0.8 + fur * 0.5];
-    if (cap(px, py, 24, 15.5, 22, 5, 3, 0.4) || cap(px, py, 40, 15.5, 42, 5, 3, 0.4)) return F(2.4);
-    if (ell(px, py, 32, 22, 10.4, 9.4) <= 1) return F(3.9);
-    if (cap(px, py, 24.2, 38, 22, 60, 3.9, 3) || cap(px, py, 39.8, 38, 42, 60, 3.9, 3)) return F(3.3);
-    if (ell(px, py, 21.6, 61.9, 4.6, 2.3) <= 1 || ell(px, py, 42.4, 61.9, 4.6, 2.3) <= 1) return ['stone', 3.4 + fur * 0.4];
-    if (ell(px, py, 32, 41, 10, 8) <= 1) return ['stone', 4.6 - l * 0.8 + fur * 0.6];
-    if (cap(px, py, 32, 29, 32, 41, 7.4, 8.6)) return F(3.7);
-    if (ell(px, py, 18, 52, 6.4, 9.4) <= 1 || ell(px, py, 46, 52, 6.4, 9.4) <= 1) return F(2.8);
-    if (ell(px, py, 32, 49, 17, 12.5) <= 1) return Math.abs(dx) < 9 && py > 52 ? ['stone', 3.8 + fur * 0.5] : F(3.1);
-    if (cap(px, py, 47, 52, 56, 37, 2.8, 1.1)) return F(2.4);
+    const l = lit(px, py), fur = (vn(px * 2.6, py * 1.1, 5) - 0.5) * 1.2 + nz(x, y) * 0.45;
+    const moss = vn(px * 1.7 + 9, py * 1.7, 4) > 0.64;
+    const F = (b) => (moss ? ['moss', 2.1 + fur * 0.7 + (b - 1.6) * 0.5] : ['ceil', b - l * 0.7 + fur * 0.8]);
+    // Kopf zuerst (liegt vorn): Auge, Brauen, Nase, Zähne, Maul
+    if (ell(px, py, 11.4, 28.4, 1.9, 1.15) <= 1) return ['glow', ell(px, py, 10.8, 28.4, 0.7, 0.7) <= 1 ? 3.6 : 7];
+    if (cap(px, py, 8.6, 25.8, 14.8, 27.4, 0.7, 0.9)) return ['ceil', 0];
+    if (ell(px, py, 2.9, 31.2, 1.7, 1.4) <= 1) return ['ceil', 0];
+    if (cap(px, py, 4.6, 33.2, 5, 37.6, 0.85, 0.2) || cap(px, py, 8.2, 33.6, 8.6, 38, 0.85, 0.2) || cap(px, py, 11.2, 33.2, 11.5, 36.4, 0.7, 0.2) || cap(px, py, 5.8, 31.8, 5.9, 29.9, 0.6, 0.2)) return ['stone', 7];
+    if (cap(px, py, 4.4, 34.6, 12.5, 35.2, 1.1, 1.0)) return ['flesh', 2];
+    if (ell(px, py, 8.6, 36.8, 4.8, 1.9) <= 1) return F(1.8); // Unterkiefer
+    if (cap(px, py, 15.8, 25.4, 18.6, 17.2, 2.8, 0.4)) return F(1.6); // Ohr vorn
+    if (cap(px, py, 19.4, 26.2, 23.4, 18.8, 2.6, 0.4)) return F(1.2); // Ohr hinten
+    if (ell(px, py, 13.6, 29.4, 8.6, 6.4) <= 1 || cap(px, py, 11, 30.6, 3.2, 32.4, 4.8, 2.4)) return F(2.4); // Schädel und Schnauze
+    // Rückenborsten
+    for (let i = 0; i < 9; i++) { const bx = 22 + i * 3.3; if (cap(px, py, bx, 33.5, bx + 1.2, 29.6 - (i % 2) * 1.3 - (i === 3 || i === 4 ? 0.8 : 0), 1.5, 0.2)) return F(1.4); }
+    // Läufe (vorn kräftig, hinten angewinkelt), Pfoten
+    if (cap(px, py, 21, 44, 19.4, 61, 3, 1.7) || cap(px, py, 29, 46, 30.4, 61, 2.8, 1.6)) return F(1.5);
+    if (cap(px, py, 46.5, 46, 51, 54.5, 3.6, 2.3) || cap(px, py, 51, 54.5, 46.5, 61, 2.3, 1.6) || cap(px, py, 40, 48, 40.6, 61, 2.8, 1.6)) return F(1.3);
+    if (ell(px, py, 18.6, 61.9, 3.2, 1.4) <= 1 || ell(px, py, 31, 61.9, 3.2, 1.4) <= 1 || ell(px, py, 45.2, 61.9, 3.2, 1.4) <= 1 || ell(px, py, 40.6, 61.9, 3.2, 1.4) <= 1) return ['ceil', 1.4 + fur * 0.3];
+    // Schwanz, Rumpf, Hals
+    if (cap(px, py, 52.5, 37, 61, 47, 3.4, 1.4)) return F(1.5);
+    if (ell(px, py, 47.5, 40, 8.6, 9.6) <= 1) return F(2);
+    if (ell(px, py, 34, 39.5, 15.5, 9) <= 1) return py > 44.5 ? ['ceil', 2.9 + fur * 0.5] : F(2.2);
+    if (cap(px, py, 24, 38, 15.6, 30.4, 8.2, 5.4)) return F(2.3);
     return null;
   });
 }
@@ -1256,7 +1264,7 @@ export function buildGrid(lvl, objs) {
 const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'turmwache' ? tex.sprites.turmwache : k === 'wolf' ? tex.sprites.wolf : k === 'kultist' ? tex.sprites.kultist : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
 const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' ? 1 : 0.9); // Bosse stehen größer im Gang
 export const GROUP_SCALE = 0.78, GROUP_GAP = 0.44, CHEST_SCALE = 0.62; // 0.16.4: Gruppen vorher 0.62/0.36, Truhe 0.5 (Nutzer: zu klein, hinter der Leiste)
-export const spriteScale = (k, n) => (n > 1 ? GROUP_SCALE : bossScale(k));
+export const spriteScale = (k, n) => (n > 1 ? GROUP_SCALE : bossScale(k)) * (k === 'wolf' ? 1.3 : 1); // Wolf ist niedrig gebaut: größer ansetzen
 // Aufstellung einer Gruppe (0.16.4b): lat = seitlich (rechts +), dep = Tiefe (vom Betrachter weg). Im engen Gang (links und rechts Wand)
 // stehen die Gegner gestaffelt hintereinander statt nebeneinander, sonst ragen sie in die Wände (Nutzer-Screenshot 0.16.4).
 export function groupOffsets(n, narrow) {
