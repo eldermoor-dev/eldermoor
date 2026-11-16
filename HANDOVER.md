@@ -624,3 +624,5 @@ Nutzerwünsche: „Beim Monsterkampf wieder wie bei der Truhe Blick leicht runte
 - Tests 93 grün (Node). Alles nur headless (Chrome/Playwright) gesehen, **nicht auf Gerät getestet**.
 - Offene Gerätetests: Kampfbild bei Einzelgegner, Zweier-/Dreiergruppe im engen Gang und im Freien; Eck-Treppen in test1/Moorrand; ob echte Türen noch falsch wirken.
 - Plan unverändert: Paket A Talente (0.17.0, Start auf „Bauen“), Paket B Nebelhüter + Thron, mittlere Gebiete schwerer, Balance; Paket C Moorfestung.
+- Nachtrag 0.16.17 (Nutzer: „Undeutlich, besser wieder nur Schriftzug, Schilder unnötig“): Wandtafeln und Türschilder sind **abgeschafft**; `genPlaque` malt nur noch Schrift (helle Buchstaben, dunkle Kontur) direkt auf Wand bzw. Tür. `PLAQUE_STYLES`/`style` in game.json bleiben vorerst bestehen, werden aber nicht mehr gezeichnet. Headless gesehen, **nicht auf Gerät getestet**. Offen: Schrift am Bildrand wird bei Nahsicht angeschnitten (Perspektive, kein Fehler der Textur) – bei Störung melden.
+- Bestätigt (Gerät): Moorkultist und Moorlicht sehen gut aus.

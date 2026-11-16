@@ -556,10 +556,36 @@ function paintPlaque(buf, N, title, kind, styleName, seed) {
   });
   return m;
 }
+// 0.16.17 (Nutzer: „Undeutlich, besser wieder nur Schriftzug, Schilder unnötig“): nur Schrift direkt auf Wand/Tür, ohne Tafel.
+// Helle Buchstaben mit dunkler Kontur, damit sie auf Holz und Stein lesbar bleiben.
 function genPlaque(title, kind, styleName, seed) {
-  const buf = new Uint8Array(PLQ * PLQ).fill(255);
-  paintPlaque(buf, PLQ, title, kind, styleName, seed);
-  return { w: PLQ, h: PLQ, data: buf, noWrap: true };
+  const N = PLQ, buf = new Uint8Array(N * N).fill(255);
+  const lines = String(title || '').toUpperCase().split('|').slice(0, 2).filter(Boolean);
+  const maxC = Math.max(1, ...lines.map((l) => [...l].slice(0, 8).length)), cw = 6;
+  const s = Math.max(2, Math.min(lines.length > 1 ? 4 : 5, Math.floor(168 / (cw * maxC))));
+  const ex = Math.max(1, s >> 2), lh = 9 * s, th = lines.length * lh - 2 * s;
+  const ty0 = kind === 'door' ? 14 : Math.round(N / 2 - th / 2);
+  const mask = new Uint8Array(N * N);
+  lines.forEach((ln, li) => {
+    const chars = [...ln].slice(0, 8), w = chars.length * cw * s - s, lx = Math.round(N / 2 - w / 2), ly = ty0 + li * lh;
+    chars.forEach((ch, ci) => {
+      const g = (FONT[ch] || FONT[' ']).split('/');
+      for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) {
+        if (g[r][c] !== '1') continue;
+        const px = lx + ci * cw * s + c * s, py = ly + r * s;
+        for (let yy = 0; yy < s + ex; yy++) for (let xx = 0; xx < s + ex; xx++) { const X = px + xx, Y = py + yy; if (X >= 0 && Y >= 0 && X < N && Y < N) mask[Y * N + X] = 1; }
+      }
+    });
+  });
+  const ol = Math.max(2, (s >> 1));
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    if (mask[y * N + x]) continue;
+    let near = false;
+    for (let dy = -ol; dy <= ol && !near; dy++) for (let dx = -ol; dx <= ol; dx++) { const X = x + dx, Y = y + dy; if (X >= 0 && Y >= 0 && X < N && Y < N && mask[Y * N + X]) { near = true; break; } }
+    if (near) buf[y * N + x] = P('stone', 0);
+  }
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (mask[y * N + x]) buf[y * N + x] = P('glow', 5.6 + hash(x >> 2, y >> 2, seed) * 0.5);
+  return { w: N, h: N, data: buf, noWrap: true };
 }
 // Rahmen einer offenen Tür (Sprite, 1×1 Feld): Pfosten, Sturz (mit Raumname), Türblatt nach innen aufgeklappt an der linken Seite.
 function genDoorFrame(title, styleName, seed) {
