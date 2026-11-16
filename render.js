@@ -385,16 +385,32 @@ function genMerchant(seed) { // Hedda: Händlerin mit Kopftuch, Umhang, Schürze
   t.noWrap = true;
   return t;
 }
-function genWisp(seed) {
-  const t = mk(255);
-  for (let y = 0; y < TEX; y++) for (let x = 0; x < TEX; x++) {
-    const dx = x - 32, dy = y - 34, r = Math.hypot(dx, dy);
-    if (r < 9) t.data[y * TEX + x] = P('flesh', 7);
-    else if (r < 15) t.data[y * TEX + x] = P('flesh', 5.5 - (r - 9) * 0.5 + hash(x, y, seed) * 0.8);
-    else if (r < 21 && hash(x, y, seed + 1) > 0.55 + (r - 15) * 0.07) t.data[y * TEX + x] = P('flesh', 3 - (r - 15) * 0.3);
-  }
-  for (let i = 0; i < 6; i++) { const a = i * 1.05 + seed; for (let k = 0; k < 9; k++) { const px = Math.round(32 + Math.cos(a) * (14 + k)), py = Math.round(34 + Math.sin(a) * (14 + k) * 0.8 + k * 0.9); if (px >= 0 && px < TEX && py >= 0 && py < TEX && hash(px, py, seed + 2) > 0.3) t.data[py * TEX + px] = P('flesh', 2.5 - k * 0.2); } }
-  return t;
+function genWisp(seed) { // Moorlicht (0.16.16, 128 px, ohne Umriss): lodernde Flamme mit schreiendem Geistergesicht, Greifarmen mit Krallen, wehendem Schweif und Funken
+  const sparks = Array.from({ length: 16 }, (_, i) => { const a = hash(i, 1, seed) * 6.283, r = 17 + hash(i, 2, seed) * 11; return { x: 32 + Math.cos(a) * r * 1.05, y: 30 + Math.sin(a) * r * 0.9 - 2, r: 0.5 + hash(i, 3, seed) * 0.7 }; });
+  return paintFigure(seed, ({ ell, cap, nz, px, py, x, y, vn }) => {
+    const dx = px - 32, dy = py - 29, n = nz(x, y);
+    // Gesicht (liegt vorn)
+    if (ell(px, py, 29.8, 27.6, 0.8, 0.8) <= 1 || ell(px, py, 34.2, 27.6, 0.8, 0.8) <= 1) return ['glow', 7];
+    if (cap(px, py, 26.8, 25.8, 31, 28.3, 1.9, 1.1) || cap(px, py, 37.2, 25.8, 33, 28.3, 1.9, 1.1)) return ['ceil', 0];
+    if (cap(px, py, 25, 22.4, 30.8, 25, 0.7, 0.9) || cap(px, py, 39, 22.4, 33.2, 25, 0.7, 0.9)) return ['ceil', 0];
+    if (ell(px, py, 32, 35.2, 3.3, 5) <= 1) { for (let i = 0; i < 4; i++) if (cap(px, py, 29.6 + i * 1.6, 30.6, 29.6 + i * 1.6, 32.6, 0.55, 0.1)) return ['flesh', 7]; return ['ceil', 0]; }
+    // Funken
+    for (const sp of sparks) if (Math.hypot(px - sp.x, py - sp.y) <= sp.r) return ['flesh', 6.4];
+    // Greifarme links und rechts: wellige Schwaden mit Krallenfingern
+    for (const sg of [-1, 1]) {
+      const wob = Math.sin(py * 0.35 + seed + sg) * 1.6;
+      if (cap(px, py, 32 + sg * 9, 33, 32 + sg * 18 + wob, 42, 3.3, 1.9) || cap(px, py, 32 + sg * 18 + wob, 42, 32 + sg * 21.4, 53, 1.9, 1.1)) return ['flesh', 3.4 + n * 0.9 + (px > 0 ? 0 : 0)];
+      for (let f = 0; f < 3; f++) if (cap(px, py, 32 + sg * 21.4, 53, 32 + sg * (22.4 + f * 1.9), 58.6 + (f === 1 ? 1.6 : 0), 0.9, 0.12)) return ['flesh', 5.4];
+    }
+    // Flammenkörper: unruhiger Rand, nach oben in Zungen verlängert
+    const ang = Math.atan2(dy, dx), up = Math.max(0, -Math.sin(ang));
+    const R = 10.2 + 3.6 * vn(Math.cos(ang) * 2.6 + 3, Math.sin(ang) * 2.6 + seed, 2) + up * (9 + 9 * Math.abs(Math.sin(ang * 5 + seed * 0.3)) ** 1.3);
+    const rr = Math.hypot(dx * 1.22, dy);
+    // Schweif nach unten (Tropfen, wellig)
+    const tail = py > 36 && py < 61 && Math.abs(dx - Math.sin(py * 0.3 + seed) * 2.2) < (61 - py) * 0.33 * (1 + (py - 36) * 0.02 * 0) + 0.2;
+    if (rr < R || tail) { const t = Math.min(1, rr / R), b = tail && rr >= R ? 4.2 - (py - 36) * 0.09 : 7 - t * 4.6; return ['flesh', Math.max(1.2, b + (n - 0.5) * 1.1)]; }
+    return null;
+  }, 128, false);
 }
 
 // 5×7-Pixelschrift für Schilder (Großbuchstaben, Ziffern, wenige Zeichen)
@@ -886,8 +902,8 @@ function genLever(used, seed) {
 }
 
 // ---------- 0.16.12: neue Kampffiguren (128×128, kontinuierlich abgetastet): Skelett, Kultwächter, Turmwache, Hauptmann, Wolf, Kultist ----------
-function paintFigure(seed, build) {
-  const SN = 128, k = 64 / SN, t = { w: SN, h: SN, data: new Uint8Array(SN * SN).fill(255) };
+function paintFigure(seed, build, SN = 128, outline = true) {
+  const k = 64 / SN, t = { w: SN, h: SN, data: new Uint8Array(SN * SN).fill(255) };
   const ell = (px, py, cx, cy, rx, ry) => ((px - cx) / rx) ** 2 + ((py - cy) / ry) ** 2;
   const cap = (px, py, ax, ay, bx, by, r0, r1) => { const vx = bx - ax, vy = by - ay, q = Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / (vx * vx + vy * vy || 1))); return Math.hypot(px - ax - vx * q, py - ay - vy * q) <= r0 + (r1 - r0) * q; };
   const lit = (px, py) => ((px - 32) * 0.9 + (py - 34) * 0.3) / 18; // Licht von links oben
@@ -901,7 +917,7 @@ function paintFigure(seed, build) {
     if (r[0] === 'glow') lock[y * SN + x] = 1;
   }
   const copy = t.data.slice();
-  for (let y = 1; y < SN - 1; y++) for (let x = 1; x < SN - 1; x++) { const i = y * SN + x; if (copy[i] !== 255 && !lock[i] && (copy[i - 1] === 255 || copy[i + 1] === 255 || copy[i - SN] === 255 || copy[i + SN] === 255)) t.data[i] = P(MATS[copy[i] >> 3], Math.max(0, (copy[i] & 7) - 2.6)); }
+  if (outline) for (let y = 1; y < SN - 1; y++) for (let x = 1; x < SN - 1; x++) { const i = y * SN + x; if (copy[i] !== 255 && !lock[i] && (copy[i - 1] === 255 || copy[i + 1] === 255 || copy[i - SN] === 255 || copy[i + SN] === 255)) t.data[i] = P(MATS[copy[i] >> 3], Math.max(0, (copy[i] & 7) - 2.6)); }
   t.noWrap = true;
   return t;
 }
@@ -1005,25 +1021,74 @@ function genWolf(seed) { // Sumpfwolf: vierbeinig im Profil (blickt nach links),
   });
 }
 
-function genKultist(seed) { // Moorkultist: schwarze Kutte, Knochenmaske, krummer Dolch, Laterne mit Irrlicht
-  return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y }) => {
+function genKultist(seed) { // Moorkultist (0.16.16, 192 px): Spitzkapuze mit Widderhörnern, leere Gesichtshöhle mit glühenden Schlitzaugen, Knochenmaske mit Zähnen, Knochenzacken an den Schultern, gezackter Dolch mit Gift, grüne Zauberhand mit Krallen, Brustsiegel, Gürtel mit Schädeln, zerfetzter Saum
+  return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y, vn }) => {
     const dx = px - 32, l = lit(px, py), n = nz(x >> 1, y >> 1);
-    const C = (b) => ['ceil', b - l * 0.9 + n * 0.5];
-    if (ell(px, py, 29, 14.8, 1.5, 0.9) <= 1 || ell(px, py, 35, 14.8, 1.5, 0.9) <= 1) return ['glow', 7];
-    if (ell(px, py, 32, 15.4, 5.2, 6.2) <= 1) return Math.abs(py - 19.6) < 0.5 && Math.abs(dx) < 2.6 ? ['ceil', 0] : ['stone', 6 - l + n * 0.6];
-    if (ell(px, py, 32, 13.4, 8.4, 9.6) <= 1) return C(1.8);
-    // Dolch (rechts erhoben) mit leuchtender Spitze
-    if (cap(px, py, 50, 25, 51.5, 8, 1.5, 0.3)) return py < 11 ? ['glow', 6.4] : ['iron', px > 50.5 ? 4.6 : 6.3];
-    if (cap(px, py, 47, 26, 53.5, 26, 1, 1)) return ['iron', 3];
-    if (cap(px, py, 43, 24.5, 48, 33, 3.2, 2.6) || cap(px, py, 48, 33, 50, 26.5, 2.6, 2.1)) return C(2.6);
-    if (ell(px, py, 16, 41.6, 3.2, 3.4) <= 1) return ['glow', 6.4 + n * 0.5];
-    if (cap(px, py, 22.5, 25, 17, 38, 3.2, 2.6)) return C(2.6);
-    if (ell(px, py, 32, 23.5, 13, 5.4) <= 1) return C(2.4);
-    if (Math.abs(Math.hypot(dx, py - 33) - 3.1) < 0.75) return ['glow', 4.8];
-    const hem = 62.5 - 1.8 * Math.abs(Math.sin(px * 1.3 + seed));
-    if (py > 21 && py < hem && Math.abs(dx) < 7.6 + (py - 21) * 0.3) return py > 57 && Math.abs(dx) > 1 && ((Math.floor(px * 1.5) % 3) === 0) ? ['glow', 3.4] : py > 44 && py < 46.4 ? ['wood', 1.6] : C(2.2 - Math.abs(Math.sin(px * 2.1 + seed)) * 0.9 + (py - 40) * 0.01);
+    const C = (b) => ['ceil', b - l * 0.8 + n * 0.5];
+    const bone = (b) => ['stone', b - l * 0.9 + n * 0.6];
+    // Augen (schräg, böse) und Zähne zuerst
+    if (cap(px, py, 27.1, 13.6, 30.7, 15.5, 1.0, 0.6) || cap(px, py, 36.9, 13.6, 33.3, 15.5, 1.0, 0.6)) return ['glow', 7];
+    if (ell(px, py, 32, 20.2, 4.2, 3.2) <= 1 && py > 18.6) { // Maul: schwarz mit unregelmäßigen Reißzähnen oben und unten
+      for (let i = 0; i < 5; i++) { const tx = 28.6 + i * 1.7, len = 1.6 + hash(i, 5, seed) * 1.7; if (cap(px, py, tx, 18.8, tx, 18.8 + len, 0.62, 0.08) || cap(px, py, tx + 0.8, 23.6, tx + 0.8, 23.6 - len * 0.7, 0.55, 0.08)) return bone(7); }
+      return ['ceil', 0];
+    }
+    if (cap(px, py, 24.6, 9.6, 31.5, 11.6, 0.6, 0.35) || cap(px, py, 39.4, 9.6, 32.5, 11.6, 0.6, 0.35)) return ['ceil', 0]; // finstere Brauen
+    // Widderhörner (seitlich der Kapuze, eingerollt)
+    for (const sg of [-1, 1]) {
+      const hx = 32 + sg * 8.6;
+      if (cap(px, py, hx, 10.5, 32 + sg * 14.2, 6.6, 2.5, 1.9) || cap(px, py, 32 + sg * 14.2, 6.6, 32 + sg * 17, 11.8, 1.9, 1.2) || cap(px, py, 32 + sg * 17, 11.8, 32 + sg * 14.6, 15.4, 1.2, 0.3)) return Math.abs(Math.sin((py + px * 0.6) * 1.9)) > 0.78 ? bone(4.4) : bone(6.4);
+    }
+    if (ell(px, py, 32, 19.4, 5.6, 5.4) <= 1 && py > 17.2) return bone(5.6 + n * 0.6); // Kiefer der Maske
+    if (ell(px, py, 32, 14.4, 6.2, 7.2) <= 1) return ['ceil', 0]; // leere Gesichtshöhle
+    // Kapuze: Spitze und Haube mit Falten
+    const peak = py > 0.8 && py < 10.6 && Math.abs(dx) < (py - 0.8) * 0.9 + 0.2;
+    if (peak || ell(px, py, 32, 13.4, 9.1, 10.6) <= 1) return C(1.5 + vn(px * 1.2, py * 0.4, 7) * 1.2 + (dx < -4 ? 0.7 : 0));
+    // Dolch (rechts erhoben): gezackte Klinge, Parierstange, Giftadern und Tropfen
+    const blade = cap(px, py, 50.2, 19.5, 52.2, 10.2, 1.45, 1.25) || cap(px, py, 52.2, 10.2, 49.6, 2.4, 1.25, 0.15);
+    if (blade) {
+      if (cap(px, py, 50.6, 18, 51.7, 8, 0.32, 0.3)) return ['glow', 6.2];
+      return ['iron', (px > 51.4 ? 4.3 : 6.5) + (Math.floor(py * 1.1) % 2 === 0 && px < 50.6 ? -0.8 : 0)];
+    }
+    for (let i = 0; i < 4; i++) { const ty = 7 + i * 3; if (cap(px, py, 50.6 - i * 0.2, ty, 48.9 - i * 0.2, ty + 1.1, 0.7, 0.1)) return ['iron', 5.6]; } // Sägezähne
+    if (cap(px, py, 46.6, 20.2, 53.8, 20.2, 0.95, 0.95)) return ['iron', 3.2];
+    if (ell(px, py, 53.6, 24.4, 0.6, 1.1) <= 1 || ell(px, py, 47.2, 27, 0.55, 1.0) <= 1) return ['glow', 6]; // Tropfen
+    if (ell(px, py, 50.2, 22, 2.3, 2.5) <= 1) return bone(5.4); // Hand
+    for (const f of [[48.5, 19.6], [50.2, 19.1], [52, 19.6]]) if (cap(px, py, f[0], 21, f[0] + (f[0] - 50.2) * 0.1, f[1], 0.7, 0.55)) return bone(4.8);
+    // rechter Arm (weiter Ärmel)
+    if (cap(px, py, 42.5, 25.8, 48.6, 31.5, 3.7, 3) || cap(px, py, 48.6, 31.5, 50.2, 23.4, 3, 2.1)) return C(2 + vn(px * 0.9, py * 0.5, 4) * 1.3);
+    // linke Zauberhand mit grüner Flamme und Krallen
+    if (ell(px, py, 13.2, 39, 3.8, 5.2) <= 1) return ['flesh', ell(px, py, 13.2, 40, 1.7, 2.6) <= 1 ? 7 : 5.2 + n * 0.8];
+    if (cap(px, py, 13.2, 36, 11.8, 29.4, 2.4, 0.2) || cap(px, py, 15.4, 37, 17.8, 31.8, 1.7, 0.2) || cap(px, py, 11, 37, 8.8, 32.4, 1.5, 0.2)) return ['flesh', 5.6 + n * 0.8];
+    if (ell(px, py, 13.2, 45.2, 3.1, 3.3) <= 1) return bone(5.2);
+    for (const f of [[9.6, 51.2], [12, 52.4], [14.6, 52.4], [17.2, 51]]) if (cap(px, py, 13.2 + (f[0] - 13.2) * 0.4, 46.2, f[0], f[1], 0.85, 0.15)) return bone(6);
+    if (cap(px, py, 21.6, 26, 15.6, 33, 3.7, 3) || cap(px, py, 15.6, 33, 13.4, 43, 3, 2.4)) return C(2 + vn(px * 0.9 + 7, py * 0.5, 4) * 1.3);
+    // Schulterkragen mit Knochenzacken
+    for (let i = 0; i < 4; i++) for (const sg of [-1, 1]) {
+      const bx = 32 + sg * (8.2 + i * 3.4), top = 20.8 + i * 0.9 - (i === 1 ? 1.6 : 0);
+      if (cap(px, py, bx, 25.8, bx + sg * 0.9, top, 1.2, 0.12)) return bone(6.2 - i * 0.2);
+    }
+    if (ell(px, py, 32, 25.6, 14.2, 5.2) <= 1) return C(2.6 + vn(px * 1.4, py * 0.8, 5) * 1.5);
+    // Brustsiegel: offenes Auge (Mandel mit Pupille und kurzen Strahlen)
+    { const ex = dx / 4.6, ey = (py - 34) / 2.4, eye = ex * ex + ey * ey;
+      if (Math.abs(eye - 1) < 0.34 && Math.abs(ey) < 1.02) return ['glow', 5.2];
+      if (ell(px, py, 32, 34, 1.15, 1.15) <= 1) return ['glow', 7];
+      for (const sg of [-1, 0, 1]) if (cap(px, py, 32 + sg * 3.4, 29.2 - (sg === 0 ? 0.6 : 0), 32 + sg * 4.6, 27.2, 0.45, 0.2)) return ['glow', 4.6]; }
+    // Gürtel mit Schnalle, Knochenschädeln an Ketten und herabhängenden Fetzen
+    for (const sx of [25.6, 38.6]) {
+      if (ell(px, py, sx, 51.4, 2, 2.3) <= 1) return ell(px, py, sx - 0.7, 51.4, 0.5, 0.7) <= 1 || ell(px, py, sx + 0.7, 51.4, 0.5, 0.7) <= 1 ? ['ceil', 0] : bone(6.1);
+      if (cap(px, py, sx, 46.4, sx, 49.2, 0.3, 0.3)) return ['iron', 4];
+    }
+    if (py > 44 && py < 46.9 && Math.abs(dx) < 9.2) return Math.abs(dx) < 1.9 ? ['glow', 5.4] : ['wood', 1.7 + n * 0.7];
+    // Robe: breiter werdend, Falten, zerfetzter Saum, Risse
+    const hem = 62.6 - 2.4 * Math.abs(Math.sin(px * 1.35 + seed)) - 1.3 * Math.abs(Math.sin(px * 3.7 + seed * 0.7));
+    if (py > 21 && py < hem && Math.abs(dx) < 7.6 + (py - 21) * 0.34) {
+      if (py > 52 && vn(px * 3.2, py * 0.6, 6) > 0.67) return null; // Risse im Saum
+      if (Math.abs(dx) < 1 && py > 46.9) return ['ceil', 0]; // Schlitz
+      if (py > 56.6 && Math.abs(dx) > 1 && Math.floor(px * 1.6 + seed) % 3 === 0) return ['glow', 3.2]; // glimmender Saum
+      return C(1.5 + vn(px * 1.1, py * 0.3, 3) * 1.6 + Math.abs(Math.sin(px * 0.8 + seed)) * 0.5 - Math.max(0, (py - 44) * 0.03));
+    }
     return null;
-  });
+  }, 192);
 }
 
 function genPortal(seed) {
@@ -1118,7 +1183,7 @@ export function makeTextures(detail = 1) {
     wall: { [WALL_STONE]: stoneW, [WALL_SECRET]: genSecretWall(stoneW, 301), [WALL_SWITCH]: genSwitchWall(stoneW, false), [WALL_SWITCH_ON]: genSwitchWall(stoneW, true), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
     ceil: genCeil(53, nf),
-    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genGuard(183, 'turm')), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genRobed(251, 'priester')), hueter: sm2(genRobed(261, 'hueter')), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genGuard(183, 'turm')), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genRobed(251, 'priester')), hueter: sm2(genRobed(261, 'hueter')), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 

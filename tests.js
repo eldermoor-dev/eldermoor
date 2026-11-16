@@ -1561,6 +1561,10 @@ export async function runTests(data, env = {}) {
       if (['wolf', 'kultist', 'turmwache', 'kultwaechter', 'hauptmann', 'skeleton'].includes(k)) { assert(sp.tex !== tex.sprites.schrat, k + ' ohne Ersatzbild'); assert(!seen.has(sp.tex), k + ' teilt Bild mit ' + seen.get(sp.tex)); seen.set(sp.tex, k); }
     }
     for (const k of ['skeleton', 'guard', 'turmwache', 'captain', 'wolf', 'kultist']) { const d = tex.sprites[k].data; let n = 0; for (const v of d) if (v !== 255) n++; assert(n > 1500, k + ' hat Fläche: ' + n); }
+    // 0.16.16: Moorkultist 192 px, Moorlicht 128 px (Retro) bzw. doppelt im Modus Scharf
+    eq(tex.sprites.kultist.w, 192, 'Kultist 192 px'); eq(tex.sprites.wisp.w, 128, 'Moorlicht 128 px');
+    const sh = makeTextures(2); eq(sh.sprites.kultist.w, 384, 'Kultist scharf 384'); eq(sh.sprites.wisp.w, 256, 'Moorlicht scharf 256');
+    let wn = 0; for (const v of sh.sprites.wisp.data) if (v !== 255) wn++; assert(wn > 6000, 'Moorlicht hat Fläche: ' + wn);
   });
 
   await test('Schratgruben (0.15): Treppe hin und zurück, Schlüsseltruhe vor dem Tor, Boss, Gegner bekannt', () => {

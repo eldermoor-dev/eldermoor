@@ -1,11 +1,12 @@
 # CHANGELOG – Die Schatten von Eldermoor
 
-Quelle: HANDOVER.md (Stand 0.16.15, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
+Quelle: HANDOVER.md (Stand 0.16.16, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
 ## 0.16.x (Inhaltsphase, Nebelturm und Nacharbeiten)
 | Version | Änderungen | Status |
 |---|---|---|
+| 0.16.16 | Moorkultist neu (192 px: Widderhörner, Reißzähne, Sägedolch, Zauberhand, Augen-Siegel) und Moorlicht neu (Flamme mit Geistergesicht, Greifarme, Funken); Tests 93 | headless, Gerät offen |
 | 0.16.15 | Kampfdistanz wieder 1 Feld (nur gerade Nachbarfelder, Kamera weicht im Kampf nicht mehr zurück); Treppen/Bögen/Ausgänge an Wänden als Wand-Abziehbild statt frontalem Bild; Tests 93 | headless, Gerät offen |
 | 0.16.14 | Schilder schärfer: Schrift bei allen Schriftarten dicker, einzeilige Titel bis Faktor 4, Tafelbreite begrenzt; Fix: Türen aus alten Spielständen übernehmen `style` und `title` aus game.json (vorher Zufallsstil); Tests 93 | headless, Gerät offen |
 | 0.16.13 | Sumpfwolf neu (vierbeinig, schwarz, grüne Moosflecken, 1,3× größer); Gruppe wendet sich beim Kampfstart dem Gegner zu; Sperrmeldung beim Drehen nennt die Kampfknöpfe; „kann nicht angreifen“ nicht nachstellbar (Ursache offen); Tests 91 | Gerät: „passt“ (Gesamtmeldung) |
@@ -95,4 +96,4 @@ Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ 
 | 0.1.2 | Kampfprotokoll, Zugbalken, Geräusche einzeln abschaltbar |
 | 0.1.1 | Fackelflackern als Einstellung |
 
-Detailwerte und Begründungen stehen nur in HANDOVER.md. Plan: 0.16.16 Nebelhüter neu + Thron, 0.16.17 mittlere Gebiete schwerer, 0.17 Talente.
+Detailwerte und Begründungen stehen nur in HANDOVER.md. Plan: 0.16.17 Nebelhüter neu + Thron, 0.16.18 mittlere Gebiete schwerer, 0.17 Talente.
