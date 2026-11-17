@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.19.5 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.19.6 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -701,3 +701,9 @@ Nur headless geprüft (Node 103 Tests grün), **nicht auf Gerät getestet**.
 - **Karte:** zweifache Fingergeste = Zoom (1–8×), Ziehen = Verschieben, Mausrad am Desktop; Tippen auf Zelle = Notiz bleibt, nach Ziehen/Zoomen wird keine Notiz gesetzt (400 ms). Karte intern in dreifacher Auflösung (`cs` × 3), Größe wird per `fitMapView` eingepasst; Hülle `#mapvp`. Reine Anzeige, Spielstand unverändert.
 - Testliste (Artifact) auf 0.19.5 aktualisiert; die drei Fehlerpunkte haben neue IDs (`tg-wolfsize5`, `tg-sign5`, `mp-map5`).
 - Plan unverändert: 0.20 Truhenarten, Geheimräume/falscher Schatz, Talente außerhalb des Kampfes → 0.21 Ausrüstungseffekte, Sets, Gegnertaktik → 0.22 Ereignisse → 0.23 ff. Moorfestung. Nutzerwunsch 16.11.: größere Pakete statt Einzelkorrekturen; nicht für jeden Test eine neue Version.
+
+## 0.19.6 – Meldungsfeld (17.11.2026)
+Nutzer (Foto 0.19.5, Moorpfad-Eingang, drei Meldungen inkl. langem Text von Hedda): „Der viele Text versperrt den Blick auf den Gang.“ Nur headless geprüft (Node 103 Tests), **nicht auf Gerät getestet**.
+- `renderLog` (main.js): außerhalb des Kampfes höchstens 2 Meldungen (vorher 3), je höchstens 2 Zeilen (`#log.calm`, CSS line-clamp), Ausblenden nach 3–6 s (3 s + 40 ms je Zeichen, max. 6 s; `S.logTs` = Zeitstempel). Im Kampf unverändert (letzte 2). `S.log` und Protokoll bleiben vollständig. Lange Texte (Hedda) stehen weiter im Händlerfenster/Toast.
+- 0.19.5 war vom Nutzer als geladen bestätigt („V5 steht“); die Einzelpunkte der Testliste sind noch offen.
+- **Nachtrag 0.19.6 (Nutzer, Foto Kampf Moorpfad: „Spielfläche kaum noch zu sehen“):** Kampfoberfläche kompakter, nur CSS: Gegnerfenster schmaler (30 %/250 px, Schrift .66, Zeilen 24 statt 30 px, Zugreihenfolge kleiner), Aktionsleiste niedriger (28 statt 36 px, Schrift .7), Meldungen im Kampf kleiner (.74, enger), Abstand im Stack 2 px. Zahl der Zeilen unverändert. Nicht auf Gerät getestet; Lesbarkeit der kleineren Schrift offen. Falls es noch zu voll ist: Zugreihenfolge ausblendbar oder Aktionsleiste in eine Zeile.

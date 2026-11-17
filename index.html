@@ -25,11 +25,11 @@ button{font:inherit;color:inherit}
 @keyframes hit{0%{filter:brightness(2.4) saturate(1.6)}100%{filter:none}}
 #hud{position:absolute;inset:0;pointer-events:none}
 #fps{position:fixed;left:calc(env(safe-area-inset-left,0px) + 4px);top:calc(env(safe-area-inset-top,0px) + 44px);z-index:7;pointer-events:none;font:10px/1.25 monospace;white-space:pre;background:#000a;padding:2px 5px;border-radius:3px;color:#9f9}
-#enemybox{zoom:var(--hs,1);position:absolute;left:6px;top:calc(44px / var(--hs,1));width:min(36%,300px);background:rgba(14,11,8,.62);border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:.78rem}
+#enemybox{zoom:var(--hs,1);position:absolute;left:6px;top:calc(44px / var(--hs,1));width:min(30%,250px);background:rgba(14,11,8,.5);border:1px solid var(--line);border-radius:6px;padding:2px 6px;font-size:.66rem}
 #enemybox .en{display:flex;gap:8px;align-items:center}
 #enemybox .en .bar{flex:1}
 #enemybox{pointer-events:auto}
-#enemybox .en{cursor:pointer;padding:4px 6px;min-height:30px;box-sizing:border-box;touch-action:manipulation;border-radius:4px;border:1px solid transparent;flex-wrap:wrap}
+#enemybox .en{cursor:pointer;padding:1px 4px;min-height:24px;box-sizing:border-box;touch-action:manipulation;border-radius:4px;border:1px solid transparent;flex-wrap:wrap}
 #enemybox .en.sel{border-color:var(--amber);background:rgba(217,164,65,.12)}
 #enemybox .en.dead{opacity:.35;text-decoration:line-through;cursor:default}
 #enemybox .heavywarn{background:#8f1f12;border:1px solid #ff9d5c;color:#fff;font-weight:700;text-align:center;border-radius:5px;padding:5px 6px;margin:3px 0;font-size:.8rem;animation:hw 0.9s ease-in-out infinite}
@@ -38,16 +38,18 @@ button{font:inherit;color:inherit}
 @keyframes hwb{0%,100%{box-shadow:0 0 4px #ff9d5c}50%{box-shadow:0 0 14px #ff9d5c}}
 @media (prefers-reduced-motion:reduce){#enemybox .heavywarn,#actionbar .ab.pulse{animation:none}}
 #enemybox .en .warn{flex:1 0 100%;font-style:normal;color:#ff9d5c;font-size:.72rem}
-.order{margin-top:3px;display:flex;gap:3px;flex-wrap:wrap;font-size:.64rem}
-.order span{padding:1px 6px;border-radius:9px;background:#2a2116;border:1px solid #4a3c26}
+.order{margin-top:2px;display:flex;gap:2px;flex-wrap:wrap;font-size:.56rem}
+.order span{padding:0 5px;border-radius:9px;background:#2a2116;border:1px solid #4a3c26}
 .order span.now{background:var(--amber);color:#1b1208;border-color:var(--amber);font-weight:700}
 .order span.done{opacity:.4}
 .order span.foe{border-color:#7a3a30}
-#stack{zoom:var(--hs,1);position:absolute;left:50%;bottom:calc(4px / var(--hs,1));transform:translateX(-50%);width:min(62%,540px);display:flex;flex-direction:column;gap:4px}
+#stack{zoom:var(--hs,1);position:absolute;left:50%;bottom:calc(4px / var(--hs,1));transform:translateX(-50%);width:min(62%,540px);display:flex;flex-direction:column;gap:2px}
 #log{text-align:center;font-size:.84rem;text-shadow:0 1px 2px #000,0 0 5px #000}
 #log div{background:rgba(0,0,0,.42);border-radius:4px;padding:1px 6px;margin-top:2px}
+#log:not(.calm) div{font-size:.74rem;line-height:1.15;padding:0 6px;margin-top:1px}
+#log.calm div{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 #actionbar{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;pointer-events:auto}
-#actionbar .ab{flex:1 1 auto;min-height:36px;padding:0 6px;border-radius:8px;background:rgba(42,33,22,.92);border:1px solid var(--amber);font-size:.78rem;white-space:nowrap}
+#actionbar .ab{flex:1 1 auto;min-height:28px;padding:0 5px;border-radius:7px;background:rgba(42,33,22,.88);border:1px solid var(--amber);font-size:.7rem;white-space:nowrap}
 #actionbar .ab[disabled]{opacity:.4;border-color:#5a4a30}
 #actionbar .wait{padding:8px;font-size:.84rem;background:var(--panel);border-radius:6px}
 #party{display:flex;gap:4px;pointer-events:auto} /* #hud hat pointer-events:none – ohne auto kommen Tipps auf die Heldenkarten nie an (Fehler bis 0.16.3) */
@@ -140,7 +142,7 @@ button{font:inherit;color:inherit}
 #banner{position:fixed;top:0;left:0;right:0;z-index:40;background:#4a3410;padding:8px;display:flex;gap:10px;justify-content:center;align-items:center;font-size:.85rem}
 #toast{position:fixed;left:50%;top:48px;transform:translateX(-50%);z-index:45;background:rgba(0,0,0,.85);border:1px solid var(--amber);border-radius:8px;padding:8px 14px;max-width:80vw;text-align:center;font-size:.88rem}
 #portrait-warn{display:none;position:fixed;inset:0;z-index:60;background:#000;align-items:center;justify-content:center;text-align:center;padding:24px;font-size:1.1rem}
-.turnbar{text-align:center;font-weight:700;font-size:.86rem;padding:2px 6px;border-radius:5px;margin-bottom:3px}
+.turnbar{text-align:center;font-weight:700;font-size:.7rem;padding:1px 6px;border-radius:5px;margin-bottom:2px}
 .turnbar.hero{background:var(--amber);color:#1b1208}
 .turnbar.foe{background:#7a3a30;color:#fff}
 .clog{max-height:60vh;overflow:auto;touch-action:pan-y}

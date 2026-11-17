@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPort
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.19.5';
+const VERSION = '0.19.6';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -78,7 +78,7 @@ function startGame(state) {
   S.game = state;
   S.lvl = getLevel(S.data, state);
   S.rc.setPalette(S.data.palettes[S.lvl.palette]);
-  S.held = []; S.queued = null; S.lock = false; S.itemMode = false; S.abMode = false; S.spMode = false; S.log = [];
+  S.held = []; S.queued = null; S.lock = false; S.itemMode = false; S.abMode = false; S.spMode = false; S.log = []; S.logTs = [];
   S.started = true;
   snapCam();
   closeModal();
@@ -310,7 +310,7 @@ function bindUI() {
 function say(msg) {
   if (!msg) return;
   if (!S.game.combat && S.log.length && S.log[S.log.length - 1] === msg) return; // gleiche Meldung nicht wiederholen (nicht im Kampf)
-  S.log.push(msg); if (S.log.length > 60) S.log.shift(); renderLog(); }
+  S.log.push(msg); (S.logTs = S.logTs || []).push(Date.now()); if (S.log.length > 60) { S.log.shift(); S.logTs.shift(); } renderLog(); }
 function toast(msg, ms = 2400) {
   const t = $('#toast'); t.textContent = msg; t.hidden = false;
   clearTimeout(toast.h); toast.h = setTimeout(() => { t.hidden = true; }, ms);
@@ -696,7 +696,25 @@ function openCombatLog() {
 function renderCompass() { const d = $('#compass-dial'); if (d && S.game) { S.compassTurns = nearestTurns(S.compassTurns || 0, S.game.player.dir); d.style.transform = `rotate(${-S.compassTurns * 90}deg)`; d.style.setProperty('--cr', `${S.compassTurns * 90}deg`); } }
 function nearestTurns(prev, dir) { const base = Math.round(prev / 4) * 4; let best = base + dir, bd = Math.abs(best - prev); for (const c of [base - 4 + dir, base + 4 + dir]) if (Math.abs(c - prev) < bd) { best = c; bd = Math.abs(c - prev); } return best; }
 function renderAll() { renderCompass(); announceTurn(); renderParty(); renderCombat(); renderLog(); }
-function renderLog() { $('#log').innerHTML = S.log.slice(S.game && S.game.combat ? -2 : -3).map((m) => `<div>${esc(m)}</div>`).join(''); }
+// 0.19.6 (Nutzer: „Der viele Text versperrt den Blick auf den Gang“): Außerhalb des Kampfs zeigt das Meldungsfeld höchstens 2 Meldungen,
+// jede höchstens 2 Zeilen, und blendet sie nach 3–6 s aus (länger bei langem Text). Im Kampf bleibt alles wie bisher (die letzten 2). Das Protokoll bleibt vollständig.
+function renderLog() {
+  const box = $('#log'), combat = !!(S.game && S.game.combat);
+  let items;
+  if (combat) items = S.log.slice(-2);
+  else {
+    const now = Date.now(), n = S.log.length, ts = S.logTs || [];
+    let next = Infinity; items = [];
+    for (let i = Math.max(0, n - 2); i < n; i++) {
+      const ttl = Math.min(6000, 3000 + 40 * S.log[i].length), left = ttl - (now - (ts[i] || 0));
+      if (left > 0) { items.push(S.log[i]); next = Math.min(next, left); }
+    }
+    clearTimeout(renderLog.h);
+    if (next < Infinity) renderLog.h = setTimeout(renderLog, next + 30);
+  }
+  box.classList.toggle('calm', !combat);
+  box.innerHTML = items.map((m) => `<div>${esc(m)}</div>`).join('');
+}
 function makePortrait(h) {
   const cv = document.createElement('canvas'); cv.width = cv.height = 32;
   drawPortrait(cv.getContext('2d'), h.role, h.look, h.race);
