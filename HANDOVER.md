@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.19.1 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.19.2 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -666,3 +666,9 @@ Nur headless geprüft (Node 103 Tests, Chrome/Playwright), **nicht auf Gerät ge
 ## 0.19.1 – Heldenleiste (17.11.2026)
 - Gerätefoto des Nutzers (0.19.0 installiert, ohne Text): in der Heldenleiste waren Namen abgeschnitten („Berenn · vo…“, „Odalys · hi…“) und die Werte brachen in eine dritte Zeile um. Behoben: „vorn/hinten“ steht klein unter dem Porträt, die Einheit entfällt (LP · Ressource; Mana blau, Ausdauer gelb), Wertezeile ohne Umbruch. Headless bei 780×360 gesehen, **nicht auf Gerät getestet**.
 - Auf demselben Foto, NICHT geändert (unklar, ob es stört – nachgefragt): außerhalb des Kampfes verdecken sich die drei Gegner einer Gruppe im engen Gang; im Protokoll steht eine Rast, während Gegner sichtbar sind (ob die Rast an dieser Stelle stattfand, ist nicht belegt; `restThreat` prüft Sicht und 10 Pfadfelder).
+
+## 0.19.2 – Gegnergruppen (17.11.2026)
+- Nutzer zum Gerätefoto von 0.19.0: „Gegner überschneiden sich und sehen in unterschiedliche Richtungen.“
+- Sumpfwolf neu von vorn gezeichnet (`genWolf`: gesenkter Kopf, glühende Augen, Fänge, gesträubte Schultern, Moos), vorher Profil nach links. Alle Gegner blicken jetzt zur Gruppe.
+- Gruppen kleiner je nach Größe (`GROUP_SIZE` 2: 0,72, 3: 0,6; Wolf ×1,25) und Abstände neu (`groupOffsets`: eng 0,38/0,31, offen 0,46/0,42). Headless im Moorpfad (Wolf–Moorlicht–Wolf) in Erkundung und Kampf ohne Überschneidung gesehen, **nicht auf Gerät getestet**. Risiko: Gruppen wirken kleiner (Nutzer fand Gruppen in 0.16.4 zu klein).
+- Nutzerwunsch (17.11.2026): im Chat keine Codeblöcke mehr (z. B. Testlisten), nur auf Aufforderung; sonst Stichwortlisten.

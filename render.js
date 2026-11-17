@@ -1085,32 +1085,34 @@ function genGuard(seed, v = 'wacht') {
 }
 const vnoiseCol = (px, seed) => 0.5 + 0.5 * Math.sin(px * 1.9 + seed); // senkrechte Falten
 
-function genWolf(seed) { // Sumpfwolf: vierbeinig im Profil (blickt nach links), schwarzes Fell mit grünen Moosflecken, gesträubter Rücken, gefletschte Zähne
+function genWolf(seed) { // 0.19.2: Sumpfwolf von vorn (Nutzer: Gegner „sehen in unterschiedliche Richtungen“ – vorher Profil nach links). Kopf gesenkt, glühende Augen, gefletschte Zähne, gesträubte Schultern, Moos im Fell
   return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y, vn }) => {
-    const l = lit(px, py), fur = (vn(px * 2.6, py * 1.1, 5) - 0.5) * 1.2 + nz(x, y) * 0.45;
-    const moss = vn(px * 1.7 + 9, py * 1.7, 4) > 0.64;
+    const ax = Math.abs(px - 32), l = lit(px, py), fur = (vn(px * 1.6, py * 2.4, 5) - 0.5) * 1.2 + nz(x, y) * 0.45;
+    const moss = vn(px * 1.7 + 9, py * 1.7, 4) > 0.66 && py > 36;
     const F = (b) => (moss ? ['moss', 2.1 + fur * 0.7 + (b - 1.6) * 0.5] : ['ceil', b - l * 0.7 + fur * 0.8]);
-    // Kopf zuerst (liegt vorn): Auge, Brauen, Nase, Zähne, Maul
-    if (ell(px, py, 11.4, 28.4, 1.9, 1.15) <= 1) return ['glow', ell(px, py, 10.8, 28.4, 0.7, 0.7) <= 1 ? 3.6 : 7];
-    if (cap(px, py, 8.6, 25.8, 14.8, 27.4, 0.7, 0.9)) return ['ceil', 0];
-    if (ell(px, py, 2.9, 31.2, 1.7, 1.4) <= 1) return ['ceil', 0];
-    if (cap(px, py, 4.6, 33.2, 5, 37.6, 0.85, 0.2) || cap(px, py, 8.2, 33.6, 8.6, 38, 0.85, 0.2) || cap(px, py, 11.2, 33.2, 11.5, 36.4, 0.7, 0.2) || cap(px, py, 5.8, 31.8, 5.9, 29.9, 0.6, 0.2)) return ['stone', 7];
-    if (cap(px, py, 4.4, 34.6, 12.5, 35.2, 1.1, 1.0)) return ['flesh', 2];
-    if (ell(px, py, 8.6, 36.8, 4.8, 1.9) <= 1) return F(1.8); // Unterkiefer
-    if (cap(px, py, 15.8, 25.4, 18.6, 17.2, 2.8, 0.4)) return F(1.6); // Ohr vorn
-    if (cap(px, py, 19.4, 26.2, 23.4, 18.8, 2.6, 0.4)) return F(1.2); // Ohr hinten
-    if (ell(px, py, 13.6, 29.4, 8.6, 6.4) <= 1 || cap(px, py, 11, 30.6, 3.2, 32.4, 4.8, 2.4)) return F(2.4); // Schädel und Schnauze
-    // Rückenborsten
-    for (let i = 0; i < 9; i++) { const bx = 22 + i * 3.3; if (cap(px, py, bx, 33.5, bx + 1.2, 29.6 - (i % 2) * 1.3 - (i === 3 || i === 4 ? 0.8 : 0), 1.5, 0.2)) return F(1.4); }
-    // Läufe (vorn kräftig, hinten angewinkelt), Pfoten
-    if (cap(px, py, 21, 44, 19.4, 61, 3, 1.7) || cap(px, py, 29, 46, 30.4, 61, 2.8, 1.6)) return F(1.5);
-    if (cap(px, py, 46.5, 46, 51, 54.5, 3.6, 2.3) || cap(px, py, 51, 54.5, 46.5, 61, 2.3, 1.6) || cap(px, py, 40, 48, 40.6, 61, 2.8, 1.6)) return F(1.3);
-    if (ell(px, py, 18.6, 61.9, 3.2, 1.4) <= 1 || ell(px, py, 31, 61.9, 3.2, 1.4) <= 1 || ell(px, py, 45.2, 61.9, 3.2, 1.4) <= 1 || ell(px, py, 40.6, 61.9, 3.2, 1.4) <= 1) return ['ceil', 1.4 + fur * 0.3];
-    // Schwanz, Rumpf, Hals
-    if (cap(px, py, 52.5, 37, 61, 47, 3.4, 1.4)) return F(1.5);
-    if (ell(px, py, 47.5, 40, 8.6, 9.6) <= 1) return F(2);
-    if (ell(px, py, 34, 39.5, 15.5, 9) <= 1) return py > 44.5 ? ['ceil', 2.9 + fur * 0.5] : F(2.2);
-    if (cap(px, py, 24, 38, 15.6, 30.4, 8.2, 5.4)) return F(2.3);
+    const sx = (v) => 32 + Math.sign(px - 32 || 1) * v; // gespiegelte x-Koordinate auf der Seite des Pixels
+    // Gesicht (liegt vorn)
+    if (ell(px, py, sx(5.0), 33.6, 1.9, 1.1) <= 1) return ['glow', ell(px, py, sx(4.6), 33.6, 0.65, 0.65) <= 1 ? 3.4 : 7];
+    if (cap(px, py, sx(2.2), 31.2, sx(7.6), 32.4, 0.75, 0.75)) return ['ceil', 0]; // finstere Brauen
+    if (ell(px, py, 32, 39.6, 2.1, 1.35) <= 1) return ['ceil', 0]; // Nase
+    if (cap(px, py, sx(2.5), 42.6, sx(2.2), 46.6, 0.85, 0.2) || cap(px, py, sx(1.0), 43.0, sx(1.0), 44.6, 0.55, 0.2) || cap(px, py, sx(2.1), 48.4, sx(2.3), 45.2, 0.75, 0.2)) return ['stone', 7]; // Fänge oben und unten
+    if (ell(px, py, 32, 45.3, 3.8, 2.4) <= 1) return ['flesh', ell(px, py, 32, 45.8, 2.2, 1.2) <= 1 ? 0.6 : 2]; // Rachen
+    if (ell(px, py, 32, 41.6, 4.9, 4.5) <= 1) return F(2.6); // Schnauze
+    if (ell(px, py, 32, 47.6, 4.2, 1.8) <= 1) return F(1.8); // Unterkiefer
+    if (ell(px, py, 32, 34.8, 9.2, 6.8) <= 1) return F(2.3); // Schädel
+    if (cap(px, py, sx(6.4), 30.4, sx(10.8), 22.2, 3.0, 0.4)) return cap(px, py, sx(6.9), 29.6, sx(10.2), 24.2, 1.2, 0.2) ? ['flesh', 1.2] : F(1.7); // Ohren mit dunklem Innenohr
+    // Vorderläufe und Pfoten mit Krallen
+    if (ell(px, py, sx(7.6), 62, 3.3, 1.5) <= 1) return ['ceil', 1.2 + fur * 0.3];
+    if (py > 62.4 && py < 63.8 && (Math.abs(ax - 5.6) < 0.45 || Math.abs(ax - 7.6) < 0.45 || Math.abs(ax - 9.6) < 0.45)) return ['stone', 6.5];
+    if (cap(px, py, sx(7.2), 49, sx(7.7), 61.4, 3.2, 2.1)) return F(1.9);
+    // Brust, Halskrause, gesträubter Rücken
+    if (ell(px, py, 32, 50.5, 10.5, 7.5) <= 1) return py > 53 && ax < 5 ? ['ceil', 2.8 + fur * 0.5] : F(2.1);
+    if (ell(px, py, 32, 43.5, 13.5, 8.2) <= 1) return F(1.8);
+    for (let i = 0; i < 5; i++) { const bx = 9.5 + i * 1.7, top = 33.2 - (i % 2) * 1.6 - (i === 2 ? 1 : 0); if (cap(px, py, sx(bx), 39.5, sx(bx + 0.9), top, 1.4, 0.2)) return F(1.3); }
+    // Hinterläufe und Rumpf (weiter hinten, dunkler)
+    if (ell(px, py, sx(15.4), 62, 2.8, 1.3) <= 1) return ['ceil', 0.8 + fur * 0.3];
+    if (cap(px, py, sx(14.6), 50, sx(15.6), 61.5, 2.8, 1.8)) return F(1.1);
+    if (ell(px, py, 32, 46.5, 16.5, 7) <= 1) return F(1.2);
     return null;
   });
 }
@@ -1447,14 +1449,15 @@ const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebel
 export const GROUP_SCALE = 0.78, GROUP_GAP = 0.44, CHEST_SCALE = 0.62; // 0.16.4: Gruppen vorher 0.62/0.36, Truhe 0.5 (Nutzer: zu klein, hinter der Leiste)
 let combatFit = 1; // 0.16.17: im Kampf verkleinert die Kamera zu große Figuren so, dass sie samt Füßen über der Leiste ins Bild passen
 export const setCombatFit = (v) => { combatFit = v; };
-export const spriteScale = (k, n) => (n > 1 ? GROUP_SCALE : bossScale(k)) * (k === 'wolf' ? 1.3 : 1); // Wolf ist niedrig gebaut: größer ansetzen
+// 0.19.2: Gruppen je nach Größe kleiner, damit sich die Gestalten nicht überschneiden (Nutzer: „Gegner überschneiden sich“)
+export const GROUP_SIZE = { 2: 0.72, 3: 0.6 };
+export const spriteScale = (k, n) => (n > 1 ? GROUP_SIZE[Math.min(3, n)] || GROUP_SCALE : bossScale(k)) * (k === 'wolf' ? 1.25 : 1); // Wolf ist niedrig gebaut: größer ansetzen
 // Aufstellung einer Gruppe (0.16.4b): lat = seitlich (rechts +), dep = Tiefe (vom Betrachter weg). Im engen Gang (links und rechts Wand)
 // stehen die Gegner gestaffelt hintereinander statt nebeneinander, sonst ragen sie in die Wände (Nutzer-Screenshot 0.16.4).
 export function groupOffsets(n, narrow) {
   if (n <= 1) return [{ lat: 0, dep: 0 }];
-  if (!narrow) return Array.from({ length: n }, (_, i) => ({ lat: (i - (n - 1) / 2) * GROUP_GAP, dep: 0 }));
-  // 0.16.17: auch im engen Gang nebeneinander (Nutzer: „Monster nebeneinander, sonst verdecken sie sich“), dichter gesetzt
-  return Array.from({ length: n }, (_, i) => ({ lat: (i - (n - 1) / 2) * 0.34, dep: 0 }));
+  const gap = narrow ? (n >= 3 ? 0.31 : 0.38) : (n >= 3 ? 0.42 : 0.46); // 0.19.2: Abstand so, dass die kleineren Gestalten nebeneinander passen
+  return Array.from({ length: n }, (_, i) => ({ lat: (i - (n - 1) / 2) * gap, dep: 0 }));
 }
 // Eng = beide Nachbarfelder quer zur Blickrichtung sind Wand (grid aus buildGrid: 0 = frei)
 export function isNarrowAt(g, x, y, angle) {
