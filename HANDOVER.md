@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.19.14 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.19.15 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -761,3 +761,9 @@ Nutzer: „Augen nicht gelb, da schon so viel anderes gelb ist“, danach (nach 
 - Palette erweitert: 10. Material `ice` (`MATS`, `M.ice = 9`, `PAL_N = 80`, Standard `ICE_DEFAULT` 96/176/255; Paletten in game.json brauchen keinen Eintrag). **Die Angaben „9 × 8 = 72 Farben“ (0.19.8) gelten nicht mehr; jetzt 10 × 8 = 80.** Tests: Palettenindex < 80, Farbanzahl ≤ 80.
 - `genGuard` (haupt): Augen `['ice', 7]`. Andere Wächter unverändert (gelbe Augen). Siegelring und Schädelkreis bleiben golden.
 - Nur headless geprüft, **nicht auf Gerät getestet**. Tests 103 grün.
+
+
+## 0.19.15 (17.11.2026) – Schwert statt Eisenstange
+Nutzer: „Schwert sieht aus wie eine Eisenstange“. Ursache: die Klinge war eine gerade Kapsel gleicher Breite.
+- `genGuard` (haupt): Klinge y 3,6–36 mit Spitze (Verjüngung bis y 9,5), Breite 4,6, Hohlkehle in der Mitte, helle Schneide links, Schatten rechts; Parierstange mit nach unten gebogenen Enden; Griff mit Wicklung (abwechselnd hell/dunkel); Totenschädel im Siegelkreis am Knauf wie in 0.19.13.
+- Nur headless geprüft (Screenshot), **nicht auf Gerät getestet**. Tests 103 grün.

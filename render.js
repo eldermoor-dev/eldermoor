@@ -1116,7 +1116,18 @@ function genGuard(seed, v = 'wacht') {
       if (pr > 3.7 && pr < 4.7) return ['glow', 6.4]; // Siegelkreis
       if (pr <= 3.7 && pr > 2.5) return ['iron', 2.2]; // dunkle Füllung im Kreis
       if (cap(px, py, 50.5, 31, 50.5, 36, 1.6, 1.2) && hash(px, py, seed + 31) > 0.6) return ['blood', 3.6]; // Blut am unteren Klingenteil
-      if (cap(px, py, 50.5, 8, 50.5, 36, 1.7, 1.2)) return ['iron', px > 50.5 ? 4.6 : 6.5]; if (cap(px, py, 46, 36.6, 55, 36.6, 1.0, 1.0)) return ['iron', 3.2]; if (cap(px, py, 50.5, 36.6, 50.5, 46.4, 0.95, 0.95)) return ['wood', 2]; }
+      // 0.19.15 (Nutzer: „sieht aus wie eine Eisenstange“): Klinge mit Spitze, Hohlkehle, helle Schneide; geschwungene Parierstange, umwickelter Griff
+      if (py >= 3.6 && py <= 36) {
+        const hw = py < 9.5 ? 0.15 + (py - 3.6) * 0.36 : 2.3, ax = Math.abs(px - 50.5);
+        if (ax <= hw) {
+          if (ax < 0.42 && py > 10) return ['iron', 2.4]; // Hohlkehle
+          if (ax > hw - 0.7) return ['iron', px < 50.5 ? 7 : 5.4]; // helle Schneide links, Schatten rechts
+          return ['iron', px < 50.5 ? 6 : 4];
+        }
+      }
+      if (cap(px, py, 45, 36.4, 56, 36.4, 1.15, 1.15) || cap(px, py, 45, 36.4, 43.4, 39.4, 0.95, 0.4) || cap(px, py, 56, 36.4, 57.6, 39.4, 0.95, 0.4)) return ['iron', 3.6 - l]; // Parierstange mit nach unten gebogenen Enden
+      if (cap(px, py, 50.5, 37.4, 50.5, 46.4, 1.0, 1.0)) return ['wood', Math.floor((py - 37) / 1.6) % 2 ? 1.4 : 2.8]; // Griff mit Wicklung
+    }
     else { if (cap(px, py, 51, -0.5, 51, 7, 1.1, 0.2)) return ['iron', 6.4]; if (!turm && ell(px, py, 55.5, 12.5, 5.2, 6.8) <= 1 && px > 52) return ['iron', px > 57.5 ? 6.6 : 5 + n * 0.5]; if (cap(px, py, 51, 6, 51, 63, 0.95, 0.95)) return ['wood', 2.4 - l * 0.5]; }
     // Turmschild links
     if (turm) { const sd = ell(px, py, 13.5, 38.5, 8.2, 17); if (sd <= 1) { if ((Math.abs(px - 13.5) < 1.1 && py > 27 && py < 49) || (Math.abs(py - 37) < 1.1 && Math.abs(px - 13.5) < 5.5)) return ['glow', 4.6]; return sd > 0.72 ? ['iron', 2.2 + n * 0.5] : ['stone', 4 - l + n * 0.9]; } }
