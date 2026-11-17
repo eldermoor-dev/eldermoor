@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.19.15 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.19.16 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -767,3 +767,6 @@ Nutzer: „Augen nicht gelb, da schon so viel anderes gelb ist“, danach (nach 
 Nutzer: „Schwert sieht aus wie eine Eisenstange“. Ursache: die Klinge war eine gerade Kapsel gleicher Breite.
 - `genGuard` (haupt): Klinge y 3,6–36 mit Spitze (Verjüngung bis y 9,5), Breite 4,6, Hohlkehle in der Mitte, helle Schneide links, Schatten rechts; Parierstange mit nach unten gebogenen Enden; Griff mit Wicklung (abwechselnd hell/dunkel); Totenschädel im Siegelkreis am Knauf wie in 0.19.13.
 - Nur headless geprüft (Screenshot), **nicht auf Gerät getestet**. Tests 103 grün.
+
+## 0.19.16 (17.11.2026) – blaue Augen im Siegel-Schädel
+Nutzer: „Siegel Totenkopf soll auch blaue Augen bekommen“. `genGuard` (haupt): Augenhöhlen des Schädels am Knauf jetzt Material `ice` (Radius 0,95 statt 0,7). Nur headless geprüft, **nicht auf Gerät getestet**. Tests 103 grün.
