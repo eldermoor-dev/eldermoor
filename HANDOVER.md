@@ -672,6 +672,7 @@ Nur headless geprüft (Node 103 Tests, Chrome/Playwright), **nicht auf Gerät ge
 - Sumpfwolf neu von vorn gezeichnet (`genWolf`: gesenkter Kopf, glühende Augen, Fänge, gesträubte Schultern, Moos), vorher Profil nach links. Alle Gegner blicken jetzt zur Gruppe.
 - Gruppen kleiner je nach Größe (`GROUP_SIZE` 2: 0,72, 3: 0,6; Wolf ×1,25) und Abstände neu (`groupOffsets`: eng 0,38/0,31, offen 0,46/0,42). Headless im Moorpfad (Wolf–Moorlicht–Wolf) in Erkundung und Kampf ohne Überschneidung gesehen, **nicht auf Gerät getestet**. Risiko: Gruppen wirken kleiner (Nutzer fand Gruppen in 0.16.4 zu klein).
 - Nutzerwunsch (17.11.2026): im Chat keine Codeblöcke mehr (z. B. Testlisten), nur auf Aufforderung; sonst Stichwortlisten.
+- Nutzerwunsch (17.11.2026, grundsätzlich): Testfragen und Testanleitungen immer als Stichwortliste in sinnvoller Abarbeitungsreihenfolge, wenn möglich zum Abhaken (Kästchen), ohne Codeblock.
 
 ## 0.19.3 – Wölfe größer (17.11.2026)
 - Nutzer (Gerätefoto 0.19.2, Testgewölbe, zwei Sumpfwölfe): „Wölfe etwas zu klein“. Wolf-Faktor 1,25 → 1,45, Zweiergruppen weiter auseinander (eng 0,48, offen 0,5), Rumpf des Wolfs etwas schmaler. Headless gesehen (Testgewölbe 2 Wölfe, Moorpfad Wolf–Moorlicht–Wolf), **nicht auf Gerät getestet**. Bestätigt durch das Foto: Wölfe blicken nach vorn, überschneiden sich nicht.
