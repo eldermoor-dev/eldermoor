@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.19.20 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.19.21 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -793,3 +793,9 @@ Nutzer (Screenshot Nebelturm-Kampf, Turmwache + Kultpriester): „Beide gefährl
 - render.js: neue Funktionen `genTurmwache` (128 px) und `genPriester` (192 px, beide per `sm2` geglättet). Turmwache: Gitterhelm mit Flügeln und Kamm, Stachelschultern mit Lamellen, Brustpanzer mit Kreuz, Turmschild mit Rand/Nieten/Buckel/Dellen, Speer mit Wimpel, Umhang, Blutspritzer. Kultpriester: Spitzhaube mit drittem Auge, Goldsaum, Perlenkette, rote Stola mit goldenen Zeichen, schwebendes Zauberbuch, Schädelstab mit blauer Kugel, Räuchergefäß, zerrissener Saum mit Zeichen.
 - Die Variante `'turm'` in `genGuard` und `'priester'` in `genRobed` bleiben im Code, werden aber nicht mehr verwendet.
 - Keine Werte geändert (BALANCE.md/SIM.md unverändert). VERSION 0.19.20. Tests 103 grün. Nur headless geprüft, **nicht auf Gerät getestet**.
+
+## 0.19.21 (17.11.2026) – Moos im Nebelturm
+Nutzer (Screenshot Nebelturm-Wand, 23:28): „Sieht komisch aus. Wie schlecht gemachte Geheimtür.“
+- Ursache (aus den Daten belegt): Palette `turm` hatte `moss` = [172,196,232], also fast weiß. Die zwölf Moos-Wandfelder (`m`) im Nebelturm erschienen als helle, fleckige Quadrate in der blauen Mauer. Dass genau diese Felder gemeint waren, ist aus dem Screenshot erschlossen (Vermutung, Position nicht belegt).
+- Fix: `game.json → palettes.turm.moss` = [62,112,96] (dunkles, leicht bläuliches Grün). Nur Farbe; Wandtextur, Karte und Logik unverändert. Headless-Screenshot (Nebelturm, Moosfeld) zeigt dunkles Moos auf Stein. Palette wirkt auch auf Material `moss` in Sprites (Nebelturm), dort nur Farbänderung.
+- VERSION 0.19.21, Tests 103 grün. Nur headless geprüft, **nicht auf Gerät getestet**.
