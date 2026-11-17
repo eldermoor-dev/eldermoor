@@ -255,14 +255,14 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 | Gegner | Ausrüstung | Unikat |
 |---|---|---|
 | Moorschrat | 100 %, Boost 2 | Schratdorn oder Wurzelstab (100 %, nur einmal) |
-| Sumpfwolf | 15 % | – |
-| Moorkultist | 20 % | – |
-| Moorlicht | 10 % | – |
-| Gruftskelett | 15 % | – |
-| Kultwächter | 25 % | – |
+| Sumpfwolf | 8 % | – |
+| Moorkultist | 10 % | – |
+| Moorlicht | 5 % | – |
+| Gruftskelett | 8 % | – |
+| Kultwächter | 15 % | – |
 | Kultwächter-Hauptmann | 100 %, Boost 2 | Siegelpanzer oder Nebelmantel (100 %, nur einmal) |
 | Moorschrat | 100 %, Boost 2 | Schratdorn oder Wurzelstab (100 %, nur einmal) |
-| Nebelgeist | 15 % | – |
-| Kultpriester | 25 % | – |
-| Turmwache | 25 % | – |
+| Nebelgeist | 8 % | – |
+| Kultpriester | 15 % | – |
+| Turmwache | 15 % | – |
 | Nebelhüter | 100 %, Boost 3 | – |

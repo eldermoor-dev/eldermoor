@@ -83,8 +83,8 @@ export async function runTests(data, env = {}) {
     assert(r.guarded && !s.inv.iron_key, 'Truhe bleibt zu, solange die Wölfe (en2) leben: ' + JSON.stringify(r));
     s.objs.find((o) => o.id === 'en2').dead = true;
     r = L.interact(s, data);
-    assert(r.sfx === 'chest' && s.inv.iron_key === 1 && s.inv.potion === 4 && s.gold === 32, 'Truhenbeute: ' + JSON.stringify([s.inv, s.gold]));
-    assert(L.interact(s, data).sfx !== 'chest' && s.inv.potion === 4, 'zweites Öffnen bringt nichts');
+    assert(r.sfx === 'chest' && s.inv.iron_key === 1 && s.inv.potion === 3 && s.gold === 28 && s.inv.iron_sword === 1 && !s.inv.chain_mail, 'Truhenbeute: ' + JSON.stringify([s.inv, s.gold]));
+    assert(L.interact(s, data).sfx !== 'chest' && s.inv.potion === 3, 'zweites Öffnen bringt nichts');
     assert(L.tryMove(s, data, 'f').moved, 'geöffnete Truhe ist begehbar');
     put(s, 12, 2, 0);
     put(s, 11, 7, 1);

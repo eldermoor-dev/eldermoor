@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.19.3 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.19.4 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -678,3 +678,13 @@ Nur headless geprüft (Node 103 Tests, Chrome/Playwright), **nicht auf Gerät ge
 ## 0.19.3 – Wölfe größer (17.11.2026)
 - Nutzer (Gerätefoto 0.19.2, Testgewölbe, zwei Sumpfwölfe): „Wölfe etwas zu klein“. Wolf-Faktor 1,25 → 1,45, Zweiergruppen weiter auseinander (eng 0,48, offen 0,5), Rumpf des Wolfs etwas schmaler. Headless gesehen (Testgewölbe 2 Wölfe, Moorpfad Wolf–Moorlicht–Wolf), **nicht auf Gerät getestet**. Bestätigt durch das Foto: Wölfe blicken nach vorn, überschneiden sich nicht.
 - Beobachtung auf demselben Foto (nicht geändert, Nutzer gefragt): Ivo (Magier, 18 LP) war in Runde 1 bewusstlos, bevor er handeln konnte. Ursache laut Daten: Sumpfwolf hat `ai: weakest` (greift den Helden mit den wenigsten LP an), zwei Wölfe × 9 Angriff. SIM.md: im Testgewölbe gegen zwei Wölfe im Schnitt 0,3 (klug) bis 0,9 (nur Angriff) Bewusstlose je Kampf.
+
+## 0.19.4 – Truhen seltener und wertvoller (17.11.2026)
+- Nutzer: „Anfänglich zu viele Truhen und teilweise zu hochwertige Schätze. Soll etwas Besonderes bleiben.“ Entscheidung delegiert, umgesetzt:
+  - Starttruhe Testgewölbe: nur noch Schlüssel, 1 Heiltrank, 8 Gold, 1 Proviant, Eisenschwert, Lederrüstung (vorher zusätzlich Eichenstab, Kettenhemd, 2 Tränke, 12 Gold). Stab und Kettenhemd gibt es weiter beim Händler.
+  - Untere Gruft: 1 Trank, 10 Gold, gewöhnliche Ausrüstung (Boost 0).
+  - Truhen entfernt: Moorpfad `chest_p1`, `chest_p3`; Kultgruft `chest_g4`. Moorpfad 5 → 3, Kultgruft 5 → 4 Truhen.
+  - Ausrüstung in Truhen schwächer: Moorpfad p4 Boost 1→0, p2 ohne Ausrüstung; Kultgruft g2 1→0, g3 2→1; Schratgruben s2 1→0; Nebelturm t2 2→1. Besondere Truhen (Geheimkammern, Rätsel, Bosse) bleiben stark.
+  - Ausrüstung von gewöhnlichen Gegnern seltener (etwa halbiert): Wolf 8 %, Kultist 10 %, Moorlicht 5 %, Skelett 8 %, Kultwächter/Kultpriester/Turmwache 15 %, Nebelgeist 8 %.
+- SIM.md neu: klug weiter 100 % Kampagne, Nebelhüter beim ersten Versuch 83 % (Gruppe schwächer ausgerüstet), nur Angriff 0 %. Tests 103.
+- Alte Spielstände: entfernte Truhen bleiben dort vorhanden, falls schon im Spielstand (nicht geprüft, ob `syncStatic` sie entfernt).

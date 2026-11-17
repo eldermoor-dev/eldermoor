@@ -640,7 +640,7 @@
         "ice": 25
       },
       "gearDrop": {
-        "chance": 15
+        "chance": 8
       },
       "onHit": {
         "status": "bleed",
@@ -668,7 +668,7 @@
         "fire": -25
       },
       "gearDrop": {
-        "chance": 20
+        "chance": 10
       }
     },
     "moorlicht": {
@@ -690,7 +690,7 @@
         "lightning": -50
       },
       "gearDrop": {
-        "chance": 10
+        "chance": 5
       }
     },
     "skeleton": {
@@ -707,7 +707,7 @@
         "fire": -25
       },
       "gearDrop": {
-        "chance": 15
+        "chance": 8
       }
     },
     "kultwaechter": {
@@ -729,7 +729,7 @@
         "lightning": -25
       },
       "gearDrop": {
-        "chance": 25
+        "chance": 15
       }
     },
     "hauptmann": {
@@ -913,7 +913,7 @@
         "fire": 25
       },
       "gearDrop": {
-        "chance": 15
+        "chance": 8
       }
     },
     "kultpriester": {
@@ -948,7 +948,7 @@
         "lightning": -25
       },
       "gearDrop": {
-        "chance": 25
+        "chance": 15
       }
     },
     "turmwache": {
@@ -970,7 +970,7 @@
         "lightning": -25
       },
       "gearDrop": {
-        "chance": 25
+        "chance": 15
       },
       "onHit": {
         "status": "curse",
@@ -1288,10 +1288,10 @@
             },
             {
               "item": "potion",
-              "n": 2
+              "n": 1
             },
             {
-              "gold": 12
+              "gold": 8
             },
             {
               "item": "ration",
@@ -1302,15 +1302,7 @@
               "n": 1
             },
             {
-              "item": "oak_staff",
-              "n": 1
-            },
-            {
               "item": "leather_armor",
-              "n": 1
-            },
-            {
-              "item": "chain_mail",
               "n": 1
             }
           ]
@@ -1436,15 +1428,11 @@
               "n": 1
             },
             {
-              "item": "ration",
-              "n": 1
-            },
-            {
-              "gold": 15
+              "gold": 10
             },
             {
               "gear": {
-                "boost": 1
+                "boost": 0
               }
             }
           ]
@@ -1595,21 +1583,6 @@
           "face": 3
         },
         {
-          "id": "chest_p1",
-          "type": "chest",
-          "x": 12,
-          "y": 1,
-          "guard": [
-            "en_p3"
-          ],
-          "loot": [
-            {
-              "item": "potion",
-              "n": 2
-            }
-          ]
-        },
-        {
           "id": "chest_p2",
           "type": "chest",
           "x": 14,
@@ -1624,11 +1597,6 @@
             },
             {
               "gold": 10
-            },
-            {
-              "gear": {
-                "boost": 0
-              }
             }
           ]
         },
@@ -1686,21 +1654,6 @@
           "face": 1
         },
         {
-          "id": "chest_p3",
-          "type": "chest",
-          "x": 3,
-          "y": 7,
-          "loot": [
-            {
-              "item": "ration",
-              "n": 1
-            },
-            {
-              "gold": 8
-            }
-          ]
-        },
-        {
           "id": "door_gruft",
           "type": "door",
           "x": 20,
@@ -1721,7 +1674,7 @@
             },
             {
               "gear": {
-                "boost": 1
+                "boost": 0
               }
             }
           ]
@@ -1933,23 +1886,8 @@
             },
             {
               "gear": {
-                "boost": 1
+                "boost": 0
               }
-            }
-          ]
-        },
-        {
-          "id": "chest_g4",
-          "type": "chest",
-          "x": 4,
-          "y": 8,
-          "loot": [
-            {
-              "item": "ration",
-              "n": 1
-            },
-            {
-              "gold": 10
             }
           ]
         },
@@ -1999,7 +1937,7 @@
             },
             {
               "gear": {
-                "boost": 2
+                "boost": 1
               }
             }
           ]
@@ -2275,7 +2213,7 @@
             },
             {
               "gear": {
-                "boost": 1
+                "boost": 0
               }
             },
             {
@@ -2650,7 +2588,7 @@
             },
             {
               "gear": {
-                "boost": 2
+                "boost": 1
               }
             },
             {
