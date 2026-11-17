@@ -1596,7 +1596,7 @@
               "n": 1
             },
             {
-              "gold": 10
+              "gold": 6
             }
           ]
         },
@@ -1627,7 +1627,7 @@
               "n": 1
             },
             {
-              "gold": 12
+              "gold": 6
             }
           ]
         },
@@ -1670,7 +1670,7 @@
           "y": 6,
           "loot": [
             {
-              "gold": 15
+              "gold": 10
             },
             {
               "gear": {
@@ -1835,7 +1835,7 @@
               "n": 1
             },
             {
-              "gold": 20
+              "gold": 10
             },
             {
               "item": "potion",
@@ -1875,19 +1875,14 @@
           "loot": [
             {
               "item": "potion",
-              "n": 2
+              "n": 1
             },
             {
               "item": "ration",
               "n": 1
             },
             {
-              "gold": 25
-            },
-            {
-              "gear": {
-                "boost": 0
-              }
+              "gold": 12
             }
           ]
         },
@@ -1929,11 +1924,11 @@
           ],
           "loot": [
             {
-              "gold": 40
+              "gold": 25
             },
             {
               "item": "potion",
-              "n": 2
+              "n": 1
             },
             {
               "gear": {
@@ -2004,15 +1999,15 @@
           "y": 1,
           "loot": [
             {
-              "gold": 60
+              "gold": 35
             },
             {
               "item": "potion",
-              "n": 2
+              "n": 1
             },
             {
               "gear": {
-                "boost": 2
+                "boost": 1
               }
             }
           ]
@@ -2109,11 +2104,11 @@
           ],
           "loot": [
             {
-              "gold": 30
+              "gold": 15
             },
             {
               "item": "potion",
-              "n": 2
+              "n": 1
             },
             {
               "item": "gegengift",
@@ -2179,7 +2174,7 @@
               "n": 1
             },
             {
-              "gold": 15
+              "gold": 8
             }
           ]
         },
@@ -2209,16 +2204,11 @@
               "n": 1
             },
             {
-              "gold": 25
-            },
-            {
-              "gear": {
-                "boost": 0
-              }
+              "gold": 12
             },
             {
               "item": "oelflasche",
-              "n": 2
+              "n": 1
             }
           ]
         },
@@ -2259,15 +2249,15 @@
           ],
           "loot": [
             {
-              "gold": 60
+              "gold": 35
             },
             {
               "item": "potion",
-              "n": 3
+              "n": 2
             },
             {
               "gear": {
-                "boost": 2
+                "boost": 1
               }
             }
           ]
@@ -2380,7 +2370,7 @@
           "y": 12,
           "loot": [
             {
-              "gold": 80
+              "gold": 45
             },
             {
               "item": "ration",
@@ -2388,7 +2378,7 @@
             },
             {
               "gear": {
-                "boost": 2
+                "boost": 1
               }
             }
           ]
@@ -2554,11 +2544,11 @@
               "n": 1
             },
             {
-              "gold": 30
+              "gold": 15
             },
             {
               "item": "potion",
-              "n": 2
+              "n": 1
             }
           ]
         },
@@ -2584,16 +2574,16 @@
           "y": 2,
           "loot": [
             {
-              "gold": 50
+              "gold": 25
             },
             {
               "gear": {
-                "boost": 1
+                "boost": 0
               }
             },
             {
               "item": "oelflasche",
-              "n": 2
+              "n": 1
             },
             {
               "item": "gegengift",
@@ -2628,15 +2618,15 @@
           ],
           "loot": [
             {
-              "gold": 90
+              "gold": 50
             },
             {
               "item": "potion",
-              "n": 3
+              "n": 2
             },
             {
               "gear": {
-                "boost": 3
+                "boost": 2
               }
             }
           ]
@@ -2675,16 +2665,16 @@
           "y": 8,
           "loot": [
             {
-              "gold": 40
+              "gold": 25
             },
             {
               "gear": {
-                "boost": 2
+                "boost": 1
               }
             },
             {
               "item": "potion",
-              "n": 2
+              "n": 1
             }
           ]
         },

@@ -255,6 +255,57 @@ function genChest(open, seed) {
   }
   return t;
 }
+// 0.19.18 (Nutzer: Truhen „optisch ansprechender, schärfer“): neue Truhe mit gewölbtem Deckel, Eisenbändern mit Nieten, Goldschloss, Eckbeschlägen und Holzmaserung; 128 px, im Modus Scharf 2× geglättet (vorher 64 px hochskaliert)
+function genChest2(open, seed) {
+  return paintFigure(seed, ({ ell, cap, nz, px, py, x, y, vn }) => {
+    const ax = Math.abs(px - 32), l = (px - 32) / 22 * 0.9, n = nz(x, y);
+    const wood = (b) => ['wood', b - l * 1.1 + (vn(px * 2.2, py * 0.35, 6) - 0.5) * 1.5 + (n - 0.5) * 0.5 - (Math.abs(((py - 36) % 6.2)) < 0.35 ? 1.1 : 0)];
+    const band = (b) => ['iron', b - l * 0.9 + (n - 0.5) * 0.5];
+    const bandX = (ax > 13.2 && ax < 17.4);
+    const lidTop = (hw) => ell(px, py, 32, 37, hw, 17); // gewölbter Deckel
+    if (open) {
+      const inside = ell(px, py, 32, 36.6, 19.4, 3.9) <= 1;
+      if (py >= 36.4 && py <= 61.5 && ax <= 22) {
+        if (ell(px, py, 32, 36.6, 19.4, 3.9) <= 1 && py < 40.5) return ['ceil', 0.2 + (py - 33) * 0.1 + n * 0.3];
+        if (bandX) return (Math.round(px * 2) % 7 === 0 && Math.abs(py - 46) < 0.9) || (Math.round(px * 2) % 7 === 0 && Math.abs(py - 56) < 0.9) ? ['iron', 6.8] : band(3.8);
+        if (py > 55.6 && (ax > 17.4)) return band(3);
+        if (ax > 21 || py > 60.6) return wood(1.5);
+        return wood(3.3);
+      }
+      if (inside) return ['ceil', 0.3];
+      if (ell(px, py, 32, 36.6, 22, 5.6) <= 1 && py < 36.6) return wood(4.6); // Rand der Öffnung
+      // Deckel nach hinten aufgeklappt: Innenseite sichtbar
+      const hw = 21 - (36 - py) * 0.12;
+      if (py >= 9 && py <= 31 && ax <= hw) {
+        if (py < 11.5) return wood(4.8);
+        if (bandX) return band(2.6);
+        return ['wood', 1.7 + (vn(px * 2.2, py * 0.4, 6) - 0.5) * 0.9 + n * 0.3 - (px - 32) * 0.03];
+      }
+      return null;
+    }
+    // geschlossen: Gold-Schloss zuerst (liegt vorn)
+    if (ax <= 4.3 && py >= 31.6 && py <= 42.4) {
+      if (ell(px, py, 32, 36.4, 1.15, 1.15) <= 1 || (ax < 0.55 && py > 36.4 && py < 39.6)) return ['ceil', 0];
+      const edge = ax > 3.4 || py < 32.5 || py > 41.4;
+      return edge ? ['glow', 3.6] : ['glow', 6.4 - l * 0.6 - (py - 31) * 0.08];
+    }
+    if (py >= 36.4 && py <= 61.5 && ax <= 22) { // Korpus
+      if (bandX) return (Math.round(px * 2) % 7 === 0 && (Math.abs(py - 41) < 0.9 || Math.abs(py - 57) < 0.9)) ? ['iron', 6.8] : band(3.9);
+      if (py > 56 && ax > 17.4) return band(3.2); // Eckbeschläge
+      if (ax > 17.4 && py < 39 && ax < 22) return band(3.6);
+      if (py > 60.4) return ['wood', 0.8]; // Sockel
+      if (ax > 21) return wood(1.4);
+      return wood(3.3);
+    }
+    if (py >= 14 && py < 36.4 && lidTop(22) <= 1) { // Deckel
+      if (py > 34.6 && py < 37) return band(4.2); // Querband an der Fuge
+      if (bandX) return (Math.round(px * 2) % 7 === 0 && py < 34) ? ['iron', 6.8] : band(3.7 + (36 - py) * 0.05);
+      const rim = lidTop(22) > 0.9; // Kante
+      return rim ? wood(1.6) : ['wood', 3.1 + (36 - py) * 0.11 - l * 1.0 + (vn(px * 2.2, py * 0.35, 6) - 0.5) * 1.3 + (n - 0.5) * 0.5];
+    }
+    return null;
+  }, 128);
+}
 function genSchrat(seed) {
   // Hochaufgelöstes Sprite (SN×SN statt 64×64): Moorschrat = knorrige Wesen aus Borke, Moos und fahlem Fleisch
   const SN = 160, k = 64 / SN;
@@ -973,14 +1024,13 @@ function genTrap(mode, seed) {
   const t = mk(255);
   const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
   if (mode === 'faint') {
-    // 0.19.9 (Nutzer: „Ich erkenne Fallen erst nach Auslösung“): die Bodenspur war nur 1–2 Pixelreihen hoch, praktisch unsichtbar.
-    // Jetzt eine leicht eingesunkene, rissige Platte mit Staub davor: auffällig genug, wer genau hinsieht, aber ohne Ausrufezeichen (das gibt es erst bei „entdeckt“).
-    for (let y = 56; y <= 63; y++) for (let x = 10; x <= 54; x++) {
-      const edge = x === 10 || x === 54 || y === 56;
-      set(x, y, edge ? P('stone', 0.5) : P('stone', 2.1 + hash(x >> 1, y, seed) * 1.5));
+    // 0.19.9: sichtbare Platte; 0.19.18 (Nutzer: „Stein bei der Giftfalle jetzt zu deutlich“): dezenter – kleiner, kaum dunkler als der Boden, schmale feine Risse, wenig Staub
+    for (let y = 58; y <= 63; y++) for (let x = 16; x <= 48; x++) {
+      const edge = x === 16 || x === 48 || y === 58;
+      set(x, y, edge ? P('stone', 1.7) : P('stone', 2.6 + hash(x >> 1, y, seed) * 1.0));
     }
-    for (const cx of [20, 32, 43]) { let x = cx + Math.floor(hash(cx, 5, seed) * 3) - 1; for (let y = 57; y <= 63; y++) { set(x, y, P('stone', 0.3)); if (hash(x, y, seed + 2) > 0.55) x += hash(y, x, seed + 3) > 0.5 ? 1 : -1; } }
-    for (let x = 8; x <= 56; x++) for (let y = 53; y <= 55; y++) if (hash(x, y, seed + 7) > 0.88) set(x, y, P('stone', 4.4));
+    for (const cx of [24, 38]) { let x = cx + Math.floor(hash(cx, 5, seed) * 3) - 1; for (let y = 59; y <= 63; y++) { set(x, y, P('stone', 1.4)); if (hash(x, y, seed + 2) > 0.55) x += hash(y, x, seed + 3) > 0.5 ? 1 : -1; } }
+    for (let x = 14; x <= 50; x++) for (let y = 56; y <= 57; y++) if (hash(x, y, seed + 7) > 0.95) set(x, y, P('stone', 3.8));
   } else if (mode === 'seen') {
     for (let x = 12; x <= 52; x++) for (let y = 58; y <= 63; y++) { const edge = x === 12 || x === 52 || y === 58 || y === 63; set(x, y, edge ? P('glow', 6.5) : (x + y) % 4 < 2 ? P('glow', 3.2) : P('stone', 0.6)); }
     for (let y = 30; y <= 50; y++) for (let x = 29; x <= 35; x++) { const w = 3 - Math.floor((y - 30) / 9); if (Math.abs(x - 32) <= Math.max(1, w) && y <= 45) set(x, y, P('glow', 7)); }
@@ -1354,7 +1404,7 @@ export function makeTextures(detail = 1) {
     wall: { [WALL_STONE]: stoneW, [WALL_SECRET]: genSecretWall(stoneW, 301), [WALL_SWITCH]: genSwitchWall(stoneW, false), [WALL_SWITCH_ON]: genSwitchWall(stoneW, true), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
     ceil: genCeil(53, nf),
-    sprites: { plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), trapSprung: genTrap('sprung', 401), chest: spr(genChest(false, 61), 107), chestOpen: spr(genChest(true, 61), 108), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genGuard(183, 'turm')), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genRobed(251, 'priester')), hueter: sm2(genRobed(261, 'hueter')), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), trapSprung: genTrap('sprung', 401), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genGuard(183, 'turm')), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genRobed(251, 'priester')), hueter: sm2(genRobed(261, 'hueter')), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 

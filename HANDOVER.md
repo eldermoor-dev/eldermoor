@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.19.17 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.19.18 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -773,3 +773,11 @@ Nutzer: „Siegel Totenkopf soll auch blaue Augen bekommen“. `genGuard` (haupt
 
 ## 0.19.17 (17.11.2026) – Brustring entfernt
 Nutzer: „Der runde Kreis in der Mitte weg“. Deutung (**Vermutung, nicht gesichert**): der goldene Siegelring auf der Brust des Hauptmanns (`genGuard` haupt, `hypot(dx, py-32)`). Der Siegelkreis mit Schädel am Knauf bleibt. Falls der Knauf-Kreis gemeint war: Rückmeldung. Nur headless (Screenshot), **nicht auf Gerät getestet**. Tests 103 grün.
+
+## 0.19.18 (17.11.2026) – Truhen schöner, weniger Beute, Fallenspur dezenter
+Nutzer: „Truhen optisch ansprechender, schärfer. Nicht zu viel Beute, zu viel zu wertvoll“; „Stein bei der Giftfalle jetzt zu deutlich“.
+- **Grafik:** `genChest2` (render.js, 128 px, `sm2` → 256 px im Modus Scharf): gewölbter Deckel, Eisenbänder mit Nieten, Goldschloss mit Schlüsselloch, Eckbeschläge, Holzmaserung; offen: dunkle Öffnung, aufgeklappte Deckel-Innenseite. Alte `genChest` bleibt ungenutzt im Code.
+- **Beute (game.json, nur Truhen):** Gold etwa halbiert, Heiltränke je Truhe meist 1 (Boss 2), Ausrüstung entfernt aus `chest_g2` und `chest_s2`, Boost in Geheim-/Rätsel-/Bosstruhen um 1 gesenkt (Turmtruhe `chest_t2` 0). Unverändert: Starttruhe `chest_a` (Test hängt daran), `chest_b`, Schlüssel- und Questgegenstände. Werte vom Assistenten gesetzt, nicht simuliert; BALANCE.md/SIM.md nicht neu erzeugt (Gegner- und Heldenwerte unverändert). Spieler haben dadurch weniger Gold/Tränke als die Simulation annimmt (Simulation kauft ohnehin bei Hedda ein).
+- **Falle:** Bodenspur (`genTrap('faint')`) kleiner, kaum dunkler als der Boden, wenige feine Risse. Entdeckungswürfe unverändert (45 % je Wurf). Der Wunsch bezog sich laut Wortlaut auf die Giftfalle; die Spur ist bei allen Fallenarten gleich.
+- Alte Spielstände: geöffnete oder bereits angelegte Truhen behalten ihren gespeicherten Inhalt (Beute liegt im Spielstand); die Kürzung wirkt nur für ungeöffnete Truhen in neuen Gebieten/Spielen (nicht geprüft, Vermutung aus dem Speicherformat).
+- Nur headless geprüft (Screenshots geschlossene und offene Truhe), **nicht auf Gerät getestet**. Tests 103 grün.
