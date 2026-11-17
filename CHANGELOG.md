@@ -7,6 +7,7 @@ Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ 
 | Version | Änderungen | Status |
 |---|---|---|
 | 0.19.18 | Truhen neu gezeichnet (gewölbter Deckel, Eisenbänder mit Nieten, Goldschloss, Maserung, 128 px, scharf); Beute in Truhen gekürzt (weniger Gold und Tränke, weniger Ausrüstung, niedrigere Qualitätsstufen); Bodenspur der Fallen dezenter; Tests 103 | headless, Gerät offen |
+| 0.19.22 | Nebelhüter neu (Nutzer: „zu sehr Strichmännchen“): breiter Geisterkönig mit Eiszackenkrone, Stachelschultern, Rippen und leuchtendem Siegel in der Brust, Knochenklauen, Kristallstab, gezackter Mantelsaum, hoher Dornenthron mit Schädeln; Tests 103 | headless, Gerät offen |
 | 0.19.21 | Nebelturm: Moos an den Wänden jetzt dunkelgrün statt blassblau-weiß (sah wie eine schlecht gemachte Geheimtür aus); Tests 103 | headless, Gerät offen |
 | 0.19.20 | Turmwache neu (Vollplatte, Gitterhelm mit Flügeln, Stachelschultern, Turmschild mit Dellen/Nieten, Speer, Blutspuren, zerrissener Umhang) und Kultpriester neu (Spitzhaube mit drittem Auge, Goldsaum, rote Stola mit Zeichen, schwebendes Zauberbuch, Schädelstab mit Frostkugel, Räuchergefäß); Tests 103 | headless, Gerät offen |
 | 0.19.19 | Hauptmann: Schwert sichtbar in der Faust (dunkler Handschuh, helle Fingerglieder, Daumen, Stulpe); andere Hand hält drohend einen blauen Ring hoch (Arm gereckt); Tests 103 | headless, Gerät offen |

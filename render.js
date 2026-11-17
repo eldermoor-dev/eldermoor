@@ -1388,6 +1388,75 @@ function genPriester(seed) { // Kultpriester (192 px): Spitzhaube mit drittem Au
   }, 192);
 }
 
+// 0.19.22 (Nutzer: Nebelhüter „nicht gefährlich genug, zu sehr Strichmännchen“): breiter Geisterkönig mit Eiszackenkrone, Stachelschultern, Rippen und Siegel, Klauenhänden, Kristallstab, zerfetztem Mantel, der im Nebel verschwimmt, und hohem Dornenthron
+function genHueter(seed) {
+  return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y, vn }) => {
+    const dx = px - 32, ax = Math.abs(dx), l = lit(px, py), n = nz(x >> 1, y >> 1);
+    const R = (b) => ['wood', b - l * 0.9 + n * 0.5 + (vn(px * 1.3, py * 0.35, 6) - 0.5) * 1.2];
+    // Augen (groß, schräg, kalt) und Gesichtshöhle mit Reißzähnen
+    if (cap(px, py, 26.4, 12.8, 30.4, 14.8, 1.25, 0.8) || cap(px, py, 37.6, 12.8, 33.6, 14.8, 1.25, 0.8)) return ['glow', 7];
+    if (cap(px, py, 24.6, 10.4, 30.6, 12.6, 0.75, 0.5) || cap(px, py, 39.4, 10.4, 33.4, 12.6, 0.75, 0.5)) return ['ceil', 0]; // Brauen
+    if (ell(px, py, 32, 15.6, 6.3, 7.2) <= 1) {
+      if (py > 19.6 && py < 22.6 && ax < 4.6) { const i = Math.floor((px - 27) / 1.15); if (py < 20.9 ? i % 2 === 0 : i % 2 === 1) return ['flesh', 7]; }
+      return ['ceil', 0];
+    }
+    // Krone aus Eiszacken auf der Kapuze
+    for (let i = -3; i <= 3; i++) { const h = 9.4 - Math.abs(i) * 1.5 + (i % 2 ? 0 : 1.2), bx = 32 + i * 2.5; if (cap(px, py, bx, 7.6, bx + i * 0.5, 7.6 - h, 1.05, 0.12)) return ['ice', 6.2 - l * 0.8 + (py < 4 ? 0.8 : 0)]; }
+    if (py > 6.6 && py < 9.2 && ax < 7.6 + (py - 6.6) * 0.4 && ell(px, py, 32, 14.4, 9.6, 10.8) <= 1) return Math.abs(Math.floor(dx * 0.9) % 3) === 0 && py > 7.2 && py < 8.4 ? ['glow', 6.4] : ['iron', 5.2 - l];
+    // Kapuze mit Frostsaum
+    if (ell(px, py, 32, 14.4, 9.8, 10.8) <= 1) return ell(px, py, 32, 14.4, 9.8, 10.8) > 0.8 && py > 11 ? ['flesh', 5.2 + n] : R(1.4 + (dx < -3 ? 0.5 : 0));
+    // Stab links: Kristallbündel
+    for (const sg of [-1, 0, 1]) if (cap(px, py, 10, 11, 10 + sg * 5.2, 11 - (sg ? 5.2 : 9.6), 1.9, 0.25)) return ['ice', 6.6 - Math.abs(sg) * 1.2 - (px - 10) * 0.12];
+    if (ell(px, py, 10, 12.6, 2.8, 3.4) <= 1) return ['ice', 7];
+    if (cap(px, py, 10, 15.6, 10, 63, 0.95, 0.95)) return ['wood', 1.5 - l * 0.4];
+    // Hände: Knochenklauen
+    if (ell(px, py, 11.6, 39.6, 2.6, 2.7) <= 1) return ['flesh', 6.6 - l * 0.4];
+    for (const f of [[8.6, 36.4], [10.4, 35.4], [12.8, 35.4], [14.6, 36.4]]) if (cap(px, py, 11.8, 38.4, f[0], f[1], 0.8, 0.12)) return ['flesh', 7];
+    if (ell(px, py, 51.2, 43.4, 2.7, 2.6) <= 1) return ['flesh', 6.4 - l * 0.4];
+    for (const f of [[48.2, 46.6], [50.2, 47.2], [52.4, 47.2], [54.4, 46.2]]) if (cap(px, py, 51.2, 44.6, f[0], f[1], 0.85, 0.12)) return ['flesh', 7];
+    // Arme (weite Ärmel)
+    if (cap(px, py, 21, 27.6, 12.8, 37.8, 4.4, 3.2) || cap(px, py, 43, 27.6, 50.6, 41, 4.4, 3.2)) return R(2.2 + (Math.abs(((py - 30) % 3.2)) < 0.3 ? -0.8 : 0));
+    // Schulterstücke mit Eisdornen
+    for (const sg of [-1, 1]) { const cx = 32 + sg * 13.6;
+      if (cap(px, py, cx + sg * 0.6, 23, cx + sg * 3.8, 10.4, 2.2, 0.15) || cap(px, py, cx - sg * 2, 22.6, cx - sg * 1.8, 12.6, 1.6, 0.12) || cap(px, py, cx + sg * 4.6, 25, cx + sg * 8.6, 17.6, 1.6, 0.12)) return ['ice', 6.2 - l * 0.7];
+      if (ell(px, py, cx, 26, 8, 5.8) <= 1) return Math.abs(((py - 22.4) % 3.2)) < 0.4 ? ['iron', 1.6] : ['iron', 4.6 - l * 1.4 + n * 0.6]; }
+    // Brust: dunkler Riss mit Rippen und leuchtendem Siegel
+    if (ax < 8.4 && py > 28.4 && py < 46) {
+      const rr = Math.hypot(dx, py - 36.4);
+      if (rr < 4.6 && rr > 3.2) return ['glow', 6.6];
+      if (Math.abs(dx) < 0.7 && py > 29 && py < 45) return ['glow', 5.4];
+      if (rr <= 3.2) return ['ceil', 0];
+      for (let i = 0; i < 3; i++) if (ax > 1.6 && Math.abs(py - (31.4 + i * 4.4 + (ax / 8) ** 2 * 3)) < 0.8) return ['flesh', 5.8 - i * 0.3];
+      return ['ceil', 0.3];
+    }
+    // Frostkragen
+    if (ell(px, py, 32, 25.8, 14.2, 5.2) <= 1) return ['flesh', 4.6 + vn(px * 2, py * 1.4, 4) * 2 - l * 0.6];
+    // Mantel: bauchig, zerfetzt, nach unten im Nebel aufgelöst
+    const w = 9.6 + Math.max(0, py - 26) * 0.4;
+    if (py > 26 && ax < w) {
+      const hem = 57 + Math.sin(px * 1.15 + seed) * 2.2 + Math.sin(px * 2.9) * 1.1 - ax * 0.12;
+      if (py > hem) return null;
+      if (py > hem - 2.2) return ['flesh', 2.8 + n];
+      if (ax > w - 1.3) return ['wood', 0.6 + n * 0.4];
+      return R(2.1 + Math.abs(Math.sin(px * 0.9 + seed)) * 0.6 - Math.max(0, (py - 44) * 0.05));
+    }
+    // Thron hinter der Gestalt: hohe Spitzbogenlehne, Seitentürme, Schädel an den Armlehnen, Stufen
+    { const topY = 1.8 + (ax / 18) ** 2 * 10 - (ax < 1.6 ? 1.4 : 0);
+      const back = ax <= 18 && py >= topY && py <= 60;
+      const spire = ax >= 16.4 && ax <= 19.8 && py >= 0.8 + (ax - 16.4) * 1.2 && py < 30;
+      const armR = ax >= 15 && ax <= 23.4 && py >= 38 && py <= 57 && !(ax < 18 && py < 40);
+      const skull = ell(px, py, 32 + Math.sign(dx || 1) * 22, 36.6, 2.6, 2.6) <= 1;
+      const step = py >= 58.6 && ax <= 27.5 - (py - 58.6) * 0.4;
+      if (skull) return ell(px, py, 32 + Math.sign(dx || 1) * 22 - 0.9, 36.2, 0.7, 0.8) <= 1 || ell(px, py, 32 + Math.sign(dx || 1) * 22 + 0.9, 36.2, 0.7, 0.8) <= 1 ? ['ice', 7] : ['flesh', 5.8];
+      if (back || spire || armR || step) {
+        const edge = (back && (ax > 16.2 || py < topY + 1.3)) || (armR && (py < 39.6 || ax > 22)) || (step && py < 59.8) || spire;
+        const inset = back && ax < 12 && py > topY + 4 && py < 54;
+        return edge ? ['stone', 4 - l * 0.4 + n * 0.4] : inset ? ['stone', 0.7 + n * 0.5 + (ax < 1 ? 0.8 : 0)] : ['stone', 1.7 + n * 0.8 - dx * 0.02];
+      } }
+    return null;
+  }, 192);
+}
+
 function genKultist(seed) { // Moorkultist (0.16.16, 192 px): Spitzkapuze mit Widderhörnern, leere Gesichtshöhle mit glühenden Schlitzaugen, Knochenmaske mit Zähnen, Knochenzacken an den Schultern, gezackter Dolch mit Gift, grüne Zauberhand mit Krallen, Brustsiegel, Gürtel mit Schädeln, zerfetzter Saum
   return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y, vn }) => {
     const dx = px - 32, l = lit(px, py), n = nz(x >> 1, y >> 1);
@@ -1550,7 +1619,7 @@ export function makeTextures(detail = 1) {
     wall: { [WALL_STONE]: stoneW, [WALL_SECRET]: genSecretWall(stoneW, 301), [WALL_SWITCH]: genSwitchWall(stoneW, false), [WALL_SWITCH_ON]: genSwitchWall(stoneW, true), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
     ceil: genCeil(53, nf),
-    sprites: { plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), trapSprung: genTrap('sprung', 401), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genRobed(261, 'hueter')), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), trapSprung: genTrap('sprung', 401), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
