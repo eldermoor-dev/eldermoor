@@ -257,12 +257,12 @@ function genChest(open, seed) {
   return t;
 }
 // 0.19.18 (Nutzer: Truhen „optisch ansprechender, schärfer“): neue Truhe mit gewölbtem Deckel, Eisenbändern mit Nieten, Goldschloss, Eckbeschlägen und Holzmaserung; 128 px, im Modus Scharf 2× geglättet (vorher 64 px hochskaliert)
-function genChest2(open, seed) {
+function genChest2(open, seed, prunk = false) { // prunk (0.20.0): Goldbeschläge, Edelsteine – Lockvogel im falschen Schatzraum
   return paintFigure(seed, ({ ell, cap, nz, px, py: py0, x, y, vn }) => {
     const py = 61.5 - (61.5 - py0) * 1.35; // 0.19.25: Truhe niedriger und breiter (Nutzer: „sieht komisch aus“), Boden bleibt unten
     const ax = Math.abs(px - 32), l = (px - 32) / 22 * 0.9, n = nz(x, y);
     const wood = (b) => ['wood', b - l * 1.1 + (vn(px * 2.2, py * 0.35, 6) - 0.5) * 1.5 + (n - 0.5) * 0.5 - (Math.abs(((py - 36) % 6.2)) < 0.35 ? 1.1 : 0)];
-    const band = (b) => ['iron', b - l * 0.9 + (n - 0.5) * 0.5];
+    const band = (b) => [prunk ? 'glow' : 'iron', (prunk ? b + 0.6 : b) - l * 0.9 + (n - 0.5) * 0.5];
     const bandX = (ax > 13.2 && ax < 17.4);
     const lidTop = (hw) => ell(px, py, 32, 37, hw, 17); // gewölbter Deckel
     if (open) {
@@ -286,9 +286,11 @@ function genChest2(open, seed) {
       return null;
     }
     // geschlossen: Gold-Schloss zuerst (liegt vorn)
+    if (prunk && (ell(px, py, 32, 27, 2.2, 2.2) <= 1 || ell(px, py, 22.5, 48, 1.7, 1.7) <= 1 || ell(px, py, 41.5, 48, 1.7, 1.7) <= 1)) return ['blood', 6.2 - (py - 26) * 0.02 + (ell(px, py, 31.3, 26.3, 0.8, 0.8) <= 1 ? 1.5 : 0)]; // Rubine
     if (ax <= 4.3 && py >= 31.6 && py <= 42.4) {
       if (ell(px, py, 32, 36.4, 1.15, 1.15) <= 1 || (ax < 0.55 && py > 36.4 && py < 39.6)) return ['ceil', 0];
       const edge = ax > 3.4 || py < 32.5 || py > 41.4;
+      if (prunk) return edge ? ['glow', 4] : ['glow', 6.8 - l * 0.6 - (py - 31) * 0.08];
       return edge ? ['wood', 3.4] : ['wood', 6.6 - l * 0.6 - (py - 31) * 0.08]; // 0.19.25: Messing aus hellem Holzton statt Palette-Glühen (im Nebelturm war das Schloss eisblau)
     }
     if (py >= 36.4 && py <= 61.5 && ax <= 22) { // Korpus
@@ -304,6 +306,48 @@ function genChest2(open, seed) {
       if (bandX) return (Math.round(px * 2) % 7 === 0 && py < 34) ? ['iron', 6.8] : band(3.7 + (36 - py) * 0.05);
       const rim = lidTop(22) > 0.9; // Kante
       return rim ? wood(1.6) : ['wood', 3.1 + (36 - py) * 0.11 - l * 1.0 + (vn(px * 2.2, py * 0.35, 6) - 0.5) * 1.3 + (n - 0.5) * 0.5];
+    }
+    return null;
+  }, 128);
+}
+// 0.20.0: Truhenmaul (Monstertruhe) – Prunktruhe mit aufgerissenem Deckel als Kiefer, Zahnreihen, Zunge, Glutaugen, Krallenbeine
+function genMimic(seed) {
+  return paintFigure(seed, ({ ell, cap, nz, px, py, x, y, vn }) => {
+    const ax = Math.abs(px - 32), l = (px - 32) / 22 * 0.9, n = nz(x, y);
+    const wood = (b) => ['wood', b - l * 1.1 + (vn(px * 2.2, py * 0.35, 6) - 0.5) * 1.4 + (n - 0.5) * 0.5];
+    const gold = (b) => ['glow', b - l * 0.8 + (n - 0.5) * 0.4];
+    // Augen auf dem Deckel (über allem)
+    if (ell(px, py, 25, 14.5, 2.6, 1.7) <= 1 || ell(px, py, 39, 14.5, 2.6, 1.7) <= 1) return ell(px, py, px < 32 ? 25.6 : 39.6, 14.6, 0.7, 1.1) <= 1 ? ['ceil', 0] : ['blood', 7];
+    // Zunge hängt über die Vorderkante
+    if (cap(px, py, 32, 36, 30, 47, 4.2, 3) || ell(px, py, 30, 47.5, 3.2, 2.4) <= 1) return ['blood', 4.6 + (ax < 0.6 ? -1.2 : 0) - l * 0.6 + n * 0.5];
+    // Zähne: oben (am Deckel, zeigen nach unten), unten (an der Kastenkante, zeigen nach oben)
+    for (let i = 0; i < 9; i++) {
+      const tx = 13 + i * 4.75, big = i === 1 || i === 7;
+      if (cap(px, py, tx, 26, tx + 0.3, 26 + (big ? 7 : 4.2), 1.6, 0.15)) return ['stone', 7 - (py - 26) * 0.15 + n * 0.3];
+      if (cap(px, py, tx + 2.3, 40, tx + 2.1, 40 - (big ? 6 : 3.8), 1.5, 0.15)) return ['stone', 6.8 - (40 - py) * 0.12 + n * 0.3];
+    }
+    // Schlund
+    if (ell(px, py, 32, 33, 19.5, 7.6) <= 1) return ['blood', 1.2 + (1 - ell(px, py, 32, 33, 19.5, 7.6)) * 1.8 + n * 0.4];
+    if (py > 26 && py < 40 && ax < 21.5) return ['ceil', 0.3];
+    // Deckel (aufgeklappt, leicht nach hinten geneigt)
+    if (py >= 6 && py <= 26.5 && ell(px, py, 32, 26, 22.5, 20) <= 1) {
+      if (py > 24.4) return gold(4.6);
+      if (ax > 13 && ax < 16.6) return Math.round(px * 2) % 7 === 0 && py < 23 ? ['flesh', 7] : gold(5.4 + (26 - py) * 0.03);
+      return ell(px, py, 32, 26, 22.5, 20) > 0.9 ? wood(1.4) : wood(3 + (26 - py) * 0.06);
+    }
+    // Kasten
+    if (py >= 39.5 && py <= 56 && ax <= 22) {
+      if (py < 41.4) return gold(4.8);
+      if (ax > 13 && ax < 16.6) return Math.round(px * 2) % 7 === 0 && Math.abs(py - 48) < 0.9 ? ['flesh', 7] : gold(5.2);
+      if (py > 52.4 && ax > 17.4) return gold(4.4);
+      if (ax > 21) return wood(1.3);
+      return wood(3.1) ;
+    }
+    // Krallenbeine
+    for (const sx of [-1, 1]) for (const k of [0, 1]) {
+      const bx = 32 + sx * (10 + k * 9);
+      if (cap(px, py, bx, 55, bx + sx * 3, 61.5, 2.2, 1.2)) return ['wood', 1.8 - l * 0.6 + n * 0.4];
+      if (py > 60.5 && py < 63 && Math.abs(px - (bx + sx * 3)) < 3 && Math.floor(px * 1.3) % 2 === 0) return ['flesh', 5];
     }
     return null;
   }, 128);
@@ -1622,7 +1666,7 @@ export function makeTextures(detail = 1) {
     wall: { [WALL_STONE]: stoneW, [WALL_SECRET]: genSecretWall(stoneW, 301), [WALL_SWITCH]: genSwitchWall(stoneW, false), [WALL_SWITCH_ON]: genSwitchWall(stoneW, true), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
     ceil: genCeil(53, nf),
-    sprites: { plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), trapSprung: genTrap('sprung', 401), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), trapSprung: genTrap('sprung', 401), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)), chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
@@ -1787,8 +1831,8 @@ export function buildGrid(lvl, objs) {
   for (const o of objs) { if (o.type === 'secret' && !o.open) grid[o.y * w + o.x] = WALL_SECRET; else if (o.type === 'lever' && o.wall) grid[o.y * w + o.x] = o.used ? WALL_SWITCH_ON : WALL_SWITCH; }
   return { grid, gw: w, gh: h };
 }
-const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'turmwache' ? tex.sprites.turmwache : k === 'wolf' ? tex.sprites.wolf : k === 'kultist' ? tex.sprites.kultist : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
-const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' ? 1.12 : 0.9); // Bosse stehen größer im Gang
+const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'turmwache' ? tex.sprites.turmwache : k === 'wolf' ? tex.sprites.wolf : k === 'kultist' ? tex.sprites.kultist : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'truhenmaul' ? tex.sprites.mimic : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
+const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' ? 1.12 : k === 'truhenmaul' ? 0.8 : 0.9); // Bosse stehen größer im Gang
 export const GROUP_SCALE = 0.78, GROUP_GAP = 0.44, CHEST_SCALE = 0.58; // 0.16.4: Gruppen vorher 0.62/0.36, Truhe 0.5 (Nutzer: zu klein, hinter der Leiste)
 let combatFit = 1; // 0.16.17: im Kampf verkleinert die Kamera zu große Figuren so, dass sie samt Füßen über der Leiste ins Bild passen
 export const setCombatFit = (v) => { combatFit = v; };
@@ -1831,7 +1875,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
     if (o.type === 'plate') out.push({ x: o.x, y: o.y, tex: o.down ? tex.sprites.plateDown : tex.sprites.plate, scale: 1 });
     else if (o.type === 'boulder') out.push({ x: o.x, y: o.y, tex: tex.sprites.boulder, scale: 0.78 });
     else if (o.type === 'trap') { if (!o.disarmed) out.push({ x: o.x, y: o.y, tex: o.sprung ? tex.sprites.trapSprung : o.spotted ? tex.sprites.trapSeen : tex.sprites.trapFaint, scale: 1 }); }
-    else if (o.type === 'chest') out.push({ x: o.x, y: o.y, tex: o.open ? tex.sprites.chestOpen : tex.sprites.chest, scale: CHEST_SCALE });
+    else if (o.type === 'chest') out.push({ x: o.x, y: o.y, tex: o.open ? tex.sprites.chestOpen : o.look === 'prunk' ? tex.sprites.chestPrunk : tex.sprites.chest, scale: CHEST_SCALE });
     else if (o.type === 'enemy' && !o.dead) {
       const tot = Array.isArray(o.kinds) ? Math.min(3, o.kinds.length) : 1;
       const av = alive && alive[o.id] != null ? alive[o.id] : null, kindList = Array.isArray(av) ? av : null;

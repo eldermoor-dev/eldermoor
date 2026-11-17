@@ -175,6 +175,13 @@
       "kind": "quest",
       "desc": "Ein kalter Schlüssel aus blauem Stahl. Passt in das Tor zum Thronsaal des Nebelturms.",
       "noSell": true
+    },
+    "dietrich": {
+      "name": "Dietrich",
+      "kind": "tool",
+      "icon": "🔧",
+      "desc": "Öffnet verschlossene Truhen (Chance je nach Schloss). Bricht beim Fehlversuch.",
+      "value": 10
     }
   },
   "races": {
@@ -1071,6 +1078,37 @@
         "title": "Der Nebelhüter",
         "text": "Auf dem Thron sitzt etwas, das einmal eine Gestalt hatte."
       }
+    },
+    "truhenmaul": {
+      "name": "Truhenmaul",
+      "hp": 60,
+      "atk": 12,
+      "def": 5,
+      "init": 7,
+      "gold": 45,
+      "xp": 120,
+      "resist": {
+        "fire": -25
+      },
+      "heavy": {
+        "name": "Zuschnappen",
+        "every": 3,
+        "mult": 170
+      },
+      "onHit": {
+        "status": "bleed",
+        "chance": 30,
+        "turns": 2,
+        "power": 3
+      },
+      "gearDrop": {
+        "chance": 100,
+        "boost": 1
+      },
+      "intro": {
+        "title": "Truhenmaul",
+        "text": "Gier hat Zähne."
+      }
     }
   },
   "palettes": {
@@ -1677,7 +1715,8 @@
                 "boost": 0
               }
             }
-          ]
+          ],
+          "trap": "spikes"
         },
         {
           "id": "stairs_gruft",
@@ -1733,9 +1772,9 @@
         "#.........................m",
         "m.....###m......m##m####..#",
         "#.....####......########..#",
-        "###Tm#######.#T##########m#",
-        "##########......m##########",
-        "#########m......###########",
+        "##.Tm#######.#T##########m#",
+        "#.....#.##......m##########",
+        "#.......#m......###########",
         "#############Tm############"
       ],
       "start": {
@@ -1884,7 +1923,8 @@
             {
               "gold": 12
             }
-          ]
+          ],
+          "lock": 15
         },
         {
           "id": "en_g5",
@@ -2008,6 +2048,69 @@
             {
               "gear": {
                 "boost": 1
+              }
+            }
+          ]
+        },
+        {
+          "id": "door_schatz",
+          "type": "door",
+          "x": 2,
+          "y": 9,
+          "locked": false,
+          "title": "SCHATZ-|KAMMER",
+          "style": "dark"
+        },
+        {
+          "id": "chest_mimic_g",
+          "type": "chest",
+          "x": 4,
+          "y": 10,
+          "look": "prunk",
+          "mimic": "truhenmaul",
+          "loot": []
+        },
+        {
+          "id": "sign_gier",
+          "type": "sign",
+          "x": 1,
+          "y": 10,
+          "face": 3,
+          "title": "GIER|FRISST",
+          "text": "Mit zittriger Hand in den Stein geritzt: „Nicht alles, was glänzt, ist eine Truhe. Und nicht jede Wand ist eine Wand.“"
+        },
+        {
+          "id": "secret_g2",
+          "type": "secret",
+          "x": 6,
+          "y": 11,
+          "hint": "Die Fuge hier ist frischer als der Rest der Mauer."
+        },
+        {
+          "id": "switch_g2",
+          "type": "lever",
+          "wall": true,
+          "x": 1,
+          "y": 11,
+          "gate": "secret_g2",
+          "msg": "Der Stein gibt nach. Am anderen Ende des Raums schabt Stein über Stein."
+        },
+        {
+          "id": "chest_g_real",
+          "type": "chest",
+          "x": 7,
+          "y": 10,
+          "loot": [
+            {
+              "gold": 30
+            },
+            {
+              "item": "potion",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 2
               }
             }
           ]
@@ -2210,7 +2313,8 @@
               "item": "oelflasche",
               "n": 1
             }
-          ]
+          ],
+          "trap": "gas"
         },
         {
           "id": "door_grube",
@@ -2589,7 +2693,8 @@
               "item": "gegengift",
               "n": 1
             }
-          ]
+          ],
+          "lock": 35
         },
         {
           "id": "door_turm",
@@ -3136,6 +3241,9 @@
           "item": "ration"
         },
         {
+          "item": "dietrich"
+        },
+        {
           "item": "iron_sword"
         },
         {
@@ -3362,10 +3470,12 @@
             {
               "id": "r_gold",
               "name": "Tascheninhalt",
-              "desc": "+15 % Gold aus Kämpfen. Fallen: +30 % entdecken und entschärfen.",
+              "desc": "+15 % Gold aus Kämpfen. Fallen: +30 % entdecken und entschärfen. Öffnet Truhenschlösser (+30 %), feilscht bei Händlern (−10 %).",
               "fx": {
                 "gold": 15,
-                "trap": 30
+                "trap": 30,
+                "lock": 30,
+                "haggle": 10
               }
             },
             {
@@ -3380,11 +3490,12 @@
             {
               "id": "r_glueck",
               "name": "Glückspilz",
-              "desc": "+20 % Gold, +1 Verteidigung. Fallen: weitere +25 %.",
+              "desc": "+20 % Gold, +1 Verteidigung. Fallen: weitere +25 %. Schlösser +25 %.",
               "fx": {
                 "gold": 20,
                 "def": 1,
-                "trap": 25
+                "trap": 25,
+                "lock": 25
               }
             },
             {
@@ -3567,10 +3678,11 @@
             {
               "id": "m_eis",
               "name": "Eisblick",
-              "desc": "+1 Initiative, Fähigkeiten +10 % Schaden.",
+              "desc": "+1 Initiative, Fähigkeiten +10 % Schaden. Sieht durch falsche Mauern (Geheimwände +25 %).",
               "fx": {
                 "init": 1,
-                "abil": 10
+                "abil": 10,
+                "secret": 25
               }
             },
             {
@@ -3638,9 +3750,10 @@
             {
               "id": "g_auge",
               "name": "Scharfes Auge",
-              "desc": "+1 Angriff.",
+              "desc": "+1 Angriff. Spürt Geheimwände (+35 %).",
               "fx": {
-                "atk": 1
+                "atk": 1,
+                "secret": 35
               }
             },
             {
@@ -3757,9 +3870,10 @@
             {
               "id": "a_saeure",
               "name": "Scharfe Säure",
-              "desc": "Fähigkeiten +10 % Schaden.",
+              "desc": "Fähigkeiten +10 % Schaden. Säure frisst Truhenschlösser (+25 %).",
               "fx": {
-                "abil": 10
+                "abil": 10,
+                "lock": 25
               }
             },
             {
@@ -3803,9 +3917,10 @@
             {
               "id": "a_mana",
               "name": "Reiche Vorräte",
-              "desc": "+6 Mana.",
+              "desc": "+6 Mana. Kennt die Preise (Händler −10 %).",
               "fx": {
-                "mp": 6
+                "mp": 6,
+                "haggle": 10
               }
             },
             {
@@ -3963,5 +4078,10 @@
         "text": "Eine Rune flammt unter euren Füßen auf."
       }
     }
+  },
+  "chests": {
+    "pick": 40,
+    "trapSpot": 30,
+    "mimicWarn": 25
   }
 }

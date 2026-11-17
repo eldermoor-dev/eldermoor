@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPort
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.19.25';
+const VERSION = '0.20.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -331,7 +331,7 @@ function act(name) {
     case 'interact': {
       if (g.combat) { say('Im Kampf stehen die Aktionsknöpfe zur Verfügung.'); break; }
       const r = interact(g, S.data);
-      if (r.encounter) { startCombatUI(r.encounter); break; }
+      if (r.encounter) { if (r.msg) say(r.msg); if (r.sfx) S.sfx.play(r.sfx); startCombatUI(r.encounter); break; } // 0.20.0: Monstertruhe erwacht
       if (r.shop) { if (r.msg) say(r.msg); S.shopTalk = r.msg || null; S.held = []; S.shopTab = 'buy'; S.shopSure = null; openShop(r.shop, true); break; }
       say(r.msg); if (r.sfx) S.sfx.play(r.sfx);
       if (r.moved) { S.target.x = g.player.x + 0.5; S.target.y = g.player.y + 0.5; beginTween(); toast(r.msg, 5000); } // Stein gezogen: Gruppe steht ein Feld weiter hinten
@@ -866,6 +866,7 @@ function helpHtml() {
   <h3>Rechts: Aktionen</h3><p>◉ Interagieren (Türen, Truhen, Hebel, Gegner ansprechen; Türen und Truhen gehen auch auf, wenn du gegen sie läufst oder sie direkt vor dir antippst), ⚔ Angriff, ✦ Fähigkeit (nur im Kampf, kostet Mana oder Ausdauer). Bei mehreren Gegnern: Gegner antippen = Ziel wählen, „Alle“ trifft jeden Gegner mit 60 % Schaden, ▣ Inventar (Heldenleiste: LP · Mana in Blau bzw. Ausdauer in Gelb), ☻ Charakter (dort „Talente“: ab Stufe 2 gibt jede Stufe einen Punkt; drei Zweige je Beruf, außerdem neue Fähigkeiten).</p>
   <h3>Kombinationsangriffe</h3><p>Automatisch, wenn ein Held einen Gegner trifft, der einen passenden Status von einem <b>anderen</b> Helden trägt. Im Kampf zeigt „✚ Kombi“ am Gegner, was gerade möglich ist.</p>${S.data.combos.map((c) => `<p class="muted" style="margin:2px 0">✚ <b>${esc(c.name)}</b>: ${esc(c.desc)}</p>`).join('')}
   <h3>Fallen</h3><p>Fallen verraten sich durch eine feine Spur am Boden oder eine Warnung an der Wand. ◉ auf das Feld vor dir untersucht den Boden, ein zweites ◉ entschärft die Falle. Helden mit Fallen-Talent (Schurke, Waldläufer, Alchemist) bemerken und entschärfen sie eher. Ausgelöste Fallen kosten LP, töten aber niemanden.</p>
+  <h3>Truhen</h3><p>Manche Truhen sind verschlossen: ein Dietrich (bei Hedda) oder ein Held mit Schlosstalent öffnet sie; misslingt es dem Talent, klemmt das Schloss bis zur nächsten Rast. Manche Truhen tragen eine Falle – wer sie bemerkt, entschärft sie mit ◉. Und nicht jede Truhe ist eine Truhe.</p><h3>Talente außerhalb des Kampfes</h3><p>Schlösser (Schurke, Alchemist), Geheimwände spüren (Waldläufer, Magier: zeigt auch, wo der Mechanismus liegt), Fallen (Schurke, Waldläufer, Alchemist) und Feilschen bei Händlern (Schurke, Alchemist). Es zählt der beste wache Held.</p>
   <h3>Steine und Druckplatten</h3><p>Schwere Steine lassen sich schieben (von vorn dagegenlaufen) und ziehen (◉, die Gruppe geht dabei einen Schritt zurück). Eine Druckplatte hält ein Gitter nur offen, solange etwas Schweres auf ihr liegt.</p>
   <h3>Menü (☰ rechts unten)</h3><p>Karte (auf eine erkundete Zelle tippen setzt oder entfernt eine Notiz), Rasten, Speichern, Laden, Einstellungen. Oben rechts zeigt der Kompass die Blickrichtung.</p>
   <h3>Kampf</h3><p>Rundenbasiert. Die Zugreihenfolge steht oben. Hinterreihe-Helden ohne Fernkampf treffen nur halb so hart.</p>
@@ -958,7 +959,7 @@ function gearDelta(h, id) {
 }
 function openInventory() {
   const g = S.game, d = S.data;
-  const rank = { consumable: 0, supply: 1, quest: 2, equip: 3 };
+  const rank = { consumable: 0, supply: 1, tool: 1, quest: 2, equip: 3 };
   const items = Object.entries(g.inv).filter(([, n]) => n > 0).sort((a, b) => (rank[itemDef(g, d, a[0]).kind] - rank[itemDef(g, d, b[0]).kind]) || itemDef(g, d, a[0]).name.localeCompare(itemDef(g, d, b[0]).name, 'de'));
   let html = `<h2>Inventar</h2><p>Gold: <b>${g.gold}</b></p>`;
   html += items.length ? items.map(([id, n]) => {

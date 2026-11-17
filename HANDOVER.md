@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.19.25 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.20.0 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -821,3 +821,16 @@ Nutzer (Foto Nebelturm, Truhe vor Moosfeld): „Sieht komisch aus“; auf Rückf
 - Ursache Farben (belegt): Palette `turm` hat `wood` lila und `glow` eisblau, die Truhe nutzt diese Materialien (lila Holz, blaues Schloss).
 - `game.json → palettes.turm.wood` = [128,88,56] (warmes Braun; wirkt auch auf andere Holzteile im Turm). `genChest2`: Schloss aus hellem Holzton (Messing) statt `glow`, in allen Paletten; Truhe vertikal um Faktor 1,35 gestaucht (niedriger, breiter), `CHEST_SCALE` 0,62 → 0,58.
 - Tests 103 grün; Screenshots geschlossen und offen headless gesehen, **nicht auf Gerät getestet**. Offen: ob Größe/Form so passt (Nutzer hat nur „Form/Größe“ genannt, nicht ob zu groß oder zu hoch – Deutung nicht gesichert).
+
+## 0.20.0 (18.11.2026) – Truhenarten, falscher Schatzraum, Talente außerhalb des Kampfes
+Nutzer: „Restbestände später. Weiter bauen“ → Plan-Schritt 0.20. Nur headless geprüft (Node 104 Tests, Chrome/Playwright-Screenshots), **nicht auf Gerät getestet**.
+- **Truhenarten** (Felder an der Truhe in game.json, gelesen wie `guard` aus den Spieldaten → alte Stände ohne Migration): `lock` (Schwierigkeit), `key`, `trap` (Fallenart), `mimic` (Gegnerart), `look: 'prunk'`. Regeln in `data.chests` (pick 40, trapSpot 30, mimicWarn 25). Logik: `chestCfg`, `pickChest`, `chestTrap`, `wakeMimic` (logic.js).
+  - Schloss: Chance = 40 + Schlosstalent − Schwierigkeit (5–95 %). Ohne Talent braucht es einen **Dietrich** (neues Item, Art `tool`, 10 Gold bei Hedda), der beim Fehlversuch bricht. Mit Talent kein Dietrich nötig; Fehlschlag = Schloss klemmt bis zur nächsten Rast (`restParty` löscht `jammed`), mit Dietrich sofort neuer Versuch.
+  - Falle an der Truhe: erster Griff = Wurf auf Bemerken (30 + Fallentalent). Bemerkt → ◉ entschärft (wie Bodenfallen, Fehlschlag halber Schaden); unbemerkt → löst aus, Truhe öffnet sich trotzdem.
+  - Monstertruhe: verwandelt sich beim Öffnen in den Gegner (Objekt wird `type: 'enemy'`). Mit Fallen- oder Geheimtalent einmalig Warnung („atmet“), zweiter Griff weckt sie trotzdem.
+  - Verteilt: Kultgruft `chest_g2` Schloss 15, Nebelturm `chest_t2` Schloss 35, Moorpfad `chest_p4` Speerfalle, Schratgruben `chest_s2` Giftnebel.
+- **Neuer Gegner Truhenmaul** (`truhenmaul`: 60 LP, Angriff 12, Vert. 5, Init 7, Zuschnappen jeden 3. Zug 170 %, Blutung 30 %, Feuer +25 %, 45 Gold, 120 EP, sichere Ausrüstung Boost 1, Auftrittsbanner „Gier hat Zähne.“). In der Kultgruft wirkt der Gebietsfaktor (150/130 %). Sprite `genMimic` (Prunktruhe mit Kiefer, Zähnen, Zunge, roten Augen, Krallenbeinen); Prunktruhe `genChest2(…, prunk)` mit Goldbeschlägen und Rubinen.
+- **Falscher Schatzraum** (Kultgruft, neu, Felder x 1–7, y 9–11): Tür `door_schatz` „SCHATZ-KAMMER“ im Südwand des Startraums (2,9); Prunktruhe = Truhenmaul (4,10); Wandschrift „GIER FRISST“ (1,10); lockerer Stein (1,11) öffnet Geheimwand (6,11); dahinter echte Truhe `chest_g_real` (7,10): 30 Gold, Heiltrank, Ausrüstung Boost 2.
+- **Talente außerhalb des Kampfes** (neue Wirkungen, an bestehende Talente angehängt, Beschreibung ergänzt): `lock` – Tascheninhalt +30, Glückspilz +25, Scharfe Säure +25; `secret` – Scharfes Auge +35, Eisblick +25; `haggle` – Tascheninhalt 10, Reiche Vorräte 10 (Kauf −, Verkauf +, max. 30 %). `secret`: nach Schritt/Drehung ein Wurf je Geheimwand 1–2 Felder voraus (30 + Talent) → Meldung „kalter Luftzug“; ◉ an der Geheimwand nennt mit Talent Richtung und Abstand des Mechanismus (`secretHint`, `scanSecrets`). Es zählt der beste wache Held (`partySkill`).
+- Hilfe: Abschnitte „Truhen“ und „Talente außerhalb des Kampfes“. BALANCE.md und SIM.md neu (Simulation öffnet Truhen per ◉; verschlossene ohne Dietrich bleiben zu, die Monstertruhe wird nicht bekämpft – Truhenmaul nicht simuliert).
+- Offene Gerätetests: Schloss mit/ohne Dietrich, Klemmen + Rast, Truhenfalle bemerken/entschärfen/auslösen, Schatzraum (Truhenmaul, Kampfbild, Schalter, echte Truhe), Talent-Meldungen, Preise mit Feilschen, Talentbeschreibungen lesbar.

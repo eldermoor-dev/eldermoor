@@ -41,6 +41,7 @@ Gegner (EP: jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die vol
 | Kultpriester | 80 | 13 | 4 | 5 | 85 | 16 | Zaubert: Dunkler Segen (jeden 2. Zug), Fluch der Schwäche (jeden 3. Zug) |
 | Turmwache | 95 | 17 | 8 | 4 | 100 | 18 | zielt auf die Hinterreihe; Schildstoß jeden 3. Zug, angekündigt (160 %); Treffer: Verflucht 30 % |
 | Nebelhüter | 480 | 26 | 8 | 6 | 320 | 80 | Zaubert: Nebelspeer (jeden 3. Zug, angekündigt); Boss, Phasen: Nebelwand ab ≤ 66 % LP (Angriff 27), Sturm der Schleier ab ≤ 33 % LP (Angriff 28) |
+| Truhenmaul | 60 | 12 | 5 | 7 | 120 | 45 | Zuschnappen jeden 3. Zug, angekündigt (170 %); Treffer: Blutung 30 % |
 
 ## Rassen (Modifikatoren)
 
@@ -266,3 +267,4 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 | Kultpriester | 15 % | – |
 | Turmwache | 15 % | – |
 | Nebelhüter | 100 %, Boost 3 | – |
+| Truhenmaul | 100 %, Boost 1 | – |

@@ -371,7 +371,7 @@ export function tryMove(state, data, rel) {
   if (stairs) { res.events.push({ type: 'stairs', id: stairs.id }); return res; }
   res.encounter = enemyInFront(state);
   if (!res.encounter) { const sp = spottedEnemy(state, data); if (sp) { res.encounter = sp.enemy; res.ambush = sp.ambush; } }
-  if (!res.encounter) { const notes = scanTraps(state, data); if (notes.length) res.notes = notes; }
+  if (!res.encounter) { const notes = [...scanTraps(state, data), ...scanSecrets(state, data)]; if (notes.length) res.notes = notes; }
   return res;
 }
 
@@ -472,7 +472,7 @@ export function turn(state, data, delta) {
   if (front) return { encounter: front };
   const sp = spottedEnemy(state, data);
   if (sp) return { encounter: sp.enemy, ambush: sp.ambush };
-  const notes = scanTraps(state, data);
+  const notes = [...scanTraps(state, data), ...scanSecrets(state, data)];
   return notes.length ? { encounter: null, notes } : { encounter: null };
 }
 
@@ -493,6 +493,102 @@ function addLoot(state, data, loot) {
     parts.push(it.kind === 'quest' ? it.name : `${n}× ${it.name}`);
   }
   return parts.join(', ');
+}
+
+// ---------- Truhenarten und Talente außerhalb des Kampfes (0.20.0) ----------
+// Truhe in game.json: lock (Schwierigkeit in Prozentpunkten), key (Schlüssel-Item), trap (Fallenart aus data.traps.kinds), mimic (Gegnerart: die Truhe ist ein Monster), look ('prunk').
+// Gelesen aus den Spieldaten wie chest.guard, damit alte Spielstände die Arten ohne Migration bekommen. Zustand (unlocked, jammed, trapSeen, trapDone, warned) liegt im Objekt.
+// data.chests = { pick: Grundchance Schloss %, trapSpot: Grundchance Falle bemerken %, mimicWarn: Grundchance Monster bemerken % (nur mit Talent) }.
+// Talente: lock (Schlösser), secret (Geheimwände spüren), haggle (Händlerpreise), trap (Fallen) – jeweils der beste wache Held zählt.
+export const partySkill = (state, data, key) => Math.max(0, ...state.heroes.map((h) => (h.hp > 0 ? talentSum(data, h, key) : 0)));
+const bestAt = (state, data, key) => state.heroes.filter((h) => h.hp > 0).sort((a, b) => talentSum(data, b, key) - talentSum(data, a, key))[0] || null;
+export function chestCfg(state, data, o) {
+  const def = (getLevel(data, state).objects || []).find((q) => q.id === o.id) || {};
+  const out = {};
+  for (const k of ['lock', 'key', 'trap', 'mimic', 'look']) { const v = def[k] !== undefined ? def[k] : o[k]; if (v !== undefined) out[k] = v; }
+  return out;
+}
+const chestRules = (data) => ({ pick: 40, trapSpot: 30, mimicWarn: 25, ...(data.chests || {}) });
+export function pickChest(state, data, o, cfg) {
+  if (cfg.key && (state.inv[cfg.key] || 0) > 0) { o.unlocked = true; return { ok: true, msg: 'Der Schlüssel passt.' }; }
+  if (o.jammed) return { msg: 'Das Schloss klemmt nach dem letzten Versuch. Nach einer Rast könnt ihr es noch einmal versuchen.', sfx: 'bump' };
+  const skill = partySkill(state, data, 'lock'), tools = state.inv.dietrich || 0, who = bestAt(state, data, 'lock');
+  if (!cfg.lock) return { msg: 'Die Truhe ist verschlossen. Irgendwo muss der passende Schlüssel sein.', sfx: 'bump' };
+  if (skill <= 0 && tools <= 0) return { msg: 'Die Truhe ist verschlossen. Ohne Dietrich oder geübte Hand geht hier nichts. Hedda verkauft Dietriche.', sfx: 'bump' };
+  const chance = Math.max(5, Math.min(95, chestRules(data).pick + skill - cfg.lock));
+  const ok = rand(state) * 100 < chance;
+  if (skill > 0) {
+    if (ok) { o.unlocked = true; return { ok: true, msg: `${who.name} knackt das Schloss.`, changed: true }; }
+    if (tools > 0) { state.inv.dietrich--; return { msg: `${who.name} rutscht ab, der Dietrich bricht. ◉ versucht es noch einmal (Dietriche übrig: ${state.inv.dietrich}).`, sfx: 'bump', changed: true }; }
+    o.jammed = true;
+    return { msg: `${who.name} rutscht ab. Das Schloss klemmt – erst nach einer Rast neu versuchen, oder mit einem Dietrich.`, sfx: 'bump', changed: true };
+  }
+  if (ok) { o.unlocked = true; return { ok: true, msg: 'Mit dem Dietrich springt das Schloss auf.', changed: true }; }
+  state.inv.dietrich--;
+  return { msg: `Der Dietrich bricht ab.${state.inv.dietrich > 0 ? ` ◉ versucht es mit dem nächsten (übrig: ${state.inv.dietrich}).` : ' Keine Dietriche mehr.'}`, sfx: 'bump', changed: true };
+}
+// Falle an der Truhe: erster Griff = Wurf auf Bemerken (Grundchance + Fallentalent). Bemerkt: ◉ entschärft (wie Bodenfallen). Unbemerkt: sie löst aus, die Truhe öffnet sich trotzdem.
+export function chestTrap(state, data, o, cfg) {
+  const k = data.traps.kinds[cfg.trap], skill = partySkill(state, data, 'trap');
+  if (o.trapSeen) {
+    const chance = Math.min(95, (data.traps.disarm || 55) + skill);
+    o.trapDone = true;
+    if (rand(state) * 100 < chance) return { stop: true, msg: `Die Falle an der Truhe (${k.name}) ist entschärft. ◉ öffnet sie.`, sfx: 'ui', changed: true };
+    return { stop: true, msg: `Das Entschärfen misslingt! ${springTrap(state, data, { kind: cfg.trap }, 0.5).join(' ')} ◉ öffnet die Truhe.`, sfx: 'hurt', long: true, changed: true };
+  }
+  if (!o.trapChk) {
+    o.trapChk = true;
+    if (rand(state) * 100 < chestRules(data).trapSpot + skill) {
+      o.trapSeen = true;
+      const who = bestAt(state, data, 'trap');
+      return { stop: true, msg: `${who ? who.name : 'Jemand'} bemerkt einen dünnen Draht am Deckel: ${k.name}. ◉ entschärft sie.`, sfx: 'ui', changed: true };
+    }
+  }
+  o.trapDone = true;
+  return { msg: springTrap(state, data, { kind: cfg.trap }).join(' ') };
+}
+// Monstertruhe: mit Fallen- oder Geheimtalent einmalige Warnung, sonst (und beim zweiten Griff) erwacht sie und wird zum Gegner.
+export function wakeMimic(state, data, o, cfg) {
+  const skill = Math.max(partySkill(state, data, 'trap'), partySkill(state, data, 'secret'));
+  if (!o.warnChk) {
+    o.warnChk = true;
+    if (skill > 0 && rand(state) * 100 < chestRules(data).mimicWarn + skill) {
+      const who = state.heroes.filter((h) => h.hp > 0).sort((a, b) => Math.max(talentSum(data, b, 'trap'), talentSum(data, b, 'secret')) - Math.max(talentSum(data, a, 'trap'), talentSum(data, a, 'secret')))[0];
+      return { msg: `${who.name} hält inne: Das Holz der Truhe ist warm, und der Deckel hebt sich ganz leicht – als würde sie atmen. ◉ öffnet sie trotzdem.`, sfx: 'ui', long: true, changed: true, warn: true };
+    }
+  }
+  const en = data.enemies[cfg.mimic];
+  Object.assign(o, { type: 'enemy', kind: cfg.mimic, hp: en.hp, dead: false, awake: true });
+  delete o.open; delete o.loot;
+  return { msg: 'Der Deckel klafft auf – Zähne! Die Truhe lebt!', encounter: o, sfx: 'hurt', changed: true };
+}
+// Geheimwand untersuchen: Hinweis aus den Daten; mit Talent „secret“ zusätzlich die Richtung des Mechanismus.
+export function secretHint(state, data, o) {
+  const base = o.hint || 'Die Wand klingt hohl. Der Riss ist zu gerade für einen Zufall.';
+  const skill = partySkill(state, data, 'secret'), sw = state.objs.find((q) => q.type === 'lever' && q.gate === o.id && !q.used);
+  if (skill <= 0 || !sw) return { msg: base, sfx: 'bump' };
+  const p = state.player, dx = sw.x - p.x, dy = sw.y - p.y, n = Math.abs(dx) + Math.abs(dy);
+  const dir = [dy < 0 && 'Norden', dy > 0 && 'Süden', dx > 0 && 'Osten', dx < 0 && 'Westen'].filter(Boolean);
+  const who = bestAt(state, data, 'secret');
+  return { msg: `${base} ${who.name} tastet die Fugen ab: Der Mechanismus muss ${n <= 1 ? 'direkt nebenan' : `etwa ${n} Schritte weiter im ${dir.join('-')}`} liegen${sw.wall ? ', ein lockerer Stein' : ''}.`, sfx: 'ui', long: true };
+}
+// Geheimwände spüren: nach Schritt/Drehung je Geheimwand geradeaus (1–2 Felder) ein Wurf, nur mit Talent „secret“ (Chance 30 + Talent).
+export function scanSecrets(state, data) {
+  const skill = partySkill(state, data, 'secret');
+  if (skill <= 0) return [];
+  const lvl = getLevel(data, state), p = state.player, d = DIRS[p.dir];
+  for (let k = 1; k <= 2; k++) {
+    const x = p.x + d.dx * k, y = p.y + d.dy * k;
+    const sc = state.objs.find((o) => o.type === 'secret' && !o.open && o.x === x && o.y === y);
+    if (sc) {
+      if (sc.sensed || sc.sn) return [];
+      sc.sn = true;
+      if (rand(state) * 100 < 30 + skill) { sc.sensed = true; const who = bestAt(state, data, 'secret'); return [`${who.name} spürt einen kalten Luftzug: Die Wand ${k === 1 ? 'vor euch' : 'dort vorn'} ist nicht echt.`]; }
+      return [];
+    }
+    if (isWallChar(cellChar(lvl, x, y)) || blockerAt(state, x, y)) return [];
+  }
+  return [];
 }
 
 // Wandtafel (sign.face = Richtung vom Bodenfeld zur Wand, 0=N 1=O 2=S 3=W): lesbar, wenn die Gruppe auf dem Feld vor der Wand
@@ -542,7 +638,6 @@ export function interact(state, data) {
   }
   if (o.type === 'boulder') return pullBoulder(state, data, o);
   if (o.type === 'gate') return { msg: o.hint || 'Das Gitter sitzt fest. Es muss einen Hebel geben.', sfx: 'bump' };
-  if (o.type === 'secret') return { msg: o.hint || 'Die Wand klingt hohl. Der Riss ist zu gerade für einen Zufall.', sfx: 'bump' };
   if (o.type === 'lever') { // wall: true = versteckter Schalter (lockerer Stein in der Mauer); Ziel ist ein Gitter oder eine Geheimwand
     const gate = state.objs.find((x) => x.id === o.gate);
     if (o.used) return { msg: o.wall ? 'Der Stein ist schon eingedrückt.' : 'Der Hebel ist schon umgelegt.', sfx: 'ui' };
@@ -553,10 +648,15 @@ export function interact(state, data) {
   if (o.type === 'chest') {
     if (o.open) return { msg: 'Die Truhe ist leer.' };
     if (chestGuarded(state, data, o)) return { msg: 'Die Truhe ist bewacht. Erst die Gegner in diesem Raum besiegen.', sfx: 'bump', guarded: true };
+    const cfg = chestCfg(state, data, o), pre = [];
+    if (cfg.mimic) return wakeMimic(state, data, o, cfg);
+    if (cfg.trap && !o.trapDone) { const r = chestTrap(state, data, o, cfg); if (r.stop) return r; pre.push(r.msg); }
+    if ((cfg.lock || cfg.key) && !o.unlocked) { const r = pickChest(state, data, o, cfg); if (!r.ok) return pre.length ? { ...r, msg: pre.join(' ') + ' ' + r.msg, long: true, changed: true } : r; pre.push(r.msg); }
     o.open = true;
     const txt = addLoot(state, data, o.loot);
-    return { msg: `Truhe geöffnet: ${txt}.`, sfx: 'chest', changed: true };
+    return { msg: `${pre.length ? pre.join(' ') + ' ' : ''}Truhe geöffnet: ${txt}.`, sfx: 'chest', changed: true, long: pre.length > 0 };
   }
+  if (o.type === 'secret') return secretHint(state, data, o);
   return { msg: 'Hier gibt es nichts zu tun.' };
 }
 
@@ -617,7 +717,7 @@ export function knownSpells(data, h) {
 // ---------- Talente (0.17.0) ----------
 // data.talents = { cost: [1,1,2,2], gateLevel: 8, gateNode: 4, respecPerLevel: 20, classes: { <beruf>: [ { id, name, desc, nodes: [ {id, name, desc, fx?, unlock?} ×4 ] } ×3 ] } }
 // hero.tal = { <nodeId>: true } (fehlt bei alten Ständen = nichts gelernt). Talentpunkte: 1 je Stufe ab Stufe 2, abzüglich Kosten der gelernten Talente (nicht gespeichert, daher keine Migration).
-// Wirkungen (fx): hp, mp, atk, def, init (Werte), crit/dodge/resist/gold/abil/trap (Prozent; trap = Fallen entdecken und entschärfen), soak (Schaden gegen dich −x), heal (Heilzauber +x), regen (Ressource extra), backfull (Nahkampf aus der Hinterreihe ohne Abzug).
+// Wirkungen (fx): hp, mp, atk, def, init (Werte), crit/dodge/resist/gold/abil/trap/lock/secret/haggle (Prozent; trap = Fallen entdecken und entschärfen, lock = Schlösser, secret = Geheimwände spüren, haggle = Preise), soak (Schaden gegen dich −x), heal (Heilzauber +x), regen (Ressource extra), backfull (Nahkampf aus der Hinterreihe ohne Abzug).
 // Zweige sind der Reihe nach zu lernen; der vierte Eintrag braucht Stufe gateLevel.
 export const talentBranches = (data, cls) => (data.talents && data.talents.classes && data.talents.classes[cls]) || [];
 export const talentNodes = (data, cls) => { const out = [], cost = (data.talents && data.talents.cost) || [1, 1, 2, 2]; talentBranches(data, cls).forEach((b, bi) => b.nodes.forEach((n, ni) => out.push({ ...n, branch: b.id, bi, ni, cost: cost[ni] || 1 }))); return out; };
@@ -790,7 +890,8 @@ export function itemWorth(state, data, id) {
   const extra = Math.max(0, (it.atk || 0) + (it.def || 0) + (it.init || 0) - (base.atk || 0) - (base.def || 0) - (q ? q.statBonus : 0));
   return Math.floor(base.value * (1 + 0.5 * qi)) + 4 * extra;
 }
-export const sellPrice = (state, data, id) => { const w = itemWorth(state, data, id); return w == null ? null : Math.max(1, Math.floor(w / 2)); };
+export const haggle = (state, data) => Math.min(30, partySkill(state, data, 'haggle')); // 0.20.0: Talent „Feilschen“ (Prozent, höchstens 30)
+export const sellPrice = (state, data, id) => { const w = itemWorth(state, data, id); return w == null ? null : Math.max(1, Math.floor((w / 2) * (100 + haggle(state, data)) / 100)); };
 export function sellItem(state, data, id) {
   if (state.combat) return { error: 'in-combat' };
   if (!(state.inv[id] > 0)) return { error: 'no-item' };
@@ -806,7 +907,7 @@ export function sellItem(state, data, id) {
 // ---------- Handel (Phase 3, Schritt 5) ----------
 // data.shops.<id> = { name, owner, greeting, stock: [{ item }] } (feste Ware, unbegrenzt). Kaufpreis = voller Wert, Verkauf = Hälfte (siehe sellPrice).
 export const shopStock = (data, shopId) => ((data.shops && data.shops[shopId] && data.shops[shopId].stock) || []).filter((e) => data.items[e.item]);
-export const buyPrice = (state, data, id) => itemWorth(state, data, id);
+export const buyPrice = (state, data, id) => { const w = itemWorth(state, data, id); return w == null ? null : Math.max(1, Math.ceil((w * (100 - haggle(state, data))) / 100)); };
 export function buyItem(state, data, shopId, itemId) {
   if (state.combat) return { error: 'in-combat' };
   if (!shopStock(data, shopId).some((e) => e.item === itemId)) return { error: 'not-in-stock' };
@@ -890,6 +991,7 @@ export function restParty(state, data) {
   if (state.heroes.every((h) => h.hp >= h.maxHp && h.mp >= h.maxMp)) return { error: 'nothing-to-do' };
   const fed = (state.inv.ration || 0) > 0;
   if (fed) state.inv.ration--;
+  for (const o of state.objs) if (o.jammed) delete o.jammed; // 0.20.0: verklemmte Truhenschlösser lassen sich nach der Rast wieder versuchen
   for (const h of state.heroes) {
     if (fed) { h.hp = h.maxHp; h.mp = h.maxMp; }
     else {

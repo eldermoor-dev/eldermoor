@@ -1819,7 +1819,7 @@ export async function runTests(data, env = {}) {
 
   const failed = results.filter((r) => !r.ok).length;
   await test('Talente (0.17.0): Daten vollständig – 6 Berufe × 3 Zweige × 4 Talente, Freischaltungen existieren', () => {
-    const FX = new Set(['hp', 'mp', 'atk', 'def', 'init', 'crit', 'dodge', 'resist', 'gold', 'abil', 'soak', 'heal', 'regen', 'backfull', 'trap']);
+    const FX = new Set(['hp', 'mp', 'atk', 'def', 'init', 'crit', 'dodge', 'resist', 'gold', 'abil', 'soak', 'heal', 'regen', 'backfull', 'trap', 'lock', 'secret', 'haggle']);
     const ids = new Set();
     eq(data.talents.cost, [1, 1, 2, 2], 'Kosten');
     for (const c of Object.keys(data.classes)) {
@@ -1992,6 +1992,66 @@ export async function runTests(data, env = {}) {
     for (const id of ['kultgruft', 'schratgruben']) { const a = L.analyzeLevel(data, id); assert(a.ok, `${id}: weiterhin lösbar (${JSON.stringify(a)})`); }
     const k = L.newGame(data, 3); L.jumpToLevel(k, data, 'kultgruft'); const sec = k.objs.find((o) => o.id === 'secret_g1');
     k.player = { x: 5, y: 4, dir: 1 }; assert(!sec.open && /Stein gibt nach/.test(L.interact(k, data).msg) && sec.open, 'Geheimkammer öffnet über den lockeren Stein');
+  });
+  await test('Truhenarten und Talente außerhalb des Kampfes (0.20.0): Schloss, Dietrich, Klemmen, Truhenfalle, Monstertruhe, Geheimwand-Gespür, Feilschen', () => {
+    const kg = (seed = 1) => { const s = L.newGame(data, seed); L.jumpToLevel(s, data, 'kultgruft'); s.objs.forEach((o) => { if (o.type === 'enemy') o.dead = true; }); return s; };
+    // Schloss ohne Talent und ohne Dietrich
+    let s = kg(); const c2 = s.objs.find((o) => o.id === 'chest_g2'); s.player = { x: 15, y: 10, dir: 2 };
+    let r = L.interact(s, data); assert(!c2.open && /Dietrich/.test(r.msg), 'verschlossen, Hinweis auf Dietrich');
+    s.inv.dietrich = 40; let n = 0; while (!c2.open && n++ < 40) L.interact(s, data);
+    assert(c2.open, 'mit Dietrichen geöffnet'); assert(s.inv.dietrich < 40 || n === 1, 'Fehlversuche verbrauchen Dietriche');
+    // Talent: kein Dietrich nötig; Fehlschlag klemmt bis zur Rast
+    let jammed = false, opened = false;
+    for (let seed = 1; seed < 40 && !(jammed && opened); seed++) {
+      const q = kg(seed), c = q.objs.find((o) => o.id === 'chest_g2'); q.player = { x: 15, y: 10, dir: 2 };
+      const sira = q.heroes[1]; sira.level = 3; sira.tal = { r_gold: true };
+      eq(L.partySkill(q, data, 'lock'), 30, 'Schlosstalent zählt');
+      r = L.interact(q, data);
+      if (c.open) opened = true;
+      else if (c.jammed) {
+        jammed = true; assert(/Rast/.test(L.interact(q, data).msg), 'geklemmt: Hinweis auf Rast');
+        q.heroes[0].hp = 1; const rr = L.restParty(q, data); assert(!rr.error, 'Rast möglich: ' + JSON.stringify(rr)); assert(!c.jammed, 'Rast löst das Klemmen');
+      }
+    }
+    assert(jammed && opened, 'beide Ausgänge kamen vor');
+    // Truhenfalle (Moorpfad): öffnet sich am Ende immer, Falle ist danach erledigt
+    let sawSpot = false, sawSpring = false;
+    for (let seed = 1; seed < 30; seed++) {
+      const q = L.newGame(data, seed); L.jumpToLevel(q, data, 'moorpfad'); const c = q.objs.find((o) => o.id === 'chest_p4'); q.player = { x: 21, y: 6, dir: 1 };
+      const hp0 = q.heroes.reduce((a, h) => a + h.hp, 0); let k = 0;
+      while (!c.open && k++ < 4) { r = L.interact(q, data); if (/Draht/.test(r.msg)) sawSpot = true; }
+      assert(c.open && c.trapDone, 'Truhe offen, Falle erledigt');
+      if (q.heroes.reduce((a, h) => a + h.hp, 0) < hp0) sawSpring = true;
+      assert(q.heroes.every((h) => h.hp >= 1), 'niemand unter 1 LP');
+    }
+    assert(sawSpot && sawSpring, 'Falle wird mal bemerkt, mal ausgelöst');
+    // Monstertruhe: ohne Talent sofort Kampf; mit Talent mitunter Warnung
+    s = kg(); const mm = s.objs.find((o) => o.id === 'chest_mimic_g'); s.player = { x: 4, y: 11, dir: 0 };
+    r = L.interact(s, data); assert(r.encounter === mm && mm.type === 'enemy' && mm.kind === 'truhenmaul' && !mm.dead, 'Truhe wird zum Truhenmaul');
+    L.startCombat(s, data, r.encounter); eq(s.combat.enemies[0].kind, 'truhenmaul', 'Kampf gegen das Truhenmaul');
+    let warned = false;
+    for (let seed = 1; seed < 30 && !warned; seed++) {
+      const q = kg(seed); q.heroes[3].level = 3; q.heroes[3].tal = { m_kalt: true, m_eis: true }; q.player = { x: 4, y: 11, dir: 0 };
+      r = L.interact(q, data);
+      if (r.warn) { warned = true; assert(!r.encounter, 'Warnung statt Kampf'); assert(L.interact(q, data).encounter, 'zweiter Griff weckt sie trotzdem'); }
+    }
+    assert(warned, 'Warnung mit Talent kommt vor');
+    // echte Beute hinter der Geheimwand, Gespür und Hinweis
+    s = kg(); const sec = s.objs.find((o) => o.id === 'secret_g2'); s.player = { x: 5, y: 11, dir: 1 };
+    assert(!/Mechanismus/.test(L.interact(s, data).msg), 'ohne Talent nur der Grundhinweis');
+    s.heroes[3].level = 3; s.heroes[3].tal = { m_kalt: true, m_eis: true };
+    r = L.interact(s, data); assert(/Mechanismus/.test(r.msg) && /Westen/.test(r.msg), 'mit Talent: Richtung des Schalters: ' + r.msg);
+    s.player = { x: 2, y: 11, dir: 3 }; assert(/Stein gibt nach/.test(L.interact(s, data).msg) && sec.open, 'Schalter öffnet die Geheimwand');
+    s.player = { x: 7, y: 11, dir: 0 }; r = L.interact(s, data); assert(/Truhe geöffnet/.test(r.msg), 'echte Truhe erreichbar');
+    let sensed = false;
+    for (let seed = 1; seed < 20 && !sensed; seed++) { const q = kg(seed); q.heroes[3].level = 3; q.heroes[3].tal = { m_kalt: true, m_eis: true }; q.player = { x: 4, y: 11, dir: 1 }; sensed = L.scanSecrets(q, data).some((t) => /Luftzug/.test(t)); }
+    assert(sensed, 'Geheimwand wird gespürt');
+    // Feilschen
+    const f = fresh(), base = L.buyPrice(f, data, 'potion'), sell = L.sellPrice(f, data, 'potion');
+    f.heroes[1].level = 3; f.heroes[1].tal = { r_gold: true };
+    assert(L.buyPrice(f, data, 'potion') < base && L.sellPrice(f, data, 'potion') >= sell, 'Feilschen senkt Kauf-, hebt Verkaufspreis');
+    assert(L.shopStock(data, 'moorrand').some((e) => e.item === 'dietrich'), 'Hedda verkauft Dietriche');
+    const a = L.analyzeLevel(data, 'kultgruft'); assert(a.ok, 'Kultgruft lösbar: ' + JSON.stringify(a));
   });
   return { results, passed: results.length - failed, failed };
 }
