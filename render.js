@@ -566,36 +566,53 @@ function genPlaque(title, kind, styleName, seed) {
   const s = Math.max(2, Math.min(3, Math.floor(168 / (cw * maxC)))); // 0.19.5: kleiner (vorher bis 5), Nutzer: „zu leuchtend groß“
   const ex = Math.max(1, s >> 2), lh = 9 * s, th = lines.length * lh - 2 * s;
   const ty0 = kind === 'door' ? 14 : Math.round(N / 2 - th / 2);
+  // 0.19.11 (Nutzer: „gruseliger, nicht aus Druckschrift“): von Hand geschmiert – jeder Buchstabe leicht schief und versetzt, Striche aus runden Pinselflecken mit schwankender Dicke,
+  // dicke Tropfen mit Kuppe, dunkle Gerinnsel und feuchte Lichter. Gleiche Lesbarkeit (gleiche Buchstabenraster), aber keine Blockschrift mehr.
   const mask = new Uint8Array(N * N);
+  const stamp = (cx, cy, rad) => {
+    const x0 = Math.floor(cx - rad - 1), x1 = Math.ceil(cx + rad + 1), y0 = Math.floor(cy - rad - 1), y1 = Math.ceil(cy + rad + 1);
+    for (let Y = y0; Y <= y1; Y++) for (let X = x0; X <= x1; X++) if (X >= 0 && Y >= 0 && X < N && Y < N && (X + 0.5 - cx) ** 2 + (Y + 0.5 - cy) ** 2 <= rad * rad) mask[Y * N + X] = 1;
+  };
   lines.forEach((ln, li) => {
     const chars = [...ln].slice(0, 8), w = chars.length * cw * s - s, lx = Math.round(N / 2 - w / 2), ly = ty0 + li * lh;
     chars.forEach((ch, ci) => {
       const g = (FONT[ch] || FONT[' ']).split('/');
-      for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) {
-        if (g[r][c] !== '1') continue;
-        const px = lx + ci * cw * s + c * s, py = ly + r * s;
-        for (let yy = 0; yy < s + ex; yy++) for (let xx = 0; xx < s + ex; xx++) { const X = px + xx, Y = py + yy; if (X >= 0 && Y >= 0 && X < N && Y < N) mask[Y * N + X] = 1; }
+      const gcx = lx + ci * cw * s + 2.5 * s, gcy = ly + 3.5 * s;
+      const rot = (hash(ci, li, seed + 50) - 0.5) * 0.34, shear = (hash(ci, li, seed + 51) - 0.5) * 0.3, dy0 = (hash(ci, li, seed + 52) - 0.5) * s * 1.7, sc = 0.94 + hash(ci, li, seed + 53) * 0.2;
+      const cr = Math.cos(rot), sr = Math.sin(rot);
+      for (let rw = 0; rw < 7; rw++) for (let c = 0; c < 5; c++) {
+        if (g[rw][c] !== '1') continue;
+        let ox = (c - 2) * s * sc, oy = (rw - 3) * s * sc;
+        ox += shear * oy;
+        const jx = (hash(c + ci * 7, rw, seed + 54) - 0.5) * s * 0.4, jy = (hash(c, rw + li * 9 + ci * 3, seed + 55) - 0.5) * s * 0.4;
+        const cx = gcx + ox * cr - oy * sr + jx, cy = gcy + ox * sr + oy * cr + dy0 + jy + Math.sin(gcx * 0.3 + seed) * s * 0.3;
+        stamp(cx, cy, s * (0.56 + hash(c + 3, rw + 5, seed + 56) * 0.26));
       }
     });
   });
-  const ol = Math.max(1, s >> 1); // dunkle Kontur: hebt die rote Schrift von grauem Stein ab
+  // Tropfen: dicke Streifen nach unten mit Kuppe am Ende
+  const drip = new Uint8Array(N * N);
+  for (let y = 0; y < N - 2; y++) for (let x = 0; x < N; x++) {
+    if (!mask[y * N + x] || mask[(y + 1) * N + x] || hash(x, y, seed + 11) < 0.9) continue;
+    const len = 4 + Math.floor(hash(x, y, seed + 12) * 16), wd = hash(x, y, seed + 13) > 0.55 ? 1 : 0;
+    for (let k = 1; k <= len && y + k < N; k++) for (let d = 0; d <= wd; d++) { const X = x + d; if (X < N && !mask[(y + k) * N + X]) drip[(y + k) * N + X] = 1 + Math.min(2, Math.floor(k / (len / 3))); }
+    for (let yy = -1; yy <= 1; yy++) for (let xx = -1; xx <= 1 + wd; xx++) { const X = x + xx, Y = y + len + 1 + yy; if (X >= 0 && X < N && Y >= 0 && Y < N && !mask[Y * N + X]) drip[Y * N + X] = 3; }
+  }
+  for (let i = 0; i < N * N; i++) if (drip[i]) mask[i] = 1;
+  const ol = 1; // dunkle Kontur: hebt die rote Schrift von grauem Stein ab
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     if (mask[y * N + x]) continue;
     let near = false;
     for (let dy = -ol; dy <= ol && !near; dy++) for (let dx = -ol; dx <= ol; dx++) { const X = x + dx, Y = y + dy; if (X >= 0 && Y >= 0 && X < N && Y < N && mask[Y * N + X]) { near = true; break; } }
     if (near) buf[y * N + x] = P('stone', 0);
   }
-  // 0.19.5/0.19.8 (Nutzer: erst „zu leuchtend groß, eher dungeonmäßig mysteriös, evtl. blutig“, dann „Schrift nicht lesbar“):
-  // getrocknetes Blut als eigenes Material (hell genug gegen grauen Stein) mit dunkler Kontur, wenigen Abplatzern und Laufspuren.
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     if (!mask[y * N + x]) continue;
-    if (hash(x, y, seed + 3) < 0.05) { buf[y * N + x] = P('stone', 1); continue; } // Abplatzer (zeigt dunklen Stein)
-    buf[y * N + x] = P('blood', 5.4 + hash(x >> 1, y >> 1, seed) * 1.6);
-  }
-  for (let y = 0; y < N - 1; y++) for (let x = 0; x < N; x++) { // Laufspuren unter Buchstaben
-    if (!mask[y * N + x] || mask[(y + 1) * N + x] || hash(x, y, seed + 11) < 0.92) continue;
-    const len = 3 + Math.floor(hash(x, y, seed + 12) * 8);
-    for (let k = 1; k <= len && y + k < N; k++) if (!mask[(y + k) * N + x]) buf[(y + k) * N + x] = P('blood', 4.6 - k * 0.12);
+    const dv = drip[y * N + x], hh = hash(x, y, seed + 3);
+    if (dv) { buf[y * N + x] = P('blood', dv === 3 ? 5.2 : 3.6 + dv * 0.5 + hh * 0.6); continue; }
+    if (hh < 0.03) { buf[y * N + x] = P('stone', 1); continue; } // Abplatzer
+    const up = y > 0 && x > 0 && !mask[(y - 1) * N + x - 1], clot = hash(x >> 1, y >> 1, seed + 20) > 0.86;
+    buf[y * N + x] = P('blood', up ? 7 : clot ? 3.4 : 4.8 + hash(x >> 1, y >> 1, seed) * 1.8);
   }
   return { w: N, h: N, data: buf, noWrap: true };
 }
@@ -1069,36 +1086,52 @@ function genSkeleton(seed) { // Gruftskelett: Rosthelm, Rippen, rostiges Schwert
 // Kultwächter, Turmwache und Hauptmann: gepanzerte Kultkrieger. v: 'wacht' (Hellebarde, kleine Hörner) · 'turm' (Turmschild, Speer, Wangenplatten) · 'haupt' (Umhang, Zweihänder, große Hörner, Siegel)
 function genGuard(seed, v = 'wacht') {
   const haupt = v === 'haupt', turm = v === 'turm', arm = turm ? 5 : haupt ? 3.2 : 3.6;
-  return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y }) => {
+  const body = ({ ell, cap, lit, nz, px, py, x, y }) => {
     const dx = px - 32, l = lit(px, py), n = nz(x >> 1, y >> 1);
     const A = (b) => ['iron', b + (arm - 3.6) - l * 1.5 + n * 0.7];
-    if (ell(px, py, 28.8, 13.8, 1.2, 1) <= 1 || ell(px, py, 35.2, 13.8, 1.2, 1) <= 1) return ['glow', 7];
+    // 0.19.11 (Nutzer: Siegel-Boss soll gefährlicher aussehen): größere Glutaugen, Dornenkrone, dickere Hörner, Schulterdornen, Ketten, Siegel auf der Klinge, zerfetzter Umhang, Blutspuren
+    if (haupt ? (ell(px, py, 28.6, 13.6, 1.9, 1.4) <= 1 || ell(px, py, 35.4, 13.6, 1.9, 1.4) <= 1) : (ell(px, py, 28.8, 13.8, 1.2, 1) <= 1 || ell(px, py, 35.2, 13.8, 1.2, 1) <= 1)) return ['glow', 7];
     if (Math.abs(dx) <= 6.4 && py >= 12.3 && py <= 15.2 && ell(px, py, 32, 13, 8.6, 9.8) <= 1) return ['ceil', 0];
     // Hörner und Helmzier
-    if (haupt && (cap(px, py, 24.4, 9, 18.6, 1.5, 2, 0.5) || cap(px, py, 39.6, 9, 45.4, 1.5, 2, 0.5))) return ['stone', 6.2 - l * 0.8];
+    if (haupt && (cap(px, py, 24.4, 9, 17.6, 0.8, 2.7, 0.5) || cap(px, py, 39.6, 9, 46.4, 0.8, 2.7, 0.5))) return ['stone', 6.2 - l * 0.8];
+    if (haupt) for (let i = 0; i < 5; i++) { const sx = 27.2 + i * 2.4; if (cap(px, py, sx, 4.2, sx + (i - 2) * 0.7, 0.2, 0.95, 0.12)) return ['iron', 6.6 - l]; } // Dornenkrone
     if (v === 'wacht' && (cap(px, py, 25, 8.5, 22, 3, 1.5, 0.4) || cap(px, py, 39, 8.5, 42, 3, 1.5, 0.4))) return ['stone', 6 - l * 0.8];
     if (cap(px, py, 32, 2.5, 32, 8, 1.2, 2.4) && !turm) return A(5.6);
     if (turm && ell(px, py, 32, 4, 2.6, 5.5) <= 1) return ['glow', 4.2 + n];
     if (ell(px, py, 32, 13.2, 8.6, 9.8) <= 1) return A(4.4 + (turm && Math.abs(dx) > 6.5 ? -0.6 : 0));
     // Waffe
-    if (haupt) { if (cap(px, py, 50.5, -1, 50.5, 49, 1.8, 1.3)) return ['iron', px > 50.5 ? 4.6 : 6.5]; if (cap(px, py, 44.2, 48, 56.8, 48, 1.3, 1.3)) return ['iron', 3.2]; if (cap(px, py, 50.5, 49, 50.5, 60, 1.1, 1.1)) return ['wood', 2]; }
+    if (haupt) {
+      const rd = Math.hypot(px - 50.5, py - 19);
+      if ((Math.abs(rd - 1.9) < 0.55 && rd < 2.5) || (Math.abs(px - 50.5) < 0.45 && Math.abs(py - 19) < 2.6) || (Math.abs(py - 19) < 0.45 && Math.abs(px - 50.5) < 2.6) || Math.abs(Math.hypot(px - 50.5, py - 33) - 1.2) < 0.5) return ['glow', 6.8]; // Siegelzeichen auf der Klinge
+      if (cap(px, py, 50.5, 44, 50.5, 49, 2.2, 1.6) && hash(px, py, seed + 31) > 0.6) return ['blood', 3.6]; // Blut am unteren Klingenteil
+      if (cap(px, py, 50.5, -1, 50.5, 49, 2.3, 1.6)) return ['iron', px > 50.5 ? 4.6 : 6.5]; if (cap(px, py, 44.2, 48, 56.8, 48, 1.3, 1.3)) return ['iron', 3.2]; if (cap(px, py, 50.5, 49, 50.5, 60, 1.1, 1.1)) return ['wood', 2]; }
     else { if (cap(px, py, 51, -0.5, 51, 7, 1.1, 0.2)) return ['iron', 6.4]; if (!turm && ell(px, py, 55.5, 12.5, 5.2, 6.8) <= 1 && px > 52) return ['iron', px > 57.5 ? 6.6 : 5 + n * 0.5]; if (cap(px, py, 51, 6, 51, 63, 0.95, 0.95)) return ['wood', 2.4 - l * 0.5]; }
     // Turmschild links
     if (turm) { const sd = ell(px, py, 13.5, 38.5, 8.2, 17); if (sd <= 1) { if ((Math.abs(px - 13.5) < 1.1 && py > 27 && py < 49) || (Math.abs(py - 37) < 1.1 && Math.abs(px - 13.5) < 5.5)) return ['glow', 4.6]; return sd > 0.72 ? ['iron', 2.2 + n * 0.5] : ['stone', 4 - l + n * 0.9]; } }
     // Arme, Schulterplatten, Hände
     if (cap(px, py, 20.5, 27, 15.8, 39.5, 3.3, 2.8) || cap(px, py, 43.5, 27, 49.8, 40.5, 3.3, 2.8) || ell(px, py, 50.6, 41, 2.6, 2.8) <= 1) return A(3.2);
     if (ell(px, py, 20, 25.2, 6.6, 4.6) <= 1 || ell(px, py, 44, 25.2, 6.6, 4.6) <= 1) return A(4.8);
-    if (haupt && (cap(px, py, 19, 21.5, 15.6, 14.5, 1.5, 0.2) || cap(px, py, 45, 21.5, 48.4, 14.5, 1.5, 0.2))) return ['iron', 5.8];
+    if (haupt && (cap(px, py, 19, 21.5, 14.6, 12.5, 1.8, 0.2) || cap(px, py, 45, 21.5, 49.4, 12.5, 1.8, 0.2) || cap(px, py, 15.5, 25.5, 9.6, 21, 1.5, 0.2) || cap(px, py, 48.5, 25.5, 54.4, 21, 1.5, 0.2))) return ['iron', 5.8 - l * 0.6];
     // Brustpanzer mit Siegel, Gürtel, Wappenrock, Beine, Stiefel
     if (haupt && Math.abs(Math.hypot(dx, py - 32) - 3.7) < 0.8) return ['glow', 6.6];
+    if (haupt) for (const [ax, ay, bx, by] of [[22, 26, 41, 45], [42, 26, 23, 45]]) { // gekreuzte Siegelketten
+      const vx = bx - ax, vy = by - ay, L = Math.hypot(vx, vy), t = Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / (L * L)));
+      if (Math.hypot(px - ax - vx * t, py - ay - vy * t) < 0.95) return ['iron', Math.floor(t * L / 1.6) % 2 ? 6.4 - l : 2.4];
+    }
     if (py > 43.8 && py < 46.6 && Math.abs(dx) < 11) return Math.abs(dx) < 1.8 ? ['glow', 5] : ['wood', 1.6 + n * 0.6];
     if (ell(px, py, 32, 34, 11.8, 13.2) <= 1 && py < 46) return A(Math.abs(dx) < 0.7 ? 5.4 : 4);
     const hem = 58 + Math.sin(px * 1.6 + seed) * 1.4;
     if (py > 46 && py < hem && Math.abs(dx) < 6.8 + (py - 46) * 0.12) return Math.abs(dx) < 0.9 ? ['glow', turm ? 4.2 : 3.4] : [turm ? 'stone' : 'wood', (turm ? 3.2 : 2.2) + n * 0.8 - l * 0.6];
     if (cap(px, py, 28, 46, 27, 60, 3.4, 3) || cap(px, py, 36, 46, 37, 60, 3.4, 3) || ell(px, py, 26.2, 61.8, 4.4, 2.2) <= 1 || ell(px, py, 37.8, 61.8, 4.4, 2.2) <= 1) return A(2.6);
     // Umhang des Hauptmanns (hinter allem)
-    if (haupt && py > 23 && py < 63 && Math.abs(dx) < 12.5 + (py - 23) * 0.24) return ['wood', 1.6 + (vnoiseCol(px, seed)) * 1.2 - l * 0.5];
+    if (haupt && py > 23 && py < 49 + 14 * Math.abs(Math.sin(px * 0.85 + seed * 0.3)) * (0.5 + 0.5 * Math.abs(Math.sin(px * 0.31 + 1))) && Math.abs(dx) < 12.8 + (py - 23) * 0.3 && !(py > 40 && hash(px >> 1, py >> 1, seed + 5) > 0.84)) return ['wood', 1.6 + (vnoiseCol(px, seed)) * 1.2 - l * 0.5]; // Fetzen mit Rissen
     return null;
+  };
+  if (!haupt) return paintFigure(seed, body);
+  return paintFigure(seed, (c) => { // Blutspritzer auf Rüstung, Umhang und Klinge
+    const res = body(c);
+    if (res && res[0] !== 'glow' && c.py > 22 && c.vn(c.px * 1.4, c.py * 1.9, 7) > 0.8 && hash(c.px, c.py, seed + 41) > 0.25) return ['blood', 3.2 + hash(c.px, c.py, seed + 42) * 1.6];
+    return res;
   });
 }
 const vnoiseCol = (px, seed) => 0.5 + 0.5 * Math.sin(px * 1.9 + seed); // senkrechte Falten
@@ -1463,7 +1496,7 @@ export function buildGrid(lvl, objs) {
   return { grid, gw: w, gh: h };
 }
 const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'turmwache' ? tex.sprites.turmwache : k === 'wolf' ? tex.sprites.wolf : k === 'kultist' ? tex.sprites.kultist : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
-const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' ? 1 : 0.9); // Bosse stehen größer im Gang
+const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' ? 1.3 : 0.9); // Bosse stehen größer im Gang
 export const GROUP_SCALE = 0.78, GROUP_GAP = 0.44, CHEST_SCALE = 0.62; // 0.16.4: Gruppen vorher 0.62/0.36, Truhe 0.5 (Nutzer: zu klein, hinter der Leiste)
 let combatFit = 1; // 0.16.17: im Kampf verkleinert die Kamera zu große Figuren so, dass sie samt Füßen über der Leiste ins Bild passen
 export const setCombatFit = (v) => { combatFit = v; };

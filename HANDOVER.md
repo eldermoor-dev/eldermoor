@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.19.10 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.19.11 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -730,3 +730,13 @@ Nutzermeldung (Screenshot Schratgruben-Gang, Rast-Meldung sichtbar): „Zu dunke
 - Einstellung „Helligkeit der Umgebung“: Original 1 · Hell 1,35 · Sehr hell 1,8 · **Maximal 2,4 (neu)**. `render.js` `setPalette`: Mindeststufe `minS` 3 ab 2,4.
 - Neuer Standard 1,8. Einstellungen-Version `SETTINGS_V = 3`: bestehende Einstellung unter 1,8 wird einmalig auf 1,8 angehoben (danach wieder frei wählbar).
 - Headless-Vergleich Schratgruben bei 1,35 / 1,8 / 2,4: deutliche Stufen, Wände und Gegner in der Tiefe erkennbar. **Nicht auf Gerät getestet.** Offen: ob 1,8 reicht oder ob einzelne Gebiete (Palette `grube`, `keller`) selbst heller werden sollen.
+
+
+## 0.19.11 (17.11.2026) – Ausrüsten, Siegel-Boss, Blutschrift
+Nutzerwünsche (Screenshot Inventar): (1) beim Ausrüsten nicht erkennbar, welches Schwert gemeint ist; (2) nach dem Anlegen ließ sich der Gegenstand oben erneut ausrüsten; (3) „Kult-Siegel-Boss mit 501 HP“ gefährlicher; (4) Blutschrift gruseliger, keine Druckschrift; (5) rote Schrift werde beim Näherkommen gelblich. Antworten auf meine Rückfragen: nur Hervorhebung; Liste aktualisieren; Boss größer + Hörner/Dornen/zerrissene Robe + Siegelketten/Blutspuren + Schwert mit Siegelzeichen auf der Klinge; Schrift von Hand verschmiert, tropfend, bleibt rot.
+- **Inventar** (`main.js`, `index.html`): gewählte Zeile `.row.sel` (goldener Rahmen); Überschrift „<Name [Qualität]> an wen?“ per `qTag`; nach `eq:` wird `S.invEquip = null` (Ursache: der zurückgelegte alte Gegenstand hatte dieselbe Basis, die Abfrage blieb offen).
+- **Hauptmann** (`genGuard(…,'haupt')`, `render.js`): Glutaugen größer, Dornenkrone, dickere Hörner, Schulterdornen, gekreuzte Siegelketten, Siegelzeichen (Ring, Kreuz, Raute) auf der Klinge, zerfetzter Umhang mit Rissen, Blutspritzer (Material `blood`); `bossScale('hauptmann')` 1 → 1,3.
+- **Blutschrift** (`genPlaque`): Buchstaben leicht gedreht/geschert/versetzt, Striche aus runden Pinselflecken, dicke Tropfen mit Kuppe, dunkle Gerinnsel, feuchte Lichter; gleiche Buchstabenraster.
+- **Zuordnung (Vermutung):** „Siegel-Boss“ = Kultwächter-Hauptmann (`en_boss`, kultgruft, 160 LP, bei Schwer 208). Die Zahl 501 finde ich in den Daten nicht (Nebelhüter hat 480, bei Schwer 624): **nicht gesichert**, welchen Gegner der Nutzer meint.
+- **Gelb beim Näherkommen:** im Headless-Test (Moorpfad „VORSICHT“, 1–4 Felder) bleibt der Text rot (Mittelwert ca. R125 G34 B33); das gelbe Bild dort ist die Fallenmarkierung. **Nicht nachgestellt**, Rückfrage an den Nutzer, welches Schild.
+- Nur headless geprüft, **nicht auf Gerät getestet**. Tests 103 grün.

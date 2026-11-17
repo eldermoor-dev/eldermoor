@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPort
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.19.10';
+const VERSION = '0.19.11';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -964,10 +964,10 @@ function openInventory() {
   html += items.length ? items.map(([id, n]) => {
     const it = itemDef(g, d, id);
     const use = it.kind === 'consumable' && it.heal && !g.combat ? `<button class="mb" data-m="use:${id}">Benutzen</button>` : it.kind === 'supply' && !g.combat ? '<button class="mb" data-m="rest">Rasten</button>' : it.kind === 'equip' && !g.combat ? `<button class="mb" data-m="eqsel:${id}">Ausrüsten</button>` : '';
-    return `<div class="row nw"><div><b>${itemIcon(id, it)}${qTag(id, it)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}<div class="muted">${esc(it.desc)}</div></div>${use}</div>`;
+    return `<div class="row nw${S.invEquip === id ? ' sel' : ''}"><div><b>${itemIcon(id, it)}${qTag(id, it)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}<div class="muted">${esc(it.desc)}</div></div>${use}</div>`;
   }).join('') : '<p class="muted">Nichts dabei.</p>';
   if (S.invEquip && itemDef(g, d, S.invEquip) && (g.inv[S.invEquip] || 0) > 0) {
-    html += `<h3>${esc(itemDef(g, d, S.invEquip).name)} an wen?</h3><div class="acts">` + g.heroes.map((h, i) =>
+    html += `<h3>${qTag(S.invEquip, itemDef(g, d, S.invEquip))} an wen?</h3><div class="acts">` + g.heroes.map((h, i) =>
       `<button class="mb" data-m="eq:${i}" ${canEquip(d, h, S.invEquip, g) ? '' : 'disabled'}>${esc(h.name)} (${esc(h.role)})${canEquip(d, h, S.invEquip, g) ? esc(gearDelta(h, S.invEquip)) : ''}</button>`).join('') + '</div>';
   }
   if (S.invUse) {
@@ -1401,7 +1401,7 @@ async function onModalClick(e) {
   else if (m.startsWith('eq:')) {
     const r = equipItem(g, S.data, S.invEquip, +m.slice(3));
     if (r.msg) { say(r.msg); S.sfx.play('ui'); toast(r.msg); } else toast('Das geht nicht.');
-    if (!(g.inv[S.invEquip] > 0)) S.invEquip = null;
+    S.invEquip = null; // 0.19.11: Auswahl schließt nach dem Anlegen (vorher blieb die Zeile oben anwählbar und ließ sich erneut ausrüsten)
     renderAll(); openInventory();
   }
   else if (m.startsWith('tal:')) { if (g.combat) toast('Nicht im Kampf.'); else openTalents(+m.slice(4)); }
