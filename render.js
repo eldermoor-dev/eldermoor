@@ -82,14 +82,15 @@ function genStone(seed, n = TEX) {
 }
 function genMoss(seed, n = TEX) {
   // Moos wächst an Fugen und Oberkanten der Steine, nach unten dünner; weiche Ränder statt Flecken
-  const t = genStone(seed, n);
+  const t = genStone(11, n); // 0.19.24: gleiche Steinmauer wie normale Wände (Fugen passen), Moos läuft zu den Seitenkanten aus
   const k = n / TEX;
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
     const u = x / k, v = y / k;
+    const ed = Math.min(1, Math.min(u, TEX - u) / 10), edge = ed * ed * (3 - 2 * ed);
     const bv = v % 16, fuge = Math.max(0, 1 - Math.min(bv, 16 - bv) / 5) + Math.max(0, 1 - Math.min(((u + (Math.floor(v / 16) & 1) * 16) % 32), 32 - ((u + (Math.floor(v / 16) & 1) * 16) % 32)) / 4) * 0.6;
     const top = Math.max(0, 1 - v / 38);
     const cover = vnoise(u, v, 10, seed + 9) * 0.75 + vnoise(u, v, 4, seed + 11) * 0.25 + fuge * 0.22 + top * 0.3;
-    const e = cover - 0.74;
+    const e = cover - 0.74 - (1 - edge) * 0.6;
     if (e > 0) {
       const base = t.data[y * n + x] & 7;
       t.data[y * n + x] = P('moss', Math.min(4.6, 1.2 + e * 7 + grain(x, y, seed + 12, n > TEX ? 0.3 : 0.7)) + (base > 3 ? 0.3 : 0));
