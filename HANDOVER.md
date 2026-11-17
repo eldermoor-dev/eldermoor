@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.19.13 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.19.14 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -754,3 +754,10 @@ Nutzermeldung (Screenshot Kampf gegen den Hauptmann): Schwert unten zu groß; To
 - **Hauptmann** (`genGuard` haupt): Klinge y 8–36 (vorher −1–49), Parierstange y 36,6 (Breite 9), Griff bis y 46; Siegelkreis (Ring, dunkle Füllung, Totenschädel mit Zähnen) am Knauf bei (50,5 / 51); keine gekreuzten Knochen mehr. `bossScale('hauptmann')` 1,3 → 1,12.
 - Blutschrift: Drehung, Scherung, Versatz und Fleckengröße verringert (Lesbarkeit bei großen Türschriften).
 - Nur headless geprüft (Screenshots Boss und Kapelle), **nicht auf Gerät getestet**. Tests 103 grün.
+
+
+## 0.19.14 (17.11.2026) – blaue Augen des Hauptmanns
+Nutzer: „Augen nicht gelb, da schon so viel anderes gelb ist“, danach (nach meinem Rot-Versuch) „Blaue Augen“.
+- Palette erweitert: 10. Material `ice` (`MATS`, `M.ice = 9`, `PAL_N = 80`, Standard `ICE_DEFAULT` 96/176/255; Paletten in game.json brauchen keinen Eintrag). **Die Angaben „9 × 8 = 72 Farben“ (0.19.8) gelten nicht mehr; jetzt 10 × 8 = 80.** Tests: Palettenindex < 80, Farbanzahl ≤ 80.
+- `genGuard` (haupt): Augen `['ice', 7]`. Andere Wächter unverändert (gelbe Augen). Siegelring und Schädelkreis bleiben golden.
+- Nur headless geprüft, **nicht auf Gerät getestet**. Tests 103 grün.

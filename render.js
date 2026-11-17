@@ -7,9 +7,9 @@ export const BASE_W = 480, BASE_H = 270, TEX = 64; // Grundauflösung (Retro) un
 // Aktuelle Bildgröße: 480×270 (Retro) oder ein Vielfaches davon (Scharf = 2×). Live-Bindung: Änderung über setResolution().
 export let W = BASE_W, H = BASE_H;
 export function setResolution(r) { W = BASE_W * r; H = BASE_H * r; }
-const MATS = ['stone', 'moss', 'wood', 'iron', 'floor', 'ceil', 'flesh', 'glow', 'blood']; // 0.19.8: 9. Material „blood“ (Schriftzüge); Paletten ohne Eintrag nutzen BLOOD_DEFAULT
-const M = { stone: 0, moss: 1, wood: 2, iron: 3, floor: 4, ceil: 5, flesh: 6, glow: 7, blood: 8 };
-const PAL_N = MATS.length * 8, BLOOD_DEFAULT = [206, 38, 32];
+const MATS = ['stone', 'moss', 'wood', 'iron', 'floor', 'ceil', 'flesh', 'glow', 'blood', 'ice']; // 0.19.14: 10. Material „ice“ (blaue Augen des Hauptmanns); 0.19.8: 9. Material „blood“ (Schriftzüge); Paletten ohne Eintrag nutzen BLOOD_DEFAULT
+const M = { stone: 0, moss: 1, wood: 2, iron: 3, floor: 4, ceil: 5, flesh: 6, glow: 7, blood: 8, ice: 9 };
+const PAL_N = MATS.length * 8, BLOOD_DEFAULT = [206, 38, 32], ICE_DEFAULT = [96, 176, 255];
 const P = (mat, shade) => M[mat] * 8 + Math.max(0, Math.min(7, Math.round(shade)));
 
 // Wandtextur-IDs im Raster: 0 = frei, 1 Stein, 2 Moos, 3 Tür, 4 verschlossene Tür
@@ -19,7 +19,7 @@ export const WALL_STONE = 1, WALL_MOSS = 2, WALL_DOOR = 3, WALL_DOOR_LOCKED = 4,
 export function buildPalette(def, lift = 1) {
   const pal = new Uint32Array(PAL_N);
   MATS.forEach((m, mi) => {
-    const c = def[m] || (m === 'blood' ? BLOOD_DEFAULT : [128, 128, 128]);
+    const c = def[m] || (m === 'blood' ? BLOOD_DEFAULT : m === 'ice' ? ICE_DEFAULT : [128, 128, 128]);
     for (let s = 0; s < 8; s++) {
       const f = 0.08 + 0.92 * Math.pow(s / 7, 1.15 / lift);
       const r = Math.round(c[0] * f + 6 * (1 - f));
@@ -1097,7 +1097,8 @@ function genGuard(seed, v = 'wacht') {
     const dx = px - 32, l = lit(px, py), n = nz(x >> 1, y >> 1);
     const A = (b) => ['iron', b + (arm - 3.6) - l * 1.5 + n * 0.7];
     // 0.19.11 (Nutzer: Siegel-Boss soll gefährlicher aussehen): größere Glutaugen, Dornenkrone, dickere Hörner, Schulterdornen, Ketten, Siegel auf der Klinge, zerfetzter Umhang, Blutspuren
-    if (haupt ? (ell(px, py, 28.6, 13.6, 1.9, 1.4) <= 1 || ell(px, py, 35.4, 13.6, 1.9, 1.4) <= 1) : (ell(px, py, 28.8, 13.8, 1.2, 1) <= 1 || ell(px, py, 35.2, 13.8, 1.2, 1) <= 1)) return ['glow', 7];
+    if (haupt && (ell(px, py, 28.6, 13.6, 1.9, 1.4) <= 1 || ell(px, py, 35.4, 13.6, 1.9, 1.4) <= 1)) return ['ice', 7]; // 0.19.14: blaue Augen (Nutzer: im Bild ist schon genug gelb, rot ebenfalls abgelehnt)
+    if (!haupt && (ell(px, py, 28.8, 13.8, 1.2, 1) <= 1 || ell(px, py, 35.2, 13.8, 1.2, 1) <= 1)) return ['glow', 7];
     if (Math.abs(dx) <= 6.4 && py >= 12.3 && py <= 15.2 && ell(px, py, 32, 13, 8.6, 9.8) <= 1) return ['ceil', 0];
     // Hörner und Helmzier
     if (haupt && (cap(px, py, 24.4, 9, 17.6, 0.8, 2.7, 0.5) || cap(px, py, 39.6, 9, 46.4, 0.8, 2.7, 0.5))) return ['stone', 6.2 - l * 0.8];
