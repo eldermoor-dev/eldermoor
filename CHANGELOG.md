@@ -6,6 +6,7 @@ Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ 
 ## 0.16.x (Inhaltsphase, Nebelturm und Nacharbeiten)
 | Version | Änderungen | Status |
 |---|---|---|
+| 0.19.17 | Hauptmann: goldener Ring auf der Brust (Mitte) entfernt; Tests 103 | headless, Gerät offen |
 | 0.19.16 | Totenschädel im Siegelkreis am Schwertknauf bekommt blaue Augen; Tests 103 | headless, Gerät offen |
 | 0.19.15 | Hauptmann-Schwert sieht wie ein Schwert aus (Spitze, Hohlkehle, helle Schneide, gebogene Parierstange, umwickelter Griff); Tests 103 | headless, Gerät offen |
 | 0.19.14 | Hauptmann: Augen blau (neues Palettenmaterial `ice`, 80 Farben); Tests 103 | headless, Gerät offen |

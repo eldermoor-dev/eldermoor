@@ -1137,7 +1137,7 @@ function genGuard(seed, v = 'wacht') {
     if (ell(px, py, 20, 25.2, 6.6, 4.6) <= 1 || ell(px, py, 44, 25.2, 6.6, 4.6) <= 1) return A(4.8);
     if (haupt && (cap(px, py, 19, 21.5, 14.6, 12.5, 1.8, 0.2) || cap(px, py, 45, 21.5, 49.4, 12.5, 1.8, 0.2) || cap(px, py, 15.5, 25.5, 9.6, 21, 1.5, 0.2) || cap(px, py, 48.5, 25.5, 54.4, 21, 1.5, 0.2))) return ['iron', 5.8 - l * 0.6];
     // Brustpanzer mit Siegel, Gürtel, Wappenrock, Beine, Stiefel
-    if (haupt && Math.abs(Math.hypot(dx, py - 32) - 3.7) < 0.8) return ['glow', 6.6];
+    // 0.19.17: goldener Brustring entfernt (Nutzer: „Der runde Kreis in der Mitte weg“)
     if (haupt) for (const [ax, ay, bx, by] of [[22, 26, 41, 45], [42, 26, 23, 45]]) { // gekreuzte Siegelketten
       const vx = bx - ax, vy = by - ay, L = Math.hypot(vx, vy), t = Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / (L * L)));
       if (Math.hypot(px - ax - vx * t, py - ay - vy * t) < 0.95) return ['iron', Math.floor(t * L / 1.6) % 2 ? 6.4 - l : 2.4];

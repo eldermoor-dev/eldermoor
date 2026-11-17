@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.19.16 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.19.17 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -770,3 +770,6 @@ Nutzer: „Schwert sieht aus wie eine Eisenstange“. Ursache: die Klinge war ei
 
 ## 0.19.16 (17.11.2026) – blaue Augen im Siegel-Schädel
 Nutzer: „Siegel Totenkopf soll auch blaue Augen bekommen“. `genGuard` (haupt): Augenhöhlen des Schädels am Knauf jetzt Material `ice` (Radius 0,95 statt 0,7). Nur headless geprüft, **nicht auf Gerät getestet**. Tests 103 grün.
+
+## 0.19.17 (17.11.2026) – Brustring entfernt
+Nutzer: „Der runde Kreis in der Mitte weg“. Deutung (**Vermutung, nicht gesichert**): der goldene Siegelring auf der Brust des Hauptmanns (`genGuard` haupt, `hypot(dx, py-32)`). Der Siegelkreis mit Schädel am Knauf bleibt. Falls der Knauf-Kreis gemeint war: Rückmeldung. Nur headless (Screenshot), **nicht auf Gerät getestet**. Tests 103 grün.
