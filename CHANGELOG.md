@@ -6,6 +6,7 @@ Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ 
 ## 0.16.x (Inhaltsphase, Nebelturm und Nacharbeiten)
 | Version | Änderungen | Status |
 |---|---|---|
+| 0.19.13 | Hauptmann: Schwert kleiner, Totenschädel im Siegelkreis am Knauf, Boss insgesamt kleiner (Faktor 1,12); Schrift im Türrahmen (Türschwelle) jetzt ebenfalls Blutrot statt Gold; Blutschrift weniger verzerrt; Tests 103 | headless, Gerät offen |
 | 0.19.12 | Hauptmann bleibt gepanzert; Siegelzeichen auf der Klinge jetzt Totenschädel mit gekreuzten Knochen (Deutung der Nutzerangabe); Tests 103 | headless, Gerät offen |
 | 0.19.11 | Ausrüsten: gewählte Zeile hervorgehoben, Abfrage mit Qualität im Namen, Auswahl schließt nach dem Anlegen; Hauptmann (Siegel-Boss) größer mit Dornenkrone, Hörnern, Schulterdornen, Ketten, Siegel auf der Klinge, zerfetztem Umhang, Blut; Blutschrift von Hand geschmiert mit Tropfen; Tests 103 | headless, Gerät offen |
 | 0.19.10 | Heller: Standard-Helligkeit „Sehr hell“ (1,8), neue Stufe „Maximal“ (2,4); bestehende Einstellung unter 1,8 wird einmalig auf 1,8 angehoben (Einstellungen v3); Tests 103 | headless, Gerät offen |

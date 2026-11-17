@@ -578,15 +578,15 @@ function genPlaque(title, kind, styleName, seed) {
     chars.forEach((ch, ci) => {
       const g = (FONT[ch] || FONT[' ']).split('/');
       const gcx = lx + ci * cw * s + 2.5 * s, gcy = ly + 3.5 * s;
-      const rot = (hash(ci, li, seed + 50) - 0.5) * 0.34, shear = (hash(ci, li, seed + 51) - 0.5) * 0.3, dy0 = (hash(ci, li, seed + 52) - 0.5) * s * 1.7, sc = 0.94 + hash(ci, li, seed + 53) * 0.2;
+      const rot = (hash(ci, li, seed + 50) - 0.5) * 0.2, shear = (hash(ci, li, seed + 51) - 0.5) * 0.16, dy0 = (hash(ci, li, seed + 52) - 0.5) * s * 1.1, sc = 0.94 + hash(ci, li, seed + 53) * 0.2;
       const cr = Math.cos(rot), sr = Math.sin(rot);
       for (let rw = 0; rw < 7; rw++) for (let c = 0; c < 5; c++) {
         if (g[rw][c] !== '1') continue;
         let ox = (c - 2) * s * sc, oy = (rw - 3) * s * sc;
         ox += shear * oy;
-        const jx = (hash(c + ci * 7, rw, seed + 54) - 0.5) * s * 0.4, jy = (hash(c, rw + li * 9 + ci * 3, seed + 55) - 0.5) * s * 0.4;
+        const jx = (hash(c + ci * 7, rw, seed + 54) - 0.5) * s * 0.22, jy = (hash(c, rw + li * 9 + ci * 3, seed + 55) - 0.5) * s * 0.22;
         const cx = gcx + ox * cr - oy * sr + jx, cy = gcy + ox * sr + oy * cr + dy0 + jy + Math.sin(gcx * 0.3 + seed) * s * 0.3;
-        stamp(cx, cy, s * (0.56 + hash(c + 3, rw + 5, seed + 56) * 0.26));
+        stamp(cx, cy, s * (0.5 + hash(c + 3, rw + 5, seed + 56) * 0.2));
       }
     });
   });
@@ -641,7 +641,14 @@ function genDoorFrame(title, styleName, seed) {
   }
   for (let y = 33; y <= 36; y++) set(15, y, P('iron', 6)); // Türring
   const hd = smoothSprite(t, 3); // 192×192
-  if (title) paintPlaque(hd.data, hd.w, title, 'door', styleName, seed + 1);
+  if (title) {
+    paintPlaque(hd.data, hd.w, title, 'door', styleName, seed + 1);
+    // 0.19.13 (Nutzer: Schrift auf der Türschwelle wird gelb): Goldschrift der Tafel übermalen und dieselbe Blutschrift wie im Raum darüberlegen
+    const inkV = P(st.ink[0], st.ink[1]), fill = P(st.mat, st.sh + 0.4);
+    for (let i = 0; i < hd.data.length; i++) if (hd.data[i] === inkV) hd.data[i] = fill;
+    const bt = genPlaque(title, 'door', styleName, 133);
+    if (bt.w === hd.w) for (let i = 0; i < hd.data.length; i++) if (bt.data[i] !== 255) hd.data[i] = bt.data[i];
+  }
   hd.noWrap = true;
   return hd;
 }
@@ -1101,12 +1108,14 @@ function genGuard(seed, v = 'wacht') {
     if (ell(px, py, 32, 13.2, 8.6, 9.8) <= 1) return A(4.4 + (turm && Math.abs(dx) > 6.5 ? -0.6 : 0));
     // Waffe
     if (haupt) {
-      // 0.19.11: Siegelzeichen auf der Klinge = Totenschädel mit gekreuzten Knochen (Nutzer: „mit reinem Skelett verziert“, Deutung)
-      if (ell(px, py, 49.5, 17.4, 0.75, 0.85) <= 1 || ell(px, py, 51.5, 17.4, 0.75, 0.85) <= 1 || (Math.abs(px - 50.5) < 0.45 && py > 19.1 && py < 20.2)) return ['ceil', 0]; // Augenhöhlen, Nase
-      if (ell(px, py, 50.5, 17.6, 2.7, 2.8) <= 1 || (Math.abs(px - 50.5) < 1.5 && py > 19.8 && py < 22.2 && (Math.floor((px - 49) * 2) % 2 === 0 || py > 21.4))) return ['glow', 6.8]; // Schädel, Kiefer mit Zähnen
-      if (cap(px, py, 48.4, 25.2, 52.6, 29.2, 0.5, 0.5) || cap(px, py, 52.6, 25.2, 48.4, 29.2, 0.5, 0.5)) return ['glow', 6.4]; // gekreuzte Knochen
-      if (cap(px, py, 50.5, 44, 50.5, 49, 2.2, 1.6) && hash(px, py, seed + 31) > 0.6) return ['blood', 3.6]; // Blut am unteren Klingenteil
-      if (cap(px, py, 50.5, -1, 50.5, 49, 2.3, 1.6)) return ['iron', px > 50.5 ? 4.6 : 6.5]; if (cap(px, py, 44.2, 48, 56.8, 48, 1.3, 1.3)) return ['iron', 3.2]; if (cap(px, py, 50.5, 49, 50.5, 60, 1.1, 1.1)) return ['wood', 2]; }
+      // 0.19.13 (Nutzer: „Schwert unten zu groß, Totenkopf unten am Griff in einem Kreis“): kleineres Schwert, Totenschädel im Siegelkreis am Knauf
+      const pr = Math.hypot(px - 50.5, py - 51);
+      if (ell(px, py, 49.5, 50.4, 0.7, 0.8) <= 1 || ell(px, py, 51.5, 50.4, 0.7, 0.8) <= 1 || (Math.abs(px - 50.5) < 0.4 && py > 51.6 && py < 52.5)) return ['ceil', 0]; // Augenhöhlen, Nase
+      if (ell(px, py, 50.5, 50.6, 2.5, 2.6) <= 1 || (Math.abs(px - 50.5) < 1.3 && py > 52.6 && py < 54.6 && (Math.floor((px - 49) * 2) % 2 === 0 || py > 53.9))) return ['glow', 6.8]; // Schädel, Kiefer mit Zähnen
+      if (pr > 3.7 && pr < 4.7) return ['glow', 6.4]; // Siegelkreis
+      if (pr <= 3.7 && pr > 2.5) return ['iron', 2.2]; // dunkle Füllung im Kreis
+      if (cap(px, py, 50.5, 31, 50.5, 36, 1.6, 1.2) && hash(px, py, seed + 31) > 0.6) return ['blood', 3.6]; // Blut am unteren Klingenteil
+      if (cap(px, py, 50.5, 8, 50.5, 36, 1.7, 1.2)) return ['iron', px > 50.5 ? 4.6 : 6.5]; if (cap(px, py, 46, 36.6, 55, 36.6, 1.0, 1.0)) return ['iron', 3.2]; if (cap(px, py, 50.5, 36.6, 50.5, 46.4, 0.95, 0.95)) return ['wood', 2]; }
     else { if (cap(px, py, 51, -0.5, 51, 7, 1.1, 0.2)) return ['iron', 6.4]; if (!turm && ell(px, py, 55.5, 12.5, 5.2, 6.8) <= 1 && px > 52) return ['iron', px > 57.5 ? 6.6 : 5 + n * 0.5]; if (cap(px, py, 51, 6, 51, 63, 0.95, 0.95)) return ['wood', 2.4 - l * 0.5]; }
     // Turmschild links
     if (turm) { const sd = ell(px, py, 13.5, 38.5, 8.2, 17); if (sd <= 1) { if ((Math.abs(px - 13.5) < 1.1 && py > 27 && py < 49) || (Math.abs(py - 37) < 1.1 && Math.abs(px - 13.5) < 5.5)) return ['glow', 4.6]; return sd > 0.72 ? ['iron', 2.2 + n * 0.5] : ['stone', 4 - l + n * 0.9]; } }
@@ -1498,7 +1507,7 @@ export function buildGrid(lvl, objs) {
   return { grid, gw: w, gh: h };
 }
 const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'turmwache' ? tex.sprites.turmwache : k === 'wolf' ? tex.sprites.wolf : k === 'kultist' ? tex.sprites.kultist : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
-const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' ? 1.3 : 0.9); // Bosse stehen größer im Gang
+const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' ? 1.12 : 0.9); // Bosse stehen größer im Gang
 export const GROUP_SCALE = 0.78, GROUP_GAP = 0.44, CHEST_SCALE = 0.62; // 0.16.4: Gruppen vorher 0.62/0.36, Truhe 0.5 (Nutzer: zu klein, hinter der Leiste)
 let combatFit = 1; // 0.16.17: im Kampf verkleinert die Kamera zu große Figuren so, dass sie samt Füßen über der Leiste ins Bild passen
 export const setCombatFit = (v) => { combatFit = v; };

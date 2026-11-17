@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.19.12 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.19.13 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -746,3 +746,11 @@ Nutzerwünsche (Screenshot Inventar): (1) beim Ausrüsten nicht erkennbar, welch
 Nutzerantwort zu 0.19.11: „1 gepanzert bleiben; der Siegel auf der Klinge des Schwertes soll mit reinen Skelett frisiert sein“. Deutung (**Vermutung, nicht gesichert**): Hauptmann bleibt gepanzert, das Siegelzeichen auf der Klinge soll ein Skelett-Motiv sein.
 - `genGuard` (haupt): statt Ring/Kreuz/Raute jetzt Totenschädel (Augenhöhlen, Nase, Kiefer mit Zähnen) und gekreuzte Knochen, Material `glow`. Rüstung unverändert.
 - Offen: Augenfarbe (gelb) – Rückfrage „rot?“ blieb unbeantwortet, unverändert. Nur headless, **nicht auf Gerät getestet**. Tests 103 grün.
+
+
+## 0.19.13 (17.11.2026) – Schwert, Boss-Größe, gelbe Schrift auf der Türschwelle
+Nutzermeldung (Screenshot Kampf gegen den Hauptmann): Schwert unten zu groß; Totenkopf unten am Griff, in einem Kreis; Boss insgesamt zu groß; „Schrift ist bei betretenen Räumen rot, auf der Türschwelle wird sie gelb“.
+- **Ursache Gelb (belegt am Code, im Screenshot bestätigt):** Der Türrahmen-Sprite (`genDoorFrame`, erscheint, wenn man im Durchgang steht) malte den Raumnamen per `paintPlaque` mit der Tafelfarbe (Stile `dark`/`iron`/`banner` = `glow`, also Gold). Die geschlossene Tür nutzt dagegen `genPlaque` (Blutrot). Jetzt: Goldschrift im Rahmen wird übermalt und `genPlaque(title,'door',style,133)` darübergelegt (gleiche Blutschrift, `PLQ` = 192 = Rahmenauflösung).
+- **Hauptmann** (`genGuard` haupt): Klinge y 8–36 (vorher −1–49), Parierstange y 36,6 (Breite 9), Griff bis y 46; Siegelkreis (Ring, dunkle Füllung, Totenschädel mit Zähnen) am Knauf bei (50,5 / 51); keine gekreuzten Knochen mehr. `bossScale('hauptmann')` 1,3 → 1,12.
+- Blutschrift: Drehung, Scherung, Versatz und Fleckengröße verringert (Lesbarkeit bei großen Türschriften).
+- Nur headless geprüft (Screenshots Boss und Kapelle), **nicht auf Gerät getestet**. Tests 103 grün.
