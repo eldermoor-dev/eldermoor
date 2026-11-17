@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.19.6 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.19.7 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -707,3 +707,6 @@ Nutzer (Foto 0.19.5, Moorpfad-Eingang, drei Meldungen inkl. langem Text von Hedd
 - `renderLog` (main.js): außerhalb des Kampfes höchstens 2 Meldungen (vorher 3), je höchstens 2 Zeilen (`#log.calm`, CSS line-clamp), Ausblenden nach 3–6 s (3 s + 40 ms je Zeichen, max. 6 s; `S.logTs` = Zeitstempel). Im Kampf unverändert (letzte 2). `S.log` und Protokoll bleiben vollständig. Lange Texte (Hedda) stehen weiter im Händlerfenster/Toast.
 - 0.19.5 war vom Nutzer als geladen bestätigt („V5 steht“); die Einzelpunkte der Testliste sind noch offen.
 - **Nachtrag 0.19.6 (Nutzer, Foto Kampf Moorpfad: „Spielfläche kaum noch zu sehen“):** Kampfoberfläche kompakter, nur CSS: Gegnerfenster schmaler (30 %/250 px, Schrift .66, Zeilen 24 statt 30 px, Zugreihenfolge kleiner), Aktionsleiste niedriger (28 statt 36 px, Schrift .7), Meldungen im Kampf kleiner (.74, enger), Abstand im Stack 2 px. Zahl der Zeilen unverändert. Nicht auf Gerät getestet; Lesbarkeit der kleineren Schrift offen. Falls es noch zu voll ist: Zugreihenfolge ausblendbar oder Aktionsleiste in eine Zeile.
+
+## 0.19.7 – Gegnergruppen im engen Gang (17.11.2026)
+Nutzer (Foto 0.19.6, Moorkultist A+B und Moorlicht im 1 Feld breiten Gang): „Gegner in der Wand“. Ursache (aus dem Code belegt): `groupOffsets` setzte die Seitenfiguren bei 0,32 Seitenabstand, die Figur ist aber ~0,45 breit (Maßstab 0,6 × 76 %), sie ragte über die Gangbreite (±0,5) und wurde von den Wandspalten abgeschnitten. Fix in `buildSprites`: im engen Gang Seitenabstand auf `0,47 − 0,38 × Maßstab` begrenzt, äußere Figuren (bei 3 beide Außenfiguren, bei 2 die zweite) 0,3 Felder nach hinten gestaffelt. Offene Fläche unverändert. Nur headless geprüft (Tests 103), **nicht auf Gerät getestet**. Offen: Einzelner großer Wolf im engen Gang (Maßstab ~1,5) kann auch breiter als der Gang sein; nicht gemeldet. Überlappung der Figuren untereinander steigt dadurch leicht (Nutzerwunsch 0.16.17: nebeneinander).

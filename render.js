@@ -1505,10 +1505,13 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
       const tot = Array.isArray(o.kinds) ? Math.min(3, o.kinds.length) : 1;
       const av = alive && alive[o.id] != null ? alive[o.id] : null, kindList = Array.isArray(av) ? av : null;
       const n = kindList ? kindList.length : av != null ? av : tot; // Gruppe: eine Gestalt je lebendem Gegner, nebeneinander
-      const offs = groupOffsets(n, n > 1 && isNarrowAt(grid, o.x, o.y, angle));
+      const narrow = n > 1 && isNarrowAt(grid, o.x, o.y, angle), offs = groupOffsets(n, narrow);
       for (let i = 0; i < n; i++) {
-        const { lat, dep } = offs[i];
-        out.push({ x: o.x + rx * lat + fx * dep, y: o.y + ry * lat + fy * dep, tex: spriteFor(tex, kindList ? kindList[i] : kindOf(o, i)), scale: spriteScale(kindList ? kindList[i] : kindOf(o, i), n) * combatFit * (1 + 0.02 * Math.sin(time * 3 + i)) });
+        let { lat, dep } = offs[i];
+        const kd = kindList ? kindList[i] : kindOf(o, i), sc = spriteScale(kd, n) * combatFit;
+        // 0.19.7 (Nutzer: „Gegner in der Wand“): im engen Gang ragten seitliche Figuren in die Mauern. Seitenabstand so begrenzen, dass die sichtbare Figur (ca. 76 % der Bildbreite) zwischen den Wänden bleibt; äußere Figuren dafür etwas nach hinten staffeln.
+        if (narrow) { const lim = Math.max(0.04, 0.47 - 0.38 * sc); if (Math.abs(lat) > lim) { lat = Math.sign(lat) * lim; if (n >= 3 || i === 1) dep += 0.3; } }
+        out.push({ x: o.x + rx * lat + fx * dep, y: o.y + ry * lat + fy * dep, tex: spriteFor(tex, kd), scale: sc * (1 + 0.02 * Math.sin(time * 3 + i)) });
       }
     }
     else if (o.type === 'lever' && !o.wall) out.push({ x: o.x, y: o.y, tex: o.used ? tex.sprites.leverDown : tex.sprites.leverUp, scale: 0.75 });
