@@ -1257,6 +1257,137 @@ function genWolf(seed) { // 0.19.2: Sumpfwolf von vorn (Nutzer: Gegner „sehen 
   });
 }
 
+// 0.19.20 (Nutzer: Turmwache und Kultpriester „gefährlicher und interessanter“): eigene Figuren statt der schlichten Varianten
+function genTurmwache(seed) { // Vollplatte mit Gitterhelm, Flügelhelmzier, Stachelschultern, Turmschild mit Dellen und Nieten, Speer mit zerfetztem Wimpel, Blutspuren
+  const body = ({ ell, cap, lit, nz, px, py, x, y, vn }) => {
+    const dx = px - 32, ax = Math.abs(dx), l = lit(px, py), n = nz(x >> 1, y >> 1);
+    const A = (b) => ['iron', b - l * 1.5 + n * 0.7];
+    // Augen und Visier
+    if (ell(px, py, 28.4, 14.3, 1.6, 0.95) <= 1 || ell(px, py, 35.6, 14.3, 1.6, 0.95) <= 1) return ['glow', 7];
+    if (py >= 13.1 && py <= 15.5 && ax <= 7 && ell(px, py, 32, 14, 9, 10.4) <= 1) return ['ceil', 0];
+    if (ell(px, py, 32, 14, 9, 10.4) <= 1) {
+      if (ax < 0.8 && py > 15.4 && py < 22) return ['ceil', 0]; // T-Visier
+      if (py > 17.2 && py < 23 && ax > 1.8 && ax < 7 && Math.abs(((ax - 1.8) % 2.2)) < 0.55) return ['ceil', 0.3]; // Gitterschlitze am Kinn
+      if (ax > 8 - 0.0 && ax < 9.2 && py > 10 && py < 21) return A(2.4); // Wangenkante
+    }
+    // Helmzier: Kamm aus Stahlzacken und Flügel
+    for (let i = 0; i < 4; i++) if (cap(px, py, 32, 4.4 - i * 0, 32 + (i - 1.5) * 1.4, -0.6, 1.5 - i * 0.12, 0.2) && i === 0) return ['iron', 6.6 - l];
+    if (cap(px, py, 32, 6.5, 32, -0.4, 1.7, 0.3)) return ['iron', 6.4 - l * 0.6];
+    if (cap(px, py, 24.2, 8.5, 17.4, 1.2, 2.4, 0.3) || cap(px, py, 39.8, 8.5, 46.6, 1.2, 2.4, 0.3)) return ['stone', 6.4 - l * 0.8];
+    if (ell(px, py, 32, 13.6, 8.9, 10.4) <= 1) return A(Math.abs(dx) < 0.7 ? 5.6 : py < 9 ? 5 : 4.2);
+    // Speer (rechts im Bild): Blatt, Parierstück, zerfetzter Wimpel, Schaft
+    if (py >= 0 && py <= 11.5) { const hw = 2.7 * Math.pow(Math.sin(Math.PI * Math.min(1, (py + 0.4) / 12)), 0.85); if (Math.abs(px - 51) <= hw) return Math.abs(px - 51) < 0.45 ? ['iron', 2.8] : ['iron', px < 51 ? 7 : 5]; }
+    if (cap(px, py, 48.4, 12.4, 53.6, 12.4, 0.85, 0.85)) return ['iron', 3.4];
+    if (px > 51.6 && px < 60 && py > 13.4 && py < 25 && Math.abs(py - 15) < (px - 51.6) * 0.45 + 1.4 - Math.max(0, px - 54) * 0.28 && hash(Math.floor(px * 2), Math.floor(py * 2), seed + 7) > 0.12 && py < 14.2 + (px - 51.6) * 0.9 + Math.sin(px * 1.8) * 1.4) return ['blood', 3.4 + hash(x, y, seed + 8) * 1.2 - (px - 51.6) * 0.22];
+    if (cap(px, py, 51, 12.5, 51, 63, 0.95, 0.95)) return ['wood', 2.5 - l * 0.5];
+    // Turmschild (links, groß): Rand, Nieten, Buckel, Kreuzrune, Dellen, Blut
+    { const sw = py < 48 ? 8.2 : 8.2 * (60.5 - py) / 12.5, sd = Math.abs(px - 13.5);
+      if (py >= 23.5 && py <= 60.5 && sd <= sw && !(py < 26 && sd > sw - 1.8)) {
+        const rim = sd > sw - 1.5 || py < 25.4 || (py > 48 && sd > sw - 2.4);
+        if (rim) return (Math.floor(py / 4.4) % 2 === 0 && sd > sw - 1.5 && sd < sw - 0.2 && ((py * 7 | 0) % 5 === 0)) ? ['iron', 7] : ['iron', 3.0 - (px < 13.5 ? -0.8 : 0.3) + n * 0.6];
+        if (ell(px, py, 13.5, 38, 2.4, 2.4) <= 1) return ['iron', ell(px, py, 12.9, 37.4, 1, 1) <= 1 ? 7 : 5.4]; // Buckel
+        if (ell(px, py, 13.5, 38, 3.6, 3.6) <= 1) return ['iron', 2.2];
+        if ((sd < 0.8 && py > 28 && py < 52) || (Math.abs(py - 33) < 0.8 && sd < 5.2)) return ['glow', 4.4];
+        if (vn(px * 1.5, py * 1.5, 5) > 0.74) return ['iron', 1.2 + n * 0.5]; // Dellen
+        if (hash(px * 3 | 0, py * 3 | 0, seed + 61) > 0.97) return ['blood', 4]; // Spritzer
+        return ['stone', 3.2 - ((px - 13.5) * 0.22 + (py - 40) * 0.08) + n * 0.8 - (vn(px * 2, py * 0.6, 7) - 0.5)];
+      } }
+    // rechter Arm am Speer, Handschuh
+    if (ell(px, py, 50.8, 38.6, 2.8, 2.9) <= 1) return ['iron', 2.4 + n * 0.5];
+    if (cap(px, py, 43.5, 27, 49.6, 37, 3.4, 2.8)) return ((py * 1.2 | 0) % 4 === 0) ? ['iron', 1.6] : A(3.4);
+    // Schulterstücke mit Lamellen und Dornen
+    for (const sg of [-1, 1]) { const cx = 32 + sg * 12.4;
+      if (cap(px, py, cx + sg * 1.5, 22, cx + sg * 4.4, 13.2, 1.9, 0.15) || cap(px, py, cx + sg * 4.2, 24, cx + sg * 8.6, 18.2, 1.4, 0.12)) return ['iron', 6.6 - l];
+      if (ell(px, py, cx, 26, 7.4, 5.6) <= 1) return (Math.abs(((py - 22) % 3.4)) < 0.4) ? ['iron', 1.8] : A(4.4); }
+    // Brustpanzer: Rippe, Kreuz, Fahrkante, Nieten
+    if (ell(px, py, 32, 34.5, 11.4, 12.2) <= 1 && py < 45.6) {
+      if ((ax < 0.7 && py > 27 && py < 42) || (Math.abs(py - 31.4) < 0.7 && ax < 4.8)) return ['glow', 4.6];
+      if (ax < 0.7) return A(6);
+      if (Math.abs(py - 40) < 0.4 && ax > 3) return ['iron', 1.8]; // Plattenfuge
+      if (hash(px * 2 | 0, py * 2 | 0, seed + 31) > 0.985) return ['iron', 7]; // Nieten
+      return A(ax > 8.5 ? 2.8 : 4.1);
+    }
+    // Gürtel, Schurz aus Plattenstreifen, Beinschienen mit Knie-Dornen, Eisenschuhe
+    if (py > 44.2 && py < 46.4 && ax < 10.5) return ax < 1.8 ? ['glow', 5.2] : ['wood', 1.6 + n * 0.6];
+    if (py >= 46.4 && py < 54.6 && ax < 9.6 - (py - 46.4) * 0.12) { const band = Math.floor((py - 46.4) / 2.7); return ax < 0.6 ? ['ceil', 0.4] : A(3.8 - band * 0.5 - (((py - 46.4) % 2.7) < 0.5 ? 1.2 : 0)); }
+    if (cap(px, py, 28, 53, 27, 60.4, 3.5, 3.0) || cap(px, py, 36, 53, 37, 60.4, 3.5, 3.0)) return A(3.4);
+    if (ell(px, py, 28, 53.4, 3.4, 2.3) <= 1 || ell(px, py, 36, 53.4, 3.4, 2.3) <= 1) return A(5.4);
+    if (cap(px, py, 25.6, 52.8, 24.4, 50.4, 1.1, 0.1) || cap(px, py, 38.4, 52.8, 39.6, 50.4, 1.1, 0.1)) return ['iron', 6.6];
+    if (ell(px, py, 26, 62, 4.8, 2.1) <= 1 || ell(px, py, 38, 62, 4.8, 2.1) <= 1) return A(2.4);
+    // zerrissener Umhang hinter der Gestalt
+    if (py > 27 && py < 59 + 4 * Math.abs(Math.sin(px * 0.9 + seed)) && ax < 13.4 + (py - 27) * 0.1 && !(py > 46 && hash(px * 1.4 | 0, py * 1.4 | 0, seed + 5) > 0.86)) return ['wood', 0.9 + vn(px * 3, py * 0.5, 4) * 1.2 - l * 0.4];
+    return null;
+  };
+  return paintFigure(seed, (c) => {
+    const res = body(c);
+    if (res && res[0] !== 'glow' && res[0] !== 'ceil' && c.py > 18 && c.vn(c.px * 1.5, c.py * 1.8, 9) > 0.82 && hash(c.px, c.py, seed + 41) > 0.3) return ['blood', 3 + hash(c.px, c.py, seed + 42) * 1.5];
+    return res;
+  });
+}
+function genPriester(seed) { // Kultpriester (192 px): Spitzhaube mit drittem Auge, Perlenkette, rote Stola mit goldenen Zeichen, schwebendes Zauberbuch, Schädelstab mit Frostkugel, Räuchergefäß an Ketten, zerrissener Saum mit Runen
+  const sparks = Array.from({ length: 8 }, (_, i) => ({ x: 9 + hash(i, 1, seed) * 12, y: 27 + hash(i, 2, seed) * 11, r: 0.35 + hash(i, 3, seed) * 0.4 }));
+  return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y, vn }) => {
+    const dx = px - 32, ax = Math.abs(dx), l = lit(px, py), n = nz(x >> 1, y >> 1);
+    const C = (b) => ['ceil', b - l * 0.9 + n * 0.5];
+    const bone = (b) => ['stone', b - l * 0.9 + n * 0.5];
+    // Augen: zwei schräge, ein senkrechtes drittes Auge auf der Stirn
+    if (cap(px, py, 27.2, 15.2, 30.8, 14.2, 0.85, 0.6) || cap(px, py, 36.8, 15.2, 33.2, 14.2, 0.85, 0.6) || ell(px, py, 32, 10.2, 0.85, 1.7) <= 1) return ['glow', 7];
+    if (ell(px, py, 32, 15.4, 5.7, 6.4) <= 1) { // Gesichtshöhle mit Zahnreihe
+      if (py > 19.8 && py < 21.6 && ax < 3.6 && Math.floor(px * 1.8) % 2 === 0) return bone(7);
+      return ['ceil', 0];
+    }
+    // Perlenkette und Schlüsselbein
+    if (py > 22.4 && py < 29.6 && Math.abs(py - (24 + (ax / 9) ** 2 * 5.6)) < 0.75 && ax < 9.4 && Math.floor(ax * 1.4) % 2 === 0) return ['glow', 6];
+    // Schädelstab rechts: Kugel, Zinken, Schädel, Schaft, Hand
+    if (ell(px, py, 50, 5.4, 3.5, 3.5) <= 1) return Math.hypot(px - 49, py - 4.3) < 1.2 ? ['ice', 7] : ['ice', 5 - (px - 50) * 0.2];
+    if (ell(px, py, 50, 5.4, 4.7, 4.7) <= 1 && ell(px, py, 50, 5.4, 4.2, 4.2) > 1) return ['glow', 3.4];
+    if (cap(px, py, 46, 11, 46.2, 4.4, 0.8, 0.3) || cap(px, py, 54, 11, 53.8, 4.4, 0.8, 0.3)) return ['iron', 5.8];
+    if (ell(px, py, 50, 13.4, 3.1, 2.8) <= 1) { if (ell(px, py, 48.8, 13.2, 0.8, 0.9) <= 1 || ell(px, py, 51.2, 13.2, 0.8, 0.9) <= 1) return ['ice', 7]; return bone(6.2); }
+    if (cap(px, py, 50, 15.4, 50, 63, 0.9, 0.9)) return ['wood', 2.2 - l * 0.4];
+    // rechte Hand und Ärmel
+    if (ell(px, py, 50, 33, 2.3, 2.3) <= 1) return bone(5.2);
+    if (cap(px, py, 43, 27, 48.6, 32, 4, 3.2)) return C(2.1 + vn(px, py * 0.6, 4) * 1.2);
+    // Zauberbuch links: schwebend, Deckel dunkel, Seiten hell, glühende Zeichen, Funken
+    for (const sp of sparks) if (Math.hypot(px - sp.x, py - sp.y) <= sp.r) return ['glow', 6.5];
+    if (px > 6.4 && px < 19.6 && py > 28.4 && py < 40.6) {
+      const bx = px - 6.4, by = py - 28.4;
+      if (bx < 1.1 || by < 1.0 || by > 11.4) return ['wood', 1.8 + n * 0.5];
+      if (Math.abs(bx - 6.5) < 0.35) return ['wood', 1.2];
+      if (by > 2 && by < 10 && ((Math.floor(by * 1.4) % 2) === 0) && hash(Math.floor(px * 2), Math.floor(py * 1.4), seed + 3) > 0.25) return ['glow', 6.8];
+      return ['stone', 5.8 - bx * 0.06 + n * 0.5];
+    }
+    if (ell(px, py, 13, 42.6, 3, 2.1) <= 1) return bone(5);
+    if (cap(px, py, 21.6, 27, 15.4, 38, 4.2, 3.3)) return C(2.1 + vn(px + 7, py * 0.6, 4) * 1.2);
+    // Mantelkragen mit Goldrand und Schulterzacken
+    if (ell(px, py, 32, 26.6, 15.2, 5.6) <= 1) { if (ell(px, py, 32, 26.6, 15.2, 5.6) > 0.78 && py > 25.4) return ['glow', 3.2 + n]; return C(2.6 + vn(px * 1.4, py * 0.8, 5) * 1.3); }
+    for (const sg of [-1, 1]) if (cap(px, py, 32 + sg * 13.6, 24.4, 32 + sg * 15.4, 17.4, 1.3, 0.1)) return bone(6.2);
+    // rote Stola mit goldenen Zeichen und Fransen
+    if (ax < 2.7 && py > 24.4 && py < 61.4 - Math.abs(Math.sin(px * 4 + seed)) * 1.8) {
+      if (ax > 2.0) return ['glow', 2.6];
+      const gi = Math.floor((py - 28) / 5.6); if (gi >= 0 && Math.abs(((py - 28) % 5.6) - 2.2) < 0.9 && ax < 1.2) return ['glow', 6.6];
+      return ['blood', 3.2 - l * 0.6 + n * 0.8 - Math.max(0, (py - 48) * 0.04)];
+    }
+    // Räuchergefäß an Kette (rechts am Gürtel) und Gürtel
+    if (ell(px, py, 41.4, 54.4, 2.4, 2.9) <= 1) return Math.abs(py - 54.4) < 0.5 || ell(px, py, 41.4, 56, 0.9, 0.9) <= 1 ? ['glow', 6] : ['iron', 4.2];
+    if (cap(px, py, 41.4, 46, 41.4, 51.4, 0.3, 0.3) && Math.floor(py) % 2 === 0) return ['iron', 5.6];
+    if (py > 44.2 && py < 46.4 && ax < 9) return ax < 2.7 ? ['glow', 5.4] : ['wood', 1.7 + n * 0.5];
+    // Haube: Spitze und Falten, Goldsaum
+    const peak = py > 0.6 && py < 10.4 && ax < 1.2 + (py - 0.6) * 0.72;
+    if (peak || ell(px, py, 32, 15, 9.3, 10.6) <= 1) {
+      if (ell(px, py, 32, 15.4, 8.6, 10.2) > 0.9 && py > 12 && py < 25.6) return ['glow', 3.4 + n * 0.8]; // Goldsaum um das Gesicht
+      return C(1.7 + vn(px * 1.2, py * 0.35, 7) * 1.4 + (dx < -4 ? 0.7 : 0));
+    }
+    // Robe: Falten, zerrissener Saum, leuchtende Zeichen
+    const hem = 62.8 - 2.6 * Math.abs(Math.sin(px * 1.2 + seed)) - 1.4 * Math.abs(Math.sin(px * 3.3 + seed * 0.7));
+    if (py > 22 && py < hem && ax < 8 + (py - 22) * 0.36) {
+      if (py > 50 && vn(px * 3.3, py * 0.7, 6) > 0.68) return null;
+      if (py > 55.4 && py < 57.2 && Math.floor(px * 1.1 + seed) % 3 === 0 && ax > 2.7) return ['glow', 5.2];
+      return C(1.6 + vn(px * 1.1, py * 0.3, 3) * 1.7 + Math.abs(Math.sin(px * 0.8 + seed)) * 0.5 - Math.max(0, (py - 44) * 0.03));
+    }
+    return null;
+  }, 192);
+}
+
 function genKultist(seed) { // Moorkultist (0.16.16, 192 px): Spitzkapuze mit Widderhörnern, leere Gesichtshöhle mit glühenden Schlitzaugen, Knochenmaske mit Zähnen, Knochenzacken an den Schultern, gezackter Dolch mit Gift, grüne Zauberhand mit Krallen, Brustsiegel, Gürtel mit Schädeln, zerfetzter Saum
   return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y, vn }) => {
     const dx = px - 32, l = lit(px, py), n = nz(x >> 1, y >> 1);
@@ -1419,7 +1550,7 @@ export function makeTextures(detail = 1) {
     wall: { [WALL_STONE]: stoneW, [WALL_SECRET]: genSecretWall(stoneW, 301), [WALL_SWITCH]: genSwitchWall(stoneW, false), [WALL_SWITCH_ON]: genSwitchWall(stoneW, true), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
     ceil: genCeil(53, nf),
-    sprites: { plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), trapSprung: genTrap('sprung', 401), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genGuard(183, 'turm')), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genRobed(251, 'priester')), hueter: sm2(genRobed(261, 'hueter')), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), trapSprung: genTrap('sprung', 401), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genRobed(261, 'hueter')), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 

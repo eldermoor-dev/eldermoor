@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.19.19 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.19.20 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -787,3 +787,9 @@ Nutzerwunsch: Schwert deutlicher in den Händen, Ring drohend in der anderen Han
 - render.js genGuard (haupt): Schwertfaust als dunkler Lederhandschuh mit hellen Fingergliedern, Daumen und Stulpe; zweiter Arm gereckt, darüber ein blauer Ring (`ice`) mit Stein.
 - Deutung (Vermutung): „Ring“ = Siegelring in der erhobenen Hand, Farbe Blau passend zu den Augen. Der goldene Schädelkreis am Knauf blieb unverändert; falls er gemeint war, ändern/entfernen.
 - VERSION 0.19.19 (main.js, sw.js). Tests 103 grün. Nur headless geprüft, nicht auf Gerät getestet.
+
+## 0.19.20 (17.11.2026) – Turmwache und Kultpriester neu
+Nutzer (Screenshot Nebelturm-Kampf, Turmwache + Kultpriester): „Beide gefährlicher und interessanter machen.“
+- render.js: neue Funktionen `genTurmwache` (128 px) und `genPriester` (192 px, beide per `sm2` geglättet). Turmwache: Gitterhelm mit Flügeln und Kamm, Stachelschultern mit Lamellen, Brustpanzer mit Kreuz, Turmschild mit Rand/Nieten/Buckel/Dellen, Speer mit Wimpel, Umhang, Blutspritzer. Kultpriester: Spitzhaube mit drittem Auge, Goldsaum, Perlenkette, rote Stola mit goldenen Zeichen, schwebendes Zauberbuch, Schädelstab mit blauer Kugel, Räuchergefäß, zerrissener Saum mit Zeichen.
+- Die Variante `'turm'` in `genGuard` und `'priester'` in `genRobed` bleiben im Code, werden aber nicht mehr verwendet.
+- Keine Werte geändert (BALANCE.md/SIM.md unverändert). VERSION 0.19.20. Tests 103 grün. Nur headless geprüft, **nicht auf Gerät getestet**.
