@@ -6,6 +6,7 @@ Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ 
 ## 0.16.x (Inhaltsphase, Nebelturm und Nacharbeiten)
 | Version | Änderungen | Status |
 |---|---|---|
+| 0.19.5 | Wölfe größer; Schriftzug düster (klein, rostbraun, abgeplatzt, Laufspuren); Karte zoom- und verschiebbar per Fingergeste; Tests 103 | headless, Gerät offen |
 | 0.19.4 | Weniger Truhen am Anfang, Starttruhe bescheidener, Truhen- und Gegnerbeute seltener hochwertig; besondere Truhen bleiben stark | headless, Gerät offen |
 | 0.19.3 | Wölfe größer, Zweiergruppen weiter auseinander | headless, Gerät offen |
 | 0.19.2 | Sumpfwolf von vorn, Gegnergruppen ohne Überschneidung (kleiner, neue Abstände) | headless, Gerät offen |

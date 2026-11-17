@@ -134,6 +134,8 @@ button{font:inherit;color:inherit}
 #modal-box .mapwrap .mapleg.two~#mapcv,#modal-box .mapwrap:has(.two) #mapcv{max-width:calc(100% - 300px)}
 @media (max-width:520px){#modal-box .mapwrap #mapcv{max-width:100%}}
 #modal-box .mapleg canvas{width:16px;height:16px;flex:none;background:#0a0806;border-radius:2px}
+#mapvp{overflow:hidden;touch-action:none;margin:4px 0;border:1px solid var(--line);flex:none;line-height:0}
+#modal-box .mapwrap #mapvp #mapcv{max-width:none!important;max-height:none!important;margin:0;border:0;transform-origin:0 0;will-change:transform}
 #mapcv{display:block;margin:4px 0;min-width:0;width:auto;height:auto;max-width:100%;max-height:calc(100dvh - 120px);image-rendering:pixelated;border:1px solid var(--line);background:#0a0806}
 #banner{position:fixed;top:0;left:0;right:0;z-index:40;background:#4a3410;padding:8px;display:flex;gap:10px;justify-content:center;align-items:center;font-size:.85rem}
 #toast{position:fixed;left:50%;top:48px;transform:translateX(-50%);z-index:45;background:rgba(0,0,0,.85);border:1px solid var(--amber);border-radius:8px;padding:8px 14px;max-width:80vw;text-align:center;font-size:.88rem}

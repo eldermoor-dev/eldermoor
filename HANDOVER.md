@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.19.4 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.19.5 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -688,3 +688,16 @@ Nur headless geprüft (Node 103 Tests, Chrome/Playwright), **nicht auf Gerät ge
   - Ausrüstung von gewöhnlichen Gegnern seltener (etwa halbiert): Wolf 8 %, Kultist 10 %, Moorlicht 5 %, Skelett 8 %, Kultwächter/Kultpriester/Turmwache 15 %, Nebelgeist 8 %.
 - SIM.md neu: klug weiter 100 % Kampagne, Nebelhüter beim ersten Versuch 83 % (Gruppe schwächer ausgerüstet), nur Angriff 0 %. Tests 103.
 - Alte Spielstände: entfernte Truhen bleiben dort vorhanden, falls schon im Spielstand (nicht geprüft, ob `syncStatic` sie entfernt).
+
+## Gerätetest 0.17.0–0.19.4 (Nutzer, Galaxy S25, 17.11.2026, abhakbare Testliste)
+- **ok (Einzelpunkte):** Ivo in Runde 1 bewusstlos = passt; Wölfe schauen nach vorn; Kampfbild; Heldenleiste; Treppen (1 Bogen); echte Türen; Starttruhe, wenige/bescheidene Truhen; Talente: Kosten/Reihenfolge; Hilfe lesbar; Moorpfad: Gruppe, Stärke, Schild „VORSICHT“, Falle laufen; Kultgruft: Hinweis + Geheimkammer; Schratgruben: Rätselraum, Stein schieben/ziehen, Platte, Halten; alter Spielstand: neue Fallen/Räume, geöffnete Truhen bleiben offen; Texte lesbar; Selbsttest grün.
+- **Fehler gemeldet:** (1) Wölfe „noch etwas größer“ (Test lief nach „Neu laden 0.19.4“); (2) Schriftzug „zu leuchtend groß, eher dungeonmäßig mysteriös, evtl. blutig, unheimlich, atmosphärisch“; (3) Karte „besser bei Berührung zoombar“.
+- **Noch nicht gemeldet (offen):** Talente öffnen/Stufensperre 4. Talent/Zurücksetzen/neue Fähigkeit/Stufe 15; Blutung/Fluch, Heilende Hand nimmt Blutung, Kombiangriff; Fallen ◉ untersuchen/entschärfen; Nebelhüter mit Thron; Schwer-Start; Alchemist (Gruppe, Trankgabe); alter Spielstand lädt; Bildrate.
+
+## 0.19.5 – Wolf, Schriftzug, Kartenzoom (17.11.2026)
+Nur headless geprüft (Node 103 Tests grün), **nicht auf Gerät getestet**.
+- **Wolf:** Faktor 1,45 → 1,65 (`spriteScale`). Risiko: Überschneidung in Dreiergruppen (Wolf–Moorlicht–Wolf); bitte prüfen.
+- **Schriftzug (`genPlaque`):** höchstens Faktor 3 (vorher 5/4), keine leuchtende Farbe mehr; verwitterte dunkelbraune Farbe (`wood` Stufe ~1,7–2,5, Palette hat kein Rot), 12 % Abplatzer, Laufspuren unter Buchstaben, Kontur 1 px. Ob „blutig“ ausreichend wirkt, ist offen (Rot bräuchte ein eigenes Palettenmaterial).
+- **Karte:** zweifache Fingergeste = Zoom (1–8×), Ziehen = Verschieben, Mausrad am Desktop; Tippen auf Zelle = Notiz bleibt, nach Ziehen/Zoomen wird keine Notiz gesetzt (400 ms). Karte intern in dreifacher Auflösung (`cs` × 3), Größe wird per `fitMapView` eingepasst; Hülle `#mapvp`. Reine Anzeige, Spielstand unverändert.
+- Testliste (Artifact) auf 0.19.5 aktualisiert; die drei Fehlerpunkte haben neue IDs (`tg-wolfsize5`, `tg-sign5`, `mp-map5`).
+- Plan unverändert: 0.20 Truhenarten, Geheimräume/falscher Schatz, Talente außerhalb des Kampfes → 0.21 Ausrüstungseffekte, Sets, Gegnertaktik → 0.22 Ereignisse → 0.23 ff. Moorfestung. Nutzerwunsch 16.11.: größere Pakete statt Einzelkorrekturen; nicht für jeden Test eine neue Version.

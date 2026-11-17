@@ -562,7 +562,7 @@ function genPlaque(title, kind, styleName, seed) {
   const N = PLQ, buf = new Uint8Array(N * N).fill(255);
   const lines = String(title || '').toUpperCase().split('|').slice(0, 2).filter(Boolean);
   const maxC = Math.max(1, ...lines.map((l) => [...l].slice(0, 8).length)), cw = 6;
-  const s = Math.max(2, Math.min(lines.length > 1 ? 4 : 5, Math.floor(168 / (cw * maxC))));
+  const s = Math.max(2, Math.min(3, Math.floor(168 / (cw * maxC)))); // 0.19.5: kleiner (vorher bis 5), Nutzer: „zu leuchtend groß“
   const ex = Math.max(1, s >> 2), lh = 9 * s, th = lines.length * lh - 2 * s;
   const ty0 = kind === 'door' ? 14 : Math.round(N / 2 - th / 2);
   const mask = new Uint8Array(N * N);
@@ -577,14 +577,26 @@ function genPlaque(title, kind, styleName, seed) {
       }
     });
   });
-  const ol = Math.max(2, (s >> 1));
+  const ol = 1;
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     if (mask[y * N + x]) continue;
     let near = false;
     for (let dy = -ol; dy <= ol && !near; dy++) for (let dx = -ol; dx <= ol; dx++) { const X = x + dx, Y = y + dy; if (X >= 0 && Y >= 0 && X < N && Y < N && mask[Y * N + X]) { near = true; break; } }
     if (near) buf[y * N + x] = P('stone', 0);
   }
-  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (mask[y * N + x]) buf[y * N + x] = P('glow', 5.6 + hash(x >> 2, y >> 2, seed) * 0.5);
+  // 0.19.5 (Nutzer: „zu leuchtend groß, eher dungeonmäßig mysteriös, evtl. blutig, unheimlich, atmosphärisch“):
+  // keine leuchtende Schrift mehr, sondern verwitterte, dunkel getrocknete Farbe (rostbraun) mit Abplatzern und Laufspuren.
+  // Die Palette hat kein Rot; Holzton in dunkler Stufe wirkt wie getrocknetes Blut/Rost.
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    if (!mask[y * N + x]) continue;
+    if (hash(x, y, seed + 3) < 0.12) { buf[y * N + x] = 255; continue; } // Abplatzer
+    buf[y * N + x] = P('wood', 1.7 + hash(x >> 1, y >> 1, seed) * 0.8);
+  }
+  for (let y = 0; y < N - 1; y++) for (let x = 0; x < N; x++) { // Laufspuren unter Buchstaben
+    if (!mask[y * N + x] || mask[(y + 1) * N + x] || hash(x, y, seed + 11) < 0.9) continue;
+    const len = 3 + Math.floor(hash(x, y, seed + 12) * 9);
+    for (let k = 1; k <= len && y + k < N; k++) if (!mask[(y + k) * N + x]) buf[(y + k) * N + x] = P('wood', 1.4 + k * 0.08);
+  }
   return { w: N, h: N, data: buf, noWrap: true };
 }
 // Rahmen einer offenen Tür (Sprite, 1×1 Feld): Pfosten, Sturz (mit Raumname), Türblatt nach innen aufgeklappt an der linken Seite.
@@ -1451,7 +1463,7 @@ let combatFit = 1; // 0.16.17: im Kampf verkleinert die Kamera zu große Figuren
 export const setCombatFit = (v) => { combatFit = v; };
 // 0.19.2: Gruppen je nach Größe kleiner, damit sich die Gestalten nicht überschneiden (Nutzer: „Gegner überschneiden sich“)
 export const GROUP_SIZE = { 2: 0.72, 3: 0.6 };
-export const spriteScale = (k, n) => (n > 1 ? GROUP_SIZE[Math.min(3, n)] || GROUP_SCALE : bossScale(k)) * (k === 'wolf' ? 1.45 : 1); // Wolf ist niedrig gebaut: größer ansetzen (0.19.3: 1,25 → 1,45, Nutzer: „Wölfe etwas zu klein“)
+export const spriteScale = (k, n) => (n > 1 ? GROUP_SIZE[Math.min(3, n)] || GROUP_SCALE : bossScale(k)) * (k === 'wolf' ? 1.65 : 1); // Wolf ist niedrig gebaut: größer ansetzen (0.19.3: 1,25 → 1,45; 0.19.5: 1,65, Nutzer: „noch etwas größer“)
 // Aufstellung einer Gruppe (0.16.4b): lat = seitlich (rechts +), dep = Tiefe (vom Betrachter weg). Im engen Gang (links und rechts Wand)
 // stehen die Gegner gestaffelt hintereinander statt nebeneinander, sonst ragen sie in die Wände (Nutzer-Screenshot 0.16.4).
 export function groupOffsets(n, narrow) {

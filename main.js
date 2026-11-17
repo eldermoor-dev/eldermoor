@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPort
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.19.4';
+const VERSION = '0.19.5';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -1012,14 +1012,17 @@ const talentNodesOf = (d, h, b) => b.nodes.map((n, ni) => ({ ...n, ni, cost: (d.
 
 function openMap() {
   const w = S.lvl.map[0].length, h = S.lvl.map.length;
-  const cs = Math.max(8, Math.min(Math.floor(560 / w), Math.floor(230 / h)));
-  openModal(`<h2 style="margin:0 0 4px">Karte – ${esc(S.lvl.name)}</h2><div class="mapwrap"><canvas id="mapcv" width="${cs * w}" height="${cs * h}"></canvas>${mapLegendHtml()}</div>
-  <div class="acts mapbar"><span class="muted">Blick: ${DIR_NAMES[S.game.player.dir]} · Zelle tippen = Notiz ◆</span>${closeBtn}</div>`, 'map');
+  const cs = 3 * Math.max(8, Math.min(Math.floor(560 / w), Math.floor(230 / h))); // 0.19.5: dreifache Auflösung, damit Zoomen scharf bleibt
+  openModal(`<h2 style="margin:0 0 4px">Karte – ${esc(S.lvl.name)}</h2><div class="mapwrap"><div id="mapvp"><canvas id="mapcv" width="${cs * w}" height="${cs * h}"></canvas></div>${mapLegendHtml()}</div>
+  <div class="acts mapbar"><span class="muted">Blick: ${DIR_NAMES[S.game.player.dir]} · Tippen = Notiz ◆ · 2 Finger = Zoom, Ziehen = Verschieben</span>${closeBtn}</div>`, 'map');
   paintLegend();
-  const cv = $('#mapcv');
+  const cv = $('#mapcv'), vp = $('#mapvp');
   cv.dataset.cs = cs;
   drawMap();
+  fitMapView(cv, vp, w, h, cs);
+  const mz = initMapZoom(cv, vp);
   cv.addEventListener('click', (e) => {
+    if (mz.dragged()) return; // Ziehen/Zoomen ist keine Notiz
     const r = cv.getBoundingClientRect();
     const x = Math.floor((e.clientX - r.left) * cv.width / r.width / cs), y = Math.floor((e.clientY - r.top) * cv.height / r.height / cs);
     const idx = y * w + x;
@@ -1029,6 +1032,46 @@ function openMap() {
     S.sfx.play('ui');
     drawMap();
   });
+}
+// Kartengröße auf den freien Platz einpassen (Legende rechts oder, auf schmalen Bildschirmen, darunter).
+function fitMapView(cv, vp, w, h, cs) {
+  const par = vp.parentElement, leg = par.querySelector('.mapleg');
+  const maxW = Math.max(120, par.clientWidth - (leg && window.innerWidth >= 520 ? leg.offsetWidth + 12 : 0));
+  const maxH = Math.max(120, window.innerHeight - 120);
+  const f = Math.min(maxW / (cs * w), maxH / (cs * h));
+  const dw = Math.floor(cs * w * f), dh = Math.floor(cs * h * f);
+  cv.style.width = dw + 'px'; cv.style.height = dh + 'px'; vp.style.width = dw + 'px'; vp.style.height = dh + 'px';
+}
+// Zoom (zwei Finger, Mausrad) und Verschieben (Ziehen) der Karte; reine Anzeige, ändert nichts am Spielstand.
+function initMapZoom(cv, vp) {
+  let k = 1, tx = 0, ty = 0, lastDrag = 0, moved = false, start = null;
+  const pts = new Map();
+  const apply = () => {
+    k = Math.max(1, Math.min(8, k));
+    tx = Math.min(0, Math.max(cv.offsetWidth * (1 - k), tx)); ty = Math.min(0, Math.max(cv.offsetHeight * (1 - k), ty));
+    cv.style.transform = `translate(${tx}px,${ty}px) scale(${k})`;
+  };
+  const zoomAt = (px, py, nk) => { nk = Math.max(1, Math.min(8, nk)); tx = px - (px - tx) * nk / k; ty = py - (py - ty) * nk / k; k = nk; apply(); };
+  const loc = (e) => { const r = vp.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  vp.addEventListener('pointerdown', (e) => { pts.set(e.pointerId, loc(e)); if (pts.size === 1) { start = loc(e); moved = false; } else moved = true; });
+  vp.addEventListener('pointermove', (e) => {
+    if (!pts.has(e.pointerId)) return;
+    const prev = pts.get(e.pointerId), cur = loc(e);
+    pts.set(e.pointerId, cur);
+    if (pts.size === 1) {
+      if (!moved && start && Math.hypot(cur[0] - start[0], cur[1] - start[1]) > 8) moved = true;
+      if (moved) { tx += cur[0] - prev[0]; ty += cur[1] - prev[1]; apply(); }
+    } else if (pts.size === 2) {
+      const other = [...pts.entries()].find(([id]) => id !== e.pointerId)[1];
+      const d0 = Math.hypot(prev[0] - other[0], prev[1] - other[1]) || 1, d1 = Math.hypot(cur[0] - other[0], cur[1] - other[1]);
+      moved = true;
+      zoomAt((cur[0] + other[0]) / 2, (cur[1] + other[1]) / 2, k * d1 / d0);
+    }
+  });
+  const up = (e) => { pts.delete(e.pointerId); if (!pts.size && moved) lastDrag = Date.now(); };
+  vp.addEventListener('pointerup', up); vp.addEventListener('pointercancel', up);
+  vp.addEventListener('wheel', (e) => { e.preventDefault(); const [px, py] = loc(e); zoomAt(px, py, k * (e.deltaY < 0 ? 1.2 : 1 / 1.2)); }, { passive: false });
+  return { dragged: () => Date.now() - lastDrag < 400 };
 }
 function drawMap() {
   const cv = $('#mapcv'), c = cv.getContext('2d'), cs = +cv.dataset.cs, g = S.game, lvl = S.lvl;
