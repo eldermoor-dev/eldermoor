@@ -258,7 +258,8 @@ function genChest(open, seed) {
 }
 // 0.19.18 (Nutzer: Truhen „optisch ansprechender, schärfer“): neue Truhe mit gewölbtem Deckel, Eisenbändern mit Nieten, Goldschloss, Eckbeschlägen und Holzmaserung; 128 px, im Modus Scharf 2× geglättet (vorher 64 px hochskaliert)
 function genChest2(open, seed) {
-  return paintFigure(seed, ({ ell, cap, nz, px, py, x, y, vn }) => {
+  return paintFigure(seed, ({ ell, cap, nz, px, py: py0, x, y, vn }) => {
+    const py = 61.5 - (61.5 - py0) * 1.35; // 0.19.25: Truhe niedriger und breiter (Nutzer: „sieht komisch aus“), Boden bleibt unten
     const ax = Math.abs(px - 32), l = (px - 32) / 22 * 0.9, n = nz(x, y);
     const wood = (b) => ['wood', b - l * 1.1 + (vn(px * 2.2, py * 0.35, 6) - 0.5) * 1.5 + (n - 0.5) * 0.5 - (Math.abs(((py - 36) % 6.2)) < 0.35 ? 1.1 : 0)];
     const band = (b) => ['iron', b - l * 0.9 + (n - 0.5) * 0.5];
@@ -288,7 +289,7 @@ function genChest2(open, seed) {
     if (ax <= 4.3 && py >= 31.6 && py <= 42.4) {
       if (ell(px, py, 32, 36.4, 1.15, 1.15) <= 1 || (ax < 0.55 && py > 36.4 && py < 39.6)) return ['ceil', 0];
       const edge = ax > 3.4 || py < 32.5 || py > 41.4;
-      return edge ? ['glow', 3.6] : ['glow', 6.4 - l * 0.6 - (py - 31) * 0.08];
+      return edge ? ['wood', 3.4] : ['wood', 6.6 - l * 0.6 - (py - 31) * 0.08]; // 0.19.25: Messing aus hellem Holzton statt Palette-Glühen (im Nebelturm war das Schloss eisblau)
     }
     if (py >= 36.4 && py <= 61.5 && ax <= 22) { // Korpus
       if (bandX) return (Math.round(px * 2) % 7 === 0 && (Math.abs(py - 41) < 0.9 || Math.abs(py - 57) < 0.9)) ? ['iron', 6.8] : band(3.9);
@@ -1788,7 +1789,7 @@ export function buildGrid(lvl, objs) {
 }
 const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'turmwache' ? tex.sprites.turmwache : k === 'wolf' ? tex.sprites.wolf : k === 'kultist' ? tex.sprites.kultist : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
 const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' ? 1.12 : 0.9); // Bosse stehen größer im Gang
-export const GROUP_SCALE = 0.78, GROUP_GAP = 0.44, CHEST_SCALE = 0.62; // 0.16.4: Gruppen vorher 0.62/0.36, Truhe 0.5 (Nutzer: zu klein, hinter der Leiste)
+export const GROUP_SCALE = 0.78, GROUP_GAP = 0.44, CHEST_SCALE = 0.58; // 0.16.4: Gruppen vorher 0.62/0.36, Truhe 0.5 (Nutzer: zu klein, hinter der Leiste)
 let combatFit = 1; // 0.16.17: im Kampf verkleinert die Kamera zu große Figuren so, dass sie samt Füßen über der Leiste ins Bild passen
 export const setCombatFit = (v) => { combatFit = v; };
 // 0.19.2: Gruppen je nach Größe kleiner, damit sich die Gestalten nicht überschneiden (Nutzer: „Gegner überschneiden sich“)

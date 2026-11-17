@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.19.24 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.19.25 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -815,3 +815,9 @@ Nutzer (Screenshot Nebelturm-Wand, 23:28): „Sieht komisch aus. Wie schlecht ge
 Nutzer (Screenshot Nebelturm, 23:41): „Abgeschnitten look“. Deutung (Vermutung): Moosfeld endete an der Zellgrenze mit gerader senkrechter Kante und anderem Steinmuster als die Nachbarwand.
 - `genMoss` (render.js): Basis jetzt dieselbe Steinmauer wie normale Wände (`genStone(11)`, Fugen passen), Moosbewuchs läuft zu den Seitenkanten der Textur aus (smoothstep über 10 von 64 px). Gilt für alle Paletten mit Moos-Wand (Moorpfad, Kultgruft …).
 - Tests 103 grün; headless gesehen, **nicht auf Gerät getestet**.
+
+## 0.19.25 (17.11.2026) – Truhe: Farben und Form
+Nutzer (Foto Nebelturm, Truhe vor Moosfeld): „Sieht komisch aus“; auf Rückfrage: Farben und Form/Größe der Truhe.
+- Ursache Farben (belegt): Palette `turm` hat `wood` lila und `glow` eisblau, die Truhe nutzt diese Materialien (lila Holz, blaues Schloss).
+- `game.json → palettes.turm.wood` = [128,88,56] (warmes Braun; wirkt auch auf andere Holzteile im Turm). `genChest2`: Schloss aus hellem Holzton (Messing) statt `glow`, in allen Paletten; Truhe vertikal um Faktor 1,35 gestaucht (niedriger, breiter), `CHEST_SCALE` 0,62 → 0,58.
+- Tests 103 grün; Screenshots geschlossen und offen headless gesehen, **nicht auf Gerät getestet**. Offen: ob Größe/Form so passt (Nutzer hat nur „Form/Größe“ genannt, nicht ob zu groß oder zu hoch – Deutung nicht gesichert).
