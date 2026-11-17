@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.19.9 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.19.10 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -723,3 +723,10 @@ Nutzermeldung: „Ich erkenne Fallen erst nach Auslösung“; nur Wandschrift + 
 - `genTrap('faint')` (render.js): leicht eingesunkene graue Platte mit Rissen und Staub davor, ohne Ausrufezeichen (das gibt es erst bei „entdeckt“). Im Screenshot ab 2–3 Feldern gut sichtbar; direkt davor (1 Feld) verdeckt die Heldenleiste den Boden.
 - `scanTraps` (logic.js): für alle Gruppen zwei unabhängige Würfe je Falle (2 Felder: `t.far`, 1 Feld: `t.checked`). `data.traps.spot` 35 → 45. Rechnerisch ohne Talent ca. 70 % Entdeckung vor dem Auslösen (1 − 0,55²), Vermutung über das Spielgefühl: Rest bleibt über Bodenspur und ◉ erkennbar.
 - Tests 103 grün. Nur headless geprüft, **nicht auf Gerät getestet**. Offen: Bewertung auf dem S25, ob Platte und Chance passen.
+
+
+## 0.19.10 (17.11.2026) – Helligkeit
+Nutzermeldung (Screenshot Schratgruben-Gang, Rast-Meldung sichtbar): „Zu dunkel“. Unbekannt (nicht gesichert), welche Helligkeitsstufe in den Einstellungen gewählt war; bisheriger Standard war „Hell“ (1,35).
+- Einstellung „Helligkeit der Umgebung“: Original 1 · Hell 1,35 · Sehr hell 1,8 · **Maximal 2,4 (neu)**. `render.js` `setPalette`: Mindeststufe `minS` 3 ab 2,4.
+- Neuer Standard 1,8. Einstellungen-Version `SETTINGS_V = 3`: bestehende Einstellung unter 1,8 wird einmalig auf 1,8 angehoben (danach wieder frei wählbar).
+- Headless-Vergleich Schratgruben bei 1,35 / 1,8 / 2,4: deutliche Stufen, Wände und Gegner in der Tiefe erkennbar. **Nicht auf Gerät getestet.** Offen: ob 1,8 reicht oder ob einzelne Gebiete (Palette `grube`, `keller`) selbst heller werden sollen.

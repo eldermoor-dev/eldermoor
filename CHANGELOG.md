@@ -6,6 +6,7 @@ Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ 
 ## 0.16.x (Inhaltsphase, Nebelturm und Nacharbeiten)
 | Version | Änderungen | Status |
 |---|---|---|
+| 0.19.10 | Heller: Standard-Helligkeit „Sehr hell“ (1,8), neue Stufe „Maximal“ (2,4); bestehende Einstellung unter 1,8 wird einmalig auf 1,8 angehoben (Einstellungen v3); Tests 103 | headless, Gerät offen |
 | 0.19.9 | Fallen früher erkennbar: Bodenspur als graue, rissige Platte mit Staub (vorher kaum sichtbar); zwei Entdeckungswürfe je Falle (2 Felder und 1 Feld Abstand, für alle Gruppen), Grundchance 35 → 45 %; Tests 103 | headless, Gerät offen |
 | 0.19.8 | Schriftzüge in Blutrot mit dunkler Kontur statt dunkelbraun (neues Palettenmaterial `blood`, 72 Farben); Tests 103 | headless, Gerät offen |
 | 0.19.7 | Gegnergruppen im engen Gang bleiben zwischen den Wänden (Seitenabstand begrenzt, äußere Figuren gestaffelt); Tests 103 | headless, Gerät offen |

@@ -9,15 +9,16 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPort
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.19.9';
+const VERSION = '0.19.10';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 // settingsV 2 (v0.2.0): Schrittgeräusche standardmäßig aus (Nutzerentscheidung 13.11.2026)
-const SETTINGS_V = 2;
-const DEFAULTS = { volume: 0.7, muted: false, quality: 'medium', vibration: true, fontScale: 1, colorblind: false, debug: false, flicker: 0.35, bright: 1.35, steps: false, ambient: true, sharp: 'scharf', settingsV: SETTINGS_V };
+const SETTINGS_V = 3;
+// settingsV 3 (v0.19.9): Nutzer „Zu dunkel“ – Standard-Helligkeit 1,8 („Sehr hell“), neue Stufe „Maximal“ (2,4); alte Einstellung unter 1,8 wird einmalig angehoben
+const DEFAULTS = { volume: 0.7, muted: false, quality: 'medium', vibration: true, fontScale: 1, colorblind: false, debug: false, flicker: 0.35, bright: 1.8, steps: false, ambient: true, sharp: 'scharf', settingsV: SETTINGS_V };
 const REPEAT = new Set(['fwd', 'back', 'sl', 'sr', 'tl', 'tr']);
 const SLOT_KEYS = ['auto', 'slot1', 'slot2', 'slot3'];
 const SLOT_NAMES = { auto: 'Autosave', slot1: 'Slot 1', slot2: 'Slot 2', slot3: 'Slot 3' };
@@ -97,7 +98,7 @@ async function loadSettings() {
     if (s && typeof s === 'object') {
       S.settings = { ...DEFAULTS, ...s };
       // Einmalig: bestehende Einstellungen (vor 0.2.0) auf den neuen Standard „Schrittgeräusche aus“ setzen; wieder einschaltbar
-      if (!(s.settingsV >= SETTINGS_V)) { S.settings.steps = false; S.settings.settingsV = SETTINGS_V; saveSettings(); }
+      if (!(s.settingsV >= SETTINGS_V)) { if (!(s.settingsV >= 2)) S.settings.steps = false; if (!(S.settings.bright >= 1.8)) S.settings.bright = 1.8; S.settings.settingsV = SETTINGS_V; saveSettings(); }
     }
   } catch { /* Standardwerte */ }
 }
@@ -1196,7 +1197,7 @@ function openSettings() {
   <div class="row"><label>Hintergrundgeräusche (Wind, Tropfen, Fackel)</label>${chk('ambient')}</div>
   <div class="row"><label>Grafikqualität</label>${sel('quality', [['low', 'Niedrig'], ['medium', 'Mittel'], ['high', 'Hoch']])}</div>
   <div class="row"><label>Bildschärfe</label>${sel('sharp', [['scharf', 'Scharf (960×540)'], ['retro', 'Retro (480×270)']])}</div>
-  <div class="row"><label>Helligkeit der Umgebung</label>${sel('bright', [[1, 'Original (dunkel)'], [1.35, 'Hell'], [1.8, 'Sehr hell']])}</div>
+  <div class="row"><label>Helligkeit der Umgebung</label>${sel('bright', [[1, 'Original (dunkel)'], [1.35, 'Hell'], [1.8, 'Sehr hell'], [2.4, 'Maximal']])}</div>
   <div class="row"><label>Fackelflackern</label>${sel('flicker', [[0, 'Aus'], [0.35, 'Schwach'], [1, 'Normal']])}</div>
   <div class="row"><label>Vibration</label>${chk('vibration')}</div>
   <div class="row"><label>Schriftgröße</label>${sel('fontScale', [[0.9, 'Klein'], [1, 'Normal'], [1.15, 'Groß'], [1.3, 'Sehr groß']])}</div>

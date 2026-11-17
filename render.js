@@ -1316,7 +1316,7 @@ export class Raycaster {
   }
   setPalette(def) {
     if (def) this.palDef = def; else def = this.palDef;
-    const bt = this.bright || 1, minS = bt >= 1.8 ? 2 : bt >= 1.35 ? 1 : 0;
+    const bt = this.bright || 1, minS = bt >= 2.4 ? 3 : bt >= 1.8 ? 2 : bt >= 1.35 ? 1 : 0;
     this.pal = buildPalette(def, bt);
     this.shadeTbl = [];
     for (let d = 0; d < 8; d++) {
