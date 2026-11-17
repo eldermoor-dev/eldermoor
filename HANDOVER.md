@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.19.11 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.19.12 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -740,3 +740,9 @@ Nutzerwünsche (Screenshot Inventar): (1) beim Ausrüsten nicht erkennbar, welch
 - **Zuordnung (Vermutung):** „Siegel-Boss“ = Kultwächter-Hauptmann (`en_boss`, kultgruft, 160 LP, bei Schwer 208). Die Zahl 501 finde ich in den Daten nicht (Nebelhüter hat 480, bei Schwer 624): **nicht gesichert**, welchen Gegner der Nutzer meint.
 - **Gelb beim Näherkommen:** im Headless-Test (Moorpfad „VORSICHT“, 1–4 Felder) bleibt der Text rot (Mittelwert ca. R125 G34 B33); das gelbe Bild dort ist die Fallenmarkierung. **Nicht nachgestellt**, Rückfrage an den Nutzer, welches Schild.
 - Nur headless geprüft, **nicht auf Gerät getestet**. Tests 103 grün.
+
+
+## 0.19.12 (17.11.2026) – Hauptmann: Schädel auf der Klinge
+Nutzerantwort zu 0.19.11: „1 gepanzert bleiben; der Siegel auf der Klinge des Schwertes soll mit reinen Skelett frisiert sein“. Deutung (**Vermutung, nicht gesichert**): Hauptmann bleibt gepanzert, das Siegelzeichen auf der Klinge soll ein Skelett-Motiv sein.
+- `genGuard` (haupt): statt Ring/Kreuz/Raute jetzt Totenschädel (Augenhöhlen, Nase, Kiefer mit Zähnen) und gekreuzte Knochen, Material `glow`. Rüstung unverändert.
+- Offen: Augenfarbe (gelb) – Rückfrage „rot?“ blieb unbeantwortet, unverändert. Nur headless, **nicht auf Gerät getestet**. Tests 103 grün.

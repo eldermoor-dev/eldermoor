@@ -1101,8 +1101,10 @@ function genGuard(seed, v = 'wacht') {
     if (ell(px, py, 32, 13.2, 8.6, 9.8) <= 1) return A(4.4 + (turm && Math.abs(dx) > 6.5 ? -0.6 : 0));
     // Waffe
     if (haupt) {
-      const rd = Math.hypot(px - 50.5, py - 19);
-      if ((Math.abs(rd - 1.9) < 0.55 && rd < 2.5) || (Math.abs(px - 50.5) < 0.45 && Math.abs(py - 19) < 2.6) || (Math.abs(py - 19) < 0.45 && Math.abs(px - 50.5) < 2.6) || Math.abs(Math.hypot(px - 50.5, py - 33) - 1.2) < 0.5) return ['glow', 6.8]; // Siegelzeichen auf der Klinge
+      // 0.19.11: Siegelzeichen auf der Klinge = Totenschädel mit gekreuzten Knochen (Nutzer: „mit reinem Skelett verziert“, Deutung)
+      if (ell(px, py, 49.5, 17.4, 0.75, 0.85) <= 1 || ell(px, py, 51.5, 17.4, 0.75, 0.85) <= 1 || (Math.abs(px - 50.5) < 0.45 && py > 19.1 && py < 20.2)) return ['ceil', 0]; // Augenhöhlen, Nase
+      if (ell(px, py, 50.5, 17.6, 2.7, 2.8) <= 1 || (Math.abs(px - 50.5) < 1.5 && py > 19.8 && py < 22.2 && (Math.floor((px - 49) * 2) % 2 === 0 || py > 21.4))) return ['glow', 6.8]; // Schädel, Kiefer mit Zähnen
+      if (cap(px, py, 48.4, 25.2, 52.6, 29.2, 0.5, 0.5) || cap(px, py, 52.6, 25.2, 48.4, 29.2, 0.5, 0.5)) return ['glow', 6.4]; // gekreuzte Knochen
       if (cap(px, py, 50.5, 44, 50.5, 49, 2.2, 1.6) && hash(px, py, seed + 31) > 0.6) return ['blood', 3.6]; // Blut am unteren Klingenteil
       if (cap(px, py, 50.5, -1, 50.5, 49, 2.3, 1.6)) return ['iron', px > 50.5 ? 4.6 : 6.5]; if (cap(px, py, 44.2, 48, 56.8, 48, 1.3, 1.3)) return ['iron', 3.2]; if (cap(px, py, 50.5, 49, 50.5, 60, 1.1, 1.1)) return ['wood', 2]; }
     else { if (cap(px, py, 51, -0.5, 51, 7, 1.1, 0.2)) return ['iron', 6.4]; if (!turm && ell(px, py, 55.5, 12.5, 5.2, 6.8) <= 1 && px > 52) return ['iron', px > 57.5 ? 6.6 : 5 + n * 0.5]; if (cap(px, py, 51, 6, 51, 63, 0.95, 0.95)) return ['wood', 2.4 - l * 0.5]; }
