@@ -1,11 +1,12 @@
 # CHANGELOG – Die Schatten von Eldermoor
 
-Quelle: HANDOVER.md (Stand 0.19.2, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
+Quelle: HANDOVER.md (Stand 0.19.3, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
 ## 0.16.x (Inhaltsphase, Nebelturm und Nacharbeiten)
 | Version | Änderungen | Status |
 |---|---|---|
+| 0.19.3 | Wölfe größer, Zweiergruppen weiter auseinander | headless, Gerät offen |
 | 0.19.2 | Sumpfwolf von vorn, Gegnergruppen ohne Überschneidung (kleiner, neue Abstände) | headless, Gerät offen |
 | 0.19.1 | Heldenleiste: Namen nicht mehr abgeschnitten, Reihe unter dem Porträt, Werte einzeilig (Mana blau, Ausdauer gelb) | headless, Gerät offen |
 | 0.19.0 | Bewegliche Steine (schieben, ziehen), Druckplatten, Rätselraum in den Schratgruben, Geheimkammer in der Kultgruft; Tests 103 | headless, Gerät offen |

@@ -1112,7 +1112,7 @@ function genWolf(seed) { // 0.19.2: Sumpfwolf von vorn (Nutzer: Gegner „sehen 
     // Hinterläufe und Rumpf (weiter hinten, dunkler)
     if (ell(px, py, sx(15.4), 62, 2.8, 1.3) <= 1) return ['ceil', 0.8 + fur * 0.3];
     if (cap(px, py, sx(14.6), 50, sx(15.6), 61.5, 2.8, 1.8)) return F(1.1);
-    if (ell(px, py, 32, 46.5, 16.5, 7) <= 1) return F(1.2);
+    if (ell(px, py, 32, 46.5, 15, 7) <= 1) return F(1.2);
     return null;
   });
 }
@@ -1451,12 +1451,12 @@ let combatFit = 1; // 0.16.17: im Kampf verkleinert die Kamera zu große Figuren
 export const setCombatFit = (v) => { combatFit = v; };
 // 0.19.2: Gruppen je nach Größe kleiner, damit sich die Gestalten nicht überschneiden (Nutzer: „Gegner überschneiden sich“)
 export const GROUP_SIZE = { 2: 0.72, 3: 0.6 };
-export const spriteScale = (k, n) => (n > 1 ? GROUP_SIZE[Math.min(3, n)] || GROUP_SCALE : bossScale(k)) * (k === 'wolf' ? 1.25 : 1); // Wolf ist niedrig gebaut: größer ansetzen
+export const spriteScale = (k, n) => (n > 1 ? GROUP_SIZE[Math.min(3, n)] || GROUP_SCALE : bossScale(k)) * (k === 'wolf' ? 1.45 : 1); // Wolf ist niedrig gebaut: größer ansetzen (0.19.3: 1,25 → 1,45, Nutzer: „Wölfe etwas zu klein“)
 // Aufstellung einer Gruppe (0.16.4b): lat = seitlich (rechts +), dep = Tiefe (vom Betrachter weg). Im engen Gang (links und rechts Wand)
 // stehen die Gegner gestaffelt hintereinander statt nebeneinander, sonst ragen sie in die Wände (Nutzer-Screenshot 0.16.4).
 export function groupOffsets(n, narrow) {
   if (n <= 1) return [{ lat: 0, dep: 0 }];
-  const gap = narrow ? (n >= 3 ? 0.31 : 0.38) : (n >= 3 ? 0.42 : 0.46); // 0.19.2: Abstand so, dass die kleineren Gestalten nebeneinander passen
+  const gap = narrow ? (n >= 3 ? 0.32 : 0.48) : (n >= 3 ? 0.42 : 0.5); // 0.19.3: Zweiergruppen weiter auseinander (größere Wölfe) // 0.19.2: Abstand so, dass die kleineren Gestalten nebeneinander passen
   return Array.from({ length: n }, (_, i) => ({ lat: (i - (n - 1) / 2) * gap, dep: 0 }));
 }
 // Eng = beide Nachbarfelder quer zur Blickrichtung sind Wand (grid aus buildGrid: 0 = frei)

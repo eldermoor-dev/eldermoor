@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.19.2 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.19.3 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -672,3 +672,7 @@ Nur headless geprüft (Node 103 Tests, Chrome/Playwright), **nicht auf Gerät ge
 - Sumpfwolf neu von vorn gezeichnet (`genWolf`: gesenkter Kopf, glühende Augen, Fänge, gesträubte Schultern, Moos), vorher Profil nach links. Alle Gegner blicken jetzt zur Gruppe.
 - Gruppen kleiner je nach Größe (`GROUP_SIZE` 2: 0,72, 3: 0,6; Wolf ×1,25) und Abstände neu (`groupOffsets`: eng 0,38/0,31, offen 0,46/0,42). Headless im Moorpfad (Wolf–Moorlicht–Wolf) in Erkundung und Kampf ohne Überschneidung gesehen, **nicht auf Gerät getestet**. Risiko: Gruppen wirken kleiner (Nutzer fand Gruppen in 0.16.4 zu klein).
 - Nutzerwunsch (17.11.2026): im Chat keine Codeblöcke mehr (z. B. Testlisten), nur auf Aufforderung; sonst Stichwortlisten.
+
+## 0.19.3 – Wölfe größer (17.11.2026)
+- Nutzer (Gerätefoto 0.19.2, Testgewölbe, zwei Sumpfwölfe): „Wölfe etwas zu klein“. Wolf-Faktor 1,25 → 1,45, Zweiergruppen weiter auseinander (eng 0,48, offen 0,5), Rumpf des Wolfs etwas schmaler. Headless gesehen (Testgewölbe 2 Wölfe, Moorpfad Wolf–Moorlicht–Wolf), **nicht auf Gerät getestet**. Bestätigt durch das Foto: Wölfe blicken nach vorn, überschneiden sich nicht.
+- Beobachtung auf demselben Foto (nicht geändert, Nutzer gefragt): Ivo (Magier, 18 LP) war in Runde 1 bewusstlos, bevor er handeln konnte. Ursache laut Daten: Sumpfwolf hat `ai: weakest` (greift den Helden mit den wenigsten LP an), zwei Wölfe × 9 Angriff. SIM.md: im Testgewölbe gegen zwei Wölfe im Schnitt 0,3 (klug) bis 0,9 (nur Angriff) Bewusstlose je Kampf.
