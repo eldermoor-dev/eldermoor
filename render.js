@@ -7,8 +7,9 @@ export const BASE_W = 480, BASE_H = 270, TEX = 64; // Grundauflösung (Retro) un
 // Aktuelle Bildgröße: 480×270 (Retro) oder ein Vielfaches davon (Scharf = 2×). Live-Bindung: Änderung über setResolution().
 export let W = BASE_W, H = BASE_H;
 export function setResolution(r) { W = BASE_W * r; H = BASE_H * r; }
-const MATS = ['stone', 'moss', 'wood', 'iron', 'floor', 'ceil', 'flesh', 'glow'];
-const M = { stone: 0, moss: 1, wood: 2, iron: 3, floor: 4, ceil: 5, flesh: 6, glow: 7 };
+const MATS = ['stone', 'moss', 'wood', 'iron', 'floor', 'ceil', 'flesh', 'glow', 'blood']; // 0.19.8: 9. Material „blood“ (Schriftzüge); Paletten ohne Eintrag nutzen BLOOD_DEFAULT
+const M = { stone: 0, moss: 1, wood: 2, iron: 3, floor: 4, ceil: 5, flesh: 6, glow: 7, blood: 8 };
+const PAL_N = MATS.length * 8, BLOOD_DEFAULT = [206, 38, 32];
 const P = (mat, shade) => M[mat] * 8 + Math.max(0, Math.min(7, Math.round(shade)));
 
 // Wandtextur-IDs im Raster: 0 = frei, 1 Stein, 2 Moos, 3 Tür, 4 verschlossene Tür
@@ -16,9 +17,9 @@ export const WALL_STONE = 1, WALL_MOSS = 2, WALL_DOOR = 3, WALL_DOOR_LOCKED = 4,
 
 // ---------- Palette: 8 Materialien × 8 Helligkeitsstufen = 64 feste Farben ----------
 export function buildPalette(def, lift = 1) {
-  const pal = new Uint32Array(64);
+  const pal = new Uint32Array(PAL_N);
   MATS.forEach((m, mi) => {
-    const c = def[m] || [128, 128, 128];
+    const c = def[m] || (m === 'blood' ? BLOOD_DEFAULT : [128, 128, 128]);
     for (let s = 0; s < 8; s++) {
       const f = 0.08 + 0.92 * Math.pow(s / 7, 1.15 / lift);
       const r = Math.round(c[0] * f + 6 * (1 - f));
@@ -577,25 +578,24 @@ function genPlaque(title, kind, styleName, seed) {
       }
     });
   });
-  const ol = 1;
+  const ol = Math.max(1, s >> 1); // dunkle Kontur: hebt die rote Schrift von grauem Stein ab
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     if (mask[y * N + x]) continue;
     let near = false;
     for (let dy = -ol; dy <= ol && !near; dy++) for (let dx = -ol; dx <= ol; dx++) { const X = x + dx, Y = y + dy; if (X >= 0 && Y >= 0 && X < N && Y < N && mask[Y * N + X]) { near = true; break; } }
     if (near) buf[y * N + x] = P('stone', 0);
   }
-  // 0.19.5 (Nutzer: „zu leuchtend groß, eher dungeonmäßig mysteriös, evtl. blutig, unheimlich, atmosphärisch“):
-  // keine leuchtende Schrift mehr, sondern verwitterte, dunkel getrocknete Farbe (rostbraun) mit Abplatzern und Laufspuren.
-  // Die Palette hat kein Rot; Holzton in dunkler Stufe wirkt wie getrocknetes Blut/Rost.
+  // 0.19.5/0.19.8 (Nutzer: erst „zu leuchtend groß, eher dungeonmäßig mysteriös, evtl. blutig“, dann „Schrift nicht lesbar“):
+  // getrocknetes Blut als eigenes Material (hell genug gegen grauen Stein) mit dunkler Kontur, wenigen Abplatzern und Laufspuren.
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     if (!mask[y * N + x]) continue;
-    if (hash(x, y, seed + 3) < 0.12) { buf[y * N + x] = 255; continue; } // Abplatzer
-    buf[y * N + x] = P('wood', 1.7 + hash(x >> 1, y >> 1, seed) * 0.8);
+    if (hash(x, y, seed + 3) < 0.05) { buf[y * N + x] = P('stone', 1); continue; } // Abplatzer (zeigt dunklen Stein)
+    buf[y * N + x] = P('blood', 5.4 + hash(x >> 1, y >> 1, seed) * 1.6);
   }
   for (let y = 0; y < N - 1; y++) for (let x = 0; x < N; x++) { // Laufspuren unter Buchstaben
-    if (!mask[y * N + x] || mask[(y + 1) * N + x] || hash(x, y, seed + 11) < 0.9) continue;
-    const len = 3 + Math.floor(hash(x, y, seed + 12) * 9);
-    for (let k = 1; k <= len && y + k < N; k++) if (!mask[(y + k) * N + x]) buf[(y + k) * N + x] = P('wood', 1.4 + k * 0.08);
+    if (!mask[y * N + x] || mask[(y + 1) * N + x] || hash(x, y, seed + 11) < 0.92) continue;
+    const len = 3 + Math.floor(hash(x, y, seed + 12) * 8);
+    for (let k = 1; k <= len && y + k < N; k++) if (!mask[(y + k) * N + x]) buf[(y + k) * N + x] = P('blood', 4.6 - k * 0.12);
   }
   return { w: N, h: N, data: buf, noWrap: true };
 }
@@ -1314,8 +1314,8 @@ export class Raycaster {
     this.pal = buildPalette(def, bt);
     this.shadeTbl = [];
     for (let d = 0; d < 8; d++) {
-      const t = new Uint32Array(64);
-      for (let i = 0; i < 64; i++) t[i] = (i >> 3) === M.glow && d < 7 ? this.pal[(i & ~7) | Math.max(2, (i & 7) - (d >> 1))] : this.pal[(i & ~7) | Math.max(Math.min(i & 7, minS), (i & 7) - d)];
+      const t = new Uint32Array(PAL_N);
+      for (let i = 0; i < PAL_N; i++) t[i] = (i >> 3) === M.glow && d < 7 ? this.pal[(i & ~7) | Math.max(2, (i & 7) - (d >> 1))] : this.pal[(i & ~7) | Math.max(Math.min(i & 7, minS), (i & 7) - d)];
       this.shadeTbl.push(t);
     }
   }

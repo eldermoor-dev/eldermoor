@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.19.7 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.19.8 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -710,3 +710,9 @@ Nutzer (Foto 0.19.5, Moorpfad-Eingang, drei Meldungen inkl. langem Text von Hedd
 
 ## 0.19.7 – Gegnergruppen im engen Gang (17.11.2026)
 Nutzer (Foto 0.19.6, Moorkultist A+B und Moorlicht im 1 Feld breiten Gang): „Gegner in der Wand“. Ursache (aus dem Code belegt): `groupOffsets` setzte die Seitenfiguren bei 0,32 Seitenabstand, die Figur ist aber ~0,45 breit (Maßstab 0,6 × 76 %), sie ragte über die Gangbreite (±0,5) und wurde von den Wandspalten abgeschnitten. Fix in `buildSprites`: im engen Gang Seitenabstand auf `0,47 − 0,38 × Maßstab` begrenzt, äußere Figuren (bei 3 beide Außenfiguren, bei 2 die zweite) 0,3 Felder nach hinten gestaffelt. Offene Fläche unverändert. Nur headless geprüft (Tests 103), **nicht auf Gerät getestet**. Offen: Einzelner großer Wolf im engen Gang (Maßstab ~1,5) kann auch breiter als der Gang sein; nicht gemeldet. Überlappung der Figuren untereinander steigt dadurch leicht (Nutzerwunsch 0.16.17: nebeneinander).
+
+## 0.19.8 – Schriftzug rot und lesbar (17.11.2026)
+Nutzer (Foto 0.19.7 / „NUR MIT SIEGEL“ aus der Nähe): „Schrift nicht lesbar, Blutschrift“ – die dunkelbraune Schrift von 0.19.5 verschwand auf grauem Stein. Nur headless geprüft (Tests 103, Screenshot Kultgruft), **nicht auf Gerät getestet**.
+- **Palette erweitert:** 9. Material `blood` (`MATS`, `M.blood = 8`, `PAL_N = 72`); Paletten in game.json brauchen keinen Eintrag (Standard `BLOOD_DEFAULT` 206/38/32). Schattentabelle (`shadeTbl`) und Palettenpuffer auf `PAL_N`. Tests: Palettenindex < 72, Farbanzahl ≤ 72 (vorher 64). **Die Doku „8 Materialien × 8 Stufen = 64 Farben“ oben gilt damit nicht mehr; jetzt 9 × 8 = 72.**
+- `genPlaque`: Schrift in Blutrot (Stufe 5,4–7) mit dunkler Kontur (`ol = max(1, s>>1)`), 5 % Abplatzer, Laufspuren; Größe wie 0.19.5 (Faktor ≤ 3).
+- Dev-Hook `S.fn.gotoArea(id)` (nur `?dev`) für Bildprüfungen.

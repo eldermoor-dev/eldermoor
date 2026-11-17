@@ -1490,7 +1490,7 @@ export async function runTests(data, env = {}) {
     const tex = makeTextures();
     const chk = (t, name, allowTransparent) => {
       assert(t.w >= 64 && t.h === t.w && t.data.length === t.w * t.h, `${name}: Größe`);
-      for (const v of t.data) assert(v < 64 || (allowTransparent && v === 255), `${name}: ungültiger Palettenindex ${v}`);
+      for (const v of t.data) assert(v < 72 || (allowTransparent && v === 255), `${name}: ungültiger Palettenindex ${v}`);
     };
     for (const [k, t] of Object.entries(tex.wall)) chk(t, 'Wand ' + k, false);
     chk(tex.floor, 'Boden', false); chk(tex.ceil, 'Decke', false);
@@ -1511,7 +1511,7 @@ export async function runTests(data, env = {}) {
         assert((rc.buf[i] >>> 24) === 255, `${q}: unbeschriebenes Pixel bei ${i}`);
         colors.add(rc.buf[i]);
       }
-      assert(colors.size > 12 && colors.size <= 64, `${q}: Farbanzahl ${colors.size} (erwartet 13..64, feste Palette)`);
+      assert(colors.size > 12 && colors.size <= 72, `${q}: Farbanzahl ${colors.size} (erwartet 13..72, feste Palette)`);
     }
     return 'Renderzeit in Node (nur Orientierung, nicht Gerät): ' + info.join(', ');
   });
@@ -1523,7 +1523,7 @@ export async function runTests(data, env = {}) {
       const tex = makeTextures(2);
       assert(W === 960 && H === 540, 'Auflösung');
       assert(tex.wall[1].w === 256 && tex.wall[5].w === 256 && tex.floor.w === 128 && tex.sprites.schrat.w === 320, 'Texturgrößen');
-      for (const w of [tex.wall[1], tex.wall[2], tex.wall[5], tex.floor, tex.ceil]) assert((w.w & (w.w - 1)) === 0 && w.data.every((v) => v < 64), 'Zweierpotenz und gültige Palettenindizes');
+      for (const w of [tex.wall[1], tex.wall[2], tex.wall[5], tex.floor, tex.ceil]) assert((w.w & (w.w - 1)) === 0 && w.data.every((v) => v < 72), 'Zweierpotenz und gültige Palettenindizes');
       const s = fresh();
       const lvl = L.getLevel(data, s);
       const { grid, gw, gh } = buildGrid(lvl, s.objs);

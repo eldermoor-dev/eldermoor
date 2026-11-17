@@ -9,7 +9,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPort
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.19.7';
+const VERSION = '0.19.8';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -29,7 +29,7 @@ const S = {
   debug: { god: false }, itemMode: false, abMode: false, spMode: false, spSel: 0, foe: 0, invUse: null, draft: null, fps: 60, frameMs: 0, lastRender: 0,
   installEvent: null, loadMs: null, hadController: false
 };
-if (new URLSearchParams(location.search).has('dev')) { window.__S = S; S.snapCam = () => snapCam(); S.fn = { renderCombat: () => renderCombat(), startCombatUI: (o) => startCombatUI(o), showEvent: (a, b) => showEvent(a, b), openShop: (id) => openShop(id, true) }; } // nur für automatische Tests (?dev)
+if (new URLSearchParams(location.search).has('dev')) { window.__S = S; S.snapCam = () => snapCam(); S.fn = { renderCombat: () => renderCombat(), startCombatUI: (o) => startCombatUI(o), showEvent: (a, b) => showEvent(a, b), openShop: (id) => openShop(id, true), gotoArea: (id) => { jumpToLevel(S.game, S.data, id); S.lvl = getLevel(S.data, S.game); S.rc.setPalette(S.data.palettes[S.lvl.palette]); S.held = []; S.queued = null; snapCam(); renderAll(); } }; } // nur für automatische Tests (?dev)
 
 // ---------------------------------------------------------------- Fehlerlog
 const ERR = { list: [], saveT: 0 };
