@@ -3950,7 +3950,7 @@
     }
   ],
   "traps": {
-    "spot": 35,
+    "spot": 45,
     "disarm": 55,
     "kinds": {
       "spikes": {

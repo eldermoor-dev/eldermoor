@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.19.8 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.19.9 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -716,3 +716,10 @@ Nutzer (Foto 0.19.7 / „NUR MIT SIEGEL“ aus der Nähe): „Schrift nicht lesb
 - **Palette erweitert:** 9. Material `blood` (`MATS`, `M.blood = 8`, `PAL_N = 72`); Paletten in game.json brauchen keinen Eintrag (Standard `BLOOD_DEFAULT` 206/38/32). Schattentabelle (`shadeTbl`) und Palettenpuffer auf `PAL_N`. Tests: Palettenindex < 72, Farbanzahl ≤ 72 (vorher 64). **Die Doku „8 Materialien × 8 Stufen = 64 Farben“ oben gilt damit nicht mehr; jetzt 9 × 8 = 72.**
 - `genPlaque`: Schrift in Blutrot (Stufe 5,4–7) mit dunkler Kontur (`ol = max(1, s>>1)`), 5 % Abplatzer, Laufspuren; Größe wie 0.19.5 (Faktor ≤ 3).
 - Dev-Hook `S.fn.gotoArea(id)` (nur `?dev`) für Bildprüfungen.
+
+
+## 0.19.9 (17.11.2026) – Fallen früher erkennbar
+Nutzermeldung: „Ich erkenne Fallen erst nach Auslösung“; nur Wandschrift + 2× ◉ funktionierte. Ursachen (belegt am Code): Bodenspur `genTrap('faint')` war nur 1–2 Pixelreihen hoch; Entdeckung nur durch einen einzigen Wurf (35 % + Talent) und nur 1 Feld voraus (2 Felder erst mit Talent ≥ 40).
+- `genTrap('faint')` (render.js): leicht eingesunkene graue Platte mit Rissen und Staub davor, ohne Ausrufezeichen (das gibt es erst bei „entdeckt“). Im Screenshot ab 2–3 Feldern gut sichtbar; direkt davor (1 Feld) verdeckt die Heldenleiste den Boden.
+- `scanTraps` (logic.js): für alle Gruppen zwei unabhängige Würfe je Falle (2 Felder: `t.far`, 1 Feld: `t.checked`). `data.traps.spot` 35 → 45. Rechnerisch ohne Talent ca. 70 % Entdeckung vor dem Auslösen (1 − 0,55²), Vermutung über das Spielgefühl: Rest bleibt über Bodenspur und ◉ erkennbar.
+- Tests 103 grün. Nur headless geprüft, **nicht auf Gerät getestet**. Offen: Bewertung auf dem S25, ob Platte und Chance passen.

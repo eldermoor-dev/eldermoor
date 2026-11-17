@@ -419,7 +419,7 @@ export function pullBoulder(state, data, b) {
 // ---------- Fallen (0.18.0) ----------
 // Objekt: { id, type: 'trap', x, y, kind } mit Zustand spotted (entdeckt), sprung (ausgelöst), disarmed (entschärft). Versperrt nichts.
 // data.traps = { spot: Grundchance %, disarm: Grundchance %, kinds: { <art>: { name, pct (Schaden in % der Max-LP), rows: 'front'|'all', mp?, text } } }
-// Entdecken: (1) automatisch mit Wurf, wenn die Falle geradeaus liegt (1 Feld; mit Talent ≥ 40: 2 Felder) – ein Wurf je Falle; (2) immer durch ◉ auf das Feld davor (Boden untersuchen);
+// Entdecken: (1) automatisch mit Wurf, wenn die Falle geradeaus liegt: je ein Wurf bei 2 Feldern und bei 1 Feld Abstand; (2) immer durch ◉ auf das Feld davor (Boden untersuchen);
 // (3) der Spieler sieht die feine Spur am Boden oder liest einen Hinweis. Talent „trap“ (Prozent, bester lebender Held) erhöht Entdecken und Entschärfen.
 export const trapSkill = (state, data) => Math.max(0, ...state.heroes.map((h) => (h.hp > 0 ? talentSum(data, h, 'trap') : 0)));
 const trapLive = (o) => o && o.type === 'trap' && !o.sprung && !o.disarmed;
@@ -427,17 +427,19 @@ export const trapAt = (state, x, y) => state.objs.find((o) => trapLive(o) && o.x
 export function scanTraps(state, data) {
   const out = [], cfg = data.traps;
   if (!cfg) return out;
-  const lvl = getLevel(data, state), p = state.player, d = DIRS[p.dir], skill = trapSkill(state, data), range = skill >= 40 ? 2 : 1;
-  for (let k = 1; k <= range; k++) {
+  const lvl = getLevel(data, state), p = state.player, d = DIRS[p.dir], skill = trapSkill(state, data);
+  // 0.19.9: zwei unabhängige Würfe je Falle (bei 2 Feldern Abstand und noch einmal direkt davor), für alle Gruppen – vorher meist erst nach dem Auslösen bemerkt.
+  for (let k = 1; k <= 2; k++) {
     const x = p.x + d.dx * k, y = p.y + d.dy * k;
     if (isWallChar(cellChar(lvl, x, y)) || blockerAt(state, x, y)) break;
     const t = trapAt(state, x, y);
     if (!t || t.spotted || t.checked) continue;
-    t.checked = true;
+    if (k === 2) { if (t.far) continue; t.far = true; } else t.checked = true;
     if (rand(state) * 100 < (cfg.spot || 35) + skill) {
       t.spotted = true;
       const who = state.heroes.filter((h) => h.hp > 0).sort((a, b) => talentSum(data, b, 'trap') - talentSum(data, a, 'trap'))[0];
       out.push(`${who ? who.name : 'Jemand'} bemerkt eine Falle ${k === 1 ? 'direkt voraus' : 'zwei Schritte voraus'}: ${cfg.kinds[t.kind].name}. ◉ entschärft sie.`);
+      break;
     }
   }
   return out;

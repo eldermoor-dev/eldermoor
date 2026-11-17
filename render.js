@@ -949,8 +949,14 @@ function genTrap(mode, seed) {
   const t = mk(255);
   const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
   if (mode === 'faint') {
-    for (const cx of [20, 32, 44]) for (let x = cx - 3; x <= cx + 3; x++) set(x, 62, P('stone', 0.4 + hash(x, 1, seed) * 0.5));
-    for (let x = 14; x <= 50; x++) if (hash(x, 2, seed) > 0.72) set(x, 63, P('stone', 0.8));
+    // 0.19.9 (Nutzer: „Ich erkenne Fallen erst nach Auslösung“): die Bodenspur war nur 1–2 Pixelreihen hoch, praktisch unsichtbar.
+    // Jetzt eine leicht eingesunkene, rissige Platte mit Staub davor: auffällig genug, wer genau hinsieht, aber ohne Ausrufezeichen (das gibt es erst bei „entdeckt“).
+    for (let y = 56; y <= 63; y++) for (let x = 10; x <= 54; x++) {
+      const edge = x === 10 || x === 54 || y === 56;
+      set(x, y, edge ? P('stone', 0.5) : P('stone', 2.1 + hash(x >> 1, y, seed) * 1.5));
+    }
+    for (const cx of [20, 32, 43]) { let x = cx + Math.floor(hash(cx, 5, seed) * 3) - 1; for (let y = 57; y <= 63; y++) { set(x, y, P('stone', 0.3)); if (hash(x, y, seed + 2) > 0.55) x += hash(y, x, seed + 3) > 0.5 ? 1 : -1; } }
+    for (let x = 8; x <= 56; x++) for (let y = 53; y <= 55; y++) if (hash(x, y, seed + 7) > 0.88) set(x, y, P('stone', 4.4));
   } else if (mode === 'seen') {
     for (let x = 12; x <= 52; x++) for (let y = 58; y <= 63; y++) { const edge = x === 12 || x === 52 || y === 58 || y === 63; set(x, y, edge ? P('glow', 6.5) : (x + y) % 4 < 2 ? P('glow', 3.2) : P('stone', 0.6)); }
     for (let y = 30; y <= 50; y++) for (let x = 29; x <= 35; x++) { const w = 3 - Math.floor((y - 30) / 9); if (Math.abs(x - 32) <= Math.max(1, w) && y <= 45) set(x, y, P('glow', 7)); }
