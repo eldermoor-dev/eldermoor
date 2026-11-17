@@ -1167,6 +1167,11 @@ function genGuard(seed, v = 'wacht') {
       if (pr > 3.7 && pr < 4.7) return ['glow', 6.4]; // Siegelkreis
       if (pr <= 3.7 && pr > 2.5) return ['iron', 2.2]; // dunkle Füllung im Kreis
       if (cap(px, py, 50.5, 31, 50.5, 36, 1.6, 1.2) && hash(px, py, seed + 31) > 0.6) return ['blood', 3.6]; // Blut am unteren Klingenteil
+      // 0.19.19 (Nutzer: „Es muss deutlicher werden, dass er das Schwert in den Händen hält“): Panzerfaust umschließt den Griff, Fingerglieder, Daumen, Unterarm
+      { const fd = ell(px, py, 50.5, 41.6, 3.5, 3.1);
+        if (fd <= 1) return fd > 0.78 ? ['ceil', 0.6] : Math.abs(((py - 38.9) % 1.6)) < 0.3 && py > 39 ? ['iron', 6.6] : ['wood', 2.4 - l * 0.8 + n * 0.5]; // dunkler Lederhandschuh, helle Fingerglieder
+        if (cap(px, py, 47.2, 39.6, 49.6, 38.2, 1.0, 0.8)) return ['wood', 3.6]; // Daumen oben auf dem Griff
+        if (cap(px, py, 50.8, 33.8, 50.5, 38.6, 2.5, 2.9)) return ['wood', 1.8 - l * 0.5 + (Math.abs(py - 36) < 0.5 ? 2 : 0)]; } // Handgelenk/Stulpe
       // 0.19.15 (Nutzer: „sieht aus wie eine Eisenstange“): Klinge mit Spitze, Hohlkehle, helle Schneide; geschwungene Parierstange, umwickelter Griff
       if (py >= 3.6 && py <= 36) {
         const hw = py < 9.5 ? 0.15 + (py - 3.6) * 0.36 : 2.3, ax = Math.abs(px - 50.5);
@@ -1182,8 +1187,18 @@ function genGuard(seed, v = 'wacht') {
     else { if (cap(px, py, 51, -0.5, 51, 7, 1.1, 0.2)) return ['iron', 6.4]; if (!turm && ell(px, py, 55.5, 12.5, 5.2, 6.8) <= 1 && px > 52) return ['iron', px > 57.5 ? 6.6 : 5 + n * 0.5]; if (cap(px, py, 51, 6, 51, 63, 0.95, 0.95)) return ['wood', 2.4 - l * 0.5]; }
     // Turmschild links
     if (turm) { const sd = ell(px, py, 13.5, 38.5, 8.2, 17); if (sd <= 1) { if ((Math.abs(px - 13.5) < 1.1 && py > 27 && py < 49) || (Math.abs(py - 37) < 1.1 && Math.abs(px - 13.5) < 5.5)) return ['glow', 4.6]; return sd > 0.72 ? ['iron', 2.2 + n * 0.5] : ['stone', 4 - l + n * 0.9]; } }
+    // 0.19.19 (Nutzer: Ring drohend in der anderen Hand hochhalten, andere Farbe): linker Arm hochgereckt, Faust mit Siegelring in Blau (Material ice, golden war schon genug)
+    if (haupt) {
+      const rr = Math.hypot(px - 11.6, py - 6.6);
+      if (Math.hypot(px - 11.6, py - 6.6 - 0) < 4.4 && rr > 2.5 && !(rr < 3.2 && py > 8.6)) return ['ice', rr < 3.1 ? 6.2 : 7]; // Ring
+      if (ell(px, py, 11.6, 2.4, 1.5, 1.3) <= 1) return ['ice', 7]; // Stein im Ring
+      if (rr <= 2.5 && py < 9.2) return null; // Loch im Ring: Hintergrund bleibt frei
+      const hd = ell(px, py, 11.6, 11.6, 3.5, 3.2);
+      if (hd <= 1) return Math.abs(((px - 8.6) % 1.7)) < 0.3 && py < 12 ? ['iron', 1.6] : ['iron', 5.4 - l * 1.1 + (hd > 0.7 ? -1.2 : 0.4)];
+      if (cap(px, py, 11.2, 14, 9.6, 22.5, 2.6, 3.0) || cap(px, py, 9.6, 22.5, 19.5, 26, 3.0, 3.4)) return A(3.4);
+    }
     // Arme, Schulterplatten, Hände
-    if (cap(px, py, 20.5, 27, 15.8, 39.5, 3.3, 2.8) || cap(px, py, 43.5, 27, 49.8, 40.5, 3.3, 2.8) || ell(px, py, 50.6, 41, 2.6, 2.8) <= 1) return A(3.2);
+    if ((!haupt && cap(px, py, 20.5, 27, 15.8, 39.5, 3.3, 2.8)) || cap(px, py, 43.5, 27, 49.8, 40.5, 3.3, 2.8) || ell(px, py, 50.6, 41, 2.6, 2.8) <= 1) return A(3.2);
     if (ell(px, py, 20, 25.2, 6.6, 4.6) <= 1 || ell(px, py, 44, 25.2, 6.6, 4.6) <= 1) return A(4.8);
     if (haupt && (cap(px, py, 19, 21.5, 14.6, 12.5, 1.8, 0.2) || cap(px, py, 45, 21.5, 49.4, 12.5, 1.8, 0.2) || cap(px, py, 15.5, 25.5, 9.6, 21, 1.5, 0.2) || cap(px, py, 48.5, 25.5, 54.4, 21, 1.5, 0.2))) return ['iron', 5.8 - l * 0.6];
     // Brustpanzer mit Siegel, Gürtel, Wappenrock, Beine, Stiefel

@@ -7,6 +7,7 @@ Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ 
 | Version | Änderungen | Status |
 |---|---|---|
 | 0.19.18 | Truhen neu gezeichnet (gewölbter Deckel, Eisenbänder mit Nieten, Goldschloss, Maserung, 128 px, scharf); Beute in Truhen gekürzt (weniger Gold und Tränke, weniger Ausrüstung, niedrigere Qualitätsstufen); Bodenspur der Fallen dezenter; Tests 103 | headless, Gerät offen |
+| 0.19.19 | Hauptmann: Schwert sichtbar in der Faust (dunkler Handschuh, helle Fingerglieder, Daumen, Stulpe); andere Hand hält drohend einen blauen Ring hoch (Arm gereckt); Tests 103 | headless, Gerät offen |
 | 0.19.17 | Hauptmann: goldener Ring auf der Brust (Mitte) entfernt; Tests 103 | headless, Gerät offen |
 | 0.19.16 | Totenschädel im Siegelkreis am Schwertknauf bekommt blaue Augen; Tests 103 | headless, Gerät offen |
 | 0.19.15 | Hauptmann-Schwert sieht wie ein Schwert aus (Spitze, Hohlkehle, helle Schneide, gebogene Parierstange, umwickelter Griff); Tests 103 | headless, Gerät offen |
