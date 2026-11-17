@@ -665,7 +665,7 @@ Nur headless geprüft (Node 103 Tests, Chrome/Playwright), **nicht auf Gerät ge
 
 ## 0.19.1 – Heldenleiste (17.11.2026)
 - Gerätefoto des Nutzers (0.19.0 installiert, ohne Text): in der Heldenleiste waren Namen abgeschnitten („Berenn · vo…“, „Odalys · hi…“) und die Werte brachen in eine dritte Zeile um. Behoben: „vorn/hinten“ steht klein unter dem Porträt, die Einheit entfällt (LP · Ressource; Mana blau, Ausdauer gelb), Wertezeile ohne Umbruch. Headless bei 780×360 gesehen, **nicht auf Gerät getestet**.
-- Auf demselben Foto, NICHT geändert (unklar, ob es stört – nachgefragt): außerhalb des Kampfes verdecken sich die drei Gegner einer Gruppe im engen Gang; im Protokoll steht eine Rast, während Gegner sichtbar sind (ob die Rast an dieser Stelle stattfand, ist nicht belegt; `restThreat` prüft Sicht und 10 Pfadfelder).
+- Auf demselben Foto, NICHT geändert (unklar, ob es stört – nachgefragt): außerhalb des Kampfes verdecken sich die drei Gegner einer Gruppe im engen Gang; im Protokoll steht eine Rast, während Gegner sichtbar sind (ob die Rast an dieser Stelle stattfand, ist nicht belegt; `restThreat` prüft Sicht und 10 Pfadfelder). Geklärt 17.11.2026: Nutzer hat dort nicht gerastet (Meldung stammte von früher) – kein Fehler der Rastregel.
 
 ## 0.19.2 – Gegnergruppen (17.11.2026)
 - Nutzer zum Gerätefoto von 0.19.0: „Gegner überschneiden sich und sehen in unterschiedliche Richtungen.“
