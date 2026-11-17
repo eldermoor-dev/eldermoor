@@ -672,6 +672,7 @@ Nur headless geprüft (Node 103 Tests, Chrome/Playwright), **nicht auf Gerät ge
 - Sumpfwolf neu von vorn gezeichnet (`genWolf`: gesenkter Kopf, glühende Augen, Fänge, gesträubte Schultern, Moos), vorher Profil nach links. Alle Gegner blicken jetzt zur Gruppe.
 - Gruppen kleiner je nach Größe (`GROUP_SIZE` 2: 0,72, 3: 0,6; Wolf ×1,25) und Abstände neu (`groupOffsets`: eng 0,38/0,31, offen 0,46/0,42). Headless im Moorpfad (Wolf–Moorlicht–Wolf) in Erkundung und Kampf ohne Überschneidung gesehen, **nicht auf Gerät getestet**. Risiko: Gruppen wirken kleiner (Nutzer fand Gruppen in 0.16.4 zu klein).
 - Nutzerwunsch (17.11.2026): im Chat keine Codeblöcke mehr (z. B. Testlisten), nur auf Aufforderung; sonst Stichwortlisten.
+- Gerätetests laufen über die abhakbare Seite „Eldermoor Testliste“ (Artifact https://claude.ai/artifact/XeP4NUhR6ckPcZZtTbyjYv, Quelle im Scratchpad testliste.html). Punkt antippen = ok (verschwindet), ✗ = Fehler mit Notiz. Ergebnisse stehen in der Artifact-Datenbank, Sammlung `results` (Dokument-ID = Testpunkt-ID, Felder s = ok|fail, note, t) und sind per ArtifactData lesbar. Neue Testpunkte: Seite mit neuen IDs neu veröffentlichen (gleiche URL); erledigte IDs bleiben erhalten.
 - Nutzerwunsch (17.11.2026, grundsätzlich): Testfragen und Testanleitungen immer als Stichwortliste in sinnvoller Abarbeitungsreihenfolge, wenn möglich zum Abhaken (Kästchen), ohne Codeblock.
 
 ## 0.19.3 – Wölfe größer (17.11.2026)
