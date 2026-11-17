@@ -1160,10 +1160,11 @@ function genGuard(seed, v = 'wacht') {
     // Waffe
     if (haupt) {
       // 0.19.13 (Nutzer: „Schwert unten zu groß, Totenkopf unten am Griff in einem Kreis“): kleineres Schwert, Totenschädel im Siegelkreis am Knauf
-      const pr = Math.hypot(px - 50.5, py - 51);
-      if (ell(px, py, 49.5, 50.4, 0.95, 1.0) <= 1 || ell(px, py, 51.5, 50.4, 0.95, 1.0) <= 1) return ['ice', 7]; // 0.19.16: blaue Augen im Schädel (Nutzer)
-      if (Math.abs(px - 50.5) < 0.4 && py > 51.6 && py < 52.5) return ['ceil', 0]; // Nase
-      if (ell(px, py, 50.5, 50.6, 2.5, 2.6) <= 1 || (Math.abs(px - 50.5) < 1.3 && py > 52.6 && py < 54.6 && (Math.floor((px - 49) * 2) % 2 === 0 || py > 53.9))) return ['glow', 6.8]; // Schädel, Kiefer mit Zähnen
+      const qx = 50.5 + (px - 50.5) / 0.62, qy = 51 + (py - 51) / 0.62; // 0.19.23: Knauf kleiner (Nutzer: „bleibt, aber kleiner“)
+      const pr = Math.hypot(qx - 50.5, qy - 51);
+      if (ell(qx, qy, 49.5, 50.4, 0.95, 1.0) <= 1 || ell(qx, qy, 51.5, 50.4, 0.95, 1.0) <= 1) return ['ice', 7]; // 0.19.16: blaue Augen im Schädel (Nutzer)
+      if (Math.abs(qx - 50.5) < 0.4 && qy > 51.6 && qy < 52.5) return ['ceil', 0]; // Nase
+      if (ell(qx, qy, 50.5, 50.6, 2.5, 2.6) <= 1 || (Math.abs(qx - 50.5) < 1.3 && qy > 52.6 && qy < 54.6 && (Math.floor((qx - 49) * 2) % 2 === 0 || qy > 53.9))) return ['glow', 6.8]; // Schädel, Kiefer mit Zähnen
       if (pr > 3.7 && pr < 4.7) return ['glow', 6.4]; // Siegelkreis
       if (pr <= 3.7 && pr > 2.5) return ['iron', 2.2]; // dunkle Füllung im Kreis
       if (cap(px, py, 50.5, 31, 50.5, 36, 1.6, 1.2) && hash(px, py, seed + 31) > 0.6) return ['blood', 3.6]; // Blut am unteren Klingenteil
