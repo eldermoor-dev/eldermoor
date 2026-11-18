@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.22.1 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.22.2 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -869,3 +869,10 @@ Nutzer-Screenshots 17:22–17:26. Nur headless geprüft (Node 107 Tests, Screens
 - **Schriftzüge:** ruhigere Blutschrift (weniger Drehung/Versatz, gleichmäßigere Striche, seltener Abplatzer/Gerinnsel, kürzere Tropfen, nie in die nächste Zeile) – Fund „aus der Nähe zu undeutlich“; Türsturz der offenen Tür schneidet Schrift und Tropfen an der Unterkante ab – Fund „Schrift verläuft ins Leere“ (KAPELLE). Wandtafeln lassen sich jetzt auch schräg antippen (sobald ihre Vorderseite sichtbar ist) und mit ◉ vom eigenen Feld aus lesen.
 - **Gegnergröße** (Fund: im 1-Feld-Gang werden Gruppen klein, beim Tod eines Gegners größer): Alle Figuren haben jetzt dieselbe Größe wie Einzelgegner. Offene Fläche: nebeneinander (Abstand 0,62 / 0,56). Enger Gang: zwei vorn versetzt, die dritte dahinter; leichte Vergrößerung der hinteren gleicht die Perspektive aus. `GROUP_SIZE` ist ungenutzt.
 - Beobachtung (nicht geändert): Im Inventar-Screenshot standen viele gleiche „Eichenstab [Gut]“ einzeln. Erzeugte Beute stapelt nicht (jedes Stück eigene Kennung). Zusammenfassen gleicher Stücke wäre möglich.
+
+## 0.22.2 (18.11.2026) – Beute stapeln, gute Beute seltener
+Nutzer: „Stapeln und zu viel gute Beute. Besondere Ausrüstung sollte Ausnahme sein.“ Nur headless geprüft (107 Tests, Screenshot Inventar), **nicht auf Gerät getestet**.
+- **Stapeln (nur Anzeige):** Inventar und Verkaufsliste fassen gleiche erzeugte Stücke (gleicher Name, Qualität, Werte, Berufe) zu einer Zeile „× n“ zusammen (`stackedInv` in main.js); Ausrüsten/Verkaufen nimmt das erste Stück. Spielstand unverändert (jedes Stück behält seine Kennung).
+- **Qualität:** Gewichte Gewöhnlich/Gut/Selten/Episch 55/28/14/3 → 74/19/6/1.
+- **Gegnerbeute halbiert:** Wolf 4 %, Kultist 5 %, Moorlicht 3 %, Skelett 4 %, Nebelgeist 4 %, Kultwächter/Kultpriester/Turmwache 8 %. Bosse: Boost 2 → 1 (Moorschrat, Hauptmann, Grubenschrat), Nebelhüter 3 → 2. Truhen: Illusionstruhe Schratgruben und Thronsaal-Truhe Boost 2 → 1.
+- SIM.md/BALANCE.md neu: klug 100 %, Nebelhüter 87 % im 1. Versuch (unverändert gegenüber 0.22.1).

@@ -703,7 +703,7 @@
       ],
       "gearDrop": {
         "chance": 100,
-        "boost": 2
+        "boost": 1
       },
       "drops": [
         {
@@ -732,7 +732,7 @@
         "ice": 25
       },
       "gearDrop": {
-        "chance": 8
+        "chance": 4
       },
       "onHit": {
         "status": "bleed",
@@ -761,7 +761,7 @@
         "fire": -25
       },
       "gearDrop": {
-        "chance": 10
+        "chance": 5
       }
     },
     "moorlicht": {
@@ -783,7 +783,7 @@
         "lightning": -50
       },
       "gearDrop": {
-        "chance": 5
+        "chance": 3
       }
     },
     "skeleton": {
@@ -800,7 +800,7 @@
         "fire": -25
       },
       "gearDrop": {
-        "chance": 8
+        "chance": 4
       }
     },
     "kultwaechter": {
@@ -822,7 +822,7 @@
         "lightning": -25
       },
       "gearDrop": {
-        "chance": 15
+        "chance": 8
       },
       "guard": true
     },
@@ -881,7 +881,7 @@
       ],
       "gearDrop": {
         "chance": 100,
-        "boost": 2
+        "boost": 1
       },
       "drops": [
         {
@@ -965,7 +965,7 @@
       ],
       "gearDrop": {
         "chance": 100,
-        "boost": 2
+        "boost": 1
       },
       "drops": [
         {
@@ -1008,7 +1008,7 @@
         "fire": 25
       },
       "gearDrop": {
-        "chance": 8
+        "chance": 4
       }
     },
     "kultpriester": {
@@ -1043,7 +1043,7 @@
         "lightning": -25
       },
       "gearDrop": {
-        "chance": 15
+        "chance": 8
       }
     },
     "turmwache": {
@@ -1065,7 +1065,7 @@
         "lightning": -25
       },
       "gearDrop": {
-        "chance": 15
+        "chance": 8
       },
       "onHit": {
         "status": "curse",
@@ -1161,7 +1161,7 @@
       ],
       "gearDrop": {
         "chance": 100,
-        "boost": 3
+        "boost": 2
       },
       "intro": {
         "title": "Der Nebelhüter",
@@ -2631,7 +2631,7 @@
             },
             {
               "gear": {
-                "boost": 2
+                "boost": 1
               }
             }
           ]
@@ -2923,7 +2923,7 @@
             },
             {
               "gear": {
-                "boost": 2
+                "boost": 1
               }
             }
           ]
@@ -3335,7 +3335,7 @@
     {
       "id": "common",
       "name": "Gewöhnlich",
-      "weight": 55,
+      "weight": 74,
       "statBonus": 0,
       "affixes": 0,
       "color": "#cfc6b4"
@@ -3343,7 +3343,7 @@
     {
       "id": "fine",
       "name": "Gut",
-      "weight": 28,
+      "weight": 19,
       "statBonus": 1,
       "affixes": 0,
       "color": "#6fbf6f"
@@ -3351,7 +3351,7 @@
     {
       "id": "rare",
       "name": "Selten",
-      "weight": 14,
+      "weight": 6,
       "statBonus": 1,
       "affixes": 1,
       "color": "#6fa8ff"
@@ -3359,7 +3359,7 @@
     {
       "id": "epic",
       "name": "Episch",
-      "weight": 3,
+      "weight": 1,
       "statBonus": 2,
       "affixes": 2,
       "color": "#c27bff"

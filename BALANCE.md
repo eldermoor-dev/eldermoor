@@ -240,10 +240,10 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 
 | Qualität | Gewicht | Anteil | Bonus Hauptwert | Zufallseigenschaften |
 |---|---|---|---|---|
-| Gewöhnlich | 55 | 55 % | +0 | 0 |
-| Gut | 28 | 28 % | +1 | 0 |
-| Selten | 14 | 14 % | +1 | 1 |
-| Episch | 3 | 3 % | +2 | 2 |
+| Gewöhnlich | 74 | 74 % | +0 | 0 |
+| Gut | 19 | 19 % | +1 | 0 |
+| Selten | 6 | 6 % | +1 | 1 |
+| Episch | 1 | 1 % | +2 | 2 |
 
 | Eigenschaft | Wirkung | Platz |
 |---|---|---|
@@ -255,18 +255,18 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 
 | Gegner | Ausrüstung | Unikat |
 |---|---|---|
-| Moorschrat | 100 %, Boost 2 | Schratdorn oder Wurzelstab (100 %, nur einmal) |
-| Sumpfwolf | 8 % | – |
-| Moorkultist | 10 % | – |
-| Moorlicht | 5 % | – |
-| Gruftskelett | 8 % | – |
-| Kultwächter | 15 % | – |
-| Kultwächter-Hauptmann | 100 %, Boost 2 | Siegelpanzer oder Nebelmantel (100 %, nur einmal) |
-| Moorschrat | 100 %, Boost 2 | Schratdorn oder Wurzelstab (100 %, nur einmal) |
-| Nebelgeist | 8 % | – |
-| Kultpriester | 15 % | – |
-| Turmwache | 15 % | – |
-| Nebelhüter | 100 %, Boost 3 | – |
+| Moorschrat | 100 %, Boost 1 | Schratdorn oder Wurzelstab (100 %, nur einmal) |
+| Sumpfwolf | 4 % | – |
+| Moorkultist | 5 % | – |
+| Moorlicht | 3 % | – |
+| Gruftskelett | 4 % | – |
+| Kultwächter | 8 % | – |
+| Kultwächter-Hauptmann | 100 %, Boost 1 | Siegelpanzer oder Nebelmantel (100 %, nur einmal) |
+| Moorschrat | 100 %, Boost 1 | Schratdorn oder Wurzelstab (100 %, nur einmal) |
+| Nebelgeist | 4 % | – |
+| Kultpriester | 8 % | – |
+| Turmwache | 8 % | – |
+| Nebelhüter | 100 %, Boost 2 | – |
 | Truhenmaul | 100 %, Boost 1 | – |
 
 ## Ausrüstungseffekte und Sets

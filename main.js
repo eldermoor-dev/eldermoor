@@ -10,7 +10,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPort
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.22.1';
+const VERSION = '0.22.2';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -922,7 +922,7 @@ function openShop(shopId, greet) {
       return `<div class="row nw"><div><b>${itemIcon(e.item, it)}${esc(it.name)}</b>${have ? ` <span class="muted">(im Beutel: ${have})</span>` : ''}<div class="muted">${esc(it.desc)}</div></div><button class="mb" data-m="buy:${e.item}" ${g.gold >= p ? '' : 'disabled'}>Kaufen (${p} G)</button></div>`;
     }).join('');
   } else {
-    const rows = Object.entries(g.inv).filter(([id, n]) => n > 0 && sellPrice(g, d, id) != null);
+    const rows = stackedInv(g, d, (id) => sellPrice(g, d, id) != null).map((gr) => [gr.id, gr.n]);
     html += rows.length ? rows.map(([id, n]) => {
       const it = itemDef(g, d, id), p = sellPrice(g, d, id), sure = S.shopSure === id;
       return `<div class="row nw"><div><b>${itemIcon(id, it)}${qTag(id, it)}</b> × ${n}<div class="muted">${esc(it.desc)}</div></div><button class="mb${sure ? ' primary' : ''}" data-m="shopsell:${id}">${sure ? 'Wirklich verkaufen' : 'Verkaufen'} (${p} G)</button></div>`;
@@ -972,15 +972,28 @@ function gearDelta(h, id) {
   const d = [['atk', 'Angriff'], ['def', 'Verteidigung'], ['init', 'Init.']].map(([k, n]) => [(it[k] || 0) - (cur ? (cur[k] || 0) : 0), n]).filter(([v]) => v !== 0);
   return d.length ? ' · ' + d.map(([v, n]) => `${n} ${v > 0 ? '+' : '−'}${Math.abs(v)}`).join(', ') : ' · gleich';
 }
+// 0.22.2 (Nutzer: „Stapeln“): gleiche erzeugte Stücke (gleicher Name, Qualität, Werte) als eine Zeile „× n“; Knöpfe wirken auf das erste Stück.
+function stackedInv(g, d, filter = () => true) {
+  const groups = new Map();
+  for (const [id, n] of Object.entries(g.inv)) {
+    if (!(n > 0) || !filter(id)) continue;
+    const it = itemDef(g, d, id);
+    const key = /^g\d+$/.test(id) ? ['S', it.base, it.q, it.name, it.atk, it.def, it.init, (it.classes || []).join()].join('|') : id;
+    const gr = groups.get(key);
+    if (gr) { gr.n += n; gr.ids.push(id); } else groups.set(key, { id, n, ids: [id] });
+  }
+  return [...groups.values()];
+}
 function openInventory() {
   const g = S.game, d = S.data;
   const rank = { consumable: 0, supply: 1, tool: 1, quest: 2, equip: 3 };
-  const items = Object.entries(g.inv).filter(([, n]) => n > 0).sort((a, b) => (isNew(g, b[0]) - isNew(g, a[0])) || (rank[itemDef(g, d, a[0]).kind] - rank[itemDef(g, d, b[0]).kind]) || itemDef(g, d, a[0]).name.localeCompare(itemDef(g, d, b[0]).name, 'de'));
+  const anyNew = (gr) => gr.ids.some((x) => isNew(g, x));
+  const items = stackedInv(g, d).map((gr) => [gr.id, gr.n, anyNew(gr)]).sort((a, b) => (b[2] - a[2]) || (rank[itemDef(g, d, a[0]).kind] - rank[itemDef(g, d, b[0]).kind]) || itemDef(g, d, a[0]).name.localeCompare(itemDef(g, d, b[0]).name, 'de'));
   let html = `<h2>Inventar</h2><p>Gold: <b>${g.gold}</b></p>`;
-  html += items.length ? items.map(([id, n]) => {
+  html += items.length ? items.map(([id, n, nw]) => {
     const it = itemDef(g, d, id);
     const use = it.kind === 'consumable' && it.heal && !g.combat ? `<button class="mb" data-m="use:${id}">Benutzen</button>` : it.kind === 'supply' && !g.combat ? '<button class="mb" data-m="rest">Rasten</button>' : it.kind === 'equip' && !g.combat ? `<button class="mb" data-m="eqsel:${id}">Ausrüsten</button>` : '';
-    return `<div class="row nw${S.invEquip === id ? ' sel' : ''}"><div><b>${itemIcon(id, it)}${qTag(id, it)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}${isNew(g, id) ? ' <span class="newtag">● neu</span>' : ''}<div class="muted">${esc(it.desc)}</div></div>${use}</div>`;
+    return `<div class="row nw${S.invEquip === id ? ' sel' : ''}"><div><b>${itemIcon(id, it)}${qTag(id, it)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}${nw ? ' <span class="newtag">● neu</span>' : ''}<div class="muted">${esc(it.desc)}</div></div>${use}</div>`;
   }).join('') : '<p class="muted">Nichts dabei.</p>';
   if (S.invEquip && itemDef(g, d, S.invEquip) && (g.inv[S.invEquip] || 0) > 0) {
     html += `<h3>${qTag(S.invEquip, itemDef(g, d, S.invEquip))} an wen?</h3><div class="acts">` + g.heroes.map((h, i) =>
