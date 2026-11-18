@@ -319,6 +319,8 @@ export function markSeen(state, data) {
   }
 }
 // Illusionswand (0.22.0): { type: 'illusion', x, y } auf einer Bodenzelle; sieht aus wie Mauer, ist begehbar. found = einmal durchschritten (danach offen sichtbar).
+// Teleportfeld (0.23.0): { type: 'teleport', x, y, to: {x, y, dir?}, look: 'visible'|'hidden', open? } – open = abgeschaltet (z. B. per Hebel). Versperrt nichts.
+export const teleportAt = (state, x, y) => state.objs.find((o) => o.type === 'teleport' && !o.open && o.x === x && o.y === y) || null;
 export const illusionAt = (state, x, y) => state.objs.find((o) => o.type === 'illusion' && !o.found && o.x === x && o.y === y) || null;
 
 // ---------- Bewegung ----------
@@ -365,6 +367,13 @@ export function tryMove(state, data, rel) {
   markSeen(state, data);
   const res = { moved: true, events: [] };
   if (ill) res.events.push({ type: 'illusion', id: ill.id, msg: ill.msg || 'Ihr geht durch die Wand hindurch – sie war nur ein Trugbild!' });
+  const tp = teleportAt(state, nx, ny);
+  if (tp) { // 0.23.0: Teleportfeld – sichtbar (Lichtkreis, Meldung) oder versteckt (keine Meldung, nur andere Umgebung/Kompass)
+    tp.used = true;
+    p.x = tp.to.x; p.y = tp.to.y; if (tp.to.dir != null) p.dir = tp.to.dir;
+    markSeen(state, data);
+    res.events.push({ type: 'teleport', id: tp.id, hidden: tp.look === 'hidden', msg: tp.look === 'hidden' ? '' : tp.msg || 'Ein Sog erfasst euch – plötzlich steht ihr woanders!' });
+  }
   if (tr0) res.events.push({ type: 'trap', id: tr0.id, msgs: springTrap(state, data, tr0) });
   const pm = [...pushNotes, ...updatePlates(state, data)];
   if (pushNotes.length || pm.length) res.events.push({ type: 'mech', msgs: pm, push: true });
@@ -624,6 +633,8 @@ export function interact(state, data) {
     const tr = trapAt(state, f.x, f.y);
     if (tr && tr.spotted) return disarmTrap(state, data, tr);
     if (tr) { tr.spotted = true; tr.checked = true; return { msg: `Du untersuchst den Boden: eine Falle (${data.traps.kinds[tr.kind].name})! Noch einmal ◉ entschärft sie.`, sfx: 'ui' }; }
+    const nc = state.objs.find((q) => q.type === 'niche' && q.face === state.player.dir && q.x === state.player.x && q.y === state.player.y); // 0.23.0: Wandnische vor der Nase
+    if (nc) { if (nc.taken || !(nc.loot || []).length) return { msg: nc.empty || 'Die Nische ist leer. Nur Staub und Spinnweben.', sfx: 'ui' }; nc.taken = true; return { msg: `${nc.text ? nc.text + ' ' : ''}In der Nische liegt: ${addLoot(state, data, nc.loot)}.`, sfx: 'chest', changed: true, long: true }; }
     const ws = wallSignAhead(state, data);
     if (ws) return { msg: ws.text, sfx: 'ui', long: true };
     const hs = state.objs.find((q) => q.type === 'sign' && q.face != null && q.x === state.player.x && q.y === state.player.y); // 0.22.1: Tafel am eigenen Feld (seitlich) ist auch lesbar
@@ -643,6 +654,12 @@ export function interact(state, data) {
     return r;
   }
   if (o.type === 'door') {
+    if (o.locked && o.bolt != null) { // 0.23.0: Riegeltür – nur von der Riegelseite zu öffnen (Abkürzung zurück)
+      const p = state.player, side = p.x - o.x === DIRS[o.bolt].dx && p.y - o.y === DIRS[o.bolt].dy;
+      if (!side) return { msg: 'Die Tür ist von der anderen Seite verriegelt. Kein Schloss, kein Griff – nur Holz.', sfx: 'bump' };
+      o.locked = false; o.open = true;
+      return { msg: 'Ihr schiebt den schweren Riegel zurück. Die Tür bleibt nun offen – ein kurzer Weg zurück.', sfx: 'unlock', changed: true };
+    }
     if (o.locked) {
       if ((state.inv[o.key] || 0) > 0) {
         o.locked = false; o.open = true;
@@ -1530,7 +1547,7 @@ function enemyCast(state, data, ei, e, en, sp, msgs, opts) {
       if (d > cap) { d = cap; tr.total = d; tr.cap = cap; }
       d = manaShield(data, t, d, msgs);
       t.hp = Math.max(0, t.hp - d);
-      msgs.push(`${sp.name} trifft ${t.name} für ${d} Schaden (Zauber: halbe Rüstung${c.defending[ti] ? ', verteidigt: halber Schaden' : ''}).${SEP}${explain(tr)}`);
+      msgs.push(`${sp.name} trifft ${t.name} für ${d} ${sp.element && data.elements[sp.element] ? data.elements[sp.element].name + 'schaden' : 'Schaden'} (Zauber: halbe Rüstung${c.defending[ti] ? ', verteidigt: halber Schaden' : ''}).${SEP}${explain(tr)}`);
       sfx = 'hurt';
       if (t.hp === 0) { msgs.push(`${t.name} sinkt bewusstlos zu Boden.`); delete c.status['h' + ti]; continue; }
     }
@@ -1854,6 +1871,7 @@ export function analyzeLevel(data, levelId) {
   const have = new Set();
   const opened = new Set();
   const gatesOpen = new Set(); // Gitter, deren Hebel erreichbar ist
+  const boltOpen = new Set(); // Riegeltüren, deren Riegelseite erreicht wurde
   const bfs = () => {
     const seen = new Set([`${lvl.start.x},${lvl.start.y}`]);
     const q = [[lvl.start.x, lvl.start.y]];
@@ -1863,7 +1881,10 @@ export function analyzeLevel(data, levelId) {
         const nx = x + d.dx, ny = y + d.dy, k = `${nx},${ny}`;
         if (seen.has(k) || cellChar(lvl, nx, ny) !== '.') continue;
         const door = doors.find((o) => o.x === nx && o.y === ny);
-        if (door && door.locked && !have.has(door.key)) continue;
+        if (door && door.locked && door.bolt != null) { if (!boltOpen.has(door.id) && !(x - nx === DIRS[door.bolt].dx && y - ny === DIRS[door.bolt].dy)) continue; }
+        else if (door && door.locked && !have.has(door.key)) continue;
+        const tp = lvl.objects.find((o) => o.type === 'teleport' && o.x === nx && o.y === ny && !gatesOpen.has(o.id));
+        if (tp) { const tk = `${tp.to.x},${tp.to.y}`; seen.add(k); if (!seen.has(tk)) { seen.add(tk); q.push([tp.to.x, tp.to.y]); } continue; }
         if (chests.some((o) => o.x === nx && o.y === ny)) continue;
         if (lvl.objects.some((o) => (o.type === 'lever' || ((o.type === 'gate' || o.type === 'secret') && !gatesOpen.has(o.id))) && o.x === nx && o.y === ny)) continue;
         seen.add(k); q.push([nx, ny]);
@@ -1878,6 +1899,7 @@ export function analyzeLevel(data, levelId) {
     for (const lv of lvl.objects.filter((o) => o.type === 'lever')) {
       if (!gatesOpen.has(lv.gate) && DIRS.some((d) => reach.has(`${lv.x + d.dx},${lv.y + d.dy}`))) { gatesOpen.add(lv.gate); changed = true; }
     }
+    for (const d of doors.filter((o) => o.locked && o.bolt != null)) { if (!boltOpen.has(d.id) && reach.has(`${d.x + DIRS[d.bolt].dx},${d.y + DIRS[d.bolt].dy}`)) { boltOpen.add(d.id); changed = true; } }
     for (const pl of lvl.objects.filter((o) => o.type === 'plate')) { // Druckplatte: erreichbar = Ziel lässt sich öffnen (Steine sind schieb- und ziehbar)
       if (!gatesOpen.has(pl.gate) && reach.has(`${pl.x},${pl.y}`)) { gatesOpen.add(pl.gate); changed = true; }
     }
@@ -1892,7 +1914,7 @@ export function analyzeLevel(data, levelId) {
   const reach = bfs();
   const unreachableExits = exits.filter((o) => !reach.has(`${o.x},${o.y}`)).map((o) => o.id);
   const unreachableChests = chests.filter((c) => !opened.has(c.id)).map((c) => c.id);
-  const lockedNoKey = doors.filter((d) => d.locked && !have.has(d.key)).map((d) => d.id);
+  const lockedNoKey = doors.filter((d) => d.locked && d.bolt == null && !have.has(d.key)).map((d) => d.id);
   return {
     ok: exits.length > 0 && !unreachableExits.length && !unreachableChests.length && !lockedNoKey.length,
     reachable: reach.size, unreachableExits, unreachableChests, lockedNoKey, keys: [...have]

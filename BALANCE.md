@@ -42,6 +42,7 @@ Gegner (EP: jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die vol
 | Turmwache | 95 | 17 | 8 | 4 | 100 | 18 | zielt auf die Hinterreihe; Wache: deckt Verbündete (−25 % Schaden); Schildstoß jeden 3. Zug, angekündigt (160 %); Treffer: Verflucht 30 % |
 | Nebelhüter | 480 | 26 | 8 | 6 | 320 | 80 | Zaubert: Nebelspeer (jeden 3. Zug, angekündigt); Boss, Phasen: Nebelwand ab ≤ 66 % LP (Angriff 27), Sturm der Schleier ab ≤ 33 % LP (Angriff 28) |
 | Truhenmaul | 60 | 12 | 5 | 7 | 120 | 45 | Zuschnappen jeden 3. Zug, angekündigt (170 %); Treffer: Blutung 30 % |
+| Brandmagier | 70 | 17 | 3 | 7 | 110 | 20 | zielt auf die Hinterreihe; Zaubert: Feuerball (jeden 4. Zug, angekündigt), Feuerpfeil (jeden 2. Zug) |
 
 ## Rassen (Modifikatoren)
 
@@ -268,6 +269,7 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 | Turmwache | 8 % | – |
 | Nebelhüter | 100 %, Boost 2 | – |
 | Truhenmaul | 100 %, Boost 1 | – |
+| Brandmagier | 8 % | – |
 
 ## Ausrüstungseffekte und Sets
 

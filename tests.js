@@ -28,7 +28,7 @@ export async function runTests(data, env = {}) {
       for (const o of lvl.objects) {
         assert(!ids.has(o.id), `${id}: doppelte Objekt-ID ${o.id}`); ids.add(o.id);
         assert(L.cellChar(lvl, o.x, o.y) === '.', `${id}: ${o.id} liegt nicht auf Boden`);
-        if (o.type === 'door' && o.locked) assert(data.items[o.key], `${id}: ${o.id} Schlüssel ${o.key} unbekannt`);
+        if (o.type === 'door' && o.locked && o.bolt == null) assert(data.items[o.key], `${id}: ${o.id} Schlüssel ${o.key} unbekannt`);
         if (o.type === 'enemy') assert(data.enemies[o.kind], `${id}: Gegnertyp ${o.kind} unbekannt`);
         if (o.type === 'chest') for (const e of o.loot || []) if (e.item) assert(data.items[e.item], `${id}: Beute ${e.item} unbekannt`);
       }
@@ -490,13 +490,13 @@ export async function runTests(data, env = {}) {
   });
 
   await test('Ausgang (0.16.4): erstes Betreten = Abschluss, danach kurzer Hinweis', () => {
-    const s = fresh(9); L.jumpToLevel(s, data, 'nebelturm');
-    put(s, 23, 12, 1);
+    const s = fresh(9); L.jumpToLevel(s, data, 'festung1'); s.objs.forEach((o) => { if (o.type === 'enemy') o.dead = true; });
+    put(s, 31, 7, 1);
     const a = L.tryMove(s, data, 'f'); assert(a.events.some((e) => e.type === 'exit'), 'erstes Mal: exit ' + JSON.stringify(a));
-    put(s, 23, 12, 1);
+    put(s, 31, 7, 1);
     const b = L.tryMove(s, data, 'f'); assert(b.events.some((e) => e.type === 'exitAgain') && !b.events.some((e) => e.type === 'exit'), 'danach: exitAgain ' + JSON.stringify(b));
-    const t = data.levels.nebelturm.objects.find((o) => o.id === 'exit_turm');
-    assert(t && /späteren Version/.test(t.again), 'Turm-Ausgang hat Hinweistext');
+    const t = data.levels.festung1.objects.find((o) => o.id === 'exit_festung');
+    assert(t && /späteren Version/.test(t.again), 'Festungs-Ausgang hat Hinweistext');
   });
 
   await test('Runenstein (0.16.5): versperrt den Weg, Inschrift lesbar, alter Ausgang verschwindet aus alten Ständen', () => {
@@ -1283,7 +1283,7 @@ export async function runTests(data, env = {}) {
   });
 
   await test('Ankunft (0.16.9): nach jedem Gebietswechsel blickt die Gruppe nie gegen eine Wand', () => {
-    for (const lvl of Object.values(data.levels)) for (const o of lvl.objects) if (o.to) {
+    for (const lvl of Object.values(data.levels)) for (const o of lvl.objects) if (o.to && o.type === 'stairs') {
       const s = fresh(68); s.objs.push({ id: 'tmp_st', type: 'stairs', x: 1, y: 1, to: o.to });
       const r = L.changeArea(s, data, 'tmp_st'); assert(r.ok, o.id + ' erreichbar');
       const d = [[0, -1], [1, 0], [0, 1], [-1, 0]][s.player.dir];
@@ -1342,7 +1342,7 @@ export async function runTests(data, env = {}) {
 
   await test('Schilder (0.16.14): Tafelbreite nie über 176, Schriftfaktor 2–4, kurze Türtitel groß', () => {
     for (const lvl of Object.values(data.levels)) for (const o of lvl.objects) {
-      if (!o.title || (o.type !== 'sign' && o.type !== 'door')) continue;
+      if (!o.title || o.deco || (o.type !== 'sign' && o.type !== 'door')) continue;
       const st = PLAQUE_STYLES[o.style || 'wood'];
       const m = plaqueMetrics(o.title, o.type === 'door' ? 'door' : 'wall', st);
       assert(m.w <= 176 && m.s >= 2 && m.s <= 4, `${o.id}: Breite ${m.w}, Faktor ${m.s}`);
@@ -1608,7 +1608,7 @@ export async function runTests(data, env = {}) {
     const toEnemy = (s) => { let g = 0; while (L.currentActor(s) && L.currentActor(s).side === 'h' && g++ < 20) L.heroAction(s, data, { type: 'defend' }); return L.currentActor(s); };
     // Nebelgeist: jeder 2. Zug Frosthauch (trifft immer)
     let s = mk(['nebelgeist'], 11), casts = 0, all = [];
-    for (let n = 0; n < 6 && s.combat && !s.combat.over; n++) { if (!toEnemy(s)) break; const r = L.enemyStep(s, data, {}); all.push(...r.msgs); if (r.msgs.some((m) => /wirkt Frosthauch/.test(m))) { casts++; assert(r.msgs.some((m) => /Frosthauch trifft .* für \d+ Schaden/.test(m)), 'Zauber trifft immer'); } }
+    for (let n = 0; n < 6 && s.combat && !s.combat.over; n++) { if (!toEnemy(s)) break; const r = L.enemyStep(s, data, {}); all.push(...r.msgs); if (r.msgs.some((m) => /wirkt Frosthauch/.test(m))) { casts++; assert(r.msgs.some((m) => /Frosthauch trifft .* für \d+ \w*[Ss]chaden/.test(m)), 'Zauber trifft immer'); } }
     assert(casts >= 2, 'Nebelgeist zaubert regelmäßig: ' + casts);
     assert(s.bestiary.nebelgeist.cast === true, 'Bestiarium merkt den Zauber');
     // Kultpriester heilt verletzte Verbündete
@@ -1817,7 +1817,6 @@ export async function runTests(data, env = {}) {
     });
   }
 
-  const failed = results.filter((r) => !r.ok).length;
   await test('Talente (0.17.0): Daten vollständig – 6 Berufe × 3 Zweige × 4 Talente, Freischaltungen existieren', () => {
     const FX = new Set(['hp', 'mp', 'atk', 'def', 'init', 'crit', 'dodge', 'resist', 'gold', 'abil', 'soak', 'heal', 'regen', 'backfull', 'trap', 'lock', 'secret', 'haggle', 'lifesteal', 'taunt', 'aura_atk', 'firstcrit', 'noambush', 'loot_potion', 'postheal', 'aura_soak', 'burnhit', 'fireburn', 'frostbite', 'manashield', 'pierce', 'opener', 'immune_poison', 'dotplus', 'potionplus', 'chain']);
     const ids = new Set();
@@ -2148,6 +2147,34 @@ export async function runTests(data, env = {}) {
     let sensed = false; for (let k = 0; k < 20 && !sensed; k++) { const q = L.newGame(data, 50 + k); L.jumpToLevel(q, data, 'schratgruben'); q.heroes[3].level = 3; q.heroes[3].tal = { m_kalt: true, m_eis: true }; q.player = { x: 30, y: 9, dir: 2 }; sensed = L.scanSecrets(q, data).some((x) => /Trugbild/.test(x)); }
     assert(sensed, 'Geheimwand-Gespür erkennt Illusionen');
   });
+  await test('Vorburg der Moorfestung (0.23.0): Teleporter sichtbar/versteckt mit Richtungswechsel, Hebel löscht Teleporter, Riegeltür nur von einer Seite, Nische, Feuerball, Treppe vom Turm', () => {
+    const fs1 = () => { const s = L.newGame(data, 7); L.jumpToLevel(s, data, 'festung1'); s.objs.forEach((o) => { if (o.type === 'enemy') o.dead = true; }); return s; };
+    assert(L.analyzeLevel(data, 'festung1').ok, 'Vorburg lösbar');
+    const nt = data.levels.nebelturm.objects.find((o) => o.id === 'stairs_turm_festung'); assert(nt && nt.to.level === 'festung1', 'Treppe vom Nebelturm');
+    // sichtbarer Teleporter im Nordgang
+    let s = fs1(); s.player = { x: 21, y: 2, dir: 1 };
+    let r = L.tryMove(s, data, 'f'); const ev = r.events.find((e) => e.type === 'teleport');
+    assert(ev && !ev.hidden && /Hof/.test(ev.msg) && s.player.x === 14 && s.player.y === 19 && s.player.dir === 0, 'sichtbarer Teleporter → Hof, Blick Norden');
+    // Hebel löscht ihn
+    s = fs1(); s.player = { x: 18, y: 2, dir: 0 }; r = L.interact(s, data); assert(/erlischt/.test(r.msg) && s.objs.find((o) => o.id === 'tp_f1').open, 'Schalter löscht das Licht');
+    s.player = { x: 21, y: 2, dir: 1 }; r = L.tryMove(s, data, 'f'); assert(r.moved && s.player.x === 22 && !r.events.some((e) => e.type === 'teleport'), 'erloschener Teleporter ist begehbar');
+    // versteckter Teleporter: keine Meldung, andere Richtung
+    s = fs1(); s.player = { x: 24, y: 14, dir: 1 }; r = L.tryMove(s, data, 'f'); const e2 = r.events.find((e) => e.type === 'teleport');
+    assert(e2 && e2.hidden && !e2.msg && s.player.x === 31 && s.player.y === 19 && s.player.dir === 3, 'versteckter Teleporter: still, Blick nach Westen');
+    // Riegeltür: vom Hof zu, aus dem Ostflügel öffnen
+    s = fs1(); s.player = { x: 24, y: 18, dir: 1 }; assert(/anderen Seite/.test(L.interact(s, data).msg), 'Riegeltür von der falschen Seite zu');
+    s.player = { x: 26, y: 18, dir: 3 }; r = L.interact(s, data); assert(/Riegel/.test(r.msg) && s.objs.find((o) => o.id === 'door_f_riegel2').open, 'Riegel von der richtigen Seite');
+    // Nische: einmal Beute, dann leer
+    s = fs1(); s.player = { x: 7, y: 1, dir: 1 }; const pot = s.inv.potion || 0; r = L.interact(s, data);
+    assert(/Nische liegt/.test(r.msg) && s.inv.potion === pot + 1, 'Nische gibt Beute'); assert(/leer/.test(L.interact(s, data).msg), 'danach leer');
+    const back = L.deserialize(JSON.parse(JSON.stringify(L.serialize(s))), data); assert(back.objs.find((o) => o.id === 'niche_f1').taken, 'Nische bleibt leer nach Laden');
+    // Feuerball: angesagt, trifft alle, Feuerschaden
+    const q = L.newGame(data, 9); L.startCombat(q, data, { id: 'b', kind: 'brandmagier', hp: 70 }); q.heroes.forEach((h) => { h.maxHp = h.hp = 300; });
+    const all = []; for (let n = 0; n < 30 && q.combat && !q.combat.over; n++) { const a = L.currentActor(q); const rr = a.side === 'h' ? L.heroAction(q, data, { type: 'defend' }) : L.enemyStep(q, data); all.push(...rr.msgs); if (all.some((m) => /wirkt Feuerball/.test(m))) break; }
+    const ia = all.findIndex((m) => /Kraft für Feuerball/.test(m)), ic = all.findIndex((m) => /wirkt Feuerball/.test(m));
+    assert(ia >= 0 && ic > ia, 'Feuerball wird angesagt'); assert(all.slice(ic).filter((m) => /Feuerball trifft .* Feuerschaden/.test(m)).length >= 3, 'Feuerball trifft mehrere Helden mit Feuerschaden');
+  });
+  const failed = results.filter((r) => !r.ok).length; // 0.23.0: erst am Ende zählen (vorher fehlten spätere Tests in der Summe)
   return { results, passed: results.length - failed, failed };
 }
 

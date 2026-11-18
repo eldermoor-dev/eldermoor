@@ -773,6 +773,39 @@ function passTex(tex, o) {
   if (o.type === 'stairs') return o.look === 'down' ? tex.sprites.stairsDown : o.look === 'up' ? tex.sprites.stairsUp : o.look === 'path' ? tex.sprites.arch : tex.sprites.portal;
   return o.look === 'down' ? tex.sprites.stairsDown : o.look === 'up' ? tex.sprites.stairsUp : o.look === 'path' ? tex.sprites.arch : tex.sprites.runeStone;
 }
+// 0.23.0: Wandschmuck (Nutzerwunsch: gelegentlich Wandnischen, Gemälde, Kritzeleien). 192×192 wie Tafeln, transparent außerhalb.
+function genDeco(kind, seed, full = true) {
+  const N = PLQ, buf = new Uint8Array(N * N).fill(255);
+  const set = (x, y, v) => { if (x >= 0 && y >= 0 && x < N && y < N) buf[y * N + x] = v; };
+  if (kind === 'niche') { // Nische: dunkle, gemauerte Vertiefung mit Bogen; full = es liegt etwas darin
+    for (let y = 70; y <= 150; y++) for (let x = 56; x <= 136; x++) {
+      const top = y < 96, r = Math.hypot((x - 96) / 40, (y - 96) / 26);
+      if (top && r > 1) continue;
+      const rim = top ? r > 0.86 : (x < 62 || x > 130 || y > 144);
+      set(x, y, rim ? P('stone', 4.6 + hash(x >> 2, y >> 2, seed) * 1.2) : P('ceil', 0.4 + (y - 70) / 140 + hash(x >> 1, y >> 1, seed + 1) * 0.4));
+    }
+    for (let x = 62; x <= 130; x++) for (let y = 138; y <= 143; y++) set(x, y, P('stone', 2.4 + (y - 138) * 0.25)); // Boden der Nische
+    if (full) { // kleines Bündel und ein Fläschchen
+      for (let y = 118; y <= 138; y++) for (let x = 74; x <= 104; x++) { const r = Math.hypot((x - 89) / 15, (y - 130) / 10); if (r <= 1) set(x, y, P('wood', 4.6 - r * 1.6 + hash(x >> 1, y, seed + 4) * 0.6)); }
+      for (let y = 112; y <= 138; y++) for (let x = 108; x <= 122; x++) { const bottle = Math.abs(x - 115) <= (y < 122 ? 2 : 6); if (bottle) set(x, y, P(y < 122 ? 'wood' : 'blood', y < 122 ? 3 : 5.6 - Math.abs(x - 113) * 0.3)); }
+    }
+  } else if (kind === 'painting') { // Gemälde: Goldrahmen, düstere Landschaft mit Turm
+    for (let y = 40; y <= 140; y++) for (let x = 36; x <= 156; x++) {
+      const fr = x < 46 || x > 146 || y < 50 || y > 130;
+      if (fr) { set(x, y, P('glow', 3.6 + ((x + y) % 7 < 2 ? 1.6 : 0) + hash(x >> 2, y >> 2, seed) * 0.6)); continue; }
+      const hz = 98 + Math.sin(x * 0.07 + seed) * 6, tower = Math.abs(x - 118) < 7 && y > 64 || (Math.abs(x - 118) < 11 && y > 60 && y < 70);
+      set(x, y, tower && y < hz + 12 ? P('stone', 0.8) : y < hz ? P('ceil', 2.2 + (y - 50) / 40 + hash(x >> 3, y >> 3, seed + 2) * 0.5) : P('moss', 1.8 + hash(x >> 2, y >> 2, seed + 3) * 1.2));
+      if (Math.hypot(x - 72, y - 66) < 7) set(x, y, P('flesh', 6.2)); // Mond
+    }
+  } else { // graffiti: grob geritzte Figur, Strichliste und Pfeil
+    const scratch = (x0, y0, x1, y1) => { const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0)); for (let i = 0; i <= n; i++) { const x = Math.round(x0 + (x1 - x0) * i / n), y = Math.round(y0 + (y1 - y0) * i / n); set(x, y, P('stone', 6.6)); set(x + 1, y, P('stone', 6.6)); set(x, y + 1, P('stone', 0.6)); } };
+    scratch(70, 60, 70, 110); scratch(70, 75, 55, 92); scratch(70, 75, 85, 92); scratch(70, 110, 58, 135); scratch(70, 110, 82, 135); // Figur
+    for (let a = 0; a < 24; a++) { const x = 70 + Math.cos(a / 24 * Math.PI * 2) * 9, y = 52 + Math.sin(a / 24 * Math.PI * 2) * 9; set(Math.round(x), Math.round(y), P('stone', 6.6)); }
+    for (let i = 0; i < 4; i++) scratch(104 + i * 8, 64, 104 + i * 8, 92); scratch(100, 86, 136, 70); // Strichliste
+    scratch(104, 120, 140, 120); scratch(140, 120, 130, 112); scratch(140, 120, 130, 128); // Pfeil
+  }
+  return { w: N, h: N, data: buf, noWrap: true };
+}
 export function buildDecals(lvl, objs, tex) {
   const w = lvl.map[0].length, h = lvl.map.length, out = new Map();
   const wallAt = (x, y) => x < 0 || y < 0 || x >= w || y >= h || lvl.map[y][x] !== '.';
@@ -780,6 +813,11 @@ export function buildDecals(lvl, objs, tex) {
   for (const o of objs) {
     if (o.type === 'stairs' || o.type === 'exit') {
       for (const f of passFaces(wallAt, o)) { const wx = o.x + DX[f], wy = o.y + DY[f]; if (wx >= 0 && wy >= 0 && wx < w && wy < h) out.set((wy * w + wx) * 4 + (f + 2) % 4, passTex(tex, o)); }
+      continue;
+    }
+    if ((o.type === 'sign' && o.face != null && o.deco) || (o.type === 'niche' && o.face != null)) { // Wandschmuck / Nische
+      const wx = o.x + DX[o.face], wy = o.y + DY[o.face], k = o.type === 'niche' ? 'niche' : o.deco, full = o.type !== 'niche' || !o.taken;
+      if (wallAt(wx, wy)) out.set((wy * w + wx) * 4 + (o.face + 2) % 4, cachedTex(tex, 'deco', k + (full ? 1 : 0), () => genDeco(k, 171, full)));
       continue;
     }
     if (o.type === 'sign' && o.face != null && o.title) {
@@ -1106,6 +1144,21 @@ function genTrap(mode, seed, kind = 'spikes') { // kind (0.22.1, Nutzer: „Stah
   } else {
     for (let x = 12; x <= 52; x++) set(x, 63, P('stone', 0.5));
     for (const cx of [18, 25, 32, 39, 46]) { const h = 16 + Math.floor(hash(cx, 3, seed) * 8); for (let y = 63 - h; y <= 62; y++) { const w = y < 63 - h + 4 ? 0 : 1; for (let x = cx - w; x <= cx + w; x++) set(x, y, P('iron', x < cx ? 5.5 : 3.2)); } }
+  }
+  t.noWrap = true;
+  return t;
+}
+// Teleportfeld (0.23.0): leuchtender Wirbel am Boden (aktiv) bzw. erloschener Steinkreis (per Hebel abgeschaltet)
+function genTele(on, seed) {
+  const t = mk(255);
+  for (let y = 40; y <= 63; y++) for (let x = 2; x <= 62; x++) {
+    const r = Math.hypot((x - 32) / 29, (y - 58) / 6);
+    if (r <= 1.05 && y >= 52) {
+      const a = Math.atan2(y - 58, (x - 32) / 4.8), sw = Math.sin(a * 3 + r * 9);
+      if (Math.abs(r - 0.95) < 0.09) t.data[y * TEX + x] = P(on ? 'glow' : 'stone', on ? 6.8 : 3.2);
+      else if (on && r < 0.9 && sw > 0.55) t.data[y * TEX + x] = P('ice', 5.2 + (1 - r) * 2);
+      else if (!on && r < 0.9 && hash(x, y, seed) > 0.85) t.data[y * TEX + x] = P('stone', 1.6);
+    } else if (on && y < 52 && Math.abs(x - 32) < 22 * (1 - (52 - y) / 14) && hash(x, y >> 1, seed + 3) > 0.9) t.data[y * TEX + x] = P('ice', 6 - (52 - y) * 0.15); // aufsteigende Funken
   }
   t.noWrap = true;
   return t;
@@ -1687,7 +1740,7 @@ export function makeTextures(detail = 1) {
     wall: { [WALL_STONE]: stoneW, [WALL_SECRET]: genSecretWall(stoneW, 301), [WALL_SWITCH]: genSwitchWall(stoneW, false), [WALL_SWITCH_ON]: genSwitchWall(stoneW, true), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
     ceil: genCeil(53, nf),
-    sprites: { plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)), chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)), chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
@@ -1856,7 +1909,7 @@ export function buildGrid(lvl, objs) {
   for (const o of objs) { if (o.type === 'secret' && !o.open) grid[o.y * w + o.x] = WALL_SECRET; else if (o.type === 'lever' && o.wall) grid[o.y * w + o.x] = o.used ? WALL_SWITCH_ON : WALL_SWITCH; }
   return { grid, gw: w, gh: h };
 }
-const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'turmwache' ? tex.sprites.turmwache : k === 'wolf' ? tex.sprites.wolf : k === 'kultist' ? tex.sprites.kultist : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'truhenmaul' ? tex.sprites.mimic : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
+const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'turmwache' ? tex.sprites.turmwache : k === 'wolf' ? tex.sprites.wolf : k === 'kultist' ? tex.sprites.kultist : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'truhenmaul' ? tex.sprites.mimic : k === 'brandmagier' ? tex.sprites.magier : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
 const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' ? 1.12 : k === 'truhenmaul' ? 0.8 : 0.9); // Bosse stehen größer im Gang
 export const GROUP_SCALE = 0.78, GROUP_GAP = 0.44, CHEST_SCALE = 0.58; // 0.16.4: Gruppen vorher 0.62/0.36, Truhe 0.5 (Nutzer: zu klein, hinter der Leiste)
 let combatFit = 1; // 0.16.17: im Kampf verkleinert die Kamera zu große Figuren so, dass sie samt Füßen über der Leiste ins Bild passen
@@ -1904,6 +1957,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
   const fx = Math.sin(angle), fy = -Math.cos(angle); // „vorn“
   for (const o of objs) {
     if (o.type === 'plate') out.push({ x: o.x, y: o.y, tex: o.down ? tex.sprites.plateDown : tex.sprites.plate, scale: 1 });
+    else if (o.type === 'teleport') { if (o.look !== 'hidden') out.push({ x: o.x, y: o.y, tex: o.open ? tex.sprites.teleOff : tex.sprites.teleOn, scale: 1 }); }
     else if (o.type === 'boulder') out.push({ x: o.x, y: o.y, tex: tex.sprites.boulder, scale: 0.78 });
     else if (o.type === 'trap') { if (!o.disarmed) out.push({ x: o.x, y: o.y, tex: o.sprung ? tex.sprites['trapSprung_' + o.kind] || tex.sprites.trapSprung : o.spotted ? tex.sprites.trapSeen : tex.sprites.trapFaint, scale: 1 }); }
     else if (o.type === 'chest') out.push({ x: o.x, y: o.y, tex: o.open ? tex.sprites.chestOpen : o.look === 'prunk' ? tex.sprites.chestPrunk : tex.sprites.chest, scale: CHEST_SCALE });

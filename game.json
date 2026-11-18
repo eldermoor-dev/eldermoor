@@ -267,6 +267,11 @@
       },
       "desc": "Set „Nebelweber“. Rüstung. +2 Verteidigung, +1 Mana je Angriff/Verteidigen. Für Magier, Kleriker, Alchemisten.",
       "value": 60
+    },
+    "festung_schluessel": {
+      "name": "Festungsschlüssel",
+      "kind": "quest",
+      "desc": "Ein schwerer Schlüssel mit eingeprägtem Turm."
     }
   },
   "races": {
@@ -1000,7 +1005,8 @@
             "status": "slow",
             "chance": 50,
             "turns": 2
-          }
+          },
+          "element": "ice"
         }
       ],
       "resist": {
@@ -1198,6 +1204,53 @@
         "title": "Truhenmaul",
         "text": "Gier hat Zähne."
       }
+    },
+    "brandmagier": {
+      "name": "Brandmagier",
+      "hp": 70,
+      "atk": 17,
+      "def": 3,
+      "init": 7,
+      "ai": "backline",
+      "gold": 20,
+      "xp": 110,
+      "resist": {
+        "fire": 50,
+        "ice": -25
+      },
+      "cast": [
+        {
+          "name": "Feuerball",
+          "kind": "bolt",
+          "all": true,
+          "every": 4,
+          "mult": 95,
+          "element": "fire",
+          "announce": true,
+          "inflict": {
+            "status": "burn",
+            "chance": 50,
+            "turns": 2,
+            "power": 3
+          }
+        },
+        {
+          "name": "Feuerpfeil",
+          "kind": "bolt",
+          "every": 2,
+          "mult": 120,
+          "element": "fire",
+          "inflict": {
+            "status": "burn",
+            "chance": 40,
+            "turns": 2,
+            "power": 3
+          }
+        }
+      ],
+      "gearDrop": {
+        "chance": 8
+      }
     }
   },
   "palettes": {
@@ -1367,6 +1420,48 @@
         170,
         225,
         255
+      ]
+    },
+    "festung": {
+      "stone": [
+        126,
+        122,
+        116
+      ],
+      "moss": [
+        78,
+        102,
+        64
+      ],
+      "wood": [
+        112,
+        80,
+        52
+      ],
+      "iron": [
+        122,
+        128,
+        140
+      ],
+      "floor": [
+        100,
+        92,
+        84
+      ],
+      "ceil": [
+        62,
+        60,
+        58
+      ],
+      "flesh": [
+        112,
+        132,
+        96
+      ],
+      "glow": [
+        255,
+        190,
+        92
       ]
     }
   },
@@ -2237,6 +2332,16 @@
           "face": 0,
           "title": "NICHT|ALLES",
           "text": "Eingeritzt, kaum lesbar: „Nicht alles hier ist so fest, wie es aussieht.“"
+        },
+        {
+          "id": "deco_g1",
+          "type": "sign",
+          "x": 1,
+          "y": 8,
+          "face": 3,
+          "deco": "graffiti",
+          "title": "KRATZER",
+          "text": "In den Stein geritzt: ein Strichmännchen, eine Strichliste mit vier Kerben – und ein Pfeil. Wer hier gewartet hat, hat die Tage gezählt."
         }
       ],
       "intro": {
@@ -2929,15 +3034,18 @@
           ]
         },
         {
-          "id": "exit_turm",
-          "type": "exit",
+          "id": "stairs_turm_festung",
+          "type": "stairs",
           "x": 24,
           "y": 12,
-          "look": "up",
-          "title": "Der Nebel lichtet sich",
-          "say": "Vom Turmfenster aus siehst du zum ersten Mal über das ganze Moor. Im Norden steht eine Festung, die auf keiner Karte ist.",
-          "text": "Der Nebelhüter ist besiegt. Der Weg zur Moorfestung wird in einer späteren Version geöffnet.",
-          "again": "Hier geht es in einer späteren Version weiter."
+          "look": "down",
+          "to": {
+            "level": "festung1",
+            "x": 2,
+            "y": 18,
+            "dir": 1
+          },
+          "msg": "Ein Gang führt hinab zur Moorfestung."
         },
         {
           "id": "secret_t1",
@@ -3000,12 +3108,380 @@
           "text": "Über dem Durchgang glimmen feine Zeichen. Jemand hat darunter geschrieben: „Nicht blind hindurch.“",
           "title": "RUNEN",
           "face": 0
+        },
+        {
+          "id": "deco_t1",
+          "type": "sign",
+          "x": 17,
+          "y": 5,
+          "face": 1,
+          "deco": "painting",
+          "title": "GEMÄLDE",
+          "text": "Ein altes Gemälde des Turms, gemalt bei Vollmond. Jemand hat die Fenster mit schwarzer Farbe übermalt."
         }
       ],
       "foe": {
         "hp": 155,
         "atk": 140
       }
+    },
+    "festung1": {
+      "id": "festung1",
+      "name": "Moorfestung – Vorburg",
+      "palette": "festung",
+      "start": {
+        "x": 2,
+        "y": 18,
+        "dir": 1
+      },
+      "foe": {
+        "hp": 250,
+        "atk": 200
+      },
+      "intro": {
+        "title": "Moorfestung",
+        "text": "Kalte Mauern, die den Nebel aussperren – oder einsperren."
+      },
+      "map": [
+        "###T##########################T#####",
+        "#.......##########.#T#########.....#",
+        "#.......##.........................#",
+        "#.......m#.###################.....m",
+        "#.......##.###################.....#",
+        "#.......##.###################.....#",
+        "####.#####.################T########",
+        "#.......#T.#############T###......##",
+        "#.......#................###......##",
+        "m.......#................#####.#####",
+        "#........................m#........#",
+        "#.......#...#...#...#....##........#",
+        "#.......#................##........#",
+        "####.####................##........#",
+        "####.####.................#........#",
+        "#.......#................##........T",
+        "#.......#...#...#...#....##........#",
+        "T.......#................##........#",
+        "#..................................#",
+        "#.......#................##........#",
+        "#.......#................#m........#",
+        "#############mT#####################"
+      ],
+      "objects": [
+        {
+          "id": "stairs_festung_turm",
+          "type": "stairs",
+          "x": 1,
+          "y": 18,
+          "look": "up",
+          "to": {
+            "level": "nebelturm",
+            "x": 23,
+            "y": 12,
+            "dir": 3
+          },
+          "msg": "Ihr steigt zurück in den Nebelturm."
+        },
+        {
+          "id": "door_f_hof",
+          "type": "door",
+          "x": 8,
+          "y": 18,
+          "locked": false,
+          "title": "HOF",
+          "style": "dark"
+        },
+        {
+          "id": "door_f_kaserne",
+          "type": "door",
+          "x": 8,
+          "y": 10,
+          "locked": false,
+          "title": "KASERNE",
+          "style": "dark"
+        },
+        {
+          "id": "door_f_riegel1",
+          "type": "door",
+          "x": 4,
+          "y": 14,
+          "locked": true,
+          "bolt": 0,
+          "title": "RIEGEL",
+          "style": "iron"
+        },
+        {
+          "id": "door_f_riegel2",
+          "type": "door",
+          "x": 25,
+          "y": 18,
+          "locked": true,
+          "bolt": 1
+        },
+        {
+          "id": "door_f_keller",
+          "type": "door",
+          "x": 30,
+          "y": 9,
+          "locked": true,
+          "key": "festung_schluessel",
+          "title": "KELLER",
+          "style": "iron"
+        },
+        {
+          "id": "tp_f1",
+          "type": "teleport",
+          "x": 22,
+          "y": 2,
+          "look": "visible",
+          "to": {
+            "x": 14,
+            "y": 19,
+            "dir": 0
+          },
+          "msg": "Der Lichtkreis packt euch – ihr stolpert zurück in den Hof."
+        },
+        {
+          "id": "switch_f1",
+          "type": "lever",
+          "wall": true,
+          "x": 18,
+          "y": 1,
+          "gate": "tp_f1",
+          "msg": "Der Stein gibt nach. Weiter vorn im Gang erlischt das Licht mit einem Seufzen."
+        },
+        {
+          "id": "sign_f_tp",
+          "type": "sign",
+          "x": 19,
+          "y": 2,
+          "face": 0,
+          "title": "WER EILT|KEHRT UM",
+          "text": "Unter der Schrift, kleiner: „Das Licht im Gang frisst Eilige. Wer den losen Stein findet, löscht es.“"
+        },
+        {
+          "id": "tp_f2",
+          "type": "teleport",
+          "x": 25,
+          "y": 14,
+          "look": "hidden",
+          "to": {
+            "x": 31,
+            "y": 19,
+            "dir": 3
+          }
+        },
+        {
+          "id": "sign_f_nische",
+          "type": "sign",
+          "x": 24,
+          "y": 13,
+          "face": 1,
+          "title": "KALTER|ZUG",
+          "text": "Aus der Nische weht ein eisiger Hauch. Jemand hat daneben geritzt: „Hier hinein, nicht hinaus.“"
+        },
+        {
+          "id": "sign_f_hof",
+          "type": "sign",
+          "x": 9,
+          "y": 20,
+          "face": 2,
+          "title": "VORBURG",
+          "text": "Ein verwittertes Wappen, darunter: „Die Vorburg hält, solange die Kaserne hält.“"
+        },
+        {
+          "id": "chest_f1",
+          "type": "chest",
+          "x": 1,
+          "y": 1,
+          "guard": [
+            "en_f1"
+          ],
+          "loot": [
+            {
+              "item": "potion",
+              "n": 1
+            },
+            {
+              "gold": 25
+            }
+          ]
+        },
+        {
+          "id": "chest_f_key",
+          "type": "chest",
+          "x": 33,
+          "y": 3,
+          "guard": [
+            "en_f4"
+          ],
+          "loot": [
+            {
+              "item": "festung_schluessel",
+              "n": 1
+            },
+            {
+              "gold": 20
+            }
+          ]
+        },
+        {
+          "id": "chest_f2",
+          "type": "chest",
+          "x": 34,
+          "y": 20,
+          "guard": [
+            "en_f5"
+          ],
+          "loot": [
+            {
+              "gear": {
+                "boost": 1
+              }
+            },
+            {
+              "item": "ration",
+              "n": 1
+            }
+          ]
+        },
+        {
+          "id": "chest_f3",
+          "type": "chest",
+          "x": 9,
+          "y": 8,
+          "loot": [
+            {
+              "item": "potion",
+              "n": 1
+            },
+            {
+              "gold": 10
+            }
+          ]
+        },
+        {
+          "id": "trap_f1",
+          "type": "trap",
+          "x": 4,
+          "y": 13,
+          "kind": "gas"
+        },
+        {
+          "id": "sign_trap_f1",
+          "type": "sign",
+          "x": 4,
+          "y": 13,
+          "face": 1,
+          "title": "ATEM|ANHALTEN",
+          "text": "Mit Ruß an die Wand geschmiert: „Atem anhalten.“"
+        },
+        {
+          "id": "en_f1",
+          "type": "enemy",
+          "x": 4,
+          "y": 3,
+          "kind": "skeleton",
+          "kinds": [
+            "skeleton",
+            "kultwaechter",
+            "skeleton"
+          ]
+        },
+        {
+          "id": "en_f2",
+          "type": "enemy",
+          "x": 4,
+          "y": 8,
+          "kind": "turmwache",
+          "kinds": [
+            "turmwache",
+            "brandmagier"
+          ]
+        },
+        {
+          "id": "en_f3",
+          "type": "enemy",
+          "x": 18,
+          "y": 13,
+          "kind": "nebelgeist",
+          "kinds": [
+            "nebelgeist",
+            "brandmagier"
+          ]
+        },
+        {
+          "id": "en_f4",
+          "type": "enemy",
+          "x": 31,
+          "y": 3,
+          "kind": "turmwache",
+          "kinds": [
+            "turmwache",
+            "nebelgeist"
+          ]
+        },
+        {
+          "id": "en_f5",
+          "type": "enemy",
+          "x": 30,
+          "y": 15,
+          "kind": "erzkaefer",
+          "kinds": [
+            "erzkaefer",
+            "kultwaechter",
+            "erzkaefer"
+          ]
+        },
+        {
+          "id": "en_f6",
+          "type": "enemy",
+          "x": 31,
+          "y": 11,
+          "kind": "brandmagier",
+          "kinds": [
+            "brandmagier",
+            "turmwache"
+          ]
+        },
+        {
+          "id": "exit_festung",
+          "type": "exit",
+          "x": 32,
+          "y": 7,
+          "look": "down",
+          "title": "Keller der Moorfestung",
+          "text": "Eine Treppe führt in die Tiefe.",
+          "again": "Hier geht es in einer späteren Version weiter."
+        },
+        {
+          "id": "niche_f1",
+          "type": "niche",
+          "x": 7,
+          "y": 1,
+          "face": 1,
+          "loot": [
+            {
+              "item": "potion",
+              "n": 1
+            },
+            {
+              "item": "gegengift",
+              "n": 1
+            }
+          ],
+          "text": "Hinter einem losen Tuch, vergessen von einem Wachsoldaten."
+        },
+        {
+          "id": "deco_f1",
+          "type": "sign",
+          "x": 24,
+          "y": 9,
+          "face": 1,
+          "deco": "painting",
+          "title": "GEMÄLDE",
+          "text": "Ein Gemälde: ein Turm im Nebel, darüber ein bleicher Mond. Der Goldrahmen ist gesprungen, als hätte jemand mit der Faust hineingeschlagen."
+        }
+      ]
     }
   },
   "spot": {

@@ -10,7 +10,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPort
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.22.2';
+const VERSION = '0.23.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -404,6 +404,7 @@ async function onEvent(ev) {
     await saveSlot('auto', true);
     return;
   }
+  if (ev.type === 'teleport') { S.held = []; S.queued = null; snapCam(); if (!ev.hidden) { say(ev.msg); toast(ev.msg, 3000); S.sfx.play('sting'); flash(); vib(40); } renderAll(); return; } // 0.23.0: versteckte Teleporter ohne Meldung – nur die Umgebung und der Kompass verraten es
   if (ev.type === 'illusion') { say(ev.msg); toast(ev.msg, 4000); S.sfx.play('sting'); vib(30); renderAll(); return; } // 0.22.0: Illusionswand durchschritten
   if (ev.type === 'mech') { // Stein geschoben / Druckplatte
     S.held = []; S.nextAllowed = performance.now() + 350;
@@ -1160,11 +1161,13 @@ function mapSymKind(o) {
   if (o.type === 'enemy') return o.dead ? null : 'enemy';
   if (o.type === 'plate') return o.down ? 'plateDown' : 'plate';
   if (o.type === 'boulder') return 'boulder';
+  if (o.type === 'teleport') return o.look === 'hidden' && !o.used ? null : o.open ? 'teleOff' : 'tele';
   if (o.type === 'trap') return o.disarmed || !o.spotted ? null : o.sprung ? 'trapUsed' : 'trap'; // nur entdeckte Fallen
   return ['stairs', 'exit', 'sign', 'merchant', 'runestone'].includes(o.type) ? o.type : null;
 }
 const MAP_LEGEND = [
   ['player', 'Du (Spitze = Blick)'], ['note', 'Notiz'], ['floor', 'Erkundeter Boden'], ['wall', 'Wand'], ['unknown', 'Noch nicht erkundet'],
+  ['tele', 'Teleportfeld'], ['teleOff', 'Teleportfeld, erloschen'],
   ['door', 'Tür, geschlossen'], ['doorLocked', 'Tür, verschlossen'], ['doorOpen', 'Tür, offen'],
   ['chest', 'Truhe'], ['chestOpen', 'Truhe, geöffnet'], ['gate', 'Gitter, geschlossen'], ['gateOpen', 'Gitter, offen'],
   ['lever', 'Hebel'], ['leverUsed', 'Hebel, benutzt'], ['stairs', 'Treppe / Durchgang'], ['exit', 'Ausgang (Ende des Gebiets)'],
@@ -1174,6 +1177,7 @@ function drawMapSym(c, k, x0, y0, cs, horiz = true, dir = 1) {
   const cx = x0 + cs / 2, cy = y0 + cs / 2;
   const txt = (t, col) => { c.fillStyle = col; c.font = `bold ${cs}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(t, cx, cy); };
   if (k === 'floor') { c.fillStyle = '#4a4034'; c.fillRect(x0, y0, cs, cs); }
+  else if (k === 'tele' || k === 'teleOff') { c.strokeStyle = k === 'tele' ? '#7fd4ff' : '#6a6050'; c.lineWidth = Math.max(1, cs / 6); c.beginPath(); c.arc(cx, cy, cs * 0.34, 0, Math.PI * 2); c.stroke(); if (k === 'tele') { c.fillStyle = '#7fd4ff'; c.fillRect(cx - cs * 0.08, cy - cs * 0.08, cs * 0.16, cs * 0.16); } }
   else if (k === 'wall') { c.fillStyle = '#8a7a5e'; c.fillRect(x0, y0, cs, cs); }
   else if (k === 'unknown') { c.strokeStyle = '#4a4034'; c.lineWidth = 2; c.strokeRect(x0 + 1, y0 + 1, cs - 2, cs - 2); }
   else if (k === 'door' || k === 'doorLocked' || k === 'doorOpen') { // Balken quer zum Gang, Farbe: zu / verschlossen / offen

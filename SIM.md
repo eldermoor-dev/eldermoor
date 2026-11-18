@@ -30,7 +30,7 @@ Annahmen stehen in sim.js über `campaign`. „1. Versuch“ = Sieg ohne vorheri
 | Strategie | Kampagne geschafft | Ø Stufe am Ende | Niederlagen je Lauf |
 |---|---|---|---|
 | nur Angriff | 0 % | 6.3 | 4.0 |
-| klug | 100 % | 9.7 | 0.1 |
+| klug | 100 % | 10.8 | 0.2 |
 
 | Gebiet | Gegner | Strategie | erreicht | Ø Stufe | Sieg 1. Versuch | Runden | KO-Helden | Schaden |
 |---|---|---|---|---|---|---|---|---|
@@ -84,5 +84,17 @@ Annahmen stehen in sim.js über `campaign`. „1. Versuch“ = Sieg ohne vorheri
 | Nebelturm | Nebelgeist + Nebelgeist + Nebelgeist | klug | 100 % | 8.9 | 100 % | 3.1 | 0.2 | 30 % |
 | Nebelturm | Nebelhüter (Boss) | nur Angriff | 1 % | 8.1 | 0 % | 6.8 | 4.0 | 55 % |
 | Nebelturm | Nebelhüter (Boss) | klug | 100 % | 8.9 | 87 % | 10.4 | 0.7 | 113 % |
+| Moorfestung – Vorburg | en_f1 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Vorburg | Gruftskelett + Kultwächter + Gruftskelett | klug | 100 % | 9.7 | 100 % | 2.3 | 0.0 | 10 % |
+| Moorfestung – Vorburg | en_f2 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Vorburg | Turmwache + Brandmagier | klug | 100 % | 9.8 | 98 % | 5.0 | 0.3 | 59 % |
+| Moorfestung – Vorburg | en_f3 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Vorburg | Nebelgeist + Brandmagier | klug | 100 % | 9.9 | 100 % | 2.6 | 0.0 | 21 % |
+| Moorfestung – Vorburg | en_f4 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Vorburg | Turmwache + Nebelgeist | klug | 100 % | 10.0 | 99 % | 4.6 | 0.2 | 49 % |
+| Moorfestung – Vorburg | en_f5 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Vorburg | Erzkäfer + Kultwächter + Erzkäfer | klug | 100 % | 10.0 | 100 % | 2.7 | 0.0 | 18 % |
+| Moorfestung – Vorburg | en_f6 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Vorburg | Brandmagier + Turmwache | klug | 100 % | 10.7 | 99 % | 3.7 | 0.1 | 35 % |
 
 Hinweis: Die Simulation nutzt die echten Regeln, aber nur zwei feste Strategien. Ein echter Spieler liegt dazwischen.
