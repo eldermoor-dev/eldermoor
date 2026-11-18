@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.23.2 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.23.3 (18.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -897,3 +897,11 @@ Nutzer: „Beim Wechsel auf Vollbild die Dauer der darauf folgenden Informatione
 Nutzer: gelber Inventar-Punkt „gut sichtbar“ (bestätigt auf dem Gerät); Wunsch: gleiches für freie Talentpunkte (lila); „Spiel grundsätzlich im Vollbildmodus starten“. Nur headless geprüft, **nicht auf Gerät getestet**.
 - **Lila Punkt** am Charakter-Knopf, solange ein Held freie Talentpunkte hat (`updateTalBadge`); im Charakterbogen „Talente ● n frei“. Beide Punkte werden zusätzlich alle 0,7 s aktualisiert.
 - **Vollbild beim Start:** neue Einstellung „Beim Start Vollbild“ (Standard an, `autoFs`). Browser erlauben Vollbild nur nach einem Tipp: es wird beim ersten Tipp im Titelbild (Neues Spiel, Fortsetzen …) und bei jedem Tipp im Spiel angefordert, falls nicht schon aktiv. Als installierte App ohnehin Vollbild (manifest). Headless nicht prüfbar (Vermutung: Chrome auf Android erlaubt es nach dem Tipp).
+
+## 0.23.3 (18.11.2026) – Kampfbild: Gegner frei, Lebensbalken über den Gegnern
+Nutzer (Screenshots): „Kasten oben links verdeckt Gegner“, dann „Gegner teilweise hinter Wand. Anders lösen.“ Nachgestellt headless (Kultgruft-Dreiergruppe, enger Gang test1). Nur headless geprüft, **nicht auf Gerät getestet**.
+- **Gegner im laufenden Kampf werden nicht mehr von Wänden verdeckt** (Sprite-Flag `front`, render.js überspringt dafür den Tiefenpuffer). Seitlich stehende Gegner im engen Gang ragen jetzt sichtbar über die Seitenwand statt in ihr zu verschwinden. Außerhalb des Kampfs bleibt alles wie bisher.
+- **Gegnerkasten entfällt.** Statt dessen über jedem Gegner ein schmaler Lebensbalken mit Buchstabe (A/B/C) und Symbolen (Status, ⚠ schwerer Schlag, 🛡 gedeckt, 🔥 Raserei, ✚ Kombi). Ziel = goldener Rahmen am Balken. Balken oder Gegner antippen wählt das Ziel. Lage kommt aus dem Raycaster (`s.scr`, oberste deckende Zeile des Bildes `tex.opTop`), main.js `placeFoeTags` jedes Bild.
+- **Zugreihenfolge** als einzeilige Leiste oben mittig („Runde n“ + Namen, aktiver golden). „Gegner antippen = Ziel“ nur noch in Runde 1. Warnung vor großem Gegnerzauber bleibt darüber.
+- LP als Zahl: nicht mehr im Kampfbild (Bestiarium). Falls vermisst: Rückmeldung.
+- Tests 109 grün (neu: Kampfbild 0.23.3, pointer-events der Balken).

@@ -1876,10 +1876,14 @@ export class Raycaster {
       if (sprH < 2) continue;
       const bottom = Math.floor(half + 0.5 * focal / tY), top = bottom - sprH;
       const x0 = screenX - (sprW >> 1);
+      if (s.foe) { // 0.23.3: Bildschirmlage für die Lebensbalken über dem Gegner (main.js)
+        if (s.tex.opTop == null) { let r = 0; outer: for (; r < TN; r++) for (let c = 0; c < TN; c++) if (td[r * TN + c] !== 255) break outer; s.tex.opTop = r / TN; }
+        s.scr = { cx: screenX, top: top + sprH * s.tex.opTop, w: sprW, tY };
+      }
       const tbl = this.shadeTbl[dropFor(tY)];
       const ya = Math.max(0, top), yb = Math.min(H - 1, bottom - 1);
       for (let x = Math.max(0, x0); x < Math.min(W, x0 + sprW); x++) {
-        if (tY >= zbuf[x]) continue;
+        if (!s.front && tY >= zbuf[x]) continue; // 0.23.3: Gegner im laufenden Kampf verschwinden nicht hinter Seitenwänden
         const tx = Math.floor((x - x0) * TN / sprW);
         for (let y = ya; y <= yb; y++) {
           const ty = Math.floor((y - top) * TN / sprH);
@@ -1969,7 +1973,8 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
       for (let i = 0; i < n; i++) {
         const { lat, dep, grow } = offs[i];
         const kd = kindList ? kindList[i] : kindOf(o, i), sc = spriteScale(kd, n) * combatFit * (grow || 1);
-        out.push({ x: o.x + rx * lat + fx * dep, y: o.y + ry * lat + fy * dep, tex: spriteFor(tex, kd), scale: sc * (1 + 0.02 * Math.sin(time * 3 + i)) });
+        const inFight = !!(alive && alive[o.id] != null);
+        out.push({ x: o.x + rx * lat + fx * dep, y: o.y + ry * lat + fy * dep, tex: spriteFor(tex, kd), scale: sc * (1 + 0.02 * Math.sin(time * 3 + i)), front: inFight, foe: inFight ? { id: o.id, k: i } : null });
       }
     }
     else if (o.type === 'lever' && !o.wall) out.push({ x: o.x, y: o.y, tex: o.used ? tex.sprites.leverDown : tex.sprites.leverUp, scale: 0.75 });

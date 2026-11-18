@@ -1546,6 +1546,20 @@ export async function runTests(data, env = {}) {
     eq(buildSprites([o], tex, 0, 0, { x: 2 }).length, 2, 'Zahl funktioniert weiter');
   });
 
+  await test('Kampfbild (0.23.3): Gegner im Kampf nicht hinter Wänden, Lage für Lebensbalken', () => {
+    const tex = makeTextures();
+    const o = { id: 'x', type: 'enemy', x: 3, y: 1, kind: 'wolf', kinds: ['wolf', 'moorlicht', 'wolf'] };
+    const out = buildSprites([o], tex, 0);
+    assert(out.every((s) => !s.front && !s.foe), 'außerhalb des Kampfs normal verdeckt');
+    const fight = buildSprites([o], tex, 0, 0, { x: ['wolf', 'moorlicht', 'wolf'] });
+    assert(fight.every((s, i) => s.front && s.foe && s.foe.k === i), 'im Kampf vorn und zugeordnet');
+    const map = ['#######', '#.....#', '#######'], lvl = { map };
+    const { grid, gw, gh } = buildGrid(lvl, []);
+    const rc = new Raycaster(tex, data.palettes.keller);
+    rc.render({ px: 3.5, py: 2.4, angle: 0, grid, gw, gh, sprites: fight, time: 0 });
+    assert(fight.some((s) => s.scr && s.scr.top >= 0 && s.scr.w > 0), 'Bildschirmlage gemeldet');
+  });
+
   await test('Kampfstart (0.16.12): Gruppe wendet sich dem Gegner zu', () => {
     eq(L.dirToward({ x: 5, y: 5, dir: 0 }, { x: 8, y: 5 }), 1, 'Osten'); eq(L.dirToward({ x: 5, y: 5, dir: 0 }, { x: 5, y: 8 }), 2, 'Süden');
     eq(L.dirToward({ x: 5, y: 5, dir: 0 }, { x: 2, y: 6 }), 3, 'Westen (größere Achse)'); eq(L.dirToward({ x: 5, y: 5, dir: 2 }, { x: 5, y: 3 }), 0, 'Norden');
@@ -1801,6 +1815,7 @@ export async function runTests(data, env = {}) {
     await test('Oberfläche: tippbare HUD-Teile haben pointer-events:auto (#party, #enemybox, #actionbar)', () => {
       const css = texts['index.html'] || '';
       assert(/#hud\{[^}]*pointer-events:none/.test(css), '#hud ohne pointer-events:none – Test anpassen');
+      assert(/#foetags \.ft\{[^}]*pointer-events:auto/.test(css), 'Gegnerbalken bekommen keine Tipps');
       for (const id of ['party', 'enemybox', 'actionbar']) assert(new RegExp('#' + id + '\\{[^}]*pointer-events:auto').test(css), `#${id} bekommt keine Tipps`);
     });
     await test('Helden kommen nur noch aus game.json (races, classes, quickParty)', () => {

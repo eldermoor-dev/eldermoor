@@ -10,7 +10,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPort
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.23.2';
+const VERSION = '0.23.3';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -257,8 +257,10 @@ function frame(now) {
   const { grid, gw, gh } = buildGrid(S.lvl, S.game.objs);
   updateViewAdjust(now);
   const vc = viewCam();
-  S.rc.render({ px: vc.x, py: vc.y, angle: vc.a, horizon: S.vh * H, grid, gw, gh, decals: buildDecals(S.lvl, S.game.objs, S.tex), sprites: buildSprites(S.game.objs, S.tex, now / 1000, S.cam.a, aliveMap(), { grid, gw, gh }), time: now / 1000 });
+  const sprites = buildSprites(S.game.objs, S.tex, now / 1000, S.cam.a, aliveMap(), { grid, gw, gh });
+  S.rc.render({ px: vc.x, py: vc.y, angle: vc.a, horizon: S.vh * H, grid, gw, gh, decals: buildDecals(S.lvl, S.game.objs, S.tex), sprites, time: now / 1000 });
   S.ctx.putImageData(S.img, 0, 0);
+  placeFoeTags(sprites);
   S.frameMs = S.frameMs * 0.9 + (performance.now() - t0) * 0.1;
   if (S.loadMs == null) S.loadMs = Math.round(performance.now());
   if (S.settings.debug && (Math.floor(now / 500) !== S.lastFpsTick)) {
@@ -294,6 +296,7 @@ function bindUI() {
   $('#modal-box').addEventListener('change', onModalInput);
   $('#actionbar').addEventListener('click', onActionBar);
   $('#enemybox').addEventListener('click', onEnemyBox);
+  $('#foetags').addEventListener('click', onEnemyBox);
   $('#view').addEventListener('click', onViewTap);
   $('#title').addEventListener('click', onTitleClick);
   $('#importfile').addEventListener('change', onImportFile);
@@ -805,9 +808,31 @@ function aliveMap() {
   for (const e of c.enemies) { (m[e.objId] = m[e.objId] || []); if (e.hp > 0) m[e.objId].push(e.kind); } // je Gruppe: Arten der noch lebenden Gegner, damit das richtige Bild bleibt
   return m;
 }
+// 0.23.3: Lebensbalken an die Gegnerbilder heften (Lage aus dem Raycaster, s.scr)
+function placeFoeTags(sprites) {
+  const c = S.game && S.game.combat, ft = $('#foetags');
+  if (!c || ft.hidden) return;
+  const cv = S.ctx.canvas.getBoundingClientRect(), hr = $('#hud').getBoundingClientRect();
+  if (!cv.width) return;
+  const kx = cv.width / W, ky = cv.height / H;
+  const slot = {}; // je Gruppe: k-te Gestalt = k-ter lebender Gegner dieser Gruppe
+  c.enemies.forEach((e, i) => { if (e.hp > 0) (slot[e.objId] = slot[e.objId] || []).push(i); });
+  const pos = {};
+  for (const s of sprites) if (s.foe && s.scr) { const ei = (slot[s.foe.id] || [])[s.foe.k]; if (ei != null) pos[ei] = s.scr; }
+  const top0 = ($('#enemybox').getBoundingClientRect().bottom || 0) - hr.top + 2;
+  for (const el of ft.children) {
+    const p = pos[+el.dataset.e];
+    if (!p) { el.style.visibility = 'hidden'; continue; }
+    const w = Math.max(50, Math.min(120, p.w * kx * 0.4));
+    let x = cv.left - hr.left + p.cx * kx - w / 2, y = cv.top - hr.top + p.top * ky - 16;
+    x = Math.max(cv.left - hr.left + 2, Math.min(cv.right - hr.left - w - 2, x));
+    y = Math.max(top0, y);
+    el.style.cssText = `left:${x.toFixed(0)}px;top:${y.toFixed(0)}px;width:${w.toFixed(0)}px;z-index:${Math.round(100 - p.tY * 10)}`;
+  }
+}
 function renderCombat() {
   const c = S.game.combat, eb = $('#enemybox'), ab = $('#actionbar');
-  if (!c) { eb.hidden = true; ab.hidden = true; return; }
+  if (!c) { eb.hidden = true; ab.hidden = true; $('#foetags').hidden = true; return; }
   eb.hidden = false;
   announcePhases(c);
   const cur = c.over ? null : currentActor(S.game);
@@ -819,14 +844,21 @@ function renderCombat() {
   if (warnKey && S.warnKey !== warnKey) { S.sfx.play('warn'); vib([90, 60, 90]); }
   S.warnKey = warnKey;
   const warnBar = heavyNow.length ? `<div class="heavywarn">⚠ ${esc(heavyNow[0].name)}: ${esc(enemyOf(S.data, heavyNow[0]).heavy.name)}! Jetzt verteidigen</div>` : '';
-  eb.innerHTML = warnBar + (cur ? `<div class="turnbar ${cur.side === 'h' ? 'hero' : 'foe'}">${cur.side === 'h' ? 'Am Zug: ' + esc(curName) + (multi ? ' · Gegner antippen = Ziel' : '') : 'Gegner am Zug: ' + esc(curName)}</div>` : '') + c.enemies.map((e) => {
-    const pct = Math.round(100 * e.hp / e.maxHp);
-    const ei = c.enemies.indexOf(e);
-    return `<div class="en${e.hp <= 0 ? ' dead' : ''}${multi && ei === S.foe && e.hp > 0 ? ' sel' : ''}" data-e="${ei}"><b>${esc(e.name)} ${stIcons('e', ei)}</b><span>${e.hp}/${e.maxHp} LP</span><div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div>${e.intent === 'heavy' ? '<em class="warn">⚠ Schwerer Schlag</em>' : ''}${e.hp > 0 && coveredBy(S.game, S.data, ei) ? '<em class="muted" title="gedeckt">🛡 gedeckt −25 %</em>' : ''}${e.hp > 0 && e.rage ? '<em class="warn">🔥 Raserei</em>' : ''}${comboHint(cur, ei)}</div>`;
-  }).join('') + `<div class="order">Runde ${c.round}: ` + c.order.map((o, i) => {
+  const hint = multi && c.round === 1 ? ' · Gegner antippen = Ziel' : ''; // 0.23.3: Hinweis nur noch in der ersten Runde
+  eb.innerHTML = warnBar + `<div class="order"><b>Runde ${c.round}</b>` + c.order.map((o, i) => {
     const nm = o.side === 'h' ? S.game.heroes[o.idx].name : c.enemies[o.idx].name;
     return `<span class="${(i === c.pos ? 'now' : i < c.pos ? 'done' : '') + (o.side === 'e' ? ' foe' : '')}">${esc(nm)}</span>`;
-  }).join('') + '</div>';
+  }).join('') + (cur && cur.side === 'h' && hint ? `<em>${hint.slice(3)}</em>` : '') + '</div>';
+  // 0.23.3 (Nutzer: „Kasten verdeckt Gegner“): Lebensbalken stehen direkt über den Gegnern im Bild
+  const ft = $('#foetags');
+  ft.hidden = false;
+  ft.innerHTML = c.enemies.map((e, ei) => {
+    if (e.hp <= 0) return '';
+    const pct = Math.round(100 * e.hp / e.maxHp);
+    const tagL = (e.name.match(/ ([A-Z])$/) || [])[1] || '';
+    const ic = (e.intent === 'heavy' ? '<i class="w">⚠</i>' : '') + (coveredBy(S.game, S.data, ei) ? '<i title="gedeckt −25 %">🛡</i>' : '') + (e.rage ? '<i class="w" title="Raserei">🔥</i>' : '') + (comboHint(cur, ei) ? '<i class="cb" title="Kombi möglich">✚</i>' : '');
+    return `<div class="ft${multi && ei === S.foe ? ' sel' : ''}" data-e="${ei}" style="visibility:hidden">${tagL ? '<b>' + tagL + '</b>' : ''}<div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div>${stIcons('e', ei)}${ic}</div>`;
+  }).join('');
   ab.hidden = false;
   const a = currentActor(S.game);
   if (c.over || !a) { ab.hidden = true; return; }

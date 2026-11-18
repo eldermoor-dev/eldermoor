@@ -25,7 +25,14 @@ button{font:inherit;color:inherit}
 @keyframes hit{0%{filter:brightness(2.4) saturate(1.6)}100%{filter:none}}
 #hud{position:absolute;inset:0;pointer-events:none}
 #fps{position:fixed;left:calc(env(safe-area-inset-left,0px) + 4px);top:calc(env(safe-area-inset-top,0px) + 44px);z-index:7;pointer-events:none;font:10px/1.25 monospace;white-space:pre;background:#000a;padding:2px 5px;border-radius:3px;color:#9f9}
-#enemybox{zoom:var(--hs,1);position:absolute;left:6px;top:calc(44px / var(--hs,1));width:min(30%,250px);background:rgba(14,11,8,.5);border:1px solid var(--line);border-radius:6px;padding:2px 6px;font-size:.66rem}
+#enemybox{zoom:var(--hs,1);position:absolute;left:50%;transform:translateX(-50%);top:4px;max-width:min(62%,560px);background:rgba(14,11,8,.55);border:1px solid var(--line);border-radius:6px;padding:1px 5px;font-size:.62rem}
+#foetags{position:absolute;inset:0;pointer-events:none}
+#foetags .ft{position:absolute;pointer-events:auto;cursor:pointer;touch-action:manipulation;display:flex;gap:3px;align-items:center;padding:6px 3px;margin-top:-5px;box-sizing:border-box;font-size:.6rem;line-height:1;color:#f0e2c0;text-shadow:0 1px 2px #000,0 0 3px #000}
+#foetags .ft .bar{flex:1;height:5px;box-shadow:0 0 0 1px rgba(0,0,0,.7)}
+#foetags .ft.sel .bar{box-shadow:0 0 0 1.5px var(--amber),0 0 5px var(--amber)}
+#foetags .ft b{color:var(--amber);font-size:.66rem}
+#foetags .ft.sel b{color:#fff}
+#foetags .ft i{font-style:normal}#foetags .ft i.w{color:#ff9d5c}#foetags .ft i.cb{color:#7fd4ff}
 #enemybox .en{display:flex;gap:8px;align-items:center}
 #enemybox .en .bar{flex:1}
 #enemybox{pointer-events:auto}
@@ -38,7 +45,9 @@ button{font:inherit;color:inherit}
 @keyframes hwb{0%,100%{box-shadow:0 0 4px #ff9d5c}50%{box-shadow:0 0 14px #ff9d5c}}
 @media (prefers-reduced-motion:reduce){#enemybox .heavywarn,#actionbar .ab.pulse{animation:none}}
 #enemybox .en .warn{flex:1 0 100%;font-style:normal;color:#ff9d5c;font-size:.72rem}
-.order{margin-top:2px;display:flex;gap:2px;flex-wrap:wrap;font-size:.56rem}
+.order{margin-top:1px;display:flex;gap:2px;flex-wrap:nowrap;overflow:hidden;white-space:nowrap;font-size:.56rem;justify-content:flex-start;align-items:center}
+.order b{color:var(--amber);margin-right:2px}
+.order em{font-style:normal;color:var(--amber);margin-left:4px}
 .order span{padding:0 5px;border-radius:9px;background:#2a2116;border:1px solid #4a3c26}
 .order span.now{background:var(--amber);color:#1b1208;border-color:var(--amber);font-weight:700}
 .order span.done{opacity:.4}
@@ -97,7 +106,7 @@ button{font:inherit;color:inherit}
 .mb.primary{background:#5a3f12;border-color:var(--amber)}
 .mb[disabled]{opacity:.4}
 #modal{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.74);display:flex;align-items:center;justify-content:center;padding:8px}
-#modal[hidden],#title[hidden],#banner[hidden],#toast[hidden],#fps[hidden],#enemybox[hidden],#actionbar[hidden]{display:none}
+#foetags[hidden],#modal[hidden],#title[hidden],#banner[hidden],#toast[hidden],#fps[hidden],#enemybox[hidden],#actionbar[hidden]{display:none}
 #modal-box{background:#17120d;border:2px solid var(--line);border-radius:10px;width:min(94vw,640px);max-height:100%;overflow:auto;padding:12px;touch-action:pan-y;-webkit-user-select:text;user-select:text}
 #modal-box h2{margin:0 0 8px;font:700 1.15rem Georgia,serif;color:#f0dca8}
 #modal-box h3{margin:10px 0 4px;font-size:.95rem;color:var(--amber)}
@@ -176,6 +185,7 @@ body.on-title .pad,body.on-title #hud,body.on-title #fps{visibility:hidden}
   <canvas id="view" width="480" height="270"></canvas>
   <div id="hud">
     <div id="compass" aria-hidden="true"><div id="compass-dial"><b class="n">N</b><b class="o">O</b><b class="s">S</b><b class="w">W</b></div><i></i></div>
+    <div id="foetags" hidden></div>
     <div id="enemybox" hidden></div>
     <div id="stack">
       <div id="log"></div>
