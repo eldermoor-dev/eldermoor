@@ -3,14 +3,14 @@
 import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
+  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
   activeSets, coveredBy, isNew, clearNew,
 } from './logic.js';
-import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt } from './render.js';
+import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.23.3';
+const VERSION = '0.24.2';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -31,7 +31,7 @@ const S = {
   debug: { god: false }, itemMode: false, abMode: false, spMode: false, spSel: 0, foe: 0, invUse: null, draft: null, fps: 60, frameMs: 0, lastRender: 0,
   installEvent: null, loadMs: null, hadController: false
 };
-if (new URLSearchParams(location.search).has('dev')) { window.__S = S; S.snapCam = () => snapCam(); S.fn = { renderCombat: () => renderCombat(), startCombatUI: (o) => startCombatUI(o), showEvent: (a, b) => showEvent(a, b), openShop: (id) => openShop(id, true), gotoArea: (id) => { jumpToLevel(S.game, S.data, id); S.lvl = getLevel(S.data, S.game); S.rc.setPalette(S.data.palettes[S.lvl.palette]); S.held = []; S.queued = null; snapCam(); renderAll(); } }; } // nur für automatische Tests (?dev)
+if (new URLSearchParams(location.search).has('dev')) { window.__S = S; S.snapCam = () => snapCam(); S.fn = { openMap: () => openMap(), renderCombat: () => renderCombat(), startCombatUI: (o) => startCombatUI(o), showEvent: (a, b) => showEvent(a, b), openShop: (id) => openShop(id, true), gotoArea: (id) => { jumpToLevel(S.game, S.data, id); S.lvl = getLevel(S.data, S.game); S.rc.setPalette(S.data.palettes[S.lvl.palette]); S.held = []; S.queued = null; snapCam(); renderAll(); } }; } // nur für automatische Tests (?dev)
 
 // ---------------------------------------------------------------- Fehlerlog
 const ERR = { list: [], saveT: 0 };
@@ -168,6 +168,18 @@ function fitStack() {
   stack.style.width = ((right - left) / hs) + 'px';
   stack.style.transform = 'none';
 }
+// 0.23.10 (Nutzer: Leiste überlappt die Tasten): Display-Ränder/Vollbild verschieben die Tastenblöcke auch nach dem Layout – Einpassung bei Größenänderung, Vollbildwechsel und sicherheitshalber alle 400 ms prüfen (billig: nur Messen, Schreiben bei Änderung)
+let fitSig = '';
+function refitStack() {
+  const lp = $('#ctl-left'), rp = $('#ctl-right'), st = $('#stage');
+  if (!lp || !rp || !st) return;
+  const a = lp.getBoundingClientRect(), b = rp.getBoundingClientRect(), c = st.getBoundingClientRect();
+  const sig = [a.right, b.left, c.left, c.right, S.hs].map((v) => Math.round((v || 0) * 2)).join(',');
+  if (sig !== fitSig) { fitSig = sig; fitStack(); }
+}
+window.addEventListener('resize', () => { fitSig = ''; setTimeout(refitStack, 60); });
+document.addEventListener('fullscreenchange', () => { fitSig = ''; setTimeout(refitStack, 120); });
+setInterval(refitStack, 400);
 
 // ---------------------------------------------------------------- Kamera
 function snapCam() {
@@ -225,6 +237,13 @@ function viewTarget(now) {
     if (ch) {
       const hz = hudTopPx(now) - H * 0.015 - 0.5 * f; // Unterkante der Truhe knapp über der Leiste
       return { back: 0, hz: Math.max(0.28, Math.min(0.5, hz / H)) };
+    }
+    // 0.23.4 (Nutzer: Fallenspur nicht erkennbar): ist eine entdeckte Falle das nächste Feld, wird der Blick wie bei der Truhe gesenkt – der Boden liegt sonst hinter der Leiste.
+    // Nur bei entdeckten Fallen, damit die Kamera keine unentdeckte Falle verrät.
+    const tr = g.objs.find((o) => o.type === 'trap' && !o.sprung && !o.disarmed && o.spotted && o.x === p.x + d[0] && o.y === p.y + d[1]);
+    if (tr) {
+      const hz = hudTopPx(now) - H * 0.015 - 0.5 * f * 0.35;
+      return { back: 0, hz: Math.max(0.3, Math.min(0.5, hz / H)) };
     }
   }
   return { back: 0, hz: 0.5 };
@@ -520,7 +539,7 @@ async function heroAct(a) {
   if (a.target == null && (a.type === 'attack' || a.type === 'ability' || a.type === 'spell')) a.target = S.foe;
   const r = heroAction(S.game, S.data, a);
   if (r.error) {
-    const t = { 'full-hp': 'Dieser Held hat volle LP.', 'no-item': 'Kein Heiltrank mehr.', 'bad-target': 'Das Ziel kann nicht geheilt werden.', 'not-available': 'Noch nicht verfügbar.', 'no-mp': 'Zu wenig Mana oder Ausdauer.', 'no-ability': 'Dieser Held hat keine Fähigkeit.' }[r.error];
+    const t = { 'full-hp': 'Dieser Held hat volle LP.', 'full-mp': 'Dieser Held hat volles Mana.', 'no-item': 'Kein Trank mehr.', 'bad-target': 'Das Ziel kann nicht geheilt werden.', 'not-available': 'Noch nicht verfügbar.', 'no-mp': 'Zu wenig Mana oder Ausdauer.', 'no-ability': 'Dieser Held hat keine Fähigkeit.' }[r.error];
     if (t) say(t);
     return;
   }
@@ -611,7 +630,7 @@ function onViewTap(e) {
     if (!o) continue;
     const list = byObj[id], n = list.length;
     list.forEach((ei, k) => {
-      const { lat, dep } = groupOffsets(n, n > 1 && isNarrowAt(buildGrid(S.lvl, S.game.objs), o.x, o.y, a))[k];
+      const { lat, dep } = groupLayout(buildGrid(S.lvl, S.game.objs), o.x, o.y, a, n)[k];
       const sx = o.x + Math.cos(a) * lat + dirX * dep + 0.5 - vc.x, sy = o.y + Math.sin(a) * lat + dirY * dep + 0.5 - vc.y;
       const tX = inv * (dirY * sx - dirX * sy), tY = inv * (-plY * sx + plX * sy);
       if (tY <= 0.15) return;
@@ -650,7 +669,7 @@ function onActionBar(e) {
   else if (c === 'sweep') heroAct({ type: 'sweep' });
   else if (c.startsWith('abheal:')) { S.abMode = false; S.spMode = false; heroAct({ ...spellAct(S.spSel), target: +c.slice(7) }); }
   else if (c === 'log') openCombatLog();
-  else if (c.startsWith('heal:')) heroAct({ type: 'item', item: 'potion', hero: +c.slice(5) });
+  else if (c.startsWith('dr:')) { const [, id, h] = c.split(':'); heroAct({ type: 'item', item: id, hero: +h }); }
   else if (c.startsWith('cure:')) heroAct({ type: 'item', item: 'gegengift', hero: +c.slice(5) });
   else if (c.startsWith('throw:')) heroAct({ type: 'item', item: 'oelflasche', target: +c.slice(6) });
 }
@@ -718,14 +737,15 @@ function updateTalBadge() { const b = document.querySelector('[data-a="char"]');
 // 0.23.2 (Nutzer: „Spiel grundsätzlich im Vollbild starten“): Browser erlauben Vollbild nur nach einem Tipp – daher beim ersten Tipp im Titel bzw. auf einen Knopf.
 // Als installierte App startet das Spiel ohnehin im Vollbild (manifest: fullscreen).
 function autoFullscreen() {
-  if (!S.settings || S.settings.autoFs === false || document.fullscreenElement || !document.documentElement.requestFullscreen) return;
+  if (!S.settings || S.settings.autoFs === false || S.fsLeft || S.fsTried || (S.game && S.game.combat) || document.fullscreenElement || !document.documentElement.requestFullscreen) return; // 0.23.11: nach Verlassen des Vollbilds (z. B. kurz aus der App) nicht mehr automatisch zurück – Android zeigt sonst jedes Mal die graue Systemmeldung
+  S.fsTried = true; // 0.23.14: höchstens ein automatischer Versuch je Seitenaufruf und nie im Kampf (Android-Systemmeldung erschien sonst „plötzlich“)
   document.documentElement.requestFullscreen({ navigationUI: 'hide' }).then(() => { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); }).catch(() => {});
 }
 document.addEventListener('pointerdown', () => { if (S.game) autoFullscreen(); }, { capture: true });
 setInterval(() => { if (S.game) { updateInvBadge(); updateTalBadge(); } }, 700); // Punkte an Inventar/Charakter auch ohne neues Bild aktuell halten
 // 0.23.1 (Nutzer: nach dem Wechsel ins Vollbild verdecken Informationen das Bild zu lange): Meldungen und Hinweise sofort ausblenden.
 function calmScreen() { S.logTs = (S.logTs || []).map(() => 0); const t = $('#toast'); if (t) t.hidden = true; const ev = $('#event'); if (ev) ev.hidden = true; renderLog(); }
-document.addEventListener('fullscreenchange', () => { if (S.game) calmScreen(); });
+document.addEventListener('fullscreenchange', () => { if (document.fullscreenElement) S.fsLeft = false; else if (S.game) S.fsLeft = true; if (S.game) calmScreen(); });
 function renderLog() {
   const box = $('#log'), combat = !!(S.game && S.game.combat);
   let items;
@@ -734,7 +754,7 @@ function renderLog() {
     const now = Date.now(), n = S.log.length, ts = S.logTs || [];
     let next = Infinity; items = [];
     for (let i = Math.max(0, n - 2); i < n; i++) {
-      const ttl = Math.min(6000, 3000 + 40 * S.log[i].length), left = ttl - (now - (ts[i] || 0));
+      const ttl = 3000, left = ttl - (now - (ts[i] || 0));
       if (left > 0) { items.push(S.log[i]); next = Math.min(next, left); }
     }
     clearTimeout(renderLog.h);
@@ -830,6 +850,11 @@ function placeFoeTags(sprites) {
     el.style.cssText = `left:${x.toFixed(0)}px;top:${y.toFixed(0)}px;width:${w.toFixed(0)}px;z-index:${Math.round(100 - p.tY * 10)}`;
   }
 }
+// Heil- und Zaubertränke im Besitz, nach Art und Größe sortiert (0.24.0)
+function drinkIds() {
+  return Object.keys(S.data.items).filter((id) => { const df = S.data.items[id]; return df.kind === 'consumable' && (df.heal || df.mana) && (S.game.inv[id] || 0) > 0; })
+    .sort((p, q) => { const a = S.data.items[p], b = S.data.items[q]; return (a.mana ? 1 : 0) - (b.mana ? 1 : 0) || (a.heal || a.mana) - (b.heal || b.mana); });
+}
 function renderCombat() {
   const c = S.game.combat, eb = $('#enemybox'), ab = $('#actionbar');
   if (!c) { eb.hidden = true; ab.hidden = true; $('#foetags').hidden = true; return; }
@@ -848,7 +873,7 @@ function renderCombat() {
   eb.innerHTML = warnBar + `<div class="order"><b>Runde ${c.round}</b>` + c.order.map((o, i) => {
     const nm = o.side === 'h' ? S.game.heroes[o.idx].name : c.enemies[o.idx].name;
     return `<span class="${(i === c.pos ? 'now' : i < c.pos ? 'done' : '') + (o.side === 'e' ? ' foe' : '')}">${esc(nm)}</span>`;
-  }).join('') + (cur && cur.side === 'h' && hint ? `<em>${hint.slice(3)}</em>` : '') + '</div>';
+  }).join('') + (cur && cur.side === 'h' && hint ? `<em>${hint.slice(3)}</em>` : '') + '</div>' + (cur && cur.side === 'h' ? comboHint(cur, S.foe) : ''); // 0.23.4: Kombi-Text für das gewählte Ziel (war seit 0.23.3 unsichtbar)
   // 0.23.3 (Nutzer: „Kasten verdeckt Gegner“): Lebensbalken stehen direkt über den Gegnern im Bild
   const ft = $('#foetags');
   ft.hidden = false;
@@ -856,19 +881,26 @@ function renderCombat() {
     if (e.hp <= 0) return '';
     const pct = Math.round(100 * e.hp / e.maxHp);
     const tagL = (e.name.match(/ ([A-Z])$/) || [])[1] || '';
-    const ic = (e.intent === 'heavy' ? '<i class="w">⚠</i>' : '') + (coveredBy(S.game, S.data, ei) ? '<i title="gedeckt −25 %">🛡</i>' : '') + (e.rage ? '<i class="w" title="Raserei">🔥</i>' : '') + (comboHint(cur, ei) ? '<i class="cb" title="Kombi möglich">✚</i>' : '');
+    const ic = (e.intent === 'heavy' ? '<i class="w">⚠</i>' : '') + (coveredBy(S.game, S.data, ei) ? '<i title="gedeckt −25 %">🛡</i>' : '') + (e.rage ? '<i class="w" title="Raserei">🔥</i>' : '') + (comboHint(cur, ei) ? '<i class="cb" title="Kombi möglich">✚ Kombi</i>' : '');
     return `<div class="ft${multi && ei === S.foe ? ' sel' : ''}" data-e="${ei}" style="visibility:hidden">${tagL ? '<b>' + tagL + '</b>' : ''}<div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div>${stIcons('e', ei)}${ic}</div>`;
   }).join('');
   ab.hidden = false;
   const a = currentActor(S.game);
   if (c.over || !a) { ab.hidden = true; return; }
   if (a.side !== 'h' || S.lock) { ab.innerHTML = `<div class="wait">${a.side === 'h' ? esc(S.game.heroes[a.idx].name) + ' ist gleich dran …' : 'Gegner ist am Zug …'}</div><button class="ab" data-c="log" style="flex:0 0 auto">Protokoll</button>`; return; }
-  const potions = (S.game.inv.potion || 0) + (S.game.inv.gegengift || 0) + (S.game.inv.oelflasche || 0);
+  const potions = drinkIds().reduce((s, id) => s + S.game.inv[id], 0) + (S.game.inv.gegengift || 0) + (S.game.inv.oelflasche || 0);
   const ch = S.game.heroes[a.idx], cab = S.data.classes[ch.cls].ability, cres = S.data.classes[ch.cls].res;
   const inv = S.game.inv, itemRows = [];
   { const row = (n, mk) => { const bs = mk(); if (n > 0 && bs.some((x) => x.ok)) itemRows.push(bs.map((x) => `<button class="ab" data-c="${x.c}" ${x.ok ? '' : 'disabled'}>${x.t}</button>`).join('')); }; // nur Zeilen zeigen, in denen etwas geht
     const giver = !!S.data.classes[ch.cls].potionGiver; // Alchemist (0.17.0): Tränke an alle Helden
-    row(inv.potion, () => giver ? S.game.heroes.map((h, i) => ({ c: `heal:${i}`, ok: h.hp > 0 && h.hp < h.maxHp, t: `Heiltrank (${inv.potion}) → ${esc(h.name)}` })) : [{ c: `heal:${a.idx}`, ok: ch.hp > 0 && ch.hp < ch.maxHp, t: `Heiltrank (${inv.potion}) trinken` }]);
+    const SZ = { 15: 'klein', 40: 'mittel', 90: 'groß', 35: 'mittel', 70: 'groß' }; // 0.24.0: Tränke in drei Größen – je Art eine Zeile
+    for (const mana of [false, true]) {
+      const ids = drinkIds().filter((id) => !!S.data.items[id].mana === mana); if (!ids.length) continue;
+      const kind = mana ? 'Zaubertrank' : 'Heiltrank';
+      row(1, () => ids.flatMap((id) => {
+        const df = S.data.items[id], n = inv[id], sz = SZ[df.heal || df.mana] || '', okFor = (h) => h.hp > 0 && (mana ? h.mp < h.maxMp : h.hp < h.maxHp);
+        return giver ? S.game.heroes.map((h, i) => ({ c: `dr:${id}:${i}`, ok: okFor(h), t: `${kind} ${sz} (${n}) → ${esc(h.name)}` })) : [{ c: `dr:${id}:${a.idx}`, ok: okFor(ch), t: `${kind} ${sz} (${n})` }];
+      })); }
     row(inv.gegengift, () => giver ? S.game.heroes.map((h, i) => ({ c: `cure:${i}`, ok: h.hp > 0 && !!statusOf(S.game, 'h', i).poison, t: `Gegengift (${inv.gegengift}) → ${esc(h.name)}` })) : [{ c: `cure:${a.idx}`, ok: ch.hp > 0 && !!statusOf(S.game, 'h', a.idx).poison, t: `Gegengift (${inv.gegengift}) nehmen` }]);
     row(inv.oelflasche, () => S.game.combat.enemies.map((e, i) => ({ c: `throw:${i}`, ok: e.hp > 0, t: `Ölflasche (${inv.oelflasche}) → ${esc(e.name)}` }))); }
   const known = knownSpells(S.data, ch);
@@ -914,7 +946,8 @@ function openMenu() {
     <button class="mb" data-m="import">Spielstand importieren (Datei)</button>
     <button class="mb" data-m="settings">Einstellungen</button>
     <button class="mb" data-m="help">Steuerung &amp; Info</button>
-    <button class="mb" data-m="title">Zum Titelbild</button>${S.settings.debug ? '<button class="mb" data-m="debug">Debug</button>' : ''}</div>`, 'menu');
+    <button class="mb" data-m="title">Zum Titelbild</button>
+    <button class="mb" data-m="quit">Spiel beenden</button>${S.settings.debug ? '<button class="mb" data-m="debug">Debug</button>' : ''}</div>`, 'menu');
 }
 function helpHtml() {
   return `<h2>Steuerung &amp; Info</h2>
@@ -960,7 +993,7 @@ function openShop(shopId, greet) {
     openModal(`${speechHtml(S.shopTalk)}<p class="muted" style="text-align:center">${esc(sh.greeting)}</p><div class="acts" style="justify-content:center"><button class="mb primary" data-m="shopgo">Weiter</button></div>`, 'shop');
     return;
   }
-  let html = `<h2>${esc(sh.name)}</h2>${greet ? `<p class="muted">${esc(sh.greeting)}</p>` : ''}<p>Gold: <b>${g.gold}</b></p>
+  let html = `<h2>${esc(sh.name)}</h2>${greet ? `<p class="muted">${esc(sh.greeting)}</p>` : ''}<p>Gold: <b>${g.gold}</b></p>${haggle(g, d) > 0 ? `<p class="muted">Feilschen (Talent): Preise −${haggle(g, d)} %, Verkauf +${haggle(g, d)} %</p>` : ''}
     <div class="acts" style="margin-top:0"><button class="mb${tab === 'buy' ? ' primary' : ''}" data-m="shopbuy">Kaufen</button><button class="mb${tab === 'sell' ? ' primary' : ''}" data-m="shopsellTab">Verkaufen</button></div>`;
   if (tab === 'buy') {
     html += shopStock(d, shopId).map((e) => {
@@ -1038,7 +1071,7 @@ function openInventory() {
   let html = `<h2>Inventar</h2><p>Gold: <b>${g.gold}</b></p>`;
   html += items.length ? items.map(([id, n, nw]) => {
     const it = itemDef(g, d, id);
-    const use = it.kind === 'consumable' && it.heal && !g.combat ? `<button class="mb" data-m="use:${id}">Benutzen</button>` : it.kind === 'supply' && !g.combat ? '<button class="mb" data-m="rest">Rasten</button>' : it.kind === 'equip' && !g.combat ? `<button class="mb" data-m="eqsel:${id}">Ausrüsten</button>` : '';
+    const use = it.kind === 'consumable' && (it.heal || it.mana) && !g.combat ? `<button class="mb" data-m="use:${id}">Benutzen</button>` : it.kind === 'supply' && !g.combat ? '<button class="mb" data-m="rest">Rasten</button>' : it.kind === 'equip' && !g.combat ? `<button class="mb" data-m="eqsel:${id}">Ausrüsten</button>` : '';
     return `<div class="row nw${S.invEquip === id ? ' sel' : ''}"><div><b>${itemIcon(id, it)}${qTag(id, it)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}${nw ? ' <span class="newtag">● neu</span>' : ''}<div class="muted">${esc(it.desc)}</div></div>${use}</div>`;
   }).join('') : '<p class="muted">Nichts dabei.</p>';
   if (S.invEquip && itemDef(g, d, S.invEquip) && (g.inv[S.invEquip] || 0) > 0) {
@@ -1047,7 +1080,7 @@ function openInventory() {
   }
   if (S.invUse) {
     html += `<h3>${esc(itemDef(g, d, S.invUse).name)} an wem anwenden?</h3><div class="acts">` + g.heroes.map((h, i) =>
-      `<button class="mb headbtn" data-m="heal:${i}" ${h.hp > 0 && h.hp < h.maxHp ? '' : 'disabled'}><img src="${makePortrait(h).toDataURL()}" alt=""><span>${esc(h.name)}<br>${h.hp}/${h.maxHp}</span></button>`).join('') + '</div>';
+      `<button class="mb headbtn" data-m="heal:${i}" ${itemDef(g, d, S.invUse).mana ? (h.hp > 0 && h.mp < h.maxMp ? '' : 'disabled') : (h.hp > 0 && h.hp < h.maxHp ? '' : 'disabled')}><img src="${makePortrait(h).toDataURL()}" alt=""><span>${esc(h.name)}<br>${itemDef(g, d, S.invUse).mana ? h.mp + '/' + h.maxMp : h.hp + '/' + h.maxHp}</span></button>`).join('') + '</div>';
   }
   if (g.combat) html += '<p class="muted">Im Kampf: Gegenstände über den Knopf „Gegenstand“ benutzen.</p>';
   else if (items.some(([id]) => sellPrice(g, d, id) != null)) html += '<p class="muted">Verkaufen kannst du bei einer Händlerin.</p>';
@@ -1112,13 +1145,14 @@ function openMap() {
   const w = S.lvl.map[0].length, h = S.lvl.map.length;
   const cs = 3 * Math.max(8, Math.min(Math.floor(560 / w), Math.floor(230 / h))); // 0.19.5: dreifache Auflösung, damit Zoomen scharf bleibt
   openModal(`<h2 style="margin:0 0 4px">Karte – ${esc(S.lvl.name)}</h2><div class="mapwrap"><div id="mapvp"><canvas id="mapcv" width="${cs * w}" height="${cs * h}"></canvas></div>${mapLegendHtml()}</div>
-  <div class="acts mapbar"><span class="muted">Blick: ${DIR_NAMES[S.game.player.dir]} · Tippen = Notiz ◆ · 2 Finger = Zoom, Ziehen = Verschieben</span>${closeBtn}</div>`, 'map');
+  <div class="acts mapbar"><span class="muted">Blick: ${DIR_NAMES[S.game.player.dir]} · Tippen = Notiz ◆ · 2 Finger oder ＋/− = Zoom, Ziehen = Verschieben</span><button class="mb" id="mz-in" aria-label="Vergrößern">＋</button><button class="mb" id="mz-out" aria-label="Verkleinern">−</button><button class="mb" id="mz-reset" aria-label="Zoom zurücksetzen">1:1</button>${closeBtn}</div>`, 'map');
   paintLegend();
   const cv = $('#mapcv'), vp = $('#mapvp');
   cv.dataset.cs = cs;
   drawMap();
   fitMapView(cv, vp, w, h, cs);
   const mz = initMapZoom(cv, vp);
+  $('#mz-in').addEventListener('click', () => mz.zoomBy(1.5)); $('#mz-out').addEventListener('click', () => mz.zoomBy(1 / 1.5)); $('#mz-reset').addEventListener('click', () => mz.reset()); // 0.23.4: Zoom auch ohne Geste
   cv.addEventListener('click', (e) => {
     if (mz.dragged()) return; // Ziehen/Zoomen ist keine Notiz
     const r = cv.getBoundingClientRect();
@@ -1169,7 +1203,8 @@ function initMapZoom(cv, vp) {
   const up = (e) => { pts.delete(e.pointerId); if (!pts.size && moved) lastDrag = Date.now(); };
   vp.addEventListener('pointerup', up); vp.addEventListener('pointercancel', up);
   vp.addEventListener('wheel', (e) => { e.preventDefault(); const [px, py] = loc(e); zoomAt(px, py, k * (e.deltaY < 0 ? 1.2 : 1 / 1.2)); }, { passive: false });
-  return { dragged: () => Date.now() - lastDrag < 400 };
+  const mid = () => [vp.clientWidth / 2, vp.clientHeight / 2];
+  return { dragged: () => Date.now() - lastDrag < 400, zoomBy: (f) => { const [px, py] = mid(); zoomAt(px, py, k * f); }, reset: () => { k = 1; tx = 0; ty = 0; apply(); }, scale: () => k };
 }
 function drawMap() {
   const cv = $('#mapcv'), c = cv.getContext('2d'), cs = +cv.dataset.cs, g = S.game, lvl = S.lvl;
@@ -1287,7 +1322,7 @@ function openSettings() {
   <div class="row"><label>Farbenblind-Modus (Blau/Orange statt Grün/Rot)</label>${chk('colorblind')}</div>
   <div class="row"><label>Debug-Modus</label>${chk('debug')}</div>
   <div class="row muted">Gamepad-Unterstützung: geplant (Phase 5), noch nicht enthalten.</div>
-  <div class="acts"><button class="mb" data-m="fullscreen">Vollbild</button><button class="mb" data-m="install">App installieren</button><button class="mb" data-m="selftest">Selbsttest</button>${closeBtn}</div>
+  <div class="acts"><button class="mb" data-m="fullscreen">Vollbild: ${document.fullscreenElement ? 'an – ausschalten' : 'aus – einschalten'}</button><button class="mb" data-m="install">App installieren</button><button class="mb" data-m="refresh">Neueste Version laden</button><button class="mb" data-m="selftest">Selbsttest</button>${closeBtn}</div>
   <p class="muted">Version ${VERSION}. Speicher: ${store.persistent ? 'IndexedDB' : 'nur temporär (IndexedDB nicht verfügbar)'}.</p>`, 'settings');
 }
 function onModalInput(e) {
@@ -1414,6 +1449,7 @@ async function onModalClick(e) {
   if (m === 'close') closeModal();
   else if (m === 'title-close') { closeModal(); }
   else if (m === 'title') { if (S.started && !confirm('Zum Titelbild? Nicht gespeicherter Fortschritt geht verloren.')) return; closeModal(); await showTitle(); }
+  else if (m === 'quit') { closeModal(); quitGame(); }
   else if (m === 'map') openMap();
   else if (m === 'debug') openDebug();
   else if (m === 'save') openSlots('save');
@@ -1427,9 +1463,17 @@ async function onModalClick(e) {
   else if (m === 'menu') openMenu();
   else if (m === 'export') exportSave();
   else if (m === 'import') $('#importfile').click();
-  else if (m === 'fullscreen') {
+  else if (m === 'fullscreen' && document.fullscreenElement) { // 0.24.1 (Nutzer: „Vollbildmodus an / aus“): Schalter – ausschalten verlassen und kein automatischer Wiedereintritt
+    S.fsLeft = true;
+    try { await document.exitFullscreen(); closeModal(); calmScreen(); } catch { toast('Vollbild konnte nicht beendet werden. Von oben ziehen und „Zurück“ tippen.'); }
+  } else if (m === 'fullscreen') {
+    S.fsLeft = false;
     try { await document.documentElement.requestFullscreen({ navigationUI: 'hide' }); if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); closeModal(); calmScreen(); } // 0.23.1: nach dem Wechsel Fenster schließen, Meldungen ausblenden
     catch { toast('Vollbild wird von diesem Browser nicht unterstützt oder wurde abgelehnt.'); }
+  } else if (m === 'refresh') { // 0.24.2 (Nutzer: neue Version lässt sich nicht installieren): Offline-Cache und Service Worker entfernen, neu laden. Spielstände (IndexedDB) bleiben unberührt.
+    try { const regs = (await navigator.serviceWorker.getRegistrations()) || []; for (const r of regs) await r.unregister(); } catch { /* egal */ }
+    try { for (const k of await caches.keys()) if (k.startsWith('eldermoor-')) await caches.delete(k); } catch { /* egal */ }
+    toast('Cache geleert – Spiel lädt neu …'); setTimeout(() => location.reload(), 600);
   } else if (m === 'install') {
     if (S.installEvent) { S.installEvent.prompt(); S.installEvent = null; }
     else toast('Chrome-Menü (⋮) → „App installieren“ bzw. „Zum Startbildschirm hinzufügen“.', 5000);
@@ -1511,7 +1555,7 @@ async function onModalClick(e) {
   else if (m.startsWith('heal:')) {
     const r = useItemOutside(g, S.data, S.invUse || 'potion', +m.slice(5));
     if (r.msg) { say(r.msg); S.sfx.play(r.sfx); toast(r.msg); }
-    if ((g.inv.potion || 0) <= 0) S.invUse = null;
+    if ((g.inv[S.invUse || 'potion'] || 0) <= 0) S.invUse = null;
     renderAll(); openInventory();
   }
   else if (m.startsWith('tp:')) teleportTo(m.slice(3));
@@ -1637,6 +1681,18 @@ async function onTitleClick(e) {
   else if (t === 'load') { S.started = false; await openSlots('load'); }
   else if (t === 'settings') openSettings();
   else if (t === 'help') openHelp();
+  else if (t === 'quit') quitGame();
+}
+// 0.24.1 (Nutzer: „Button Spiel beenden einfügen“): Autospeicherstand (außer im Kampf), Vollbild verlassen, window.close() versuchen.
+// Browser/Android erlauben das Schließen oft nicht – dann erklärt ein Hinweis, wie man die App wegwischt (nicht gesichert, ob window.close() auf dem Gerät greift).
+async function quitGame() {
+  if (S.started && !confirm('Spiel beenden? Ohne Speichern geht Fortschritt seit dem letzten Speichern verloren.')) return;
+  let saved = false;
+  if (S.started && S.game && !S.game.combat) { try { await saveSlot('auto', true); saved = true; } catch { /* egal */ } }
+  try { S.sfx.suspend(); } catch { /* egal */ }
+  try { if (document.fullscreenElement) await document.exitFullscreen(); } catch { /* egal */ }
+  try { window.close(); } catch { /* egal */ }
+  setTimeout(() => openModal(`<h2>Spiel beendet</h2><p>${saved ? 'Der Stand wurde automatisch gesichert.' : S.started ? 'Es wurde nicht gespeichert (Kampf oder kein Spiel).' : ''}</p><p class="muted">Android lässt Web-Apps sich oft nicht selbst schließen. Wische die App dann in der Übersicht weg (von unten nach oben wischen, App nach oben schieben).</p><div class="acts"><button class="mb primary" data-m="close">Zurück zum Spiel</button></div>`, 'quitinfo'), 400);
 }
 
 // ---------------------------------------------------------------- Service Worker

@@ -1,7 +1,7 @@
 // Die Schatten von Eldermoor – Service Worker (Offline-Cache)
 // Autor: eldermoor-dev
 // Bei jeder Änderung an einer Spieldatei VERSION erhöhen (gleichzeitig in main.js), sonst bleibt die alte Fassung im Cache.
-const VERSION = '0.23.3';
+const VERSION = '0.24.2';
 const CACHE = 'eldermoor-' + VERSION;
 const ASSETS = [
   './', './index.html', './main.js', './render.js', './logic.js', './audio.js', './store.js', './tests.js',
@@ -10,7 +10,8 @@ const ASSETS = [
 
 self.addEventListener('install', (e) => {
   // cache:'reload' umgeht den HTTP-Cache von GitHub Pages, damit nie alte Dateien in den neuen Cache geraten
-  e.waitUntil(caches.open(CACHE).then((c) => Promise.all(ASSETS.map((u) => c.add(new Request(u, { cache: 'reload' }))))));
+  // 0.24.2: fehlende Einzeldatei lässt die Installation nicht mehr scheitern (allSettled); neue Version übernimmt sofort (skipWaiting) statt zu warten, bis alle App-Fenster geschlossen sind
+  e.waitUntil(caches.open(CACHE).then((c) => Promise.allSettled(ASSETS.map((u) => c.add(new Request(u, { cache: 'reload' }))))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('message', (e) => {

@@ -1787,6 +1787,88 @@ export async function runTests(data, env = {}) {
       const missing = allFiles.filter((f) => texts[f] == null);
       assert(!missing.length, 'nicht lesbar: ' + missing.join(', '));
     });
+    await test('Oberfläche (0.23.4): Kombi-Text in der Zugleiste, Feilschen-Hinweis im Laden, Zoom-Schaltflächen, Fallen-Blick', () => {
+      const m = texts['main.js'] || '', h = texts['index.html'] || '';
+      assert(/\}\)\.join\(''\)[^\n]*comboHint\(cur, S\.foe\)/.test(m), 'Kombi-Text für das gewählte Ziel fehlt in der Zugleiste');
+      assert(/#enemybox \.combo\{/.test(h), 'Stil für Kombi-Text fehlt');
+      assert(/Feilschen \(Talent\)/.test(m) && /haggle\(g, d\)/.test(m), 'Feilschen-Hinweis im Laden fehlt');
+      assert(/mz-in/.test(m) && /mz-out/.test(m) && /mz-reset/.test(m), 'Zoom-Schaltflächen der Karte fehlen');
+      assert(/o\.type === 'trap'[^\n]*o\.spotted/.test(m), 'Blick auf entdeckte Falle fehlt');
+    });
+    await test('Gegnergruppe (0.23.5): Wand auf einer Seite zählt (Staffelung ab 3 Gegnern, Verschiebung von der Wand weg)', () => {
+      const r = texts['render.js'] || '';
+      assert(/export function wallSides/.test(r) && /export function groupLayout/.test(r), 'wallSides/groupLayout fehlen');
+      assert(/groupLayout\(grid, o\.x, o\.y, angle, n\)/.test(r) && /groupLayout\(buildGrid/.test(texts['main.js'] || ''), 'Sprites und Lebensbalken müssen dieselbe Aufstellung nutzen');
+    });
+    await test('Offenes Fallgitter (0.23.9): wird als hochgezogenes Gitter gezeichnet', () => {
+      const r = texts['render.js'] || '';
+      assert(/function genGateOpen/.test(r) && /gateOpen: smoothSprite/.test(r) && /o\.type === 'gate' && o\.open && grid/.test(r), 'Sprite für offenes Gitter fehlt');
+    });
+    await test('Layout (0.23.10): Leiste wird bei Größen-/Vollbildwechsel und regelmäßig neu eingepasst', () => {
+      const m = texts['main.js'] || '';
+      assert(/function refitStack/.test(m) && /addEventListener\('resize'/.test(m) && /fullscreenchange/.test(m) && /setInterval\(refitStack/.test(m), 'refitStack fehlt');
+    });
+    await test('Vollbild (0.23.11): nach Verlassen kein automatischer Wiedereintritt', () => {
+      const m = texts['main.js'] || '';
+      assert(/S\.fsLeft \|\|/.test(m) && /S\.fsLeft = true/.test(m), 'fsLeft fehlt');
+    });
+    await test('Thronsaal (0.23.12): Hüter steht an der Ostwand, alte Stände ziehen die Position nach', () => {
+      const lv = data.levels.nebelturm, o = lv.objects.find((q) => q.id === 'en_tboss');
+      assert(lv.map[o.y][o.x] === '.' && lv.map[o.y][o.x + 1] !== '.', 'Hüter nicht an der Wand: ' + o.x + ',' + o.y);
+      const s = L.newGame(data, 3); L.jumpToLevel(s, data, 'nebelturm');
+      const b = s.objs.find((q) => q.id === 'en_tboss'); b.x = 22; b.y = 9; L.syncStatic(s, data);
+      assert(b.x === o.x && b.y === o.y, 'Position nicht nachgezogen');
+    });
+    await test('Lebensbalken (0.23.12): Lage der Gegnerbalken ohne Atem-Schwanken', () => {
+      const rs = texts['render.js'] || '';
+      assert(/base: sc/.test(rs) && /s\.base \|\| s\.scale/.test(rs), 'Basisgröße fehlt');
+    });
+    await test('Treppe (0.23.13): freistehende Treppen/Ausgänge haben eine feste Achse', () => {
+      const rs = texts['render.js'] || '';
+      assert(/function freeAxis/.test(rs) && /passAxis\(grid, o\) \|\| freeAxis\(grid, o\)/.test(rs), 'freeAxis fehlt');
+    });
+    await test('Vollbild (0.23.14): nur ein Versuch je Aufruf, nie im Kampf', () => {
+      const m = texts['main.js'] || '';
+      assert(/S\.fsTried \|\|/.test(m) && /S\.fsTried = true/.test(m) && /S\.game\.combat\) \|\| document\.fullscreenElement/.test(m), 'fsTried fehlt');
+    });
+    await test('Zaubertrank (0.24.0): stellt Mana wieder her, im Laden, außerhalb und im Kampf', () => {
+      const s = L.newGame(data, 3), it = data.items.zaubertrank;
+      assert(it && it.kind === 'consumable' && it.mana === 15, 'Zaubertrank fehlt');
+      assert(data.shops.moorrand.stock.some((x) => x.item === 'zaubertrank'), 'nicht im Laden');
+      s.inv.zaubertrank = 2; const h = s.heroes[3]; h.maxMp = 30; h.mp = 0;
+      let r = L.useItemOutside(s, data, 'zaubertrank', 3);
+      assert(!r.error && h.mp === 15 && s.inv.zaubertrank === 1, 'Mana +15: ' + JSON.stringify(r) + ' mp ' + h.mp);
+      h.mp = h.maxMp; assert(L.useItemOutside(s, data, 'zaubertrank', 3).error === 'full-mp', 'volles Mana');
+      assert(s.inv.zaubertrank === 1, 'bei vollem Mana nicht verbraucht');
+      s.gold = 100; const b = L.buyItem(s, data, 'moorrand', 'zaubertrank');
+      assert(!b.error && s.inv.zaubertrank === 2 && s.gold === 100 - b.price && b.price === 14, 'Kauf ' + JSON.stringify(b));
+    });
+    await test('Tränke (0.24.0): drei Größen mit steigender Wirkung, Verteilung und Anwendung', () => {
+      const I = data.items;
+      assert(I.potion.heal === 15 && I.potion_m.heal === 40 && I.potion_g.heal === 90, 'Heiltränke 15/40/90');
+      assert(I.zaubertrank.mana === 15 && I.zaubertrank_m.mana === 35 && I.zaubertrank_g.mana === 70, 'Zaubertränke 15/35/70');
+      for (const [a, b] of [['potion', 'potion_m'], ['potion_m', 'potion_g'], ['zaubertrank', 'zaubertrank_m'], ['zaubertrank_m', 'zaubertrank_g']]) assert(I[b].value > I[a].value, `${b} teurer als ${a}`);
+      const st = data.shops.moorrand.stock.map((x) => x.item);
+      assert(st.includes('potion_m') && st.includes('zaubertrank_m'), 'Mittlere im Laden');
+      const s = L.newGame(data, 3); s.heroes[0].hp = 1; s.heroes[0].maxHp = 200; s.inv.potion_g = 1; s.inv.potion_m = 1;
+      L.useItemOutside(s, data, 'potion_g', 0); assert(s.heroes[0].hp === 91, 'groß +90: ' + s.heroes[0].hp);
+      L.useItemOutside(s, data, 'potion_m', 0); assert(s.heroes[0].hp === 131, 'mittel +40: ' + s.heroes[0].hp);
+      const ids = new Set(); for (const lv of Object.values(data.levels)) for (const o of lv.objects) for (const e of o.loot || []) if (e.item) ids.add(e.item);
+      assert(ids.has('potion_m') && ids.has('potion_g') && ids.has('zaubertrank') && ids.has('zaubertrank_m'), 'Verteilung in Truhen');
+      for (const i of ids) assert(I[i], 'unbekannter Gegenstand ' + i);
+    });
+    await test('Spiel beenden (0.24.1): Knopf im Titel und im Menü', () => {
+      const m = texts['main.js'] || '', h = texts['index.html'] || '';
+      assert(/data-t="quit"/.test(h) && /data-m="quit"/.test(m) && /async function quitGame/.test(m) && /t === 'quit'/.test(m), 'Beenden-Knopf fehlt');
+    });
+    await test('Vollbild-Schalter (0.24.2): Einstellungen schalten an und aus', () => {
+      const m = texts['main.js'] || '';
+      assert(/m === 'fullscreen' && document\.fullscreenElement/.test(m) && /document\.exitFullscreen\(\)/.test(m) && /Vollbild: \$\{/.test(m), 'Schalter fehlt');
+    });
+    await test('Update-Robustheit (0.24.2): skipWaiting, allSettled, Knopf „Neueste Version laden“', () => {
+      assert(/allSettled/.test(texts['sw.js'] || '') && /skipWaiting\(\)\)/.test(texts['sw.js'] || ''), 'sw.js');
+      assert(/m === 'refresh'/.test(texts['main.js'] || '') && /unregister\(\)/.test(texts['main.js'] || ''), 'refresh-Knopf');
+    });
     await test('Version: sw.js und main.js stimmen überein', () => {
       const re = /VERSION\s*=\s*'([^']+)'/;
       const a = texts['sw.js'] && re.exec(texts['sw.js']), b = texts['main.js'] && re.exec(texts['main.js']);
@@ -2050,12 +2132,17 @@ export async function runTests(data, env = {}) {
       if (r.warn) { warned = true; assert(!r.encounter, 'Warnung statt Kampf'); assert(L.interact(q, data).encounter, 'zweiter Griff weckt sie trotzdem'); }
     }
     assert(warned, 'Warnung mit Talent kommt vor');
+    // Fackelschalter (0.23.7): Geheimwand lässt sich auch durch Berühren einer Fackel öffnen
+    s = kg(); const tw = s.objs.find((o) => o.id === 'switch_g2'), sec0 = s.objs.find((o) => o.id === 'secret_g2');
+    assert(tw && tw.torch && tw.wall, 'switch_g2 ist ein Fackelschalter'); s.player = { x: 2, y: 11, dir: 3 };
+    assert(!sec0.open, 'Geheimwand zu'); r = L.interact(s, data); assert(sec0.open && tw.used && /Fackel/.test(r.msg), 'Fackel berühren öffnet die Geheimwand: ' + r.msg);
+    assert(/schon gedreht/.test(L.interact(s, data).msg), 'zweites Berühren: schon gedreht');
     // echte Beute hinter der Geheimwand, Gespür und Hinweis
     s = kg(); const sec = s.objs.find((o) => o.id === 'secret_g2'); s.player = { x: 5, y: 11, dir: 1 };
     assert(!/Mechanismus/.test(L.interact(s, data).msg), 'ohne Talent nur der Grundhinweis');
     s.heroes[3].level = 3; s.heroes[3].tal = { m_kalt: true, m_eis: true };
     r = L.interact(s, data); assert(/Mechanismus/.test(r.msg) && /Westen/.test(r.msg), 'mit Talent: Richtung des Schalters: ' + r.msg);
-    s.player = { x: 2, y: 11, dir: 3 }; assert(/Stein gibt nach/.test(L.interact(s, data).msg) && sec.open, 'Schalter öffnet die Geheimwand');
+    s.player = { x: 2, y: 11, dir: 3 }; assert(/Fackel lässt sich drehen/.test(L.interact(s, data).msg) && sec.open, 'Schalter öffnet die Geheimwand');
     s.player = { x: 7, y: 11, dir: 0 }; r = L.interact(s, data); assert(/Truhe geöffnet/.test(r.msg), 'echte Truhe erreichbar');
     let sensed = false;
     for (let seed = 1; seed < 20 && !sensed; seed++) { const q = kg(seed); q.heroes[3].level = 3; q.heroes[3].tal = { m_kalt: true, m_eis: true }; q.player = { x: 4, y: 11, dir: 1 }; sensed = L.scanSecrets(q, data).some((t) => /Luftzug/.test(t)); }
@@ -2065,6 +2152,8 @@ export async function runTests(data, env = {}) {
     f.heroes[1].level = 3; f.heroes[1].tal = { r_gold: true };
     assert(L.buyPrice(f, data, 'potion') < base && L.sellPrice(f, data, 'potion') >= sell, 'Feilschen senkt Kauf-, hebt Verkaufspreis');
     assert(L.shopStock(data, 'moorrand').some((e) => e.item === 'dietrich'), 'Hedda verkauft Dietriche');
+    eq(L.buyPrice(fresh(), data, 'dietrich'), 10, 'Dietrich ohne Feilschtalent: 10 Gold');
+    eq(L.buyPrice(f, data, 'dietrich'), 9, 'Dietrich mit Schurken-Talent Tascheninhalt (−10 %): 9 Gold, nicht fehlerhaft'); eq(L.haggle(f, data), 10, 'Feilschen 10 %');
     const a = L.analyzeLevel(data, 'kultgruft'); assert(a.ok, 'Kultgruft lösbar: ' + JSON.stringify(a));
   });
   await test('Ausrüstungseffekte, Sets, Gegnertaktik (0.21.0): Effekte zählen, Set-Bonus nur komplett, Lebensraub, Dornen, Deckung, Raserei, Heiler-Ziel, Set-Teile in Truhen', () => {

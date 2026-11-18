@@ -9,11 +9,49 @@
   },
   "items": {
     "potion": {
-      "name": "Heiltrank",
+      "name": "Kleiner Heiltrank",
       "kind": "consumable",
       "heal": 15,
       "desc": "Stellt 15 LP wieder her.",
       "value": 10
+    },
+    "potion_m": {
+      "name": "Mittlerer Heiltrank",
+      "kind": "consumable",
+      "heal": 40,
+      "desc": "Stellt 40 LP wieder her.",
+      "value": 28
+    },
+    "potion_g": {
+      "name": "Großer Heiltrank",
+      "kind": "consumable",
+      "heal": 90,
+      "desc": "Stellt 90 LP wieder her.",
+      "value": 60
+    },
+    "zaubertrank": {
+      "name": "Kleiner Zaubertrank",
+      "kind": "consumable",
+      "mana": 15,
+      "icon": "🔮",
+      "desc": "Stellt 15 Mana bzw. Ausdauer wieder her. Im Kampf und außerhalb benutzbar.",
+      "value": 14
+    },
+    "zaubertrank_m": {
+      "name": "Mittlerer Zaubertrank",
+      "kind": "consumable",
+      "mana": 35,
+      "icon": "🔮",
+      "desc": "Stellt 35 Mana bzw. Ausdauer wieder her.",
+      "value": 32
+    },
+    "zaubertrank_g": {
+      "name": "Großer Zaubertrank",
+      "kind": "consumable",
+      "mana": 70,
+      "icon": "🔮",
+      "desc": "Stellt 70 Mana bzw. Ausdauer wieder her.",
+      "value": 66
     },
     "iron_key": {
       "name": "Eiserner Schlüssel",
@@ -2232,6 +2270,10 @@
             {
               "item": "nebelstab",
               "n": 1
+            },
+            {
+              "item": "zaubertrank",
+              "n": 1
             }
           ],
           "lootV": 2
@@ -2268,16 +2310,17 @@
           "type": "secret",
           "x": 6,
           "y": 11,
-          "hint": "Die Fuge hier ist frischer als der Rest der Mauer."
+          "hint": "Die Fuge hier ist frischer als der Rest der Mauer. Etwas in dieser Gruft lässt sich drehen, nicht nur drücken."
         },
         {
           "id": "switch_g2",
           "type": "lever",
           "wall": true,
+          "torch": true,
           "x": 1,
           "y": 11,
           "gate": "secret_g2",
-          "msg": "Der Stein gibt nach. Am anderen Ende des Raums schabt Stein über Stein."
+          "msg": "Die Fackel lässt sich drehen. Am anderen Ende des Raums schabt Stein über Stein."
         },
         {
           "id": "chest_g_real",
@@ -2584,13 +2627,17 @@
               "gold": 35
             },
             {
-              "item": "potion",
+              "item": "potion_m",
               "n": 2
             },
             {
               "gear": {
                 "boost": 1
               }
+            },
+            {
+              "item": "zaubertrank_m",
+              "n": 1
             }
           ]
         },
@@ -3006,8 +3053,8 @@
         {
           "id": "en_tboss",
           "type": "enemy",
-          "x": 22,
-          "y": 9,
+          "x": 25,
+          "y": 10,
           "kind": "nebelhueter"
         },
         {
@@ -3023,8 +3070,12 @@
               "gold": 50
             },
             {
-              "item": "potion",
-              "n": 2
+              "item": "potion_m",
+              "n": 1
+            },
+            {
+              "item": "potion_g",
+              "n": 1
             },
             {
               "gear": {
@@ -3073,7 +3124,7 @@
               "gold": 25
             },
             {
-              "item": "potion",
+              "item": "potion_m",
               "n": 1
             },
             {
@@ -3298,7 +3349,7 @@
           ],
           "loot": [
             {
-              "item": "potion",
+              "item": "potion_m",
               "n": 1
             },
             {
@@ -3356,6 +3407,10 @@
             },
             {
               "gold": 10
+            },
+            {
+              "item": "zaubertrank",
+              "n": 1
             }
           ]
         },
@@ -3902,6 +3957,15 @@
       "stock": [
         {
           "item": "potion"
+        },
+        {
+          "item": "potion_m"
+        },
+        {
+          "item": "zaubertrank"
+        },
+        {
+          "item": "zaubertrank_m"
         },
         {
           "item": "gegengift"

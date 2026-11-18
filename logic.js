@@ -332,7 +332,7 @@ function blockedText(b) {
   if (b.type === 'runestone') return 'Ein Runenstein. Die Zeichen glimmen schwach.';
   if (b.type === 'gate') return 'Ein Fallgitter versperrt den Weg.';
   if (b.type === 'secret') return 'Eine Wand. Durch die Fugen läuft ein feiner Riss.';
-  if (b.type === 'lever') return b.wall ? 'Ein Stein in der Wand sitzt locker.' : 'Ein Wandhebel steht im Weg.';
+  if (b.type === 'lever') return b.torch ? 'Eine Wandfackel. Ihre Halterung sitzt locker.' : b.wall ? 'Ein Stein in der Wand sitzt locker.' : 'Ein Wandhebel steht im Weg.';
   return 'Ein Gegner steht im Weg.';
 }
 
@@ -592,7 +592,7 @@ export function secretHint(state, data, o) {
   const p = state.player, dx = sw.x - p.x, dy = sw.y - p.y, n = Math.abs(dx) + Math.abs(dy);
   const dir = [dy < 0 && 'Norden', dy > 0 && 'Süden', dx > 0 && 'Osten', dx < 0 && 'Westen'].filter(Boolean);
   const who = bestAt(state, data, 'secret');
-  return { msg: `${base} ${who.name} tastet die Fugen ab: Der Mechanismus muss ${n <= 1 ? 'direkt nebenan' : `etwa ${n} Schritte weiter im ${dir.join('-')}`} liegen${sw.wall ? ', ein lockerer Stein' : ''}.`, sfx: 'ui', long: true };
+  return { msg: `${base} ${who.name} tastet die Fugen ab: Der Mechanismus muss ${n <= 1 ? 'direkt nebenan' : `etwa ${n} Schritte weiter im ${dir.join('-')}`} liegen${sw.torch ? ', eine Fackel mit lockerer Halterung' : sw.wall ? ', ein lockerer Stein' : ''}.`, sfx: 'ui', long: true };
 }
 // Geheimwände spüren: nach Schritt/Drehung je Geheimwand geradeaus (1–2 Felder) ein Wurf, nur mit Talent „secret“ (Chance 30 + Talent).
 export function scanSecrets(state, data) {
@@ -674,10 +674,10 @@ export function interact(state, data) {
   if (o.type === 'gate') return { msg: o.hint || 'Das Gitter sitzt fest. Es muss einen Hebel geben.', sfx: 'bump' };
   if (o.type === 'lever') { // wall: true = versteckter Schalter (lockerer Stein in der Mauer); Ziel ist ein Gitter oder eine Geheimwand
     const gate = state.objs.find((x) => x.id === o.gate);
-    if (o.used) return { msg: o.wall ? 'Der Stein ist schon eingedrückt.' : 'Der Hebel ist schon umgelegt.', sfx: 'ui' };
+    if (o.used) return { msg: o.torch ? 'Die Fackel ist schon gedreht.' : o.wall ? 'Der Stein ist schon eingedrückt.' : 'Der Hebel ist schon umgelegt.', sfx: 'ui' };
     o.used = true;
     if (gate) gate.open = true;
-    return { msg: o.msg || (o.wall ? 'Der Stein gibt nach. In der Nähe schabt Stein über Stein.' : 'Der Hebel rastet ein. Irgendwo rasselt eine Kette.'), sfx: 'door', changed: true };
+    return { msg: o.msg || (o.torch ? 'Die Fackel lässt sich drehen. In der Nähe schabt Stein über Stein.' : o.wall ? 'Der Stein gibt nach. In der Nähe schabt Stein über Stein.' : 'Der Hebel rastet ein. Irgendwo rasselt eine Kette.'), sfx: 'door', changed: true };
   }
   if (o.type === 'chest') {
     if (o.open) return { msg: 'Die Truhe ist leer.' };
@@ -697,8 +697,15 @@ export function interact(state, data) {
 export function useItemOutside(state, data, itemId, heroIdx) {
   const it = data.items[itemId];
   const h = state.heroes[heroIdx];
-  if (!it || it.kind !== 'consumable' || !it.heal || !(state.inv[itemId] > 0)) return { error: 'no-item' };
+  if (!it || it.kind !== 'consumable' || !(it.heal || it.mana) || !(state.inv[itemId] > 0)) return { error: 'no-item' };
   if (!h || h.hp <= 0) return { error: 'bad-target' };
+  if (it.mana) { // 0.24.0: Zaubertrank – Mana bzw. Ausdauer
+    if (h.mp >= h.maxMp) return { error: 'full-mp' };
+    const mb = h.mp;
+    h.mp = Math.min(h.maxMp, h.mp + Math.floor((it.mana * (100 + Math.min(100, partyFx(state, data, 'potionplus')))) / 100));
+    state.inv[itemId]--;
+    return { msg: `${h.name} erhält ${h.mp - mb} ${data.classes[h.cls].res.name} zurück.`, sfx: 'heal' };
+  }
   if (h.hp >= h.maxHp) return { error: 'full-hp' };
   const before = h.hp;
   h.hp = Math.min(h.maxHp, h.hp + Math.floor((it.heal * (100 + Math.min(100, partyFx(state, data, 'potionplus')))) / 100)); // Tränkemeister (0.22.0)
@@ -1786,7 +1793,8 @@ export function syncStatic(state, data) {
       if (i < 0) { a.objs.push(freshObj(data, o)); n++; }
       else if (STATIC_TYPES.has(o.type) && a.objs[i].type === o.type && JSON.stringify(a.objs[i]) !== JSON.stringify(o)) { a.objs[i] = clone(o); n++; }
       else if (o.type === 'chest' && o.lootV && a.objs[i].type === 'chest' && !a.objs[i].open && a.objs[i].lootV !== o.lootV) { a.objs[i].loot = clone(o.loot); a.objs[i].lootV = o.lootV; n++; } // 0.21.0: neue Beute (z. B. Set-Teile) auch in ungeöffneten Truhen alter Stände
-      else if (!STATIC_TYPES.has(o.type)) for (const k of ['title', 'style']) if (o[k] !== undefined && a.objs[i][k] !== o[k]) { a.objs[i][k] = o[k]; n++; } // 0.16.14: Beschriftung/Stil von Türen u. a. nachziehen (alte Stände ohne `style` zeigten einen Zufallsstil)
+      else if (o.type === 'enemy' && a.objs[i].type === 'enemy' && !a.objs[i].dead && (a.objs[i].x !== o.x || a.objs[i].y !== o.y) && !(a.id === state.levelId && state.player.x === o.x && state.player.y === o.y)) { a.objs[i].x = o.x; a.objs[i].y = o.y; n++; } // 0.23.12: Gegnerplatz (z. B. Hüter am Thron) auch in alten Ständen nachziehen
+      else if (!STATIC_TYPES.has(o.type)) for (const k of ['title', 'style', 'torch', 'msg']) if (o[k] !== undefined && a.objs[i][k] !== o[k]) { a.objs[i][k] = o[k]; n++; } // 0.16.14: Beschriftung/Stil von Türen u. a. nachziehen (alte Stände ohne `style` zeigten einen Zufallsstil)
     }
   }
   return n;

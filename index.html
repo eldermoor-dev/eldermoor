@@ -32,7 +32,7 @@ button{font:inherit;color:inherit}
 #foetags .ft.sel .bar{box-shadow:0 0 0 1.5px var(--amber),0 0 5px var(--amber)}
 #foetags .ft b{color:var(--amber);font-size:.66rem}
 #foetags .ft.sel b{color:#fff}
-#foetags .ft i{font-style:normal}#foetags .ft i.w{color:#ff9d5c}#foetags .ft i.cb{color:#7fd4ff}
+#foetags .ft i{font-style:normal}#foetags .ft i.w{color:#ff9d5c}#foetags .ft i.cb{color:#7fd4ff;font-weight:700;font-size:.8rem}
 #enemybox .en{display:flex;gap:8px;align-items:center}
 #enemybox .en .bar{flex:1}
 #enemybox{pointer-events:auto}
@@ -173,7 +173,7 @@ body.on-title .pad,body.on-title #hud,body.on-title #fps{visibility:hidden}
 .tnode.got{border-color:#7fa05a;background:#18220f}.tnode.got em{color:#9fc27a}
 .tnode:disabled:not(.got){opacity:.55}
 @media (max-width:640px){.tgrid{grid-template-columns:1fr}}
-#enemybox .en .combo{flex:1 0 100%;font-style:normal;color:#7fd4ff;font-size:.72rem}
+#enemybox .combo{display:block;text-align:center;font-style:normal;color:#7fd4ff;font-size:.8rem;margin-top:3px}#enemybox .en .combo{flex:1 0 100%;font-style:normal;color:#7fd4ff;font-size:.72rem}
 .taldot{color:#b46bff;text-shadow:0 0 4px #b46bff}
 .newtag{color:#ffd24a;font-weight:700;font-size:.85em;white-space:nowrap}
 .btn.hastal{position:relative}.btn.hastal::after{content:'';position:absolute;top:5px;right:6px;width:9px;height:9px;border-radius:50%;background:#b46bff;box-shadow:0 0 5px #b46bff}
@@ -224,6 +224,7 @@ body.on-title .pad,body.on-title #hud,body.on-title #fps{visibility:hidden}
     <button class="mb" data-t="load">Spielstände</button>
     <button class="mb" data-t="settings">Einstellungen</button>
     <button class="mb" data-t="help">Steuerung &amp; Info</button>
+    <button class="mb" data-t="quit">Spiel beenden</button>
   </div>
 </div>
 

@@ -139,6 +139,22 @@ function genGate(seed, n = TEX) {
   }
   return t;
 }
+// Geöffnetes Fallgitter (0.23.9, Nutzer: „soll offen zu sehen sein“): Pfosten und Querbalken, daran hochgezogen die Stäbe mit Spitzen; Durchgang frei
+function genGateOpen(seed) {
+  const t = { w: TEX, h: TEX, data: new Uint8Array(TEX * TEX).fill(255) };
+  const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
+  for (let y = 0; y < TEX; y++) for (let x = 0; x < TEX; x++) {
+    if (x <= 3 || x >= 60) set(x, y, P('iron', (x === 3 || x === 60 ? 1.4 : 3.2) + hash(x, y >> 2, seed) * 0.6)); // Pfosten
+    else if (y <= 5) set(x, y, P('iron', (y === 5 ? 1.2 : 3.8) + hash(x >> 1, y, seed + 1) * 0.5)); // Querbalken
+  }
+  for (let u = 8; u < 58; u += 10) for (let x = u; x < u + 3.4; x++) for (let y = 6; y <= 19; y++) {
+    const tip = y >= 17; // Spitze läuft schmal zu
+    if (tip && (x - u < 1 || x - u > 2)) continue;
+    set(Math.floor(x), y, P('iron', 4.4 - ((x - u) / 3.4) * 1.6 + hash(x, y, seed + 2) * 0.4));
+  }
+  t.noWrap = true;
+  return t;
+}
 // Wandfackel: feste Flamme (kein Flackern), Halterung aus Eisen, Lichtschein auf dem Stein
 function genTorch(seed, n = TEX) {
   const t = genStone(seed, n);
@@ -660,8 +676,9 @@ function genPlaque(title, kind, styleName, seed, clipY = PLQ) { // clipY (0.22.1
   const N = PLQ, buf = new Uint8Array(N * N).fill(255);
   const lines = String(title || '').toUpperCase().split('|').slice(0, 2).filter(Boolean);
   const maxC = Math.max(1, ...lines.map((l) => [...l].slice(0, 8).length)), cw = 6;
-  const s = Math.max(2, Math.min(3, Math.floor(168 / (cw * maxC)))); // 0.19.5: kleiner (vorher bis 5), Nutzer: „zu leuchtend groß“
-  const ex = Math.max(1, s >> 2), lh = 9 * s, th = lines.length * lh - 2 * s;
+  // 0.23.4 (Nutzer: aus der Nähe zu groß, unlesbar): Textblock höchstens ca. die halbe Wandbreite (vorher bis 75 %); Stil (Blutschmiere) bleibt
+  const s = kind === 'door' ? Math.max(1.5, Math.min(2, 80 / (cw * maxC))) : Math.max(1.7, Math.min(2.3, 100 / (cw * maxC))); // Türsturz (0.23.6): Schrift liegt innerhalb des Türschilds
+  const lh = Math.round(9 * s), th = Math.round(lines.length * lh - 2 * s);
   const ty0 = kind === 'door' ? 14 : Math.round(N / 2 - th / 2);
   // 0.19.11 (Nutzer: „gruseliger, nicht aus Druckschrift“): von Hand geschmiert – jeder Buchstabe leicht schief und versetzt, Striche aus runden Pinselflecken mit schwankender Dicke,
   // dicke Tropfen mit Kuppe, dunkle Gerinnsel und feuchte Lichter. Gleiche Lesbarkeit (gleiche Buchstabenraster), aber keine Blockschrift mehr.
@@ -690,7 +707,7 @@ function genPlaque(title, kind, styleName, seed, clipY = PLQ) { // clipY (0.22.1
   // Tropfen: dicke Streifen nach unten mit Kuppe am Ende
   const drip = new Uint8Array(N * N);
   for (let y = 0; y < N - 2; y++) for (let x = 0; x < N; x++) {
-    if (!mask[y * N + x] || mask[(y + 1) * N + x] || hash(x, y, seed + 11) < 0.93) continue;
+    if (!mask[y * N + x] || mask[(y + 1) * N + x] || hash(x, y, seed + 11) < 0.955) continue;
     const lastLine = y >= ty0 + lh * (lines.length - 1), lmax = lastLine ? 10 : Math.max(2, 2 * s - 1); // 0.22.1: Tropfen kürzer, nie in die nächste Zeile
     const len = 2 + Math.floor(hash(x, y, seed + 12) * lmax), wd = hash(x, y, seed + 13) > 0.6 ? 1 : 0;
     for (let k = 1; k <= len && y + k < N; k++) for (let d = 0; d <= wd; d++) { const X = x + d; if (X < N && !mask[(y + k) * N + X]) drip[(y + k) * N + X] = 1 + Math.min(2, Math.floor(k / (len / 3))); }
@@ -1111,12 +1128,13 @@ function genTrap(mode, seed, kind = 'spikes') { // kind (0.22.1, Nutzer: „Stah
   const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
   if (mode === 'faint') {
     // 0.19.9: sichtbare Platte; 0.19.18 (Nutzer: „Stein bei der Giftfalle jetzt zu deutlich“): dezenter – kleiner, kaum dunkler als der Boden, schmale feine Risse, wenig Staub
-    for (let y = 58; y <= 63; y++) for (let x = 16; x <= 48; x++) {
-      const edge = x === 16 || x === 48 || y === 58;
-      set(x, y, edge ? P('stone', 1.7) : P('stone', 2.6 + hash(x >> 1, y, seed) * 1.0));
+    // 0.23.4 (Nutzer: ohne Schurken nicht erkennbar): etwas höher und kontrastreicher – helle Kante oben, dunkle Fuge, deutlichere Risse; weiter dezenter als die entdeckte (rote) Falle
+    for (let y = 54; y <= 63; y++) for (let x = 14; x <= 50; x++) {
+      const edge = x === 14 || x === 50 || y === 54, lit = y === 55 && x > 14 && x < 50;
+      set(x, y, edge ? P('stone', 0.9) : lit ? P('stone', 5.2) : P('stone', 3.4 + hash(x >> 1, y, seed) * 0.9));
     }
-    for (const cx of [24, 38]) { let x = cx + Math.floor(hash(cx, 5, seed) * 3) - 1; for (let y = 59; y <= 63; y++) { set(x, y, P('stone', 1.4)); if (hash(x, y, seed + 2) > 0.55) x += hash(y, x, seed + 3) > 0.5 ? 1 : -1; } }
-    for (let x = 14; x <= 50; x++) for (let y = 56; y <= 57; y++) if (hash(x, y, seed + 7) > 0.95) set(x, y, P('stone', 3.8));
+    for (const cx of [22, 32, 42]) { let x = cx + Math.floor(hash(cx, 5, seed) * 3) - 1; for (let y = 56; y <= 63; y++) { set(x, y, P('stone', 0.7)); if (hash(x, y, seed + 2) > 0.55) x += hash(y, x, seed + 3) > 0.5 ? 1 : -1; } }
+    for (let x = 12; x <= 52; x++) for (let y = 51; y <= 53; y++) if (hash(x, y, seed + 7) > 0.9) set(x, y, P('stone', 4.6));
   } else if (mode === 'seen') {
     for (let x = 12; x <= 52; x++) for (let y = 58; y <= 63; y++) { const edge = x === 12 || x === 52 || y === 58 || y === 63; set(x, y, edge ? P('glow', 6.5) : (x + y) % 4 < 2 ? P('glow', 3.2) : P('stone', 0.6)); }
     for (let y = 30; y <= 50; y++) for (let x = 29; x <= 35; x++) { const w = 3 - Math.floor((y - 30) / 9); if (Math.abs(x - 32) <= Math.max(1, w) && y <= 45) set(x, y, P('glow', 7)); }
@@ -1562,17 +1580,17 @@ function genHueter(seed) {
       return R(2.1 + Math.abs(Math.sin(px * 0.9 + seed)) * 0.6 - Math.max(0, (py - 44) * 0.05));
     }
     // Thron hinter der Gestalt: hohe Spitzbogenlehne, Seitentürme, Schädel an den Armlehnen, Stufen
-    { const topY = 1.8 + (ax / 18) ** 2 * 10 - (ax < 1.6 ? 1.4 : 0);
-      const back = ax <= 18 && py >= topY && py <= 60;
-      const spire = ax >= 16.4 && ax <= 19.8 && py >= 0.8 + (ax - 16.4) * 1.2 && py < 30;
-      const armR = ax >= 15 && ax <= 23.4 && py >= 38 && py <= 57 && !(ax < 18 && py < 40);
-      const skull = ell(px, py, 32 + Math.sign(dx || 1) * 22, 36.6, 2.6, 2.6) <= 1;
-      const step = py >= 58.6 && ax <= 27.5 - (py - 58.6) * 0.4;
-      if (skull) return ell(px, py, 32 + Math.sign(dx || 1) * 22 - 0.9, 36.2, 0.7, 0.8) <= 1 || ell(px, py, 32 + Math.sign(dx || 1) * 22 + 0.9, 36.2, 0.7, 0.8) <= 1 ? ['ice', 7] : ['flesh', 5.8];
+    { const topY = 1.2 + (ax / 27) ** 2 * 16 - (ax < 1.6 ? 1.4 : 0);
+      const back = ax <= 27 && py >= topY && py <= 60;
+      const spire = ax >= 23.4 && ax <= 27.6 && py >= 0.8 + (ax - 23.4) * 1.2 && py < 34;
+      const armR = ax >= 17 && ax <= 29.4 && py >= 38 && py <= 57 && !(ax < 20 && py < 40);
+      const skull = ell(px, py, 32 + Math.sign(dx || 1) * 26, 35.6, 2.6, 2.6) <= 1;
+      const step = py >= 58.6 && ax <= 31.5 - (py - 58.6) * 0.4;
+      if (skull) return ell(px, py, 32 + Math.sign(dx || 1) * 26 - 0.9, 35.2, 0.7, 0.8) <= 1 || ell(px, py, 32 + Math.sign(dx || 1) * 26 + 0.9, 35.2, 0.7, 0.8) <= 1 ? ['ice', 7] : ['flesh', 5.8];
       if (back || spire || armR || step) {
-        const edge = (back && (ax > 16.2 || py < topY + 1.3)) || (armR && (py < 39.6 || ax > 22)) || (step && py < 59.8) || spire;
-        const inset = back && ax < 12 && py > topY + 4 && py < 54;
-        return edge ? ['stone', 4 - l * 0.4 + n * 0.4] : inset ? ['stone', 0.7 + n * 0.5 + (ax < 1 ? 0.8 : 0)] : ['stone', 1.7 + n * 0.8 - dx * 0.02];
+        const edge = (back && (ax > 25 || py < topY + 1.3)) || (armR && (py < 39.6 || ax > 27.6)) || (step && py < 59.8) || spire;
+        const inset = back && ax < 20 && py > topY + 4 && py < 54;
+        return edge ? ['stone', 7] : inset ? ['stone', 0 + n * 0.3 + (ax < 1 ? 0.8 : 0)] : ['stone', 0.5 + n * 0.5]; // 0.23.12: Thron heller, hebt sich von der Wand ab
       } }
     return null;
   }, 192);
@@ -1740,7 +1758,7 @@ export function makeTextures(detail = 1) {
     wall: { [WALL_STONE]: stoneW, [WALL_SECRET]: genSecretWall(stoneW, 301), [WALL_SWITCH]: genSwitchWall(stoneW, false), [WALL_SWITCH_ON]: genSwitchWall(stoneW, true), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
     ceil: genCeil(53, nf),
-    sprites: { plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)), chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)), chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
@@ -1878,7 +1896,7 @@ export class Raycaster {
       const x0 = screenX - (sprW >> 1);
       if (s.foe) { // 0.23.3: Bildschirmlage für die Lebensbalken über dem Gegner (main.js)
         if (s.tex.opTop == null) { let r = 0; outer: for (; r < TN; r++) for (let c = 0; c < TN; c++) if (td[r * TN + c] !== 255) break outer; s.tex.opTop = r / TN; }
-        s.scr = { cx: screenX, top: top + sprH * s.tex.opTop, w: sprW, tY };
+        const hb = Math.floor(focal / tY * (s.base || s.scale)); s.scr = { cx: screenX, top: bottom - hb + hb * s.tex.opTop, w: Math.max(1, Math.floor(hb * wf)), tY }; // 0.23.12: Lage ohne Atem-Schwanken, sonst wackelt der Lebensbalken
       }
       const tbl = this.shadeTbl[dropFor(tY)];
       const ya = Math.max(0, top), yb = Math.min(H - 1, bottom - 1);
@@ -1910,7 +1928,7 @@ export function buildGrid(lvl, objs) {
   }
   for (const o of objs) if (o.type === 'door' && !o.open) grid[o.y * w + o.x] = o.locked ? WALL_DOOR_LOCKED : WALL_DOOR;
   for (const o of objs) if (o.type === 'gate' && !o.open) grid[o.y * w + o.x] = WALL_GATE;
-  for (const o of objs) { if (o.type === 'secret' && !o.open) grid[o.y * w + o.x] = WALL_SECRET; else if (o.type === 'lever' && o.wall) grid[o.y * w + o.x] = o.used ? WALL_SWITCH_ON : WALL_SWITCH; }
+  for (const o of objs) { if (o.type === 'secret' && !o.open) grid[o.y * w + o.x] = WALL_SECRET; else if (o.type === 'lever' && o.wall) grid[o.y * w + o.x] = o.torch ? WALL_TORCH : o.used ? WALL_SWITCH_ON : WALL_SWITCH; } // torch (0.23.7): Schalter sieht aus wie eine gewöhnliche Wandfackel
   return { grid, gw: w, gh: h };
 }
 const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'turmwache' ? tex.sprites.turmwache : k === 'wolf' ? tex.sprites.wolf : k === 'kultist' ? tex.sprites.kultist : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'truhenmaul' ? tex.sprites.mimic : k === 'brandmagier' ? tex.sprites.magier : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
@@ -1926,13 +1944,27 @@ export const spriteScale = (k, n) => bossScale(k) * // 0.22.1 (Nutzer: „alle g
 // stehen die Gegner gestaffelt hintereinander statt nebeneinander, sonst ragen sie in die Wände (Nutzer-Screenshot 0.16.4).
 // 0.22.1: Alle Figuren in voller Größe. Offen: nebeneinander. Enger Gang (1 Feld): eine vorn, die anderen leicht versetzt dahinter;
 // grow gleicht die Perspektive teilweise aus, damit die hinteren nicht klein wirken (Nutzer: „im Gang werden sie klein“).
-export function groupOffsets(n, narrow) {
+export function groupOffsets(n, narrow, side = 0) { // side (0.23.4): -1 = Wand links, +1 = Wand rechts, 0 = frei – die Gruppe rückt von der Wand weg (Nutzer: „Monster in der Wand“)
   if (n <= 1) return [{ lat: 0, dep: 0, grow: 1 }];
   if (narrow) return n >= 3
-    ? [{ lat: -0.2, dep: 0, grow: 1 }, { lat: 0.21, dep: 0.12, grow: 1.08 }, { lat: 0, dep: 0.6, grow: 1.36 }]
-    : [{ lat: -0.19, dep: 0, grow: 1 }, { lat: 0.21, dep: 0.12, grow: 1.08 }];
+    ? [{ lat: -0.13, dep: 0, grow: 1 }, { lat: 0.14, dep: 0.12, grow: 1.08 }, { lat: 0, dep: 0.6, grow: 1.36 }]
+    : [{ lat: -0.15, dep: 0, grow: 1 }, { lat: 0.17, dep: 0.14, grow: 1.08 }]; // 0.23.8: näher an der Mitte (breite Figuren mit Schild ragten an die Wand)
   const gap = n >= 3 ? 0.56 : 0.62;
-  return Array.from({ length: n }, (_, i) => ({ lat: (i - (n - 1) / 2) * gap, dep: 0, grow: 1 }));
+  const lats = Array.from({ length: n }, (_, i) => (i - (n - 1) / 2) * gap);
+  if (side < 0) { const s = Math.max(0, -0.12 - Math.min(...lats)); for (let i = 0; i < n; i++) lats[i] += s; }
+  else if (side > 0) { const s = Math.max(0, Math.max(...lats) - 0.12); for (let i = 0; i < n; i++) lats[i] -= s; }
+  return lats.map((lat) => ({ lat, dep: 0, grow: 1 }));
+}
+// Wand direkt links/rechts des Feldes (aus Sicht der Kamera)
+export function wallSides(g, x, y, angle) {
+  if (!g) return { l: false, r: false };
+  const rx = Math.round(Math.cos(angle)), ry = Math.round(Math.sin(angle));
+  const wall = (cx, cy) => cx < 0 || cy < 0 || cx >= g.gw || cy >= g.gh || g.grid[cy * g.gw + cx] !== 0;
+  return { l: wall(x - rx, y - ry), r: wall(x + rx, y + ry) };
+}
+export function groupLayout(g, x, y, angle, n) {
+  const { l, r } = wallSides(g, x, y, angle);
+  return groupOffsets(n, n > 1 && (l && r || (l || r) && n >= 3), l && !r ? -1 : r && !l ? 1 : 0); // drei Gegner mit Wand auf einer Seite: gestaffelt (sonst rutscht einer aus dem Bild)
 }
 // Eng = beide Nachbarfelder quer zur Blickrichtung sind Wand (grid aus buildGrid: 0 = frei)
 export function isNarrowAt(g, x, y, angle) {
@@ -1955,6 +1987,14 @@ function passAxis(grid, o) {
   if (wl(o.x, o.y - 1) && wl(o.x, o.y + 1)) return [1, 0];
   return null;
 }
+// 0.23.13 (Nutzer: „Bei Annäherung dreht sich das Tor um 90 Grad“): frei im Raum stehende Treppen/Ausgänge hatten keine feste Achse und drehten sich als Aufsteller zur Kamera.
+// Jetzt stehen sie fest parallel zur nächsten Wand (bei Gleichstand: Nord-Süd-Blick).
+function freeAxis(grid, o) {
+  const wl = (x, y) => x < 0 || y < 0 || x >= grid.gw || y >= grid.gh || grid.grid[y * grid.gw + x] !== 0;
+  const run = (dx, dy) => { let n = 0; while (n < 12 && !wl(o.x + dx * (n + 1), o.y + dy * (n + 1))) n++; return n; };
+  const ns = Math.min(run(0, -1), run(0, 1)), ew = Math.min(run(-1, 0), run(1, 0));
+  return ns <= ew ? [0, 1] : [1, 0];
+}
 export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = null) { // alive: {objId: Arten (Liste) oder Anzahl der lebenden Gegner} im Kampf; grid: für enge Gänge
   const out = [];
   const rx = Math.cos(angle), ry = Math.sin(angle); // „rechts“ aus Sicht der Kamera
@@ -1969,12 +2009,12 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
       const tot = Array.isArray(o.kinds) ? Math.min(3, o.kinds.length) : 1;
       const av = alive && alive[o.id] != null ? alive[o.id] : null, kindList = Array.isArray(av) ? av : null;
       const n = kindList ? kindList.length : av != null ? av : tot; // Gruppe: eine Gestalt je lebendem Gegner, nebeneinander
-      const narrow = n > 1 && isNarrowAt(grid, o.x, o.y, angle), offs = groupOffsets(n, narrow);
+      const offs = groupLayout(grid, o.x, o.y, angle, n);
       for (let i = 0; i < n; i++) {
         const { lat, dep, grow } = offs[i];
         const kd = kindList ? kindList[i] : kindOf(o, i), sc = spriteScale(kd, n) * combatFit * (grow || 1);
         const inFight = !!(alive && alive[o.id] != null);
-        out.push({ x: o.x + rx * lat + fx * dep, y: o.y + ry * lat + fy * dep, tex: spriteFor(tex, kd), scale: sc * (1 + 0.02 * Math.sin(time * 3 + i)), front: inFight, foe: inFight ? { id: o.id, k: i } : null });
+        out.push({ x: o.x + rx * lat + fx * dep, y: o.y + ry * lat + fy * dep, tex: spriteFor(tex, kd), scale: sc * (1 + 0.02 * Math.sin(time * 3 + i)), base: sc, front: inFight, foe: inFight ? { id: o.id, k: i } : null });
       }
     }
     else if (o.type === 'lever' && !o.wall) out.push({ x: o.x, y: o.y, tex: o.used ? tex.sprites.leverDown : tex.sprites.leverUp, scale: 0.75 });
@@ -1984,11 +2024,16 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
       const ns = wl(o.x - 1, o.y) && wl(o.x + 1, o.y);
       out.push({ x: o.x, y: o.y, tex: cachedTex(tex, 'frames', styleFor(o) + (o.title || ''), () => genDoorFrame(o.title, styleFor(o), 137)), scale: 1, axis: ns ? [0, 1] : [1, 0] });
     }
+    else if (o.type === 'gate' && o.open && grid) { // offenes Gitter: hochgezogene Stäbe im Durchgang (nur beim Blick längs, wie offene Tür)
+      const wl = (x, y) => x < 0 || y < 0 || x >= grid.gw || y >= grid.gh || grid.grid[y * grid.gw + x] !== 0;
+      const ns = wl(o.x - 1, o.y) && wl(o.x + 1, o.y), ew = wl(o.x, o.y - 1) && wl(o.x, o.y + 1);
+      if (ns || ew) out.push({ x: o.x, y: o.y, tex: tex.sprites.gateOpen, scale: 1, axis: ns ? [0, 1] : [1, 0] });
+    }
     else if (o.type === 'runestone') out.push({ x: o.x, y: o.y, tex: tex.sprites.runeStone, scale: 0.9 });
     else if (o.type === 'merchant') out.push({ x: o.x, y: o.y, tex: tex.sprites.merchant, scale: 0.8 });
     else if (o.type === 'stairs' || o.type === 'exit') {
       if (grid && passFaces((x, y) => x < 0 || y < 0 || x >= grid.gw || y >= grid.gh || grid.grid[y * grid.gw + x] !== 0, o).length) continue; // liegt an einer Wand: als Wand-Abziehbild (buildDecals)
-      out.push({ x: o.x, y: o.y, tex: passTex(tex, o), scale: 0.9, axis: passAxis(grid, o) });
+      out.push({ x: o.x, y: o.y, tex: passTex(tex, o), scale: 0.9, axis: grid ? passAxis(grid, o) || freeAxis(grid, o) : null });
     }
   }
   return out;

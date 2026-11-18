@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.23.3 (18.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.24.2 (18.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -905,3 +905,96 @@ Nutzer (Screenshots): „Kasten oben links verdeckt Gegner“, dann „Gegner te
 - **Zugreihenfolge** als einzeilige Leiste oben mittig („Runde n“ + Namen, aktiver golden). „Gegner antippen = Ziel“ nur noch in Runde 1. Warnung vor großem Gegnerzauber bleibt darüber.
 - LP als Zahl: nicht mehr im Kampfbild (Bestiarium). Falls vermisst: Rückmeldung.
 - Tests 109 grün (neu: Kampfbild 0.23.3, pointer-events der Balken).
+
+## 0.23.4 (18.11.2026) – Fehlerpaket aus dem Gerätetest (nicht auf Gerät getestet)
+| Meldung des Nutzers | Befund | Änderung |
+|---|---|---|
+| Dietrich kostet 9 statt 10 Gold | Code belegt: Feilschtalent (Schurke „Tascheninhalt“, Alchemist) gibt −10 % → ceil(10·0,9) = 9. Ob das in der Gruppe des Nutzers die Ursache ist, nicht gesichert | Laden zeigt „Feilschen (Talent): Preise −X %, Verkauf +X %“; Test für 10 und 9 Gold |
+| Rote Schrift aus der Nähe zu groß | Headless-Screenshot bestätigt: Textblock bis ca. 75 % der Wandbreite | `genPlaque`: Maßstab 1,7–2,3 (Block höchstens ca. 50 %), weniger Tropfen; Stil bleibt |
+| Kombi-Anzeige fehlte | Ursache belegt: Stil `.combo` galt nur für die seit 0.23.3 entfernten Gegnerzeilen, der Text wurde nicht mehr ausgegeben | Text „✚ Kombi: Name (Angriff/Zauber)“ unter der Zugleiste für das gewählte Ziel; Symbol am Gegner „✚ Kombi“ |
+| Fallenspur nicht erkennbar | Screenshot: Spur sehr schwach, bei 1 Feld Abstand hinter der Leiste | Spur höher/kontrastreicher (bleibt dezenter als die rote entdeckte Falle); Blick senkt sich, wenn eine ENTDECKTE Falle das nächste Feld ist (nicht bei unentdeckten, sonst Verrat) |
+| Kartenzoom ohne Wirkung | **Nicht nachgestellt**: Zwei-Finger-Zoom funktioniert in headless Chromium (Faktor 5, keine Notiz) | Zusätzlich Schaltflächen ＋ / − / 1:1 unter der Karte. Genaues Verhalten auf dem Gerät erfragen, falls weiter ohne Wirkung |
+| Grauer Infobalken nur 3 s | Der Balken im Screenshot ist die Android-Systemmeldung zum Vollbild – von der App nicht steuerbar | In-Game-Infoleiste jetzt fest 3 s (vorher 3–6 s) |
+
+Tests 110 grün (Node). BALANCE.md/SIM.md unverändert (keine Werte geändert). Dev-Hook `S.fn.openMap` für Headless-Tests ergänzt.
+
+## 0.23.5 (18.11.2026) – Monster in der Wand (nicht auf Gerät getestet)
+- Meldung des Nutzers (Screenshot Moorpfad, Kultisten + Moorlicht): Moorlicht steckt halb in der rechten Wand.
+- Ursache (Headless-Screenshot nachgestellt, Zelle 18/4 mit Moosmauer 17/4): `isNarrowAt` staffelte die Gruppe nur, wenn LINKS und RECHTS Wand war; bei nur einer Wand rutschte der äußere Gegner (Versatz −0,56) in diese Wand.
+- Fix: `wallSides`/`groupLayout` (render.js), genutzt von Sprites (`buildSprites`) und Lebensbalken (main.js `placeFoeTags`). Wand auf einer Seite: bei 3 Gegnern gestaffelte Aufstellung, bei 2 Gegnern Verschiebung von der Wand weg. Beide Wände: wie bisher.
+- Geprüft: Moorpfad 18/3 Blick Süd und 19/4 Blick West – keine Figur in der Wand. Weitere Orte nicht durchgesehen.
+- Tests 111 grün (Node). Testpunkt `wall-235`.
+
+## 0.23.6 (18.11.2026) – Türsturz-Schrift (nicht auf Gerät getestet)
+- Meldung: „Schrift“ (Screenshot Kultgruft, offene Tür „SCHATZ-KAMMER“ aus der Nähe: Schrift größer als das Schild, Zeilen am Rand abgeschnitten, schlecht lesbar).
+- Befund (Headless nachgestellt): auch mit 0.23.5 war die Türschrift etwas breiter als das Schild.
+- Fix: `genPlaque` für `kind === 'door'` Maßstab 1,5–2,0 (Faktor 80 statt 100); Wandschrift unverändert. Danach liegt der Text im Schild.
+- Grenze: Aus 1 Feld Abstand ragt der obere Türsturz ohnehin über den Bildrand; das liegt an der Kamerahöhe und ist nicht geändert.
+- Tests 111 grün.
+
+## 0.23.7 (18.11.2026) – Fackelschalter für Geheimwände (nicht auf Gerät getestet)
+- Nutzerwunsch: Geheimtüren sollen auch durch Berühren einer Fackel aufgehen.
+- Umsetzung: `lever` mit `wall: true, torch: true` wird als gewöhnliche Wandfackel gezeichnet (render.js `buildGrid`), ◉/Antippen dreht sie und öffnet das Ziel (`gate`). Texte in logic.js (Hinweis, „schon gedreht“, Talent-Hinweis „Fackel mit lockerer Halterung“). `syncStatic` zieht `torch` und `msg` in alte Stände nach.
+- Eingesetzt: Kultgruft, Geheimkammer „GIER FRISST“ (`switch_g2` bei 1/11, vorher lockerer Stein). Hinweis an `secret_g2` ergänzt: „… lässt sich drehen, nicht nur drücken.“ Die anderen Geheimwände (Auge, Archiv, Vorburg) bleiben bei losen Steinen.
+- Spoiler-Bezug: keiner.
+- Tests 111 grün (neu: Fackel öffnet Geheimwand, zweites Berühren; alter Test auf neue Meldung angepasst). Headless-Screenshot: Fackel von einer normalen nicht unterscheidbar.
+- Offen/Entscheidung des Nutzers: weitere Geheimwände auf Fackeln umstellen? Empfehlung: ja, 1 pro Ebene, damit „locker sitzt“ nicht der einzige Weg bleibt.
+
+## 0.23.8 (18.11.2026) – Skelette an der Wand (nicht auf Gerät getestet)
+- Meldung: „Skelett teilweise in der Wand“ (Screenshot Schratgruben, braune Steinwände, Blick Ost, Wand links, zwei Gruftskelette mit Schild).
+- Ursache nicht eindeutig belegt; wahrscheinlich Einwand-Lage (alter Stand vor 0.23.5) bzw. breite Figuren mit Schild: Nach 0.23.5 ragte der Schild noch knapp an die Wand.
+- Fix: Mindestabstand zur Wand vergrößert (`groupOffsets`: Wandseite ±0,12 statt ±0,2; enger Gang 2 Gegner −0,15/+0,17, 3 Gegner −0,13/+0,14). Headless: Schratgruben 10/1 Ost und Kultgruft 6/6 Ost – Schilde berühren die Wand nicht mehr; im 1-breiten Gang überlappen sich die zwei Skelette leicht (Platzgrenze).
+- Tests 111 grün.
+
+## 0.23.9 (18.11.2026) – Offenes Fallgitter sichtbar (nicht auf Gerät getestet)
+- Meldung: Nach dem Einsinken der Steinplatte (Schratgruben) war das geöffnete Gitter im Bild nicht zu sehen.
+- Befund (Code): Offene Gitter (`gate.open`) wurden gar nicht gezeichnet; der Durchgang war einfach leer. Offene Türen hatten dagegen einen Rahmen.
+- Fix: neues Sprite `gateOpen` (Pfosten, Querbalken, hochgezogene Stäbe mit Spitzen), wie der Türrahmen mit Achse nur beim Blick längs des Durchgangs. Gilt für alle Gitter (Schratgruben 2×, Nebelturm). Headless: Gitter 9/12 aus 1 und 3 Feldern sichtbar.
+- Grenze: Aus der Seite (quer zum Gang) wird das offene Gitter nicht gezeichnet, wie beim Türrahmen.
+- Tests 112 grün.
+
+## 0.23.10 (18.11.2026) – Leiste überlappt die Tasten (nicht auf Gerät getestet)
+- Meldung: „Überlappt“ (Screenshot Kampf, Nebelturm: Aktionsleiste und Heldenkarte von Berenn liegen unter den linken Tasten „Rechts drehen“/„Seitwärts“).
+- Nachgestellt (Headless 780×360 CSS-px, Faktor 3, linker Tastenblock 41 px vom Rand statt 6 px wie auf dem S25-Screenshot): `fitStack` lief nur beim Layout; verschieben sich die Tastenblöcke danach (Display-Rand, Vollbild), blieb die Leiste an der alten Stelle. Ursache auf dem Gerät nicht gemessen, passt aber zu Screenshot (Leiste beginnt 553 px, Tasten enden 637 px).
+- Fix: `refitStack` misst Tastenblöcke, Bühne und Zoom und passt bei Änderung neu ein; zusätzlich bei `resize`, `fullscreenchange` und alle 400 ms.
+- Geprüft: Headless-Screenshot mit Rand-Simulation: Leiste liegt zwischen den Tasten, Aktionsknöpfe brechen in eine zweite Zeile um.
+- Tests 113 grün.
+
+## 0.23.11 (18.11.2026) – Vollbild-Meldung nicht jedes Mal (nicht auf Gerät getestet)
+- Meldung: graue Android-Systemmeldung („zum Beenden des Vollbildmodus …“) erscheint jedes Mal nach kurzem Verlassen der App.
+- Ursache (aus Code belegt): `autoFullscreen` trat bei jedem Tipp wieder ins Vollbild ein; die Meldung selbst stammt von Android und ist nicht steuerbar.
+- Fix: Wurde das Vollbild verlassen (`fullscreenchange`), setzt `S.fsLeft` – kein automatischer Wiedereintritt mehr. Manuell weiter über Einstellungen/Vollbild-Knopf. Nach App-Neustart wieder automatisch.
+- Offen: „Türen öffnen auch beim Antippen aus zwei Feldern“ – Headless nicht nachgestellt (Kultgruft, Kapellentür: 1 Feld öffnet, 2 und 3 Felder nur „Geh näher heran“). Nutzer soll Ebene/Tür und Ablauf nennen.
+
+## 0.23.12 (18.11.2026) – Thron, Lebensbalken (nicht auf Gerät getestet)
+- Meldung 1: „Erkennt man nicht als Thron. Sollte an der Wand stehen“ (Nebelturm, Thronsaal, Hüter stand mitten im Raum, Thron nur als dünner Bogen sichtbar).
+- Änderung: Hüter `en_tboss` von (22,9) nach (25,10) an die Ostwand (Blick von der Tür geradeaus). `syncStatic` zieht Positionen lebender Gegner in alten Ständen nach (nicht, wenn der Spieler auf dem Feld steht). Thron-Sprite breiter (Lehne ±27 px, Seitentürme, Schädel, Stufen), dunkle Lehne mit hellen Kanten. Headless-Screenshot geprüft.
+- Meldung 2: „Balken der Lebensanzeige wackelt, schwankt“. Ursache (aus Code): Balkenlage und -breite folgten der Atem-Animation des Sprites (±2 % Größe). Fix: `scr` aus `base`-Größe ohne Atmen. Headless: Balkenposition über 25 Bilder konstant.
+- Offen aus 0.23.11: Tür öffnet sich beim Antippen aus 2 Feldern – nicht nachgestellt, Angaben des Nutzers abwarten.
+- Tests 116 grün.
+
+## 0.23.13 (18.11.2026) – Treppe dreht sich bei Annäherung (nicht auf Gerät getestet)
+- Meldung: „Bei Annäherung dreht sich das Tor um 90 Grad“ (Screenshots: Treppe mit Bogen im Thronsaal, Nebelturm (24,12)). Das offene Fallgitter war nicht betroffen (Headless geprüft).
+- Ursache (aus Code belegt): Treppen/Ausgänge im offenen Raum hatten keine Achse (`passAxis` = null) und wurden wie ein Aufsteller zur Kamera gedreht.
+- Fix: `freeAxis` – feste Achse parallel zur nächsten Wand (Gleichstand: Nord-Süd-Blick). Von der Seite erscheint das Bauteil nun schmal (Kante), wie ein flaches Objekt im Raum. Headless-Screenshots aus 6 Positionen geprüft.
+- Tests 117 grün.
+
+## 0.23.14 (18.11.2026) – Systemmeldung mitten im Kampf (nicht auf Gerät getestet)
+- Meldung: graue Android-Vollbildmeldung „plötzlich im Kampf ohne Grund“ (Screenshot, Kampf Runde 3).
+- Vermutung (nicht gesichert): erster Tipp nach dem Laden/Neustart der Seite löste `autoFullscreen` aus, zufällig im Kampf. Ob der Nutzer bereits 0.23.11 hatte, ist nicht bekannt.
+- Fix: höchstens ein automatischer Versuch je Seitenaufruf (`S.fsTried`) und nie im Kampf. Vollbild weiter manuell möglich.
+- Tests 118 grün.
+
+## 0.24.0 (18.11.2026) – Zaubertränke, Tränke in drei Größen (nicht auf Gerät getestet)
+- Aufträge des Nutzers: „Zaubertrank einführen“; „Unterschiedliche Größen Heiltränke, auch unterschiedliche Größen mit entsprechenden Wiederherstellungspunkten“. Zaubertrank = Manatrank (Entscheidung des Assistenten: gibt Mana bzw. Ausdauer zurück, nutzt dieselbe `res` wie der Beruf; Annahme: Größen sollen auch für Zaubertränke gelten).
+- Gegenstände (game.json): Heiltrank klein `potion` 15 LP (10 G), mittel `potion_m` 40 LP (28 G), groß `potion_g` 90 LP (60 G); Zaubertrank klein `zaubertrank` 15 (14 G), mittel `zaubertrank_m` 35 (32 G), groß `zaubertrank_g` 70 (66 G). `potion` heißt jetzt „Kleiner Heiltrank“ (ID unverändert, alte Stände kompatibel).
+- Verteilung (Entscheidung des Assistenten): Hedda verkauft klein + mittel (beide Arten); groß nur als Beute (Truhe des Turmwächters). Mittlere Tränke u. a. in Schratgruben-Bosstruhe, Turm-Geheimtruhe, Festung 1; kleiner Zaubertrank in Kultgruft-Geheimtruhe und Festung (f3). Bestehende Spielstände behalten ihre bisherige Truhenbeute.
+- Logik: `useItemOutside` kennt `mana` (Fehler `full-mp`, Tränkemeister-Bonus gilt auch hier). Kampf: je Art eine Zeile mit Größen („Heiltrank klein (2)“ …), Alchemist: Zeile je Held. Inventar: „Benutzen“ für beide Arten.
+- Nicht angefasst: Gegner-/Heldenwerte (BALANCE.md/SIM.md unverändert, Sim nutzt nur kleinen Heiltrank). Offen: Siedlungsläden später mit großen Tränken.
+- Tests 120 grün; Headless-Kampf geprüft (Zaubertrank groß gibt Mana).
+
+## 0.24.1 / 0.24.2 (19.11.2026) – Beenden, Vollbild-Schalter, Update-Robustheit (nicht auf Gerät getestet)
+- „Button Spiel beenden einfügen“: Titelbild (6. Knopf) und Menü. `quitGame`: Bestätigung, Autospeicherstand (nicht im Kampf), Vollbild verlassen, `window.close()` versuchen, danach Hinweis (Android lässt Web-Apps oft nicht selbst schließen – ob `window.close()` auf dem Gerät greift: nicht gesichert).
+- „Vollbildmodus an/aus in den Einstellungen“: Knopf zeigt den Zustand und schaltet um; Ausschalten setzt `S.fsLeft` (kein automatischer Wiedereintritt). Nutzer meldete: Vollbild ließ sich nicht mehr beenden, Grund unklar (nicht nachgestellt; Android-Systemmeldung stammt nicht vom Spiel).
+- Meldung des Nutzers: neue Version lässt sich nicht installieren; Titelbild zeigt weiter „Version 0.23.3“ (zwei Screenshots, 19.11.). Ursache nicht gesichert (Live-Seite von hier nicht abrufbar). Maßnahmen: sw.js mit `skipWaiting` und `allSettled` (fehlende Einzeldatei bricht Installation nicht mehr ab), Einstellungen: „Neueste Version laden“ (Service Worker und Cache `eldermoor-*` entfernen, Spielstände bleiben). Prüfpunkt für den Nutzer: GitHub → sw.js → Zeile VERSION; Live-Seite im normalen Chrome-Tab öffnen.
+- Tests 123 grün.
