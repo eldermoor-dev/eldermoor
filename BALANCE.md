@@ -29,17 +29,17 @@ Gegner (EP: jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die vol
 | Gegner | LP | Angriff | Verteidigung | Initiative | EP | Gold | Verhalten |
 |---|---|---|---|---|---|---|---|
 | Moorschrat | 80 | 13 | 3 | 5 | 120 | 15 | Schweren Schlag jeden 3. Zug, angekündigt (170 %); Treffer: Gift 30 %; Boss, Phasen: Wutrausch ab ≤ 60 % LP (Angriff 15), Letzte Kraft ab ≤ 25 % LP (Angriff 17) |
-| Sumpfwolf | 26 | 9 | 1 | 8 | 35 | 6 | zielt auf den schwächsten Helden; Treffer: Blutung 25 % |
-| Moorkultist | 20 | 7 | 2 | 4 | 30 | 8 | zielt auf die Hinterreihe; Treffer: Schwach 35 % |
+| Sumpfwolf | 26 | 9 | 1 | 8 | 35 | 6 | zielt auf den schwächsten Helden; Raserei, wenn ein Verbündeter fällt (+25 % Angriff); Treffer: Blutung 25 % |
+| Moorkultist | 20 | 7 | 2 | 4 | 30 | 8 | zielt bevorzugt auf Heiler; Treffer: Schwach 35 % |
 | Moorlicht | 18 | 6 | 0 | 10 | 28 | 5 | zielt auf die Hinterreihe; Treffer: Verlangsamt 40 % |
 | Gruftskelett | 24 | 9 | 2 | 6 | 40 | 6 | zielt auf den schwächsten Helden |
-| Kultwächter | 34 | 10 | 5 | 3 | 55 | 14 | zielt auf die Hinterreihe; Schildstoß jeden 4. Zug, angekündigt (150 %) |
+| Kultwächter | 34 | 10 | 5 | 3 | 55 | 14 | zielt auf die Hinterreihe; Wache: deckt Verbündete (−25 % Schaden); Schildstoß jeden 4. Zug, angekündigt (150 %) |
 | Kultwächter-Hauptmann | 160 | 13 | 5 | 5 | 220 | 40 | zielt auf den schwächsten Helden; Richtspruch jeden 3. Zug, angekündigt (160 %); Treffer: Schwach 35 %; Boss, Phasen: Kultruf ab ≤ 65 % LP (Angriff 14), Letzte Bastion ab ≤ 30 % LP (Angriff 16) |
-| Erzkäfer | 34 | 11 | 4 | 7 | 45 | 7 | – |
+| Erzkäfer | 34 | 11 | 4 | 7 | 45 | 7 | Raserei, wenn ein Verbündeter fällt (+25 % Angriff) |
 | Moorschrat | 190 | 13 | 3 | 5 | 200 | 40 | Schweren Schlag jeden 3. Zug, angekündigt (170 %); Treffer: Gift 30 %; Boss, Phasen: Wutrausch ab ≤ 60 % LP (Angriff 15), Letzte Kraft ab ≤ 25 % LP (Angriff 17) |
 | Nebelgeist | 62 | 16 | 3 | 9 | 70 | 10 | zielt auf die Hinterreihe; Zaubert: Frosthauch (jeden 2. Zug) |
 | Kultpriester | 80 | 13 | 4 | 5 | 85 | 16 | Zaubert: Dunkler Segen (jeden 2. Zug), Fluch der Schwäche (jeden 3. Zug) |
-| Turmwache | 95 | 17 | 8 | 4 | 100 | 18 | zielt auf die Hinterreihe; Schildstoß jeden 3. Zug, angekündigt (160 %); Treffer: Verflucht 30 % |
+| Turmwache | 95 | 17 | 8 | 4 | 100 | 18 | zielt auf die Hinterreihe; Wache: deckt Verbündete (−25 % Schaden); Schildstoß jeden 3. Zug, angekündigt (160 %); Treffer: Verflucht 30 % |
 | Nebelhüter | 480 | 26 | 8 | 6 | 320 | 80 | Zaubert: Nebelspeer (jeden 3. Zug, angekündigt); Boss, Phasen: Nebelwand ab ≤ 66 % LP (Angriff 27), Sturm der Schleier ab ≤ 33 % LP (Angriff 28) |
 | Truhenmaul | 60 | 12 | 5 | 7 | 120 | 45 | Zuschnappen jeden 3. Zug, angekündigt (170 %); Treffer: Blutung 30 % |
 
@@ -268,3 +268,21 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 | Turmwache | 15 % | – |
 | Nebelhüter | 100 %, Boost 3 | – |
 | Truhenmaul | 100 %, Boost 1 | – |
+
+## Ausrüstungseffekte und Sets
+
+| Gegenstand | Platz | Werte | Effekt | Set |
+|---|---|---|---|---|
+| Schratdorn | Waffe | Angriff +4, Init +1 | Lebensraub % 10 | – |
+| Wurzelstab | Waffe | Angriff +4, Init +1 | Ressource + 1 | – |
+| Siegelpanzer | Rüstung | Vert. +4 | Dornen 3 | – |
+| Nebelmantel | Rüstung | Vert. +3, Init +1 | Ausweichen % 8 | – |
+| Moorklinge | Waffe | Angriff +3 | Lebensraub % 15 | Moorwächter |
+| Moorpanzer | Rüstung | Vert. +3 | Dornen 2 | Moorwächter |
+| Nebelstab | Waffe | Angriff +3 | Fähigkeiten % 10 | Nebelweber |
+| Nebelrobe | Rüstung | Vert. +2 | Ressource + 1 | Nebelweber |
+
+| Set | Teile | Bonus (alle Teile) |
+|---|---|---|
+| Moorwächter | Moorklinge, Moorpanzer | Krit % 10, Schaden − 1 |
+| Nebelweber | Nebelstab, Nebelrobe | Heilung + 6, Statusabwehr % 25 |

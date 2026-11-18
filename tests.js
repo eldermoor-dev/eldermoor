@@ -2053,6 +2053,44 @@ export async function runTests(data, env = {}) {
     assert(L.shopStock(data, 'moorrand').some((e) => e.item === 'dietrich'), 'Hedda verkauft Dietriche');
     const a = L.analyzeLevel(data, 'kultgruft'); assert(a.ok, 'Kultgruft lösbar: ' + JSON.stringify(a));
   });
+  await test('Ausrüstungseffekte, Sets, Gegnertaktik (0.21.0): Effekte zählen, Set-Bonus nur komplett, Lebensraub, Dornen, Deckung, Raserei, Heiler-Ziel, Set-Teile in Truhen', () => {
+    for (const [id, st] of Object.entries(data.sets)) { assert(st.name && st.items.length >= 2 && st.bonus, `Set ${id}`); for (const i of st.items) assert(data.items[i] && data.items[i].set === id && data.items[i].q === 'set', `Set ${id}: ${i}`); }
+    const s = fresh(5), h = s.heroes[0];
+    s.inv.moorklinge = 1; s.inv.moorpanzer = 1;
+    L.equipItem(s, data, 'moorklinge', 0);
+    eq([L.fxSum(data, h, 'lifesteal'), L.fxSum(data, h, 'crit'), L.activeSets(data, h).length], [15, 0, 0], 'eine Hälfte: Effekt, kein Set');
+    L.equipItem(s, data, 'moorpanzer', 0);
+    eq([L.fxSum(data, h, 'thorns'), L.fxSum(data, h, 'crit'), L.fxSum(data, h, 'soak'), L.activeSets(data, h)[0].id], [2, 10, 1, 'moorwaechter'], 'komplett: Set-Bonus');
+    eq(L.sellPrice(s, data, 'moorklinge'), null, 'Set-Teile nicht verkäuflich');
+    // Lebensraub und Dornen im Kampf
+    put(s, 15, 7, 1); L.startCombat(s, data, L.enemyInFront(s)); h.hp = 10; let leech = false, thorns = false;
+    for (let i = 0; i < 60 && s.combat && !(leech && thorns); i++) { const a = L.currentActor(s); const r = a.side === 'h' ? L.heroAction(s, data, a.idx === 0 ? { type: 'attack', target: 0 } : { type: 'defend' }) : L.enemyStep(s, data); if (r.msgs.some((m) => /entzieht/.test(m))) leech = true; if (r.msgs.some((m) => /^Dornen:/.test(m))) thorns = true; if (h.hp < 10) h.hp = 10; }
+    assert(leech && thorns, 'Lebensraub und Dornen kommen vor');
+    // Deckung: Wache lebt → andere nehmen 75 %
+    const q = fresh(6); L.startCombat(q, data, { id: 'gx', kind: 'kultwaechter', kinds: ['kultwaechter', 'kultist'], hp: 34 });
+    assert(L.coveredBy(q, data, 1) && !L.coveredBy(q, data, 0), 'Kultist gedeckt, Wache nicht');
+    q.combat.enemies[0].hp = 0; assert(!L.coveredBy(q, data, 1), 'Wache tot: keine Deckung');
+    const dmg = (cov) => { const z = fresh(7); L.startCombat(z, data, { id: 'gx', kind: 'kultwaechter', kinds: ['kultwaechter', 'kultist'], hp: 34 }); if (!cov) z.combat.enemies[0].hp = 0; let g = 0; while (L.currentActor(z).side !== 'h' && g++ < 9) L.enemyStep(z, data, { god: true }); z.combat.enemies[1].hp = 999; z.rng = 77; z.heroes[L.currentActor(z).idx].atk = 30; const r = L.heroAction(z, data, { type: 'attack', target: 1 }); return { d: 999 - z.combat.enemies[1].hp, r }; };
+    const a1 = dmg(true), a0 = dmg(false);
+    assert(a0.d > 0 && a1.d === Math.max(1, Math.floor((a0.d * 75) / 100)) && a1.r.msgs.some((m) => /gedeckt/.test(m)), `Deckung −25 %: ${a0.d} → ${a1.d}`);
+    // Raserei: zweiter Wolf nach dem Tod des ersten
+    const w = fresh(8); L.startCombat(w, data, w.objs.find((o) => o.id === 'en2'));
+    let g = 0; while (L.currentActor(w).side !== 'h' && g++ < 9) L.enemyStep(w, data, { god: true });
+    w.combat.enemies[0].hp = 1; w.heroes.forEach((x) => { x.atk = 40; });
+    let raged = false; for (let i = 0; i < 6 && !raged && w.combat; i++) { const a = L.currentActor(w); const r = a.side === 'h' ? L.heroAction(w, data, { type: 'attack', target: 0 }) : L.enemyStep(w, data, { god: true }); if (r.msgs.some((m) => /Raserei/.test(m))) raged = true; }
+    assert(raged && w.combat.enemies[1].rage, 'Raserei ausgelöst');
+    // Heiler-Ziel: Kultist trifft den Kleriker deutlich öfter als 25 %
+    let pri = 0, N = 200;
+    for (let i = 0; i < N; i++) { const z = L.newGame(data, 3000 + i); L.startCombat(z, data, { id: 'k', kind: 'kultist', hp: 20 }); let gg = 0; while (L.currentActor(z).side !== 'e' && gg++ < 9) L.heroAction(z, data, { type: 'defend' }); const before = z.heroes.map((x) => x.hp); const r = L.enemyStep(z, data); if (r.msgs.some((m) => /Odalys/.test(m))) pri++; }
+    assert(pri / N > 0.45, `Kultist zielt auf den Heiler: ${pri}/${N}`);
+    // Set-Teile liegen in Truhen; alte Stände bekommen neue Beute in ungeöffneten Truhen
+    const found = new Set(); for (const lv of Object.values(data.levels)) for (const o of lv.objects) for (const e of o.loot || []) if (e.item && data.items[e.item].q === 'set') found.add(e.item);
+    eq([...found].sort(), Object.values(data.sets).flatMap((st) => st.items).sort(), 'jedes Set-Teil liegt in einer Truhe');
+    const k = fresh(9); L.jumpToLevel(k, data, 'kultgruft'); const ch = k.objs.find((o) => o.id === 'chest_g_real'); ch.loot = [{ gold: 1 }]; delete ch.lootV;
+    const back = L.deserialize(JSON.parse(JSON.stringify(L.serialize(k))), data);
+    assert(back.objs.find((o) => o.id === 'chest_g_real').loot.some((e) => e.item === 'moorklinge'), 'ungeöffnete Truhe bekommt neue Beute');
+    eq(L.syncStatic(back, data), 0, 'zweiter Abgleich ändert nichts');
+  });
   return { results, passed: results.length - failed, failed };
 }
 

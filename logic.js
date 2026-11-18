@@ -771,6 +771,56 @@ export function respecTalents(state, data, heroIdx) {
 }
 const backPen = (data, h) => h.row === 'back' && !h.ranged && !talentSum(data, h, 'backfull');
 
+// ---------- Ausrüstungseffekte und Sets (0.21.0) ----------
+// Feste Gegenstände (data.items) dürfen fx tragen: dieselben Schlüssel wie Talente (crit, dodge, resist, soak, regen, heal, abil, gold, trap, lock, secret, haggle)
+// plus lifesteal (Prozent des verursachten Schadens als LP) und thorns (Schaden zurück an den Angreifer, wenn der Träger getroffen wird).
+// Sets: data.sets.<id> = { name, items: [ids], bonus: { fx }, desc } – Bonus gilt, wenn ALLE Teile getragen werden. Erzeugte Beute (g1, g2 …) hat keine Effekte.
+export function activeSets(data, h) {
+  if (!data.sets || !h || !h.equip) return [];
+  const worn = new Set(SLOTS.map((s) => h.equip[s]).filter(Boolean));
+  return Object.entries(data.sets).filter(([, st]) => st.items.every((i) => worn.has(i))).map(([id, st]) => ({ id, ...st }));
+}
+export function gearFx(data, h, key) {
+  if (!h || !h.equip) return 0;
+  let v = 0;
+  for (const s of SLOTS) { const it = h.equip[s] && data.items[h.equip[s]]; if (it && it.fx && it.fx[key]) v += it.fx[key]; }
+  for (const st of activeSets(data, h)) if (st.bonus && st.bonus[key]) v += st.bonus[key];
+  return v;
+}
+export const fxSum = (data, h, key) => talentSum(data, h, key) + gearFx(data, h, key);
+function leech(data, h, d, msgs) {
+  const ls = fxSum(data, h, 'lifesteal');
+  if (!(ls > 0) || !(d > 0) || h.hp <= 0) return;
+  const g = Math.min(h.maxHp - h.hp, Math.max(1, Math.floor((d * ls) / 100)));
+  if (g > 0) { h.hp += g; msgs.push(`${h.name} entzieht ${g} LP.`); }
+}
+
+// ---------- Gegnertaktik (0.21.0) ----------
+// guard: Solange ein Gegner mit guard lebt, sind seine Verbündeten gedeckt (−25 % Schaden durch Helden). Tipp: zuerst die Wache.
+// enrage: Fällt ein Verbündeter, gerät der Gegner in Raserei (+25 % Angriff, einmalig).
+// ai 'healer': 60 % der Angriffe gehen auf einen Helden mit Heilerberuf (classes.<id>.healer).
+export const COVER_PCT = 75, RAGE_PCT = 125;
+export function coveredBy(state, data, ti) {
+  const c = state.combat, e = c && c.enemies[ti];
+  if (!e || enemyOf(data, e).guard) return null;
+  return c.enemies.find((x, i) => i !== ti && x.hp > 0 && enemyOf(data, x).guard) || null;
+}
+function cover(state, data, ti, d, tr) {
+  if (!(d > 0) || !coveredBy(state, data, ti)) return d;
+  const nd = Math.max(1, Math.floor((d * COVER_PCT) / 100));
+  if (tr) { tr.cover = true; tr.total = nd; }
+  noteBestiary(state, coveredBy(state, data, ti).kind, 'guard');
+  return nd;
+}
+function checkRage(state, data, msgs) {
+  const c = state.combat;
+  if (!c) return;
+  for (const e of c.enemies) if (e.hp <= 0 && !e.down) {
+    e.down = true;
+    for (const x of c.enemies) if (x !== e && x.hp > 0 && !x.rage && enemyOf(data, x).enrage) { x.rage = true; msgs.push(`${x.name} gerät in Raserei! (+25 % Angriff)`); noteBestiary(state, x.kind, 'enrage'); }
+  }
+}
+
 // ---------- Ausrüstung (Schritt 5b) ----------
 // hero.equip = { weapon: itemId|null, armor: itemId|null } (optional; fehlt es, ist nichts angelegt).
 // Die gespeicherten Werte atk/def bleiben die Grundwerte; Boni werden beim Rechnen addiert.
@@ -857,7 +907,7 @@ export function addGear(state, data, inst) {
   return uid;
 }
 export const ownsItem = (state, id) => (state.inv[id] || 0) > 0 || state.heroes.some((h) => h.equip && SLOTS.some((s) => h.equip[s] === id));
-export const qualityOf = (state, data, id) => { const it = itemDef(state, data, id); return it && it.q ? (it.q === 'unique' ? { id: 'unique', name: 'Einzigartig', color: '#ffb347' } : data.quality.find((q) => q.id === it.q)) : null; };
+export const qualityOf = (state, data, id) => { const it = itemDef(state, data, id); return it && it.q ? (it.q === 'unique' ? { id: 'unique', name: 'Einzigartig', color: '#ffb347' } : it.q === 'set' ? { id: 'set', name: 'Set', color: '#6fdc8c' } : data.quality.find((q) => q.id === it.q)) : null; };
 // Beute nach einem Sieg: je Gegnerart data.enemies.<id>.drops (feste Gegenstände, einmalig) und gearDrop {chance, boost, slot?}
 function rollDrops(state, data, enemies, msgs) {
   for (const e of enemies) {
@@ -882,7 +932,7 @@ function rollDrops(state, data, enemies, msgs) {
 // Verkaufspreis = Hälfte des Werts (mindestens 1). Questgegenstände, Unikate und Gegenstände ohne value sind nicht verkäuflich.
 export function itemWorth(state, data, id) {
   const it = itemDef(state, data, id);
-  if (!it || it.kind === 'quest' || it.q === 'unique' || it.noSell) return null;
+  if (!it || it.kind === 'quest' || it.q === 'unique' || it.q === 'set' || it.noSell) return null;
   const base = it.base ? data.items[it.base] : it;
   if (!base || !(base.value > 0)) return null;
   if (!it.base) return base.value;
@@ -1111,7 +1161,7 @@ export function calcDamage(state, atk, def, opts = {}) {
   return d;
 }
 export function explain(tr) {
-  return `Angriff ${tr.atk} + Wurf ${tr.roll} − Rüstung ${tr.red}${tr.mult ? ` · ${tr.mult} %` : ''}${tr.elem ? ` · ${tr.elemName} ${tr.elem > 0 ? '+' : ''}${tr.elem} %` : ''}${tr.back ? ' · ½ Hinterreihe' : ''}${tr.def ? ' · ½ Verteidigung' : ''}${tr.crit ? ' · kritisch ×1,5' : ''} = ${tr.total}`;
+  return `Angriff ${tr.atk} + Wurf ${tr.roll} − Rüstung ${tr.red}${tr.mult ? ` · ${tr.mult} %` : ''}${tr.elem ? ` · ${tr.elemName} ${tr.elem > 0 ? '+' : ''}${tr.elem} %` : ''}${tr.back ? ' · ½ Hinterreihe' : ''}${tr.def ? ' · ½ Verteidigung' : ''}${tr.crit ? ' · kritisch ×1,5' : ''}${tr.cover ? ' · gedeckt −25 %' : ''} = ${tr.total}`;
 }
 
 // ---------- Statuswirkungen (nur im Kampf, werden nicht gespeichert) ----------
@@ -1122,7 +1172,7 @@ export function statusOf(state, side, idx) { return (state.combat && state.comba
 function addStatus(state, data, side, idx, inf, msgs, src = null) {
   if (!inf) return;
   if (inf.chance < 100 && rand(state) * 100 >= inf.chance) return;
-  if (side === 'h') { const rs = talentSum(data, state.heroes[idx], 'resist'); if (rs > 0 && rand(state) * 100 < rs) { msgs.push(`${state.heroes[idx].name} wehrt ${data.statuses[inf.status].name} ab.`); return; } }
+  if (side === 'h') { const rs = fxSum(data, state.heroes[idx], 'resist'); if (rs > 0 && rand(state) * 100 < rs) { msgs.push(`${state.heroes[idx].name} wehrt ${data.statuses[inf.status].name} ab.`); return; } }
   const c = state.combat, k = skey(side, idx);
   const st = c.status[k] || (c.status[k] = {});
   const cur = st[inf.status];
@@ -1138,6 +1188,7 @@ export const diffPct = (state, data, key) => {
   const d = ((data.difficulty && data.difficulty[(state && state.difficulty) || 'normal']) || {})[key] || 100;
   return key === 'hp' || key === 'atk' ? Math.round((d * areaPct(state, data, key)) / 100) : d;
 };
+const rageAtk = (e, atk) => (e && e.rage ? Math.round((atk * RAGE_PCT) / 100) : atk);
 const foeAtk = (state, data, atk) => { const p = diffPct(state, data, 'atk'); return p === 100 ? atk : Math.max(1, Math.round((atk * p) / 100)); };
 const effDef = (state, side, idx, def) => (statusOf(state, side, idx).curse ? Math.floor((def * 7) / 10) : def); // Fluch: Verteidigung −30 %
 const effAtk = (state, side, idx, atk) => (statusOf(state, side, idx).weak ? Math.max(1, Math.floor((atk * 3) / 4)) : atk);
@@ -1169,6 +1220,7 @@ export function skipStunned(state, data) {
   delete st.stun;
   const msgs = [`${actorName(state, a.side, a.idx)} ist betäubt und setzt aus.`];
   if (endOfTurn(state, data, a.side, a.idx, msgs)) { finishVictory(state, data, msgs); return { msgs, sfx: 'miss', over: 'victory' }; }
+  checkRage(state, data, msgs);
   checkPhases(state, data, msgs);
   advance(state, data);
   return { msgs, sfx: 'miss', over: null };
@@ -1192,7 +1244,7 @@ function finishVictory(state, data, msgs) {
   const dg = diffPct(state, data, 'gold'), dx = diffPct(state, data, 'xp');
   if (dg !== 100) gold = Math.floor((gold * dg) / 100);
   if (dx !== 100) xp = Math.floor((xp * dx) / 100);
-  const gp = Math.min(60, state.heroes.reduce((a, h) => a + (h.hp > 0 ? talentSum(data, h, 'gold') : 0), 0));
+  const gp = Math.min(60, state.heroes.reduce((a, h) => a + (h.hp > 0 ? fxSum(data, h, 'gold') : 0), 0));
   if (gp > 0 && gold > 0) gold += Math.floor((gold * gp) / 100);
   state.gold += gold;
   msgs.push(`Sieg! Beute: ${gold} Gold${gp > 0 ? ` (Talente +${gp} %)` : ''}.`);
@@ -1204,9 +1256,9 @@ function finishVictory(state, data, msgs) {
 }
 
 function regen(h, msgs, data) {
-  if (h.mp < h.maxMp) h.mp = Math.min(h.maxMp, h.mp + MP_REGEN + (data ? talentSum(data, h, 'regen') : 0));
+  if (h.mp < h.maxMp) h.mp = Math.min(h.maxMp, h.mp + MP_REGEN + (data ? fxSum(data, h, 'regen') : 0));
 }
-const rollCrit = (state, data, h) => { const c = talentSum(data, h, 'crit'); return c > 0 && rand(state) * 100 < c; };
+const rollCrit = (state, data, h) => { const c = fxSum(data, h, 'crit'); return c > 0 && rand(state) * 100 < c; };
 
 // ---------- Kombinationsangriffe (0.18.0) ----------
 // data.combos = [{ id, name, status, by: melee|ranged|fire|ice|lightning|any, mult, consume?, desc }]. Automatisch: trifft ein Held einen Gegner,
@@ -1251,12 +1303,14 @@ export function heroAction(state, data, act) {
     const e = c.enemies[ti];
     const tr = {};
     const cb = comboFor(state, data, a.idx, ti);
-    const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h, state)), effDef(state, 'e', ti, enemyOf(data, e).def), { backMelee: backPen(data, h), crit: rollCrit(state, data, h), mult: cb ? cb.mult : 0, trace: tr });
+    let d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h, state)), effDef(state, 'e', ti, enemyOf(data, e).def), { backMelee: backPen(data, h), crit: rollCrit(state, data, h), mult: cb ? cb.mult : 0, trace: tr });
+    d = cover(state, data, ti, d, tr);
     if (d === 0) { msgs.push(`${h.name} verfehlt ${e.name}.`); sfx = 'miss'; }
     else {
       if (cb) comboDone(state, data, cb, h, ti, msgs);
       e.hp = Math.max(0, e.hp - d);
-      const note = backPen(data, h) ? ' (Hinterreihe, Nahkampf: halber Schaden)' : '';
+      leech(data, h, d, msgs);
+      const note = (backPen(data, h) ? ' (Hinterreihe, Nahkampf: halber Schaden)' : '') + (tr.cover ? ' (gedeckt)' : '');
       msgs.push(`${h.name} trifft ${e.name} für ${d} Schaden${note}.${SEP}${explain(tr)}`);
       sfx = 'hit';
       if (e.hp === 0) msgs.push(`${e.name} bricht zusammen.`);
@@ -1279,7 +1333,7 @@ export function heroAction(state, data, act) {
       const parts = [];
       for (const ti of targets) {
         const t = state.heroes[ti], stT = c.status['h' + ti];
-        const gain = Math.min(ab.heal + talentSum(data, h, 'heal'), t.maxHp - t.hp);
+        const gain = Math.min(ab.heal + fxSum(data, h, 'heal'), t.maxHp - t.hp);
         t.hp += gain;
         parts.push(`${t.name}${gain > 0 ? ` +${gain}` : ''}`);
         for (const cl of cleanseList(ab)) if (stT && stT[cl]) { delete stT[cl]; msgs.push(`${t.name}: ${data.statuses[cl].name} wird genommen.`); }
@@ -1302,12 +1356,14 @@ export function heroAction(state, data, act) {
         const el = ab.element ? ((enemyOf(data, e).resist || {})[ab.element] || 0) : 0;
         if (el !== 0) noteBestiary(state, e.kind, 'resist', ab.element);
         const cb = comboFor(state, data, a.idx, ti, ab);
-        const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h, state)), effDef(state, 'e', ti, enemyOf(data, e).def), { backMelee: backPen(data, h), mult: Math.floor((ab.mult * (100 + talentSum(data, h, 'abil')) * (cb ? cb.mult : 100)) / 10000), crit: rollCrit(state, data, h), sure: !!ab.sure, elem: el, elemName: ab.element && data.elements[ab.element].name, trace: tr });
+        let d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h, state)), effDef(state, 'e', ti, enemyOf(data, e).def), { backMelee: backPen(data, h), mult: Math.floor((ab.mult * (100 + fxSum(data, h, 'abil')) * (cb ? cb.mult : 100)) / 10000), crit: rollCrit(state, data, h), sure: !!ab.sure, elem: el, elemName: ab.element && data.elements[ab.element].name, trace: tr });
+        d = cover(state, data, ti, d, tr);
         if (d === 0) { msgs.push(`${h.name} setzt ${ab.name} ein, verfehlt aber ${e.name}${list.length === 1 ? ` (−${ab.cost} ${rn})` : ''}.`); continue; }
         hit = true;
         if (cb) comboDone(state, data, cb, h, ti, msgs);
         e.hp = Math.max(0, e.hp - d);
-        const note = el > 0 ? ' Anfällig!' : el < 0 ? ' Resistent.' : '';
+        leech(data, h, d, msgs);
+        const note = (el > 0 ? ' Anfällig!' : el < 0 ? ' Resistent.' : '') + (tr.cover ? ' (gedeckt)' : '');
         msgs.push(`${h.name} setzt ${ab.name} ein: ${d} Schaden an ${e.name}${list.length === 1 ? ` (−${ab.cost} ${rn})` : ''}.${note}${SEP}${explain(tr)}`);
         if (e.hp === 0) msgs.push(`${e.name} bricht zusammen.`);
         else addStatus(state, data, 'e', ti, ab.inflict, msgs, a.idx);
@@ -1321,10 +1377,12 @@ export function heroAction(state, data, act) {
     let hit = false;
     for (const e of live) {
       const tr = {};
-      const d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h, state)), effDef(state, 'e', c.enemies.indexOf(e), enemyOf(data, e).def), { backMelee: backPen(data, h), mult: SWEEP_MULT, trace: tr });
+      let d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h, state)), effDef(state, 'e', c.enemies.indexOf(e), enemyOf(data, e).def), { backMelee: backPen(data, h), mult: SWEEP_MULT, trace: tr });
+      d = cover(state, data, c.enemies.indexOf(e), d, tr);
       if (d === 0) { msgs.push(`${h.name} verfehlt ${e.name}.`); continue; }
       hit = true; e.hp = Math.max(0, e.hp - d);
-      msgs.push(`${h.name} trifft ${e.name} für ${d} Schaden.${SEP}${explain(tr)}`);
+      leech(data, h, d, msgs);
+      msgs.push(`${h.name} trifft ${e.name} für ${d} Schaden${tr.cover ? ' (gedeckt)' : ''}.${SEP}${explain(tr)}`);
       if (e.hp === 0) msgs.push(`${e.name} bricht zusammen.`);
     }
     sfx = hit ? 'hit' : 'miss';
@@ -1368,6 +1426,7 @@ export function heroAction(state, data, act) {
     const gold = finishVictory(state, data, msgs);
     return { msgs, sfx, over: 'victory', gold };
   }
+  checkRage(state, data, msgs);
   checkPhases(state, data, msgs);
   endOfTurn(state, data, 'h', a.idx, msgs);
   advance(state, data);
@@ -1375,10 +1434,11 @@ export function heroAction(state, data, act) {
 }
 
 // Zielwahl der Gegner: random (75 % Vorderreihe), weakest (60 % der Held mit den wenigsten LP), backline (75 % Hinterreihe)
-function pickTarget(state, en) {
+function pickTarget(state, en, data = null) {
   const front = [], back = [], all = [];
   state.heroes.forEach((h, i) => { if (h.hp > 0) { all.push(i); (h.row === 'front' ? front : back).push(i); } });
   const ai = en.ai || 'random';
+  if (ai === 'healer' && data && rand(state) < 0.6) { const hs = all.filter((i) => data.classes[state.heroes[i].cls].healer); if (hs.length) return hs[randInt(state, 0, hs.length - 1)]; }
   if (ai === 'weakest' && rand(state) < 0.6) return all.reduce((b, i) => (state.heroes[i].hp < state.heroes[b].hp ? i : b), all[0]);
   if (ai === 'backline' && back.length && rand(state) < 0.75) return back[randInt(state, 0, back.length - 1)];
   const pool = front.length && (rand(state) < 0.75 || !back.length) ? front : (back.length ? back : front);
@@ -1417,7 +1477,7 @@ function enemyCast(state, data, ei, e, en, sp, msgs, opts) {
     if (opts.god) { msgs.push(`${sp.name} trifft ${t.name}, doch Debug-Unverwundbarkeit hält.`); sfx = 'hurt'; continue; }
     if (sp.kind === 'bolt') {
       const tr = {};
-      let d = calcDamage(state, effAtk(state, 'e', ei, foeAtk(state, data, en.atk)), Math.floor(heroDef(data, t, state) / 2), { sure: true, defending: !!c.defending[ti], mult: sp.mult, trace: tr });
+      let d = calcDamage(state, effAtk(state, 'e', ei, rageAtk(e, foeAtk(state, data, en.atk))), Math.floor(heroDef(data, t, state) / 2), { sure: true, defending: !!c.defending[ti], mult: sp.mult, trace: tr });
       const cap = Math.max(1, Math.ceil(t.maxHp * (sp.all ? 0.4 : 0.5))); // ein Zauber nimmt höchstens die Hälfte der Max-LP (schützt den Magier)
       if (d > cap) { d = cap; tr.total = d; tr.cap = cap; }
       t.hp = Math.max(0, t.hp - d);
@@ -1439,7 +1499,7 @@ export function enemyStep(state, data, opts = {}) {
   const en = enemyOf(data, e);
   const msgs = [];
   const hv = en.heavy, heavy = !!hv && e.intent === 'heavy';
-  let ti = pickTarget(state, en);
+  let ti = pickTarget(state, en, data);
   if (heavy) { // schwerer Nahkampfschlag trifft nur die Vorderreihe, solange dort jemand steht (kein Ein-Treffer-Tod für Magier hinten)
     const fr = state.heroes.map((h, i) => (h.hp > 0 && h.row === 'front' ? i : -1)).filter((i) => i >= 0);
     if (fr.length && !fr.includes(ti)) ti = fr[randInt(state, 0, fr.length - 1)];
@@ -1450,12 +1510,12 @@ export function enemyStep(state, data, opts = {}) {
   if (sp) sfx = enemyCast(state, data, a.idx, e, en, sp, msgs, opts);
   else {
     const tr = {};
-    let d = calcDamage(state, effAtk(state, 'e', a.idx, foeAtk(state, data, en.atk)), effDef(state, 'h', ti, heroDef(data, t, state)), { defending: !!c.defending[ti], mult: heavy ? hv.mult : 0, trace: tr });
+    let d = calcDamage(state, effAtk(state, 'e', a.idx, rageAtk(e, foeAtk(state, data, en.atk))), effDef(state, 'h', ti, heroDef(data, t, state)), { defending: !!c.defending[ti], mult: heavy ? hv.mult : 0, trace: tr });
     let dodged = false;
     if (d > 0) { // Talente: Ausweichen (Zufall nur bei Talent, damit alte Läufe gleich bleiben) und Schadensminderung
-      const dg = talentSum(data, t, 'dodge');
+      const dg = fxSum(data, t, 'dodge');
       if (dg > 0 && rand(state) * 100 < dg) { d = 0; dodged = true; }
-      else { const sk = talentSum(data, t, 'soak'); if (sk > 0) { d = Math.max(1, d - sk); tr.soak = sk; } }
+      else { const sk = fxSum(data, t, 'soak'); if (sk > 0) { d = Math.max(1, d - sk); tr.soak = sk; } }
     }
     const why = `${t.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}${c.defending[ti] ? ', verteidigt: halber Schaden' : ''}`;
     if (heavy) { msgs.push(`${e.name} setzt ${hv.name} ein!`); noteBestiary(state, e.kind, 'heavy'); }
@@ -1467,8 +1527,11 @@ export function enemyStep(state, data, opts = {}) {
       sfx = 'hurt';
       if (t.hp === 0) { msgs.push(`${t.name} sinkt bewusstlos zu Boden.`); delete c.status['h' + ti]; }
       else { addStatus(state, data, 'h', ti, en.onHit, msgs); if (en.onHit) noteBestiary(state, e.kind, 'onHit'); }
+      const th = t.hp > 0 ? fxSum(data, t, 'thorns') : 0; // Dornen (0.21.0): Schaden zurück an den Angreifer
+      if (th > 0 && e.hp > 0) { const b = e.hp; e.hp = Math.max(0, e.hp - th); msgs.push(`Dornen: ${e.name} erleidet ${b - e.hp} Schaden.`); if (e.hp === 0) msgs.push(`${e.name} bricht zusammen.`); }
     }
   }
+  if (c.enemies.every((x) => x.hp <= 0)) { checkRage(state, data, msgs); const gold = finishVictory(state, data, msgs); return { msgs, sfx, over: 'victory', gold }; }
   if (hv) { // angekündigter Schlag: jeder dritte Zug, eine Runde vorher wird er angesagt
     if (heavy) { e.intent = null; e.cd = 0; }
     else if (++e.cd >= hv.every - 1) { e.intent = 'heavy'; msgs.push(`${e.name} holt zum ${hv.name} aus! Verteidigen halbiert den Schaden.`); }
@@ -1479,6 +1542,7 @@ export function enemyStep(state, data, opts = {}) {
     return { msgs, sfx, over: 'defeat' };
   }
   if (endOfTurn(state, data, 'e', a.idx, msgs)) { const gold = finishVictory(state, data, msgs); return { msgs, sfx, over: 'victory', gold }; }
+  checkRage(state, data, msgs);
   checkPhases(state, data, msgs);
   advance(state, data);
   return { msgs, sfx, over: null };
@@ -1653,6 +1717,7 @@ export function syncStatic(state, data) {
       const i = a.objs.findIndex((x) => x && x.id === o.id);
       if (i < 0) { a.objs.push(freshObj(data, o)); n++; }
       else if (STATIC_TYPES.has(o.type) && a.objs[i].type === o.type && JSON.stringify(a.objs[i]) !== JSON.stringify(o)) { a.objs[i] = clone(o); n++; }
+      else if (o.type === 'chest' && o.lootV && a.objs[i].type === 'chest' && !a.objs[i].open && a.objs[i].lootV !== o.lootV) { a.objs[i].loot = clone(o.loot); a.objs[i].lootV = o.lootV; n++; } // 0.21.0: neue Beute (z. B. Set-Teile) auch in ungeöffneten Truhen alter Stände
       else if (!STATIC_TYPES.has(o.type)) for (const k of ['title', 'style']) if (o[k] !== undefined && a.objs[i][k] !== o[k]) { a.objs[i][k] = o[k]; n++; } // 0.16.14: Beschriftung/Stil von Türen u. a. nachziehen (alte Stände ohne `style` zeigten einen Zufallsstil)
     }
   }
@@ -1685,8 +1750,8 @@ export function balanceMarkdown(data) {
   L.push('## Erfahrung', '', '| Stufe | EP gesamt | EP für diese Stufe |', '|---|---|---|', '| 1 | 0 | – |');
   for (let lv = 2; lv <= mx; lv++) L.push(`| ${lv} | ${xp[lv - 2]} | ${xp[lv - 2] - (lv > 2 ? xp[lv - 3] : 0)} |`);
   L.push('', 'Gegner (EP: jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die volle Summe):', '', '| Gegner | LP | Angriff | Verteidigung | Initiative | EP | Gold | Verhalten |', '|---|---|---|---|---|---|---|---|');
-  const aiName = { weakest: 'zielt auf den schwächsten Helden', backline: 'zielt auf die Hinterreihe' };
-  for (const e of Object.values(data.enemies)) L.push(`| ${e.name} | ${e.hp} | ${e.atk} | ${e.def} | ${e.init} | ${e.xp || 0} | ${e.gold || 0} | ${[aiName[e.ai], e.heavy && `${e.heavy.name} jeden ${e.heavy.every}. Zug, angekündigt (${e.heavy.mult} %)`, e.onHit && `Treffer: ${data.statuses[e.onHit.status].name} ${e.onHit.chance} %`, e.cast && `Zaubert: ${e.cast.map((c) => `${c.name} (jeden ${c.every}. Zug${c.announce ? ', angekündigt' : ''})`).join(', ')}`, e.phases && `Boss, Phasen: ${e.phases.map((p) => `${p.name} ab ≤ ${p.below} % LP${p.set && p.set.atk ? ` (Angriff ${p.set.atk})` : ''}`).join(', ')}`].filter(Boolean).join('; ') || '–'} |`);
+  const aiName = { weakest: 'zielt auf den schwächsten Helden', backline: 'zielt auf die Hinterreihe', healer: 'zielt bevorzugt auf Heiler' };
+  for (const e of Object.values(data.enemies)) L.push(`| ${e.name} | ${e.hp} | ${e.atk} | ${e.def} | ${e.init} | ${e.xp || 0} | ${e.gold || 0} | ${[aiName[e.ai], e.guard && 'Wache: deckt Verbündete (−25 % Schaden)', e.enrage && 'Raserei, wenn ein Verbündeter fällt (+25 % Angriff)', e.heavy && `${e.heavy.name} jeden ${e.heavy.every}. Zug, angekündigt (${e.heavy.mult} %)`, e.onHit && `Treffer: ${data.statuses[e.onHit.status].name} ${e.onHit.chance} %`, e.cast && `Zaubert: ${e.cast.map((c) => `${c.name} (jeden ${c.every}. Zug${c.announce ? ', angekündigt' : ''})`).join(', ')}`, e.phases && `Boss, Phasen: ${e.phases.map((p) => `${p.name} ab ≤ ${p.below} % LP${p.set && p.set.atk ? ` (Angriff ${p.set.atk})` : ''}`).join(', ')}`].filter(Boolean).join('; ') || '–'} |`);
   L.push('', '## Rassen (Modifikatoren)', '', '| Rasse | LP | Angriff | Verteidigung | Initiative |', '|---|---|---|---|---|');
   for (const r of Object.values(data.races)) L.push(`| ${r.name} | ${sg(r.mods.maxHp)} | ${sg(r.mods.atk)} | ${sg(r.mods.def)} | ${sg(r.mods.init)} |`);
   L.push('', '## Berufe (Basis auf Stufe 1, Wachstum in Zehnteln je Stufe)', '', '| Beruf | Reihe | Fernkampf | LP | Angriff | Verteidigung | Initiative | Wachstum LP/Ang/Vert/Init |', '|---|---|---|---|---|---|---|---|');
@@ -1715,6 +1780,15 @@ export function balanceMarkdown(data) {
     for (const a of data.affixes) L.push(`| ${a.name} | +${a.min}${a.max > a.min ? '–' + a.max : ''} ${sn[a.stat]} | ${a.slots.map((x) => data.slots[x]).join(', ')} |`);
     L.push('', '| Gegner | Ausrüstung | Unikat |', '|---|---|---|');
     for (const e of Object.values(data.enemies)) if (e.gearDrop || e.drops) L.push(`| ${e.name} | ${e.gearDrop ? `${e.gearDrop.chance} %${e.gearDrop.boost ? `, Boost ${e.gearDrop.boost}` : ''}` : '–'} | ${(e.drops || []).map((d) => `${(d.pick || [d.item]).map((id) => data.items[id].name).join(' oder ')} (${d.chance ?? 100} %, nur einmal)`).join('; ') || '–'} |`);
+    L.push('');
+  }
+  const fxName = { lifesteal: 'Lebensraub %', thorns: 'Dornen', crit: 'Krit %', dodge: 'Ausweichen %', resist: 'Statusabwehr %', soak: 'Schaden −', regen: 'Ressource +', heal: 'Heilung +', abil: 'Fähigkeiten %' };
+  const fxTxt = (fx) => Object.entries(fx || {}).map(([k, v]) => `${fxName[k] || k} ${v}`).join(', ') || '–';
+  const fxItems = Object.values(data.items).filter((it) => it.fx);
+  if (fxItems.length) {
+    L.push('## Ausrüstungseffekte und Sets', '', '| Gegenstand | Platz | Werte | Effekt | Set |', '|---|---|---|---|---|');
+    for (const it of fxItems) L.push(`| ${it.name} | ${data.slots[it.slot]} | ${[it.atk && `Angriff +${it.atk}`, it.def && `Vert. +${it.def}`, it.init && `Init +${it.init}`].filter(Boolean).join(', ')} | ${fxTxt(it.fx)} | ${it.set && data.sets && data.sets[it.set] ? data.sets[it.set].name : '–'} |`);
+    if (data.sets) { L.push('', '| Set | Teile | Bonus (alle Teile) |', '|---|---|---|'); for (const st of Object.values(data.sets)) L.push(`| ${st.name} | ${st.items.map((i) => data.items[i].name).join(', ')} | ${fxTxt(st.bonus)} |`); }
     L.push('');
   }
   return L.join('\n');

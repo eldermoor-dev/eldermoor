@@ -3,13 +3,14 @@
 import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX
+  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
+  activeSets, coveredBy,
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.20.0';
+const VERSION = '0.21.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -798,7 +799,7 @@ function renderCombat() {
   eb.innerHTML = warnBar + (cur ? `<div class="turnbar ${cur.side === 'h' ? 'hero' : 'foe'}">${cur.side === 'h' ? 'Am Zug: ' + esc(curName) + (multi ? ' · Gegner antippen = Ziel' : '') : 'Gegner am Zug: ' + esc(curName)}</div>` : '') + c.enemies.map((e) => {
     const pct = Math.round(100 * e.hp / e.maxHp);
     const ei = c.enemies.indexOf(e);
-    return `<div class="en${e.hp <= 0 ? ' dead' : ''}${multi && ei === S.foe && e.hp > 0 ? ' sel' : ''}" data-e="${ei}"><b>${esc(e.name)} ${stIcons('e', ei)}</b><span>${e.hp}/${e.maxHp} LP</span><div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div>${e.intent === 'heavy' ? '<em class="warn">⚠ Schwerer Schlag</em>' : ''}${comboHint(cur, ei)}</div>`;
+    return `<div class="en${e.hp <= 0 ? ' dead' : ''}${multi && ei === S.foe && e.hp > 0 ? ' sel' : ''}" data-e="${ei}"><b>${esc(e.name)} ${stIcons('e', ei)}</b><span>${e.hp}/${e.maxHp} LP</span><div class="bar${pct <= 30 ? ' low' : ''}"><i style="width:${pct}%"></i></div>${e.intent === 'heavy' ? '<em class="warn">⚠ Schwerer Schlag</em>' : ''}${e.hp > 0 && coveredBy(S.game, S.data, ei) ? '<em class="muted" title="gedeckt">🛡 gedeckt −25 %</em>' : ''}${e.hp > 0 && e.rage ? '<em class="warn">🔥 Raserei</em>' : ''}${comboHint(cur, ei)}</div>`;
   }).join('') + `<div class="order">Runde ${c.round}: ` + c.order.map((o, i) => {
     const nm = o.side === 'h' ? S.game.heroes[o.idx].name : c.enemies[o.idx].name;
     return `<span class="${(i === c.pos ? 'now' : i < c.pos ? 'done' : '') + (o.side === 'e' ? ' foe' : '')}">${esc(nm)}</span>`;
@@ -866,6 +867,7 @@ function helpHtml() {
   <h3>Rechts: Aktionen</h3><p>◉ Interagieren (Türen, Truhen, Hebel, Gegner ansprechen; Türen und Truhen gehen auch auf, wenn du gegen sie läufst oder sie direkt vor dir antippst), ⚔ Angriff, ✦ Fähigkeit (nur im Kampf, kostet Mana oder Ausdauer). Bei mehreren Gegnern: Gegner antippen = Ziel wählen, „Alle“ trifft jeden Gegner mit 60 % Schaden, ▣ Inventar (Heldenleiste: LP · Mana in Blau bzw. Ausdauer in Gelb), ☻ Charakter (dort „Talente“: ab Stufe 2 gibt jede Stufe einen Punkt; drei Zweige je Beruf, außerdem neue Fähigkeiten).</p>
   <h3>Kombinationsangriffe</h3><p>Automatisch, wenn ein Held einen Gegner trifft, der einen passenden Status von einem <b>anderen</b> Helden trägt. Im Kampf zeigt „✚ Kombi“ am Gegner, was gerade möglich ist.</p>${S.data.combos.map((c) => `<p class="muted" style="margin:2px 0">✚ <b>${esc(c.name)}</b>: ${esc(c.desc)}</p>`).join('')}
   <h3>Fallen</h3><p>Fallen verraten sich durch eine feine Spur am Boden oder eine Warnung an der Wand. ◉ auf das Feld vor dir untersucht den Boden, ein zweites ◉ entschärft die Falle. Helden mit Fallen-Talent (Schurke, Waldläufer, Alchemist) bemerken und entschärfen sie eher. Ausgelöste Fallen kosten LP, töten aber niemanden.</p>
+  <h3>Gegnertaktik</h3><p>Wachen (🛡) decken ihre Verbündeten: solange eine Wache steht, nehmen die anderen 25 % weniger Schaden – zuerst die Wache. Rudeltiere geraten in Raserei (🔥), wenn ein Verbündeter fällt. Manche Gegner zielen bevorzugt auf Heiler.</p><h3>Ausrüstungseffekte und Sets</h3><p>Besondere Stücke haben Effekte wie Lebensraub, Dornen oder Ausweichen. Zwei passende Set-Teile (Waffe und Rüstung) am selben Helden geben einen zusätzlichen Bonus. Effekte und Sets stehen im Charakterbogen.</p>
   <h3>Truhen</h3><p>Manche Truhen sind verschlossen: ein Dietrich (bei Hedda) oder ein Held mit Schlosstalent öffnet sie; misslingt es dem Talent, klemmt das Schloss bis zur nächsten Rast. Manche Truhen tragen eine Falle – wer sie bemerkt, entschärft sie mit ◉. Und nicht jede Truhe ist eine Truhe.</p><h3>Talente außerhalb des Kampfes</h3><p>Schlösser (Schurke, Alchemist), Geheimwände spüren (Waldläufer, Magier: zeigt auch, wo der Mechanismus liegt), Fallen (Schurke, Waldläufer, Alchemist) und Feilschen bei Händlern (Schurke, Alchemist). Es zählt der beste wache Held.</p>
   <h3>Steine und Druckplatten</h3><p>Schwere Steine lassen sich schieben (von vorn dagegenlaufen) und ziehen (◉, die Gruppe geht dabei einen Schritt zurück). Eine Druckplatte hält ein Gitter nur offen, solange etwas Schweres auf ihr liegt.</p>
   <h3>Menü (☰ rechts unten)</h3><p>Karte (auf eine erkundete Zelle tippen setzt oder entfernt eine Notiz), Rasten, Speichern, Laden, Einstellungen. Oben rechts zeigt der Kompass die Blickrichtung.</p>
@@ -930,6 +932,8 @@ function openBestiary() {
     else L.push('Werte unbekannt (erst nach dem ersten Sieg).');
     if (r.heavy && e.heavy) L.push(`Besonderer Angriff: ${esc(e.heavy.name)} (alle ${e.heavy.every} Züge, vorher angekündigt)`);
     if (r.cast && e.cast) L.push(`Zaubert: ${e.cast.map((c) => esc(c.name)).join(', ')}`);
+    if (r.guard && e.guard) L.push('Wache: deckt ihre Verbündeten (−25 % Schaden), solange sie steht.');
+    if (r.enrage && e.enrage) L.push('Gerät in Raserei, wenn ein Verbündeter fällt (+25 % Angriff).');
     if (r.onHit && e.onHit) L.push(`Trefferwirkung: ${esc(d.statuses[e.onHit.status].name)} (${e.onHit.chance} %)`);
     const rs = Object.keys(r.resist || {}).map((el) => { const v = (e.resist || {})[el] || 0; return v >= 100 ? `immun gegen ${esc(d.elements[el].name)}` : `${v > 0 ? 'resistent gegen' : 'anfällig für'} ${esc(d.elements[el].name)} (${v > 0 ? '−' : '+'}${Math.abs(v)} % Schaden)`; });
     if (rs.length) L.push('Elemente: ' + rs.join(', '));
@@ -1000,9 +1004,13 @@ const bonusTxt = (n) => (n ? ` <span class="muted">(+${n})</span>` : '');
 function gearLines(h, i) {
   return ['weapon', 'armor'].map((s) => {
     const id = h.equip && h.equip[s], it = id && itemDef(S.game, S.data, id);
-    return `<div class="muted">${S.data.slots[s]}: ${it ? qTag(id, it) + ` <button class="mb" data-m="uneq:${i}:${s}" style="padding:1px 6px;min-height:0">Ablegen</button>` : '–'}</div>`;
-  }).join('');
+    const fx = it && it.fx ? `<div class="muted" style="font-size:.72em">${esc(fxText(it.fx))}</div>` : '';
+    return `<div class="muted">${S.data.slots[s]}: ${it ? qTag(id, it) + ` <button class="mb" data-m="uneq:${i}:${s}" style="padding:1px 6px;min-height:0">Ablegen</button>` : '–'}</div>${fx}`;
+  }).join('') + activeSets(S.data, h).map((st) => `<div style="font-size:.74em;color:#6fdc8c">Set „${esc(st.name)}“: ${esc(fxText(st.bonus))}</div>`).join('');
 }
+// 0.21.0: Ausrüstungseffekte in Worten
+const FX_NAMES = { lifesteal: (v) => `Lebensraub ${v} %`, thorns: (v) => `Dornen ${v}`, crit: (v) => `Krit +${v} %`, dodge: (v) => `Ausweichen ${v} %`, resist: (v) => `Statusabwehr ${v} %`, soak: (v) => `Schaden gegen dich −${v}`, regen: (v) => `+${v} Ressource je Angriff/Verteidigen`, heal: (v) => `Heilung +${v}`, abil: (v) => `Fähigkeiten +${v} %`, gold: (v) => `Gold +${v} %` };
+function fxText(fx) { return Object.entries(fx || {}).map(([k, v]) => (FX_NAMES[k] ? FX_NAMES[k](v) : `${k} ${v}`)).join(', '); }
 function openCharacter() {
   const g = S.game;
   openModal(`<h2>Charaktere</h2><div class="grid4">` + g.heroes.map((h, i) =>

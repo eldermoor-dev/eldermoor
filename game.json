@@ -86,7 +86,10 @@
         "rogue",
         "ranger"
       ],
-      "desc": "Einzigartige Waffe. +4 Angriff, +1 Initiative. Ein Dorn aus dem Herzen des Moorschrats. Für Krieger, Schurke, Waldläufer."
+      "desc": "Einzigartige Waffe. +4 Angriff, +1 Initiative. Ein Dorn aus dem Herzen des Moorschrats. Für Krieger, Schurke, Waldläufer. Lebensraub 10 %.",
+      "fx": {
+        "lifesteal": 10
+      }
     },
     "wurzelstab": {
       "name": "Wurzelstab",
@@ -100,7 +103,10 @@
         "priest",
         "alchemist"
       ],
-      "desc": "Einzigartige Waffe. +4 Angriff, +1 Initiative. Eine Wurzel, die noch Magie des Moors trägt. Für Magier, Kleriker und Alchemisten."
+      "desc": "Einzigartige Waffe. +4 Angriff, +1 Initiative. Eine Wurzel, die noch Magie des Moors trägt. Für Magier, Kleriker und Alchemisten. +1 Mana je Angriff/Verteidigen.",
+      "fx": {
+        "regen": 1
+      }
     },
     "gruft_key": {
       "name": "Gruftschlüssel",
@@ -125,7 +131,10 @@
         "priest",
         "ranger"
       ],
-      "desc": "Einzigartige Rüstung. +4 Verteidigung. Der Plattenpanzer des Hauptmanns. Für Krieger, Kleriker, Waldläufer."
+      "desc": "Einzigartige Rüstung. +4 Verteidigung. Der Plattenpanzer des Hauptmanns. Für Krieger, Kleriker, Waldläufer. Dornen 3.",
+      "fx": {
+        "thorns": 3
+      }
     },
     "nebelmantel": {
       "name": "Nebelmantel",
@@ -139,7 +148,10 @@
         "mage",
         "alchemist"
       ],
-      "desc": "Einzigartige Rüstung. +3 Verteidigung, +1 Initiative. Ein Mantel, der nach Nebel riecht. Für Schurke und Magier."
+      "desc": "Einzigartige Rüstung. +3 Verteidigung, +1 Initiative. Ein Mantel, der nach Nebel riecht. Für Schurke und Magier. Ausweichen 8 %.",
+      "fx": {
+        "dodge": 8
+      }
     },
     "gruben_schluessel": {
       "name": "Grubenschlüssel",
@@ -182,6 +194,79 @@
       "icon": "🔧",
       "desc": "Öffnet verschlossene Truhen (Chance je nach Schloss). Bricht beim Fehlversuch.",
       "value": 10
+    },
+    "moorklinge": {
+      "name": "Moorklinge",
+      "kind": "equip",
+      "slot": "weapon",
+      "atk": 3,
+      "q": "set",
+      "set": "moorwaechter",
+      "classes": [
+        "warrior",
+        "rogue",
+        "ranger"
+      ],
+      "fx": {
+        "lifesteal": 15
+      },
+      "desc": "Set „Moorwächter“. Waffe. +3 Angriff, Lebensraub 15 % (Treffer heilen den Träger). Für Krieger, Schurke, Waldläufer.",
+      "value": 60
+    },
+    "moorpanzer": {
+      "name": "Moorpanzer",
+      "kind": "equip",
+      "slot": "armor",
+      "def": 3,
+      "q": "set",
+      "set": "moorwaechter",
+      "classes": [
+        "warrior",
+        "rogue",
+        "priest",
+        "ranger"
+      ],
+      "fx": {
+        "thorns": 2
+      },
+      "desc": "Set „Moorwächter“. Rüstung. +3 Verteidigung, Dornen 2 (Angreifer nehmen Schaden). Für Krieger, Schurke, Kleriker, Waldläufer.",
+      "value": 60
+    },
+    "nebelstab": {
+      "name": "Nebelstab",
+      "kind": "equip",
+      "slot": "weapon",
+      "atk": 3,
+      "q": "set",
+      "set": "nebelweber",
+      "classes": [
+        "mage",
+        "priest",
+        "alchemist"
+      ],
+      "fx": {
+        "abil": 10
+      },
+      "desc": "Set „Nebelweber“. Waffe. +3 Angriff, Fähigkeiten und Zauber +10 % Schaden. Für Magier, Kleriker, Alchemisten.",
+      "value": 60
+    },
+    "nebelrobe": {
+      "name": "Nebelrobe",
+      "kind": "equip",
+      "slot": "armor",
+      "def": 2,
+      "q": "set",
+      "set": "nebelweber",
+      "classes": [
+        "mage",
+        "priest",
+        "alchemist"
+      ],
+      "fx": {
+        "regen": 1
+      },
+      "desc": "Set „Nebelweber“. Rüstung. +2 Verteidigung, +1 Mana je Angriff/Verteidigen. Für Magier, Kleriker, Alchemisten.",
+      "value": 60
     }
   },
   "races": {
@@ -654,7 +739,8 @@
         "chance": 25,
         "turns": 2,
         "power": 2
-      }
+      },
+      "enrage": true
     },
     "kultist": {
       "name": "Moorkultist",
@@ -664,7 +750,7 @@
       "init": 4,
       "gold": 8,
       "xp": 30,
-      "ai": "backline",
+      "ai": "healer",
       "onHit": {
         "status": "weak",
         "chance": 35,
@@ -737,7 +823,8 @@
       },
       "gearDrop": {
         "chance": 15
-      }
+      },
+      "guard": true
     },
     "hauptmann": {
       "name": "Kultwächter-Hauptmann",
@@ -821,7 +908,8 @@
       "resist": {
         "fire": -25,
         "lightning": 25
-      }
+      },
+      "enrage": true
     },
     "grubenschrat": {
       "name": "Moorschrat",
@@ -983,7 +1071,8 @@
         "status": "curse",
         "chance": 30,
         "turns": 2
-      }
+      },
+      "guard": true
     },
     "nebelhueter": {
       "name": "Nebelhüter",
@@ -2046,11 +2135,11 @@
               "n": 1
             },
             {
-              "gear": {
-                "boost": 1
-              }
+              "item": "nebelstab",
+              "n": 1
             }
-          ]
+          ],
+          "lootV": 2
         },
         {
           "id": "door_schatz",
@@ -2109,11 +2198,11 @@
               "n": 1
             },
             {
-              "gear": {
-                "boost": 2
-              }
+              "item": "moorklinge",
+              "n": 1
             }
-          ]
+          ],
+          "lootV": 2
         }
       ],
       "intro": {
@@ -2481,11 +2570,11 @@
               "n": 1
             },
             {
-              "gear": {
-                "boost": 1
-              }
+              "item": "moorpanzer",
+              "n": 1
             }
-          ]
+          ],
+          "lootV": 2
         }
       ],
       "intro": {
@@ -2773,15 +2862,15 @@
               "gold": 25
             },
             {
-              "gear": {
-                "boost": 1
-              }
-            },
-            {
               "item": "potion",
               "n": 1
+            },
+            {
+              "item": "nebelrobe",
+              "n": 1
             }
-          ]
+          ],
+          "lootV": 2
         },
         {
           "id": "sign_t4",
@@ -4083,5 +4172,31 @@
     "pick": 40,
     "trapSpot": 30,
     "mimicWarn": 25
+  },
+  "sets": {
+    "moorwaechter": {
+      "name": "Moorwächter",
+      "items": [
+        "moorklinge",
+        "moorpanzer"
+      ],
+      "bonus": {
+        "crit": 10,
+        "soak": 1
+      },
+      "desc": "Beide Teile: kritische Treffer +10 %, Schaden gegen den Träger −1."
+    },
+    "nebelweber": {
+      "name": "Nebelweber",
+      "items": [
+        "nebelstab",
+        "nebelrobe"
+      ],
+      "bonus": {
+        "heal": 6,
+        "resist": 25
+      },
+      "desc": "Beide Teile: Heilzauber +6 LP, 25 % Statusabwehr."
+    }
   }
 }

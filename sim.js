@@ -10,7 +10,14 @@ const RUNS = +process.argv[2] || 2000;
 const ENC = { en2: '2 Sumpfwölfe', en3: 'Wolf + 2 Moorkultisten', en1: 'Moorschrat' };
 
 function liveEnemies(c) { return c.enemies.map((e, i) => ({ e, i })).filter((x) => x.e.hp > 0); }
-function weakest(c) { return liveEnemies(c).reduce((b, x) => (x.e.hp < b.e.hp ? x : b)).i; }
+function weakest(c) { // 0.21.0: lebt eine Wache (guard), wird sie zuerst bekämpft (sie deckt die anderen)
+  const live = liveEnemies(c), g = live.filter((x) => data.enemies[x.e.kind].guard);
+  return (g.length && live.length > 1 ? g : live).reduce((b, x) => (x.e.hp < b.e.hp ? x : b)).i;
+}
+// 0.21.0: Talente in der Kampagne – nach jedem Kampf lernt jeder Held, was geht (Zweige der Reihe nach, erster Zweig zuerst)
+function autoTalents(s) {
+  s.heroes.forEach((h, i) => { for (let k = 0; k < 20; k++) { const n = L.talentNodes(data, h.cls).find((x) => L.canLearnTalent(data, h, x.id).ok); if (!n) break; L.learnTalent(s, data, i, n.id); } });
+}
 
 function decideSimple(s) { return { type: 'attack', target: liveEnemies(s.combat)[0].i }; }
 
@@ -129,6 +136,7 @@ function campaign(seed, strat) {
       while (!won && rec.tries < 3) {
         rec.tries++;
         const r = fight(s, f.id, strat);
+        if (strat === 'smart') autoTalents(s);
         if (rec.tries === 1) { rec.first = r.won; rec.ko = r.ko; rec.lost = r.hpLost / full; rec.rounds = r.rounds; }
         won = r.won;
         if (!won) L.applyDefeat(s, data);
