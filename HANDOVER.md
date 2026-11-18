@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.23.0 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.23.1 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -886,3 +886,9 @@ Nutzerwünsche (EOB2-Vorbild, Screenshots): große Dungeons mit verschiedenen R�
 - **Wandschmuck (selten):** `niche` (Wandnische, ◉ mit Blick zur Wand: Beute einmal, danach leer; Zustand im Spielstand), `sign.deco` = `painting` | `graffiti` (Bild statt Schrift, Text per Antippen/◉). Gesetzt: Nische Kaserne, Gemälde Vorburg-Hof und Nebelturm, Kritzelei Kultgruft.
 - Testsuite: Fehlerzählung erst am Ende (vorher zählten spätere Tests nicht in die Summe; Fehler wurden aber angezeigt).
 - **Nächster Nutzerwunsch (17:50, noch nicht gebaut):** Begegnungen mit Personen/Kreaturen, die etwas erzählen (Hinweise zur Aufgabe, Drohungen, Zwischenquests), mit Auswahl wie EOB2 (Nachfragen / Angreifen / Gehen). Plan: 0.24 Begegnungs-Dialoge (Porträt groß, Text, Antwortknöpfe, Folgen: Hinweis, Gegenstand, Kampf, Auftrag), erste Begegnungen in der Vorburg.
+
+## 0.23.1 (18.11.2026) – Vollbild: Hinweise sofort ausblenden
+Nutzer: „Beim Wechsel auf Vollbild die Dauer der darauf folgenden Informationen drastisch kürzen. Verdeckt sonst Bereiche.“ Nicht nachgestellt (Vollbild headless nicht prüfbar); welche Information gemeint ist, ist **nicht gesichert**.
+- Einstellungen → „Vollbild“ schließt jetzt das Fenster; bei jedem Wechsel in/aus dem Vollbild (`fullscreenchange`) werden Meldungsleiste, Hinweis-Toast und Auftrittsbanner sofort ausgeblendet (`calmScreen`). Das Protokoll bleibt vollständig.
+- Grenze: Den Hinweis von Chrome selbst („Zum Beenden … wischen“) kann die Seite nicht verkürzen.
+- Tests 108 grün; nicht auf Gerät getestet.

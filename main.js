@@ -10,7 +10,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPort
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.23.0';
+const VERSION = '0.23.1';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -710,6 +710,9 @@ function renderAll() { renderCompass(); announceTurn(); renderParty(); renderCom
 function updateInvBadge() { const b = document.querySelector('[data-a="inv"]'); if (b && S.game) b.classList.toggle('hasnew', Object.keys(S.game.inv).some((k) => isNew(S.game, k))); }
 // 0.19.6 (Nutzer: „Der viele Text versperrt den Blick auf den Gang“): Außerhalb des Kampfs zeigt das Meldungsfeld höchstens 2 Meldungen,
 // jede höchstens 2 Zeilen, und blendet sie nach 3–6 s aus (länger bei langem Text). Im Kampf bleibt alles wie bisher (die letzten 2). Das Protokoll bleibt vollständig.
+// 0.23.1 (Nutzer: nach dem Wechsel ins Vollbild verdecken Informationen das Bild zu lange): Meldungen und Hinweise sofort ausblenden.
+function calmScreen() { S.logTs = (S.logTs || []).map(() => 0); const t = $('#toast'); if (t) t.hidden = true; const ev = $('#event'); if (ev) ev.hidden = true; renderLog(); }
+document.addEventListener('fullscreenchange', () => { if (S.game) calmScreen(); });
 function renderLog() {
   const box = $('#log'), combat = !!(S.game && S.game.combat);
   let items;
@@ -1382,7 +1385,7 @@ async function onModalClick(e) {
   else if (m === 'export') exportSave();
   else if (m === 'import') $('#importfile').click();
   else if (m === 'fullscreen') {
-    try { await document.documentElement.requestFullscreen({ navigationUI: 'hide' }); if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); }
+    try { await document.documentElement.requestFullscreen({ navigationUI: 'hide' }); if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); closeModal(); calmScreen(); } // 0.23.1: nach dem Wechsel Fenster schließen, Meldungen ausblenden
     catch { toast('Vollbild wird von diesem Browser nicht unterstützt oder wurde abgelehnt.'); }
   } else if (m === 'install') {
     if (S.installEvent) { S.installEvent.prompt(); S.installEvent = null; }
