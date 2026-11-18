@@ -1826,6 +1826,10 @@ export function buildGrid(lvl, objs) {
     const c = lvl.map[y][x];
     grid[y * w + x] = c === '#' ? WALL_STONE : c === 'm' ? WALL_MOSS : c === 'T' ? WALL_TORCH : c === 'r' ? WALL_ROCK : c === 'o' ? WALL_LICHEN : 0;
   }
+  for (const o of objs) if (o.type === 'illusion' && !o.found) { // 0.22.0: Illusionswand = Mauer wie die Nachbarn
+    const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => grid[(o.y + dy) * w + o.x + dx]).find((v) => v === WALL_STONE || v === WALL_MOSS || v === WALL_ROCK || v === WALL_LICHEN);
+    grid[o.y * w + o.x] = nb || WALL_STONE;
+  }
   for (const o of objs) if (o.type === 'door' && !o.open) grid[o.y * w + o.x] = o.locked ? WALL_DOOR_LOCKED : WALL_DOOR;
   for (const o of objs) if (o.type === 'gate' && !o.open) grid[o.y * w + o.x] = WALL_GATE;
   for (const o of objs) { if (o.type === 'secret' && !o.open) grid[o.y * w + o.x] = WALL_SECRET; else if (o.type === 'lever' && o.wall) grid[o.y * w + o.x] = o.used ? WALL_SWITCH_ON : WALL_SWITCH; }

@@ -1819,7 +1819,7 @@ export async function runTests(data, env = {}) {
 
   const failed = results.filter((r) => !r.ok).length;
   await test('Talente (0.17.0): Daten vollständig – 6 Berufe × 3 Zweige × 4 Talente, Freischaltungen existieren', () => {
-    const FX = new Set(['hp', 'mp', 'atk', 'def', 'init', 'crit', 'dodge', 'resist', 'gold', 'abil', 'soak', 'heal', 'regen', 'backfull', 'trap', 'lock', 'secret', 'haggle']);
+    const FX = new Set(['hp', 'mp', 'atk', 'def', 'init', 'crit', 'dodge', 'resist', 'gold', 'abil', 'soak', 'heal', 'regen', 'backfull', 'trap', 'lock', 'secret', 'haggle', 'lifesteal', 'taunt', 'aura_atk', 'firstcrit', 'noambush', 'loot_potion', 'postheal', 'aura_soak', 'burnhit', 'fireburn', 'frostbite', 'manashield', 'pierce', 'opener', 'immune_poison', 'dotplus', 'potionplus', 'chain']);
     const ids = new Set();
     eq(data.talents.cost, [1, 1, 2, 2], 'Kosten');
     for (const c of Object.keys(data.classes)) {
@@ -2090,6 +2090,63 @@ export async function runTests(data, env = {}) {
     const back = L.deserialize(JSON.parse(JSON.stringify(L.serialize(k))), data);
     assert(back.objs.find((o) => o.id === 'chest_g_real').loot.some((e) => e.item === 'moorklinge'), 'ungeöffnete Truhe bekommt neue Beute');
     eq(L.syncStatic(back, data), 0, 'zweiter Abgleich ändert nichts');
+  });
+  await test('Talent-Sondereffekte (0.22.0): jeder Zweig hat auf Stufe 3 einen ★-Effekt; Wächter, Wachsam, Fangnetz, Giftschutz, Manaschild, Tränke, Nachsorge, Kettenreaktion', () => {
+    for (const [c, br] of Object.entries(data.talents.classes)) for (const b of br) assert(b.nodes[2].sig && /★/.test(b.nodes[2].desc), `${c}/${b.id}: Sondereffekt fehlt`);
+    const lv = (s, i, ids) => { s.heroes[i].level = 8; s.heroes[i].tal = Object.fromEntries(ids.map((x) => [x, true])); };
+    // Wächter: Krieger zieht Angriffe
+    let hit = 0; for (let k = 0; k < 120; k++) { const s = L.newGame(data, 400 + k); lv(s, 0, ['w_haut', 'w_wille', 'w_wall']); L.startCombat(s, data, { id: 'w', kind: 'kultist', hp: 20 }); let g = 0; while (L.currentActor(s).side !== 'e' && g++ < 9) L.heroAction(s, data, { type: 'defend' }); const r = L.enemyStep(s, data); if (r.msgs.some((m) => /Berenn/.test(m))) hit++; }
+    assert(hit / 120 > 0.5, `Wächter zieht Angriffe: ${hit}/120`);
+    // Wachsam: kein Überfall; Fangnetz: ein Gegner verlangsamt
+    const w = fresh(3); lv(w, 1, ['r_flink', 'r_aus', 'r_geist']); L.startCombat(w, data, { id: 'w', kind: 'wolf', hp: 26 }, { ambush: true });
+    assert(!w.combat.ambush && w.combat.startMsgs.some((m) => /Hinterhalt/.test(m)), 'Wachsam verhindert Überfall');
+    const n = L.newGame(data, 4, [{ name: 'A', race: 'human', cls: 'warrior' }, { name: 'B', race: 'human', cls: 'ranger' }, { name: 'C', race: 'human', cls: 'priest' }, { name: 'D', race: 'human', cls: 'mage' }]);
+    lv(n, 1, ['g_fuss', 'g_zaeh', 'g_netz']); L.startCombat(n, data, { id: 'w', kind: 'wolf', hp: 26 });
+    assert(n.combat.status.e0 && n.combat.status.e0.slow && /Fangnetz/.test(n.combat.startMsgs[0]), 'Fangnetz verlangsamt');
+    // Giftschutz (Gruppe)
+    lv(n, 1, ['g_hart', 'g_wald', 'g_kraeut']); const msgs = []; n.combat.status = {};
+    const before = JSON.stringify(n.combat.status); for (let k = 0; k < 5; k++) L.heroAction; // nichts
+    eq(L.partyFx(n, data, 'immune_poison'), 1, 'Giftschutz aktiv');
+    // Manaschild
+    const m = fresh(5); lv(m, 3, ['m_quell', 'm_fluss', 'm_tief']); eq(L.fxSum(data, m.heroes[3], 'manashield'), 30, 'Manaschild 30 %');
+    // Tränkemeister: Trank heilt 50 % mehr
+    const t = L.newGame(data, 6, [{ name: 'A', race: 'human', cls: 'warrior' }, { name: 'B', race: 'human', cls: 'alchemist' }, { name: 'C', race: 'human', cls: 'priest' }, { name: 'D', race: 'human', cls: 'mage' }]);
+    lv(t, 1, ['a_balsam', 'a_mana', 'a_fest']); t.heroes[0].hp = 1; t.inv.potion = 1; L.useItemOutside(t, data, 'potion', 0);
+    eq(t.heroes[0].hp, 1 + Math.floor(data.items.potion.heal * 1.5), 'Trank +50 %');
+    // Kampfruf: alle +1 Angriff
+    const a = fresh(7); const atk0 = L.heroAtk(data, a.heroes[3], a); lv(a, 0, ['w_takt', 'w_atem', 'w_kraft']); eq(L.heroAtk(data, a.heroes[3], a), atk0 + 1, 'Kampfruf wirkt auf andere');
+    // Nachsorge nach dem Sieg
+    const q = fresh(8); lv(q, 2, ['p_hand', 'p_quell', 'p_gnade']); put(q, 15, 7, 1); L.startCombat(q, data, L.enemyInFront(q)); q.combat.enemies[0].hp = 1; q.heroes[0].hp = 10;
+    let r = null; for (let k = 0; k < 20 && q.combat; k++) { const c = L.currentActor(q); r = c.side === 'h' ? L.heroAction(q, data, { type: 'attack', target: 0 }) : L.enemyStep(q, data, { god: true }); }
+    assert(r && r.msgs.some((x) => /Nachsorge/.test(x)), 'Nachsorge gemeldet');
+    // Kettenreaktion
+    const k2 = L.newGame(data, 9, [{ name: 'A', race: 'human', cls: 'alchemist' }, { name: 'B', race: 'human', cls: 'warrior' }, { name: 'C', race: 'human', cls: 'priest' }, { name: 'D', race: 'human', cls: 'mage' }]);
+    lv(k2, 0, ['a_zuend', 'a_pulver', 'a_kuehl']); L.startCombat(k2, data, { id: 'g', kind: 'wolf', kinds: ['wolf', 'wolf'], hp: 26 });
+    let chain = false; for (let i = 0; i < 30 && k2.combat && !chain; i++) { const c = L.currentActor(k2); if (c.side === 'h' && c.idx === 0) { k2.combat.enemies[0].hp = Math.min(k2.combat.enemies[0].hp, 1); k2.combat.enemies[1].hp = 50; const rr = L.heroAction(k2, data, { type: 'attack', target: 0 }); if (rr.msgs.some((x) => /Kettenreaktion/.test(x))) { chain = true; eq(k2.combat ? k2.combat.enemies[1].hp : 44, 44, 'Kette 6 Schaden'); } } else if (c.side === 'h') L.heroAction(k2, data, { type: 'defend' }); else L.enemyStep(k2, data, { god: true }); }
+    assert(chain, 'Kettenreaktion ausgelöst');
+  });
+  await test('Illusionswände (0.22.0): begehbar, verdecken Sicht und Karte bis zum Durchgang, Hinweis, Gespür, nur optionale Wege', () => {
+    let n = 0;
+    for (const [id, lv] of Object.entries(data.levels)) for (const o of lv.objects) if (o.type === 'illusion') {
+      n++;
+      const d = L.clone(data); d.levels[id].objects = d.levels[id].objects.filter((q) => q.id !== o.id);
+      const block = L.clone(d); block.levels[id].map[o.y] = block.levels[id].map[o.y].slice(0, o.x) + '#' + block.levels[id].map[o.y].slice(o.x + 1);
+      const a = L.analyzeLevel(block, id); assert(!a.unreachableExits.length && !a.lockedNoKey.length, `${o.id}: Hauptweg darf nicht hinter der Illusion liegen`);
+      assert(lv.objects.some((q) => q.type === 'sign' && Math.abs(q.x - o.x) + Math.abs(q.y - o.y) <= 4), `${o.id}: Hinweis in der Nähe`);
+    }
+    assert(n >= 3, 'mindestens drei Illusionswände: ' + n);
+    const s = fresh(4); L.jumpToLevel(s, data, 'schratgruben'); s.objs.forEach((o) => { if (o.type === 'enemy') o.dead = true; });
+    const il = s.objs.find((o) => o.id === 'ill_s1');
+    s.player = { x: 30, y: 10, dir: 2 }; L.markSeen(s, data);
+    const w = data.levels.schratgruben.map[0].length;
+    assert(!s.seen[12 * w + 30], 'Blick endet an der Illusion');
+    assert(/unscharf/.test(L.interact(s, data).msg), 'Hinweis beim Untersuchen');
+    const r = L.tryMove(s, data, 'f'); assert(r.moved && il.found && r.events.some((e) => e.type === 'illusion'), 'durchgehen');
+    assert(s.seen[12 * w + 30] || L.tryMove(s, data, 'f').moved, 'dahinter sichtbar/erreichbar');
+    const g = buildGrid(data.levels.schratgruben, s.objs).grid; eq(g[11 * w + 30], 0, 'nach dem Durchgang offen');
+    const t = fresh(5); L.jumpToLevel(t, data, 'schratgruben'); eq(buildGrid(data.levels.schratgruben, t.objs).grid[11 * w + 30] > 0, true, 'vorher als Mauer gezeichnet');
+    let sensed = false; for (let k = 0; k < 20 && !sensed; k++) { const q = L.newGame(data, 50 + k); L.jumpToLevel(q, data, 'schratgruben'); q.heroes[3].level = 3; q.heroes[3].tal = { m_kalt: true, m_eis: true }; q.player = { x: 30, y: 9, dir: 2 }; sensed = L.scanSecrets(q, data).some((x) => /Trugbild/.test(x)); }
+    assert(sensed, 'Geheimwand-Gespür erkennt Illusionen');
   });
   return { results, passed: results.length - failed, failed };
 }

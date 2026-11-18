@@ -1854,7 +1854,7 @@
       "map": [
         "###########m#T#############",
         "##....####......###########",
-        "##....####......###########",
+        "##....####.........########",
         "##mT#.####m#.T#m########m##",
         "#......###......########..#",
         "m.....m##m......mT####T#..#",
@@ -2203,6 +2203,40 @@
             }
           ],
           "lootV": 2
+        },
+        {
+          "id": "ill_g1",
+          "type": "illusion",
+          "x": 16,
+          "y": 2
+        },
+        {
+          "id": "chest_g_ill",
+          "type": "chest",
+          "x": 18,
+          "y": 2,
+          "loot": [
+            {
+              "gold": 30
+            },
+            {
+              "item": "potion",
+              "n": 1
+            },
+            {
+              "item": "ration",
+              "n": 1
+            }
+          ]
+        },
+        {
+          "id": "sign_g_ill",
+          "type": "sign",
+          "x": 11,
+          "y": 1,
+          "face": 0,
+          "title": "NICHT|ALLES",
+          "text": "Eingeritzt, kaum lesbar: „Nicht alles hier ist so fest, wie es aussieht.“"
         }
       ],
       "intro": {
@@ -2220,7 +2254,7 @@
       "palette": "grube",
       "map": [
         "rororrororoorrorrrrrrorroorrrrrrroo",
-        "rrrrrrrr.........r.........rrrrrrrr",
+        "rrrrr............r.........rrrrrrrr",
         "orrororr.........r.........rrrrrrrr",
         "rrrorrrrrrro.rroororr.rorrrrrrrrrro",
         "rrrrrrorrrrr.rrrorrrr.rroroo.....rr",
@@ -2230,9 +2264,9 @@
         "r#....#rrr.....rrrr.....oorr.....rr",
         "r####T#rrr.....rrrr.....rorr.....rr",
         "rrrrrrrrrrro.rrorrrrr.oorrrr.....rr",
-        "rrrrrrrror.....rrrror.rorrrrrrrrror",
-        "rrrrrrrr.......r...........rrrrrrro",
-        "orororrror.....r...........rrrrrrrr",
+        "rrrrrrrror.....rrrror.rorrrrrr.rror",
+        "rrrrrrrr.......r...........rrr.rrro",
+        "orororrror.....r...........rrr.rrrr",
         "rrrorrorrrorrrororrorrrrorrroorrorr"
       ],
       "start": {
@@ -2575,6 +2609,75 @@
             }
           ],
           "lootV": 2
+        },
+        {
+          "id": "ill_s1",
+          "type": "illusion",
+          "x": 30,
+          "y": 11
+        },
+        {
+          "id": "chest_s_ill",
+          "type": "chest",
+          "x": 30,
+          "y": 13,
+          "loot": [
+            {
+              "gold": 40
+            },
+            {
+              "item": "potion",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 2
+              }
+            }
+          ]
+        },
+        {
+          "id": "sign_s_ill",
+          "type": "sign",
+          "x": 29,
+          "y": 10,
+          "face": 2,
+          "title": "FELS|LÜGT",
+          "text": "Ein Bergmann hat gekritzelt: „Der Fels hier unten lügt. Manchmal ist er gar nicht da.“"
+        },
+        {
+          "id": "ill_s2",
+          "type": "illusion",
+          "x": 7,
+          "y": 1
+        },
+        {
+          "id": "chest_s_ill2",
+          "type": "chest",
+          "x": 5,
+          "y": 1,
+          "loot": [
+            {
+              "gold": 25
+            },
+            {
+              "item": "oelflasche",
+              "n": 1
+            },
+            {
+              "item": "gegengift",
+              "n": 1
+            }
+          ]
+        },
+        {
+          "id": "sign_s_ill2",
+          "type": "sign",
+          "x": 8,
+          "y": 2,
+          "face": 3,
+          "title": "HOHL",
+          "text": "Jemand hat einen Pfeil in den Fels geritzt, darunter: „Klopf nicht. Geh.“"
         }
       ],
       "intro": {
@@ -3388,11 +3491,13 @@
             {
               "id": "w_wall",
               "name": "Schildwall",
-              "desc": "+2 Verteidigung, +10 LP.",
+              "desc": "+2 Verteidigung, +10 LP. ★ Wächter: Gegner greifen zu 50 % diesen Helden an.",
               "fx": {
                 "def": 2,
-                "hp": 10
-              }
+                "hp": 10,
+                "taunt": 50
+              },
+              "sig": true
             },
             {
               "id": "w_stoss",
@@ -3426,10 +3531,12 @@
             {
               "id": "w_wucht",
               "name": "Wuchtig",
-              "desc": "Fähigkeiten +20 % Schaden.",
+              "desc": "Fähigkeiten +20 % Schaden. ★ Blutdurst: Lebensraub 10 %.",
               "fx": {
-                "abil": 20
-              }
+                "abil": 20,
+                "lifesteal": 10
+              },
+              "sig": true
             },
             {
               "id": "w_hieb",
@@ -3464,11 +3571,13 @@
             {
               "id": "w_kraft",
               "name": "Kampferfahren",
-              "desc": "+14 LP, +1 Angriff.",
+              "desc": "+14 LP, +1 Angriff. ★ Kampfruf: die ganze Gruppe +1 Angriff.",
               "fx": {
                 "hp": 14,
-                "atk": 1
-              }
+                "atk": 1,
+                "aura_atk": 1
+              },
+              "sig": true
             },
             {
               "id": "w_ruf",
@@ -3504,10 +3613,12 @@
             {
               "id": "r_gift",
               "name": "Tödliche Kunst",
-              "desc": "Fähigkeiten +20 % Schaden.",
+              "desc": "Fähigkeiten +20 % Schaden. ★ Erster Stich: der erste Angriff in jedem Kampf ist kritisch.",
               "fx": {
-                "abil": 20
-              }
+                "abil": 20,
+                "firstcrit": 1
+              },
+              "sig": true
             },
             {
               "id": "r_meuch",
@@ -3541,11 +3652,13 @@
             {
               "id": "r_geist",
               "name": "Schattenhaft",
-              "desc": "+8 % Ausweichen, +6 LP.",
+              "desc": "+8 % Ausweichen, +6 LP. ★ Wachsam: die Gruppe wird nie überfallen.",
               "fx": {
                 "dodge": 8,
-                "hp": 6
-              }
+                "hp": 6,
+                "noambush": 1
+              },
+              "sig": true
             },
             {
               "id": "r_wolke",
@@ -3583,13 +3696,15 @@
             {
               "id": "r_glueck",
               "name": "Glückspilz",
-              "desc": "+20 % Gold, +1 Verteidigung. Fallen: weitere +25 %. Schlösser +25 %.",
+              "desc": "+20 % Gold, +1 Verteidigung. Fallen: weitere +25 %. Schlösser +25 %. ★ Plündern: nach einem Sieg 25 % Chance auf einen Heiltrank.",
               "fx": {
                 "gold": 20,
                 "def": 1,
                 "trap": 25,
-                "lock": 25
-              }
+                "lock": 25,
+                "loot_potion": 25
+              },
+              "sig": true
             },
             {
               "id": "r_hagel",
@@ -3625,10 +3740,12 @@
             {
               "id": "p_gnade",
               "name": "Gnade",
-              "desc": "Heilzauber +6 LP.",
+              "desc": "Heilzauber +6 LP. ★ Nachsorge: nach jedem Sieg alle wachen Helden +10 % LP.",
               "fx": {
-                "heal": 6
-              }
+                "heal": 6,
+                "postheal": 10
+              },
+              "sig": true
             },
             {
               "id": "p_gross",
@@ -3663,11 +3780,13 @@
             {
               "id": "p_glaube",
               "name": "Fester Glaube",
-              "desc": "+12 LP, +1 Verteidigung.",
+              "desc": "+12 LP, +1 Verteidigung. ★ Schutzschild: Schaden gegen die ganze Gruppe −1.",
               "fx": {
                 "hp": 12,
-                "def": 1
-              }
+                "def": 1,
+                "aura_soak": 1
+              },
+              "sig": true
             },
             {
               "id": "p_rein",
@@ -3701,11 +3820,13 @@
             {
               "id": "p_eifer",
               "name": "Heiliger Zorn",
-              "desc": "Fähigkeiten +15 % Schaden, +1 Angriff.",
+              "desc": "Fähigkeiten +15 % Schaden, +1 Angriff. ★ Heiliger Zorn: Angriffe setzen zu 25 % in Brand.",
               "fx": {
                 "abil": 15,
-                "atk": 1
-              }
+                "atk": 1,
+                "burnhit": 25
+              },
+              "sig": true
             },
             {
               "id": "p_feuer",
@@ -3741,11 +3862,13 @@
             {
               "id": "m_krit",
               "name": "Flammenzunge",
-              "desc": "+8 % kritische Treffer, Fähigkeiten +10 % Schaden.",
+              "desc": "+8 % kritische Treffer, Fähigkeiten +10 % Schaden. ★ Zündfunke: Feuerzauber setzen immer in Brand.",
               "fx": {
                 "crit": 8,
-                "abil": 10
-              }
+                "abil": 10,
+                "fireburn": 1
+              },
+              "sig": true
             },
             {
               "id": "m_sturm",
@@ -3782,11 +3905,13 @@
             {
               "id": "m_panzer",
               "name": "Eispanzer",
-              "desc": "+1 Verteidigung, +8 LP.",
+              "desc": "+1 Verteidigung, +8 LP. ★ Frostpanzer: wer den Magier trifft, wird zu 30 % verlangsamt.",
               "fx": {
                 "def": 1,
-                "hp": 8
-              }
+                "hp": 8,
+                "frostbite": 30
+              },
+              "sig": true
             },
             {
               "id": "m_nova",
@@ -3820,12 +3945,14 @@
             {
               "id": "m_tief",
               "name": "Tiefe Quelle",
-              "desc": "+10 Mana, +1 Angriff, Zauber +10 % Schaden.",
+              "desc": "+10 Mana, +1 Angriff, Zauber +10 % Schaden. ★ Manaschild: 30 % des Schadens gehen aufs Mana.",
               "fx": {
                 "mp": 10,
                 "atk": 1,
-                "abil": 10
-              }
+                "abil": 10,
+                "manashield": 30
+              },
+              "sig": true
             },
             {
               "id": "m_geschoss",
@@ -3862,10 +3989,12 @@
             {
               "id": "g_kraft",
               "name": "Starker Bogen",
-              "desc": "Fähigkeiten +20 % Schaden.",
+              "desc": "Fähigkeiten +20 % Schaden. ★ Schwachstelle: Angriffe ignorieren die Hälfte der Rüstung.",
               "fx": {
-                "abil": 20
-              }
+                "abil": 20,
+                "pierce": 50
+              },
+              "sig": true
             },
             {
               "id": "g_durch",
@@ -3901,12 +4030,14 @@
             {
               "id": "g_netz",
               "name": "Netzwerfer",
-              "desc": "+10 % Ausweichen, +1 Initiative. Fallen: weitere +25 %.",
+              "desc": "+10 % Ausweichen, +1 Initiative. Fallen: weitere +25 %. ★ Fangnetz: zu Kampfbeginn wird ein Gegner verlangsamt.",
               "fx": {
                 "dodge": 10,
                 "init": 1,
-                "trap": 25
-              }
+                "trap": 25,
+                "opener": 1
+              },
+              "sig": true
             },
             {
               "id": "g_regen",
@@ -3941,11 +4072,13 @@
             {
               "id": "g_kraeut",
               "name": "Kräuterkunde",
-              "desc": "+14 LP, +1 Verteidigung.",
+              "desc": "+14 LP, +1 Verteidigung. ★ Kräuterkunde: die Gruppe ist gegen Gift gefeit.",
               "fx": {
                 "hp": 14,
-                "def": 1
-              }
+                "def": 1,
+                "immune_poison": 1
+              },
+              "sig": true
             },
             {
               "id": "g_gift",
@@ -3982,11 +4115,13 @@
             {
               "id": "a_dosis",
               "name": "Starke Dosis",
-              "desc": "Fähigkeiten +20 % Schaden, +1 Angriff.",
+              "desc": "Fähigkeiten +20 % Schaden, +1 Angriff. ★ Ätzend: Gift, Brand und Blutung dieses Helden +2 Schaden je Runde.",
               "fx": {
                 "abil": 20,
-                "atk": 1
-              }
+                "atk": 1,
+                "dotplus": 2
+              },
+              "sig": true
             },
             {
               "id": "a_gas",
@@ -4021,11 +4156,13 @@
             {
               "id": "a_fest",
               "name": "Starke Konstitution",
-              "desc": "+10 LP, +1 Verteidigung.",
+              "desc": "+10 LP, +1 Verteidigung. ★ Kräftige Tränke: Heiltränke heilen 50 % mehr.",
               "fx": {
                 "hp": 10,
-                "def": 1
-              }
+                "def": 1,
+                "potionplus": 50
+              },
+              "sig": true
             },
             {
               "id": "a_elix",
@@ -4060,13 +4197,15 @@
             {
               "id": "a_kuehl",
               "name": "Kühler Kopf",
-              "desc": "+4 % Ausweichen, +8 LP, +4 Mana. Fallen: +20 % entdecken und entschärfen.",
+              "desc": "+4 % Ausweichen, +8 LP, +4 Mana. Fallen: +20 % entdecken und entschärfen. ★ Kettenreaktion: fällt ein Gegner durch ihn, 6 Schaden an allen übrigen.",
               "fx": {
                 "dodge": 4,
                 "hp": 8,
                 "mp": 4,
-                "trap": 20
-              }
+                "trap": 20,
+                "chain": 6
+              },
+              "sig": true
             },
             {
               "id": "a_bombe",

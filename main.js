@@ -10,7 +10,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPort
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.21.1';
+const VERSION = '0.22.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -404,6 +404,7 @@ async function onEvent(ev) {
     await saveSlot('auto', true);
     return;
   }
+  if (ev.type === 'illusion') { say(ev.msg); toast(ev.msg, 4000); S.sfx.play('sting'); vib(30); renderAll(); return; } // 0.22.0: Illusionswand durchschritten
   if (ev.type === 'mech') { // Stein geschoben / Druckplatte
     S.held = []; S.nextAllowed = performance.now() + 350;
     if (ev.msgs.length) { ev.msgs.forEach(say); toast(ev.msgs.join(' '), 5000); }
@@ -464,7 +465,8 @@ function startCombatUI(enemyObj, ambush) {
   S.clog = []; S.annKey = null; S.phaseShown = {};
   S.foe = 0;
   const name = S.game.combat.enemies.map((e) => e.name).join(', ');
-  say(`${name} ${S.game.combat.enemies.length > 1 ? 'greifen' : 'greift'} ${ambush ? 'aus dem Hinterhalt ' : ''}an!`);
+  say(`${name} ${S.game.combat.enemies.length > 1 ? 'greifen' : 'greift'} ${S.game.combat.ambush ? 'aus dem Hinterhalt ' : ''}an!`);
+  for (const m of S.game.combat.startMsgs || []) say(m); // 0.22.0: Talente zu Kampfbeginn (Wachsam, Fangnetz)
   if (!introOnce('intro:' + enemyObj.id, S.data.enemies[enemyObj.kind] && S.data.enemies[enemyObj.kind].intro)) S.sfx.play('miss');
   vib(40);
   renderAll();
@@ -867,6 +869,8 @@ function helpHtml() {
   <h3>Rechts: Aktionen</h3><p>◉ Interagieren (Türen, Truhen, Hebel, Gegner ansprechen; Türen und Truhen gehen auch auf, wenn du gegen sie läufst oder sie direkt vor dir antippst), ⚔ Angriff, ✦ Fähigkeit (nur im Kampf, kostet Mana oder Ausdauer). Bei mehreren Gegnern: Gegner antippen = Ziel wählen, „Alle“ trifft jeden Gegner mit 60 % Schaden, ▣ Inventar (Heldenleiste: LP · Mana in Blau bzw. Ausdauer in Gelb), ☻ Charakter (dort „Talente“: ab Stufe 2 gibt jede Stufe einen Punkt; drei Zweige je Beruf, außerdem neue Fähigkeiten).</p>
   <h3>Kombinationsangriffe</h3><p>Automatisch, wenn ein Held einen Gegner trifft, der einen passenden Status von einem <b>anderen</b> Helden trägt. Im Kampf zeigt „✚ Kombi“ am Gegner, was gerade möglich ist.</p>${S.data.combos.map((c) => `<p class="muted" style="margin:2px 0">✚ <b>${esc(c.name)}</b>: ${esc(c.desc)}</p>`).join('')}
   <h3>Fallen</h3><p>Fallen verraten sich durch eine feine Spur am Boden oder eine Warnung an der Wand. ◉ auf das Feld vor dir untersucht den Boden, ein zweites ◉ entschärft die Falle. Helden mit Fallen-Talent (Schurke, Waldläufer, Alchemist) bemerken und entschärfen sie eher. Ausgelöste Fallen kosten LP, töten aber niemanden.</p>
+  <h3>Illusionswände</h3><p>Manche Wände sind nur ein Trugbild: man kann hindurchgehen. Sie verbergen nie den Hauptweg, nur Geheimnisse. Hinweise geben Inschriften in der Nähe; Helden, die Geheimwände spüren, bemerken ein Flimmern. Auf der Karte erscheint der Durchgang erst, wenn ihr hindurchgegangen seid.</p>
+  <h3>Talent-Sondereffekte (★)</h3><p>Das dritte Talent jedes Zweigs hat einen besonderen Effekt (mit ★ markiert), z. B. Gegner auf sich ziehen, nie überfallen werden, Kettenreaktion oder Manaschild. Gruppenwirkungen (Kampfruf, Schutzschild, Giftschutz, Nachsorge) gelten für alle.</p>
   <h3>Gegnertaktik</h3><p>Wachen (🛡) decken ihre Verbündeten: solange eine Wache steht, nehmen die anderen 25 % weniger Schaden – zuerst die Wache. Rudeltiere geraten in Raserei (🔥), wenn ein Verbündeter fällt. Manche Gegner zielen bevorzugt auf Heiler.</p><h3>Ausrüstungseffekte und Sets</h3><p>Besondere Stücke haben Effekte wie Lebensraub, Dornen oder Ausweichen. Zwei passende Set-Teile (Waffe und Rüstung) am selben Helden geben einen zusätzlichen Bonus. Effekte und Sets stehen im Charakterbogen.</p>
   <h3>Truhen</h3><p>Manche Truhen sind verschlossen: ein Dietrich (bei Hedda) oder ein Held mit Schlosstalent öffnet sie; misslingt es dem Talent, klemmt das Schloss bis zur nächsten Rast. Manche Truhen tragen eine Falle – wer sie bemerkt, entschärft sie mit ◉. Und nicht jede Truhe ist eine Truhe.</p><h3>Talente außerhalb des Kampfes</h3><p>Schlösser (Schurke, Alchemist), Geheimwände spüren (Waldläufer, Magier: zeigt auch, wo der Mechanismus liegt), Fallen (Schurke, Waldläufer, Alchemist) und Feilschen bei Händlern (Schurke, Alchemist). Es zählt der beste wache Held.</p>
   <h3>Steine und Druckplatten</h3><p>Schwere Steine lassen sich schieben (von vorn dagegenlaufen) und ziehen (◉, die Gruppe geht dabei einen Schritt zurück). Eine Druckplatte hält ein Gitter nur offen, solange etwas Schweres auf ihr liegt.</p>
@@ -1106,7 +1110,7 @@ function drawMap() {
   const w = lvl.map[0].length, h = lvl.map.length;
   c.fillStyle = '#0a0806'; c.fillRect(0, 0, cv.width, cv.height);
   const seen = (x, y) => x >= 0 && y >= 0 && x < w && y < h && g.seen[y * w + x];
-  const wallObj = new Set(g.objs.filter((o) => (o.type === 'secret' && !o.open) || (o.type === 'lever' && o.wall)).map((o) => o.x + ',' + o.y)); // Geheimwand und Schalterstein zählen auf der Karte als Mauer
+  const wallObj = new Set(g.objs.filter((o) => (o.type === 'secret' && !o.open) || (o.type === 'lever' && o.wall) || (o.type === 'illusion' && !o.found)).map((o) => o.x + ',' + o.y)); // Geheimwand und Schalterstein zählen auf der Karte als Mauer
   const cellChar = (l, x, y) => (wallObj.has(x + ',' + y) ? '#' : cellCharRaw(l, x, y));
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     if (cellChar(lvl, x, y) === '.') { if (seen(x, y)) { c.fillStyle = '#4a4034'; c.fillRect(x * cs, y * cs, cs, cs); } }

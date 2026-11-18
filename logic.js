@@ -282,7 +282,7 @@ export function spottedEnemy(state, data) {
   const range = (data.spot && data.spot.range) || 1;
   const lvl = getLevel(data, state), p = state.player, d = DIRS[p.dir];
   const at = (x, y) => state.objs.filter((o) => o.x === x && o.y === y);
-  const blocked = (x, y) => isWallChar(cellChar(lvl, x, y)) || at(x, y).some((o) => (o.type === 'door' && !o.open) || (o.type === 'secret' && !o.open) || (o.type === 'lever' && o.wall));
+  const blocked = (x, y) => isWallChar(cellChar(lvl, x, y)) || at(x, y).some((o) => (o.type === 'door' && !o.open) || (o.type === 'secret' && !o.open) || (o.type === 'lever' && o.wall) || (o.type === 'illusion' && !o.found));
   let best = null, bd = 99;
   for (const o of state.objs) {
     if (o.type !== 'enemy' || o.dead) continue;
@@ -315,8 +315,11 @@ export function markSeen(state, data) {
     if (isWallChar(cellChar(lvl, cx, cy))) break;
     const b = blockerAt(state, cx, cy);
     if (b && (b.type === 'door' || b.type === 'secret' || (b.type === 'lever' && b.wall))) break;
+    if (illusionAt(state, cx, cy)) break; // Illusionswand verdeckt wie eine Mauer
   }
 }
+// Illusionswand (0.22.0): { type: 'illusion', x, y } auf einer Bodenzelle; sieht aus wie Mauer, ist begehbar. found = einmal durchschritten (danach offen sichtbar).
+export const illusionAt = (state, x, y) => state.objs.find((o) => o.type === 'illusion' && !o.found && o.x === x && o.y === y) || null;
 
 // ---------- Bewegung ----------
 function blockedText(b) {
@@ -357,8 +360,11 @@ export function tryMove(state, data, rel) {
   state.trapAsk = null;
   p.x = nx; p.y = ny;
   state.steps++;
+  const ill = illusionAt(state, nx, ny);
+  if (ill) ill.found = true;
   markSeen(state, data);
   const res = { moved: true, events: [] };
+  if (ill) res.events.push({ type: 'illusion', id: ill.id, msg: ill.msg || 'Ihr geht durch die Wand hindurch – sie war nur ein Trugbild!' });
   if (tr0) res.events.push({ type: 'trap', id: tr0.id, msgs: springTrap(state, data, tr0) });
   const pm = [...pushNotes, ...updatePlates(state, data)];
   if (pushNotes.length || pm.length) res.events.push({ type: 'mech', msgs: pm, push: true });
@@ -579,11 +585,11 @@ export function scanSecrets(state, data) {
   const lvl = getLevel(data, state), p = state.player, d = DIRS[p.dir];
   for (let k = 1; k <= 2; k++) {
     const x = p.x + d.dx * k, y = p.y + d.dy * k;
-    const sc = state.objs.find((o) => o.type === 'secret' && !o.open && o.x === x && o.y === y);
+    const sc = state.objs.find((o) => ((o.type === 'secret' && !o.open) || (o.type === 'illusion' && !o.found)) && o.x === x && o.y === y);
     if (sc) {
       if (sc.sensed || sc.sn) return [];
       sc.sn = true;
-      if (rand(state) * 100 < 30 + skill) { sc.sensed = true; const who = bestAt(state, data, 'secret'); return [`${who.name} spürt einen kalten Luftzug: Die Wand ${k === 1 ? 'vor euch' : 'dort vorn'} ist nicht echt.`]; }
+      if (rand(state) * 100 < 30 + skill) { sc.sensed = true; const who = bestAt(state, data, 'secret'); return [sc.type === 'illusion' ? `${who.name} sieht die Wand ${k === 1 ? 'vor euch' : 'dort vorn'} flimmern – sie ist nur ein Trugbild.` : `${who.name} spürt einen kalten Luftzug: Die Wand ${k === 1 ? 'vor euch' : 'dort vorn'} ist nicht echt.`]; }
       return [];
     }
     if (isWallChar(cellChar(lvl, x, y)) || blockerAt(state, x, y)) return [];
@@ -606,6 +612,8 @@ export function interact(state, data) {
   const f = frontCell(state);
   const o = blockerAt(state, f.x, f.y);
   if (!o) {
+    const il = illusionAt(state, f.x, f.y);
+    if (il) { const sk = partySkill(state, data, 'secret'); il.sensed = il.sensed || sk > 0; return { msg: il.hint || (sk > 0 ? `${bestAt(state, data, 'secret').name}: „Das ist keine Mauer. Das Licht bricht sich falsch darin.“` : 'Die Steine wirken seltsam unscharf, als läge ein Schleier darüber.'), sfx: 'ui' }; }
     const tr = trapAt(state, f.x, f.y);
     if (tr && tr.spotted) return disarmTrap(state, data, tr);
     if (tr) { tr.spotted = true; tr.checked = true; return { msg: `Du untersuchst den Boden: eine Falle (${data.traps.kinds[tr.kind].name})! Noch einmal ◉ entschärft sie.`, sfx: 'ui' }; }
@@ -667,7 +675,7 @@ export function useItemOutside(state, data, itemId, heroIdx) {
   if (!h || h.hp <= 0) return { error: 'bad-target' };
   if (h.hp >= h.maxHp) return { error: 'full-hp' };
   const before = h.hp;
-  h.hp = Math.min(h.maxHp, h.hp + it.heal);
+  h.hp = Math.min(h.maxHp, h.hp + Math.floor((it.heal * (100 + Math.min(100, partyFx(state, data, 'potionplus')))) / 100)); // Tränkemeister (0.22.0)
   state.inv[itemId]--;
   return { msg: `${h.name} erhält ${h.hp - before} LP zurück.`, sfx: 'heal' };
 }
@@ -788,6 +796,17 @@ export function gearFx(data, h, key) {
   return v;
 }
 export const fxSum = (data, h, key) => talentSum(data, h, key) + gearFx(data, h, key);
+// 0.22.0: Gruppenwirkungen (Aura) – Summe über alle wachen Helden
+export const partyFx = (state, data, key) => (state && state.heroes ? state.heroes.reduce((a, h) => a + (h.hp > 0 ? fxSum(data, h, key) : 0), 0) : 0);
+// Manaschild (Arkanist): ein Teil des Schadens geht aufs Mana
+function manaShield(data, t, d, msgs) {
+  const ms = fxSum(data, t, 'manashield');
+  if (!(ms > 0) || !(d > 0) || !(t.mp > 0)) return d;
+  const ab = Math.min(t.mp, Math.floor((d * ms) / 100));
+  if (ab <= 0) return d;
+  t.mp -= ab; msgs.push(`Manaschild: ${t.name} fängt ${ab} Schaden mit Mana ab.`);
+  return d - ab;
+}
 function leech(data, h, d, msgs) {
   const ls = fxSum(data, h, 'lifesteal');
   if (!(ls > 0) || !(d > 0) || h.hp <= 0) return;
@@ -832,7 +851,7 @@ export function gearBonus(data, h, state) {
   for (const s of SLOTS) { const it = h.equip && h.equip[s] && itemDef(state, data, h.equip[s]); if (it && it.kind === 'equip') { b.atk += it.atk || 0; b.def += it.def || 0; b.init += it.init || 0; } }
   return b;
 }
-export const heroAtk = (data, h, state) => h.atk + gearBonus(data, h, state).atk + talentSum(data, h, 'atk');
+export const heroAtk = (data, h, state) => h.atk + gearBonus(data, h, state).atk + talentSum(data, h, 'atk') + Math.min(3, partyFx(state, data, 'aura_atk')); // aura_atk (0.22.0): Kampfruf der Anführer
 export const heroDef = (data, h, state) => h.def + gearBonus(data, h, state).def + talentSum(data, h, 'def');
 export const heroInit = (data, h, state) => h.init + gearBonus(data, h, state).init + talentSum(data, h, 'init');
 export function canEquip(data, h, itemId, state) {
@@ -1001,7 +1020,7 @@ export function restThreat(state, data, cfg = data.rest || {}) {
   if (!foes.length) return { near: 0, seen: false };
   const at = (x, y) => state.objs.filter((o) => o.x === x && o.y === y);
   const pathBlocked = (x, y) => isWallChar(cellChar(lvl, x, y)) || at(x, y).some((o) => (o.type === 'door' && !o.open && o.locked) || ((o.type === 'gate' || o.type === 'secret') && !o.open) || (o.type === 'lever' && o.wall));
-  const sightBlocked = (x, y) => isWallChar(cellChar(lvl, x, y)) || at(x, y).some((o) => (o.type === 'door' && !o.open) || (o.type === 'secret' && !o.open) || (o.type === 'lever' && o.wall));
+  const sightBlocked = (x, y) => isWallChar(cellChar(lvl, x, y)) || at(x, y).some((o) => (o.type === 'door' && !o.open) || (o.type === 'secret' && !o.open) || (o.type === 'lever' && o.wall) || (o.type === 'illusion' && !o.found));
   const foeAt = new Set(foes.map((o) => o.y * w + o.x));
   const { x: px, y: py } = state.player;
   const dist = new Int16Array(w * h).fill(-1), q = [py * w + px];
@@ -1130,8 +1149,11 @@ export function startCombat(state, data, enemyObj, opts = {}) {
   if (hp !== 100) for (const e of en) { e.hp = Math.max(1, Math.round((e.hp * hp) / 100)); e.maxHp = Math.max(1, Math.round((e.maxHp * hp) / 100)); }
   state.combat = {
     enemies: en,
-    order: [], pos: 0, round: 1, defending: {}, status: {}, over: null, ambush: !!opts.ambush
+    order: [], pos: 0, round: 1, defending: {}, status: {}, over: null, ambush: !!opts.ambush, startMsgs: [], struck: {}
   };
+  const c0 = state.combat;
+  if (c0.ambush) { const w = state.heroes.find((h) => h.hp > 0 && fxSum(data, h, 'noambush') > 0); if (w) { c0.ambush = false; c0.startMsgs.push(`${w.name} hat den Hinterhalt kommen sehen – kein Überfall.`); } } // Schatten (0.22.0)
+  { const n = state.heroes.find((h) => h.hp > 0 && fxSum(data, h, 'opener') > 0); if (n) { const live = c0.enemies.map((e, i) => i); const ti = live[randInt(state, 0, live.length - 1)]; addStatus(state, data, 'e', ti, { status: 'slow', chance: 100, turns: 1 }, c0.startMsgs, state.heroes.indexOf(n)); c0.startMsgs.unshift(`${n.name} wirft ein Fangnetz.`); } } // Fallensteller (0.22.0)
   for (const e of state.combat.enemies) noteBestiary(state, e.kind, 'seen');
   buildOrder(state, data);
   normalizeTurn(state, data);
@@ -1173,6 +1195,8 @@ function addStatus(state, data, side, idx, inf, msgs, src = null) {
   if (!inf) return;
   if (inf.chance < 100 && rand(state) * 100 >= inf.chance) return;
   if (side === 'h') { const rs = fxSum(data, state.heroes[idx], 'resist'); if (rs > 0 && rand(state) * 100 < rs) { msgs.push(`${state.heroes[idx].name} wehrt ${data.statuses[inf.status].name} ab.`); return; } }
+  if (side === 'h' && inf.status === 'poison' && partyFx(state, data, 'immune_poison') > 0) { msgs.push(`${state.heroes[idx].name} ist gegen Gift gefeit (Kräuterkunde).`); return; } // Naturkundiger (0.22.0)
+  if (side === 'e' && src != null && (inf.status === 'poison' || inf.status === 'burn' || inf.status === 'bleed')) { const dp = fxSum(data, state.heroes[src], 'dotplus'); if (dp > 0) inf = { ...inf, power: (inf.power || 0) + dp }; } // Giftmischer
   const c = state.combat, k = skey(side, idx);
   const st = c.status[k] || (c.status[k] = {});
   const cur = st[inf.status];
@@ -1190,6 +1214,7 @@ export const diffPct = (state, data, key) => {
 };
 const rageAtk = (e, atk) => (e && e.rage ? Math.round((atk * RAGE_PCT) / 100) : atk);
 const foeAtk = (state, data, atk) => { const p = diffPct(state, data, 'atk'); return p === 100 ? atk : Math.max(1, Math.round((atk * p) / 100)); };
+const pierceDef = (data, h, def) => { const p = fxSum(data, h, 'pierce'); return p > 0 ? Math.floor((def * (100 - Math.min(90, p))) / 100) : def; }; // Scharfschütze (0.22.0)
 const effDef = (state, side, idx, def) => (statusOf(state, side, idx).curse ? Math.floor((def * 7) / 10) : def); // Fluch: Verteidigung −30 %
 const effAtk = (state, side, idx, atk) => (statusOf(state, side, idx).weak ? Math.max(1, Math.floor((atk * 3) / 4)) : atk);
 
@@ -1250,6 +1275,8 @@ function finishVictory(state, data, msgs) {
   msgs.push(`Sieg! Beute: ${gold} Gold${gp > 0 ? ` (Talente +${gp} %)` : ''}.`);
   if (xp > 0) { msgs.push(`Erfahrung: +${xp} EP für jeden Helden, der noch steht.`); grantXp(state, data, xp, msgs); }
   rollDrops(state, data, c.enemies, msgs);
+  { const ph = Math.min(25, partyFx(state, data, 'postheal')); if (ph > 0) { for (const h of state.heroes) if (h.hp > 0) h.hp = Math.min(h.maxHp, h.hp + Math.ceil((h.maxHp * ph) / 100)); msgs.push(`Nachsorge: alle wachen Helden +${ph} % LP.`); } } // Heiler (0.22.0)
+  { const lp = state.heroes.reduce((m, h) => Math.max(m, h.hp > 0 ? fxSum(data, h, 'loot_potion') : 0), 0); if (lp > 0 && rand(state) * 100 < lp) { state.inv.potion = (state.inv.potion || 0) + 1; msgs.push('Glückspilz: Ihr findet einen Heiltrank bei den Gegnern.'); } } // Gauner
   for (const h of state.heroes) if (h.hp <= 0) { h.hp = 1; msgs.push(`${h.name} kommt mit 1 LP wieder zu sich.`); } // vorläufig, bis die Rast kommt (Schritt 5)
   state.combat = null;
   return gold;
@@ -1258,6 +1285,8 @@ function finishVictory(state, data, msgs) {
 function regen(h, msgs, data) {
   if (h.mp < h.maxMp) h.mp = Math.min(h.maxMp, h.mp + MP_REGEN + (data ? fxSum(data, h, 'regen') : 0));
 }
+// Klingentänzer (0.22.0): der erste Treffer jedes Helden im Kampf ist kritisch
+const firstCrit = (state, data, h, idx) => { const c = state.combat; if (!c || c.struck[idx] || !(fxSum(data, h, 'firstcrit') > 0)) return false; c.struck[idx] = true; return true; };
 const rollCrit = (state, data, h) => { const c = fxSum(data, h, 'crit'); return c > 0 && rand(state) * 100 < c; };
 
 // ---------- Kombinationsangriffe (0.18.0) ----------
@@ -1296,6 +1325,7 @@ export function heroAction(state, data, act) {
   if (!a || a.side !== 'h') return { error: 'not-hero-turn' };
   const h = state.heroes[a.idx];
   const msgs = [];
+  const aliveBefore = c.enemies.map((e) => e.hp > 0);
   let sfx = null;
   if (act.type === 'attack') {
     let ti = act.target;
@@ -1303,7 +1333,7 @@ export function heroAction(state, data, act) {
     const e = c.enemies[ti];
     const tr = {};
     const cb = comboFor(state, data, a.idx, ti);
-    let d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h, state)), effDef(state, 'e', ti, enemyOf(data, e).def), { backMelee: backPen(data, h), crit: rollCrit(state, data, h), mult: cb ? cb.mult : 0, trace: tr });
+    let d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h, state)), pierceDef(data, h, effDef(state, 'e', ti, enemyOf(data, e).def)), { backMelee: backPen(data, h), crit: firstCrit(state, data, h, a.idx) || rollCrit(state, data, h), mult: cb ? cb.mult : 0, trace: tr });
     d = cover(state, data, ti, d, tr);
     if (d === 0) { msgs.push(`${h.name} verfehlt ${e.name}.`); sfx = 'miss'; }
     else {
@@ -1314,6 +1344,7 @@ export function heroAction(state, data, act) {
       msgs.push(`${h.name} trifft ${e.name} für ${d} Schaden${note}.${SEP}${explain(tr)}`);
       sfx = 'hit';
       if (e.hp === 0) msgs.push(`${e.name} bricht zusammen.`);
+      else { const bh = fxSum(data, h, 'burnhit'); if (bh > 0) addStatus(state, data, 'e', ti, { status: 'burn', chance: bh, turns: 2, power: 3 }, msgs, a.idx); } // Eiferer (0.22.0)
     }
     regen(h, msgs, data);
   } else if (act.type === 'ability' || act.type === 'spell') {
@@ -1356,7 +1387,7 @@ export function heroAction(state, data, act) {
         const el = ab.element ? ((enemyOf(data, e).resist || {})[ab.element] || 0) : 0;
         if (el !== 0) noteBestiary(state, e.kind, 'resist', ab.element);
         const cb = comboFor(state, data, a.idx, ti, ab);
-        let d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h, state)), effDef(state, 'e', ti, enemyOf(data, e).def), { backMelee: backPen(data, h), mult: Math.floor((ab.mult * (100 + fxSum(data, h, 'abil')) * (cb ? cb.mult : 100)) / 10000), crit: rollCrit(state, data, h), sure: !!ab.sure, elem: el, elemName: ab.element && data.elements[ab.element].name, trace: tr });
+        let d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h, state)), pierceDef(data, h, effDef(state, 'e', ti, enemyOf(data, e).def)), { backMelee: backPen(data, h), mult: Math.floor((ab.mult * (100 + fxSum(data, h, 'abil')) * (cb ? cb.mult : 100)) / 10000), crit: firstCrit(state, data, h, a.idx) || rollCrit(state, data, h), sure: !!ab.sure, elem: el, elemName: ab.element && data.elements[ab.element].name, trace: tr });
         d = cover(state, data, ti, d, tr);
         if (d === 0) { msgs.push(`${h.name} setzt ${ab.name} ein, verfehlt aber ${e.name}${list.length === 1 ? ` (−${ab.cost} ${rn})` : ''}.`); continue; }
         hit = true;
@@ -1366,7 +1397,7 @@ export function heroAction(state, data, act) {
         const note = (el > 0 ? ' Anfällig!' : el < 0 ? ' Resistent.' : '') + (tr.cover ? ' (gedeckt)' : '');
         msgs.push(`${h.name} setzt ${ab.name} ein: ${d} Schaden an ${e.name}${list.length === 1 ? ` (−${ab.cost} ${rn})` : ''}.${note}${SEP}${explain(tr)}`);
         if (e.hp === 0) msgs.push(`${e.name} bricht zusammen.`);
-        else addStatus(state, data, 'e', ti, ab.inflict, msgs, a.idx);
+        else addStatus(state, data, 'e', ti, ab.inflict && ab.element === 'fire' && fxSum(data, h, 'fireburn') > 0 ? { ...ab.inflict, chance: 100 } : ab.inflict, msgs, a.idx); // Feuer-Zweig: Feuer brennt immer
       }
       if (list.length > 1) msgs.push(`(−${ab.cost} ${rn})`);
       sfx = hit ? 'hit' : 'miss';
@@ -1377,7 +1408,7 @@ export function heroAction(state, data, act) {
     let hit = false;
     for (const e of live) {
       const tr = {};
-      let d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h, state)), effDef(state, 'e', c.enemies.indexOf(e), enemyOf(data, e).def), { backMelee: backPen(data, h), mult: SWEEP_MULT, trace: tr });
+      let d = calcDamage(state, effAtk(state, 'h', a.idx, heroAtk(data, h, state)), pierceDef(data, h, effDef(state, 'e', c.enemies.indexOf(e), enemyOf(data, e).def)), { backMelee: backPen(data, h), mult: SWEEP_MULT, trace: tr });
       d = cover(state, data, c.enemies.indexOf(e), d, tr);
       if (d === 0) { msgs.push(`${h.name} verfehlt ${e.name}.`); continue; }
       hit = true; e.hp = Math.max(0, e.hp - d);
@@ -1421,6 +1452,11 @@ export function heroAction(state, data, act) {
   } else {
     return { error: 'not-available' };
   }
+  const ch = fxSum(data, h, 'chain'); // Sprengmeister (0.22.0): Kettenreaktion, wenn ein Gegner durch diesen Helden fällt
+  if (ch > 0 && c.enemies.some((e, i) => e.hp <= 0 && aliveBefore[i])) {
+    const rest = c.enemies.filter((e) => e.hp > 0);
+    if (rest.length) { msgs.push(`Kettenreaktion! ${ch} Schaden an allen übrigen Gegnern.`); for (const e of rest) { e.hp = Math.max(0, e.hp - ch); if (e.hp === 0) msgs.push(`${e.name} bricht zusammen.`); } }
+  }
   let over = null;
   if (c.enemies.every((e) => e.hp <= 0)) {
     const gold = finishVictory(state, data, msgs);
@@ -1438,6 +1474,7 @@ function pickTarget(state, en, data = null) {
   const front = [], back = [], all = [];
   state.heroes.forEach((h, i) => { if (h.hp > 0) { all.push(i); (h.row === 'front' ? front : back).push(i); } });
   const ai = en.ai || 'random';
+  if (data) { const tn = all.filter((i) => fxSum(data, state.heroes[i], 'taunt') > 0); if (tn.length && rand(state) * 100 < fxSum(data, state.heroes[tn[0]], 'taunt')) return tn[0]; } // Bollwerk (0.22.0): Wächter zieht Angriffe auf sich
   if (ai === 'healer' && data && rand(state) < 0.6) { const hs = all.filter((i) => data.classes[state.heroes[i].cls].healer); if (hs.length) return hs[randInt(state, 0, hs.length - 1)]; }
   if (ai === 'weakest' && rand(state) < 0.6) return all.reduce((b, i) => (state.heroes[i].hp < state.heroes[b].hp ? i : b), all[0]);
   if (ai === 'backline' && back.length && rand(state) < 0.75) return back[randInt(state, 0, back.length - 1)];
@@ -1480,6 +1517,7 @@ function enemyCast(state, data, ei, e, en, sp, msgs, opts) {
       let d = calcDamage(state, effAtk(state, 'e', ei, rageAtk(e, foeAtk(state, data, en.atk))), Math.floor(heroDef(data, t, state) / 2), { sure: true, defending: !!c.defending[ti], mult: sp.mult, trace: tr });
       const cap = Math.max(1, Math.ceil(t.maxHp * (sp.all ? 0.4 : 0.5))); // ein Zauber nimmt höchstens die Hälfte der Max-LP (schützt den Magier)
       if (d > cap) { d = cap; tr.total = d; tr.cap = cap; }
+      d = manaShield(data, t, d, msgs);
       t.hp = Math.max(0, t.hp - d);
       msgs.push(`${sp.name} trifft ${t.name} für ${d} Schaden (Zauber: halbe Rüstung${c.defending[ti] ? ', verteidigt: halber Schaden' : ''}).${SEP}${explain(tr)}`);
       sfx = 'hurt';
@@ -1515,15 +1553,17 @@ export function enemyStep(state, data, opts = {}) {
     if (d > 0) { // Talente: Ausweichen (Zufall nur bei Talent, damit alte Läufe gleich bleiben) und Schadensminderung
       const dg = fxSum(data, t, 'dodge');
       if (dg > 0 && rand(state) * 100 < dg) { d = 0; dodged = true; }
-      else { const sk = fxSum(data, t, 'soak'); if (sk > 0) { d = Math.max(1, d - sk); tr.soak = sk; } }
+      else { const sk = fxSum(data, t, 'soak') + Math.min(2, partyFx(state, data, 'aura_soak')); if (sk > 0) { d = Math.max(1, d - sk); tr.soak = sk; } }
     }
     const why = `${t.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}${c.defending[ti] ? ', verteidigt: halber Schaden' : ''}`;
     if (heavy) { msgs.push(`${e.name} setzt ${hv.name} ein!`); noteBestiary(state, e.kind, 'heavy'); }
     if (d === 0) msgs.push(dodged ? `${e.name} greift ${t.name} an, doch ${t.name} weicht aus.` : `${e.name} greift ${t.name} an (${why}) und verfehlt.`);
     else if (opts.god) { msgs.push(`${e.name} trifft ${t.name}, doch Debug-Unverwundbarkeit hält.`); sfx = 'hurt'; }
     else {
+      d = manaShield(data, t, d, msgs);
       t.hp = Math.max(0, t.hp - d);
       msgs.push(`${e.name} trifft ${t.name} für ${d} Schaden (${why}).${SEP}${explain(tr)}`);
+      { const fb = t.hp > 0 ? fxSum(data, t, 'frostbite') : 0; if (fb > 0 && e.hp > 0) addStatus(state, data, 'e', a.idx, { status: 'slow', chance: fb, turns: 1 }, msgs, ti); } // Frostpanzer (0.22.0)
       sfx = 'hurt';
       if (t.hp === 0) { msgs.push(`${t.name} sinkt bewusstlos zu Boden.`); delete c.status['h' + ti]; }
       else { addStatus(state, data, 'h', ti, en.onHit, msgs); if (en.onHit) noteBestiary(state, e.kind, 'onHit'); }

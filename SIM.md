@@ -29,8 +29,8 @@ Annahmen stehen in sim.js über `campaign`. „1. Versuch“ = Sieg ohne vorheri
 
 | Strategie | Kampagne geschafft | Ø Stufe am Ende | Niederlagen je Lauf |
 |---|---|---|---|
-| nur Angriff | 0 % | 6.3 | 4.0 |
-| klug | 100 % | 9.6 | 0.1 |
+| nur Angriff | 0 % | 6.5 | 4.1 |
+| klug | 100 % | 9.7 | 0.1 |
 
 | Gebiet | Gegner | Strategie | erreicht | Ø Stufe | Sieg 1. Versuch | Runden | KO-Helden | Schaden |
 |---|---|---|---|---|---|---|---|---|
@@ -58,31 +58,31 @@ Annahmen stehen in sim.js über `campaign`. „1. Versuch“ = Sieg ohne vorheri
 | Kultgruft | Kultwächter + Moorkultist | klug | 100 % | 4.9 | 100 % | 2.1 | 0.0 | 6 % |
 | Kultgruft | Gruftskelett + Kultwächter + Gruftskelett | nur Angriff | 100 % | 4.7 | 96 % | 6.6 | 1.9 | 61 % |
 | Kultgruft | Gruftskelett + Kultwächter + Gruftskelett | klug | 100 % | 5.0 | 100 % | 3.4 | 0.4 | 30 % |
-| Kultgruft | Kultwächter + Kultwächter | nur Angriff | 100 % | 5.1 | 99 % | 4.4 | 1.2 | 25 % |
+| Kultgruft | Kultwächter + Kultwächter | nur Angriff | 100 % | 5.1 | 100 % | 3.9 | 0.5 | 25 % |
 | Kultgruft | Kultwächter + Kultwächter | klug | 100 % | 5.7 | 100 % | 2.3 | 0.0 | 9 % |
-| Kultgruft | Kultwächter-Hauptmann (Boss) | nur Angriff | 100 % | 5.5 | 19 % | 9.7 | 3.6 | 82 % |
+| Kultgruft | Kultwächter-Hauptmann (Boss) | nur Angriff | 100 % | 5.6 | 24 % | 10.0 | 3.5 | 86 % |
 | Kultgruft | Kultwächter-Hauptmann (Boss) | klug | 100 % | 5.9 | 100 % | 6.2 | 0.2 | 38 % |
-| Schratgruben | Erzkäfer + Erzkäfer | nur Angriff | 53 % | 5.9 | 67 % | 5.1 | 2.2 | 44 % |
-| Schratgruben | Erzkäfer + Erzkäfer | klug | 100 % | 6.7 | 100 % | 2.5 | 0.0 | 18 % |
-| Schratgruben | Gruftskelett + Gruftskelett | nur Angriff | 53 % | 6.1 | 100 % | 3.0 | 0.6 | 20 % |
+| Schratgruben | Erzkäfer + Erzkäfer | nur Angriff | 58 % | 6.0 | 67 % | 5.1 | 2.1 | 43 % |
+| Schratgruben | Erzkäfer + Erzkäfer | klug | 100 % | 6.8 | 100 % | 2.4 | 0.0 | 18 % |
+| Schratgruben | Gruftskelett + Gruftskelett | nur Angriff | 58 % | 6.2 | 100 % | 2.9 | 0.6 | 18 % |
 | Schratgruben | Gruftskelett + Gruftskelett | klug | 100 % | 6.9 | 100 % | 2.0 | 0.0 | 7 % |
-| Schratgruben | Gruftskelett + Erzkäfer + Gruftskelett | nur Angriff | 53 % | 6.3 | 98 % | 5.3 | 1.4 | 52 % |
-| Schratgruben | Gruftskelett + Erzkäfer + Gruftskelett | klug | 100 % | 6.9 | 100 % | 3.1 | 0.2 | 27 % |
-| Schratgruben | Kultwächter + Erzkäfer | nur Angriff | 53 % | 6.4 | 97 % | 4.1 | 0.6 | 34 % |
+| Schratgruben | Gruftskelett + Erzkäfer + Gruftskelett | nur Angriff | 58 % | 6.3 | 98 % | 5.2 | 1.4 | 52 % |
+| Schratgruben | Gruftskelett + Erzkäfer + Gruftskelett | klug | 100 % | 6.9 | 100 % | 3.1 | 0.2 | 26 % |
+| Schratgruben | Kultwächter + Erzkäfer | nur Angriff | 58 % | 6.4 | 99 % | 4.0 | 0.5 | 32 % |
 | Schratgruben | Kultwächter + Erzkäfer | klug | 100 % | 7.0 | 100 % | 2.5 | 0.0 | 15 % |
-| Schratgruben | Moorlicht + Moorlicht + Erzkäfer | nur Angriff | 53 % | 6.5 | 96 % | 4.3 | 1.0 | 39 % |
+| Schratgruben | Moorlicht + Moorlicht + Erzkäfer | nur Angriff | 58 % | 6.5 | 98 % | 4.2 | 0.9 | 38 % |
 | Schratgruben | Moorlicht + Moorlicht + Erzkäfer | klug | 100 % | 7.0 | 100 % | 2.8 | 0.1 | 23 % |
-| Schratgruben | Moorschrat (Boss) | nur Angriff | 53 % | 6.8 | 9 % | 8.5 | 3.8 | 69 % |
-| Schratgruben | Moorschrat (Boss) | klug | 100 % | 7.7 | 100 % | 5.0 | 0.1 | 28 % |
-| Nebelturm | Nebelgeist + Nebelgeist | nur Angriff | 19 % | 7.1 | 65 % | 4.8 | 2.4 | 43 % |
+| Schratgruben | Moorschrat (Boss) | nur Angriff | 58 % | 6.8 | 10 % | 8.5 | 3.8 | 69 % |
+| Schratgruben | Moorschrat (Boss) | klug | 100 % | 7.7 | 100 % | 4.9 | 0.1 | 28 % |
+| Nebelturm | Nebelgeist + Nebelgeist | nur Angriff | 24 % | 7.1 | 64 % | 4.7 | 2.6 | 42 % |
 | Nebelturm | Nebelgeist + Nebelgeist | klug | 100 % | 7.9 | 100 % | 2.3 | 0.1 | 17 % |
-| Nebelturm | Turmwache + Kultpriester | nur Angriff | 19 % | 7.3 | 99 % | 8.2 | 0.6 | 46 % |
-| Nebelturm | Turmwache + Kultpriester | klug | 100 % | 7.9 | 100 % | 3.9 | 0.0 | 14 % |
-| Nebelturm | Turmwache + Kultpriester + Nebelgeist | nur Angriff | 19 % | 7.5 | 2 % | 7.9 | 4.0 | 101 % |
-| Nebelturm | Turmwache + Kultpriester + Nebelgeist | klug | 100 % | 8.7 | 97 % | 6.9 | 0.5 | 56 % |
-| Nebelturm | Nebelgeist + Nebelgeist + Nebelgeist | nur Angriff | 1 % | 7.9 | 0 % | 4.5 | 4.0 | 63 % |
-| Nebelturm | Nebelgeist + Nebelgeist + Nebelgeist | klug | 100 % | 8.8 | 100 % | 3.5 | 0.4 | 38 % |
-| Nebelturm | Nebelhüter (Boss) | nur Angriff | 1 % | 8.0 | 0 % | 6.0 | 4.0 | 48 % |
-| Nebelturm | Nebelhüter (Boss) | klug | 100 % | 8.9 | 91 % | 9.5 | 0.6 | 93 % |
+| Nebelturm | Turmwache + Kultpriester | nur Angriff | 24 % | 7.2 | 99 % | 8.9 | 0.7 | 48 % |
+| Nebelturm | Turmwache + Kultpriester | klug | 100 % | 8.0 | 100 % | 3.9 | 0.0 | 15 % |
+| Nebelturm | Turmwache + Kultpriester + Nebelgeist | nur Angriff | 24 % | 7.5 | 5 % | 7.9 | 3.9 | 102 % |
+| Nebelturm | Turmwache + Kultpriester + Nebelgeist | klug | 100 % | 8.7 | 100 % | 5.6 | 0.1 | 41 % |
+| Nebelturm | Nebelgeist + Nebelgeist + Nebelgeist | nur Angriff | 2 % | 7.8 | 38 % | 5.2 | 3.2 | 62 % |
+| Nebelturm | Nebelgeist + Nebelgeist + Nebelgeist | klug | 100 % | 8.9 | 100 % | 3.1 | 0.1 | 29 % |
+| Nebelturm | Nebelhüter (Boss) | nur Angriff | 2 % | 8.0 | 0 % | 7.1 | 4.0 | 59 % |
+| Nebelturm | Nebelhüter (Boss) | klug | 100 % | 8.9 | 87 % | 10.1 | 0.7 | 109 % |
 
 Hinweis: Die Simulation nutzt die echten Regeln, aber nur zwei feste Strategien. Ein echter Spieler liegt dazwischen.
