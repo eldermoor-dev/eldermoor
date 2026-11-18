@@ -4,13 +4,13 @@ import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
   buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
-  activeSets, coveredBy,
+  activeSets, coveredBy, isNew, clearNew,
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.22.0';
+const VERSION = '0.22.1';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -473,7 +473,12 @@ function startCombatUI(enemyObj, ambush) {
   runEnemyTurns();
 }
 function showResult(r) {
-  (r.msgs || []).forEach((m) => { const [t, dt] = m.split(SEP); say(t); clogAdd(dt ? `${t} [${dt}]` : t); if (/^Beute von /.test(t)) toast(t, 3600); });
+  // 0.22.1 (Nutzer: Betäubung des Moorschrats war in der Leiste nicht zu sehen): Solange der Kampf läuft, steht ein ganzer Zug als EINE Zeile
+  // in der Leiste – sonst verdrängen Folgemeldungen (Brandschaden, „X ist am Zug“) das Wichtige. Das Protokoll behält jede Meldung einzeln.
+  const parts = (r.msgs || []).map((m) => m.split(SEP));
+  parts.forEach(([t, dt]) => { clogAdd(dt ? `${t} [${dt}]` : t); if (/^Beute von /.test(t)) toast(t, 3600); });
+  if (S.game.combat && !r.over && parts.length > 1) say(parts.map(([t]) => t).join(' '));
+  else parts.forEach(([t]) => say(t));
   if (r.sfx) S.sfx.play(r.sfx);
   if (r.sfx === 'hit' || r.sfx === 'hurt') { flash(); vib(r.sfx === 'hurt' ? 60 : 30); }
 }
@@ -540,7 +545,7 @@ function readSignByTap(e) {
     const sx = o.x + 0.5 + fd[0] * 0.45 - S.cam.x, sy = o.y + 0.5 + fd[1] * 0.45 - S.cam.y;
     const tX = inv * (dirY * sx - dirX * sy), tY = inv * (-plY * sx + plX * sy);
     if (tY <= 0.3 || tY > 2.6) continue;
-    if (fd[0] * dirX + fd[1] * dirY < 0.5 && (fd[0] || fd[1])) continue; // Wandtafel nur, wenn man auf sie blickt
+    if ((fd[0] || fd[1]) && sx * fd[0] + sy * fd[1] < 0.05) continue; // 0.22.1: Wandtafel lesbar, sobald man ihre Vorderseite sieht – auch schräg (vorher nur mit Blick genau auf die Wand)
     const d = Math.abs(0.5 * (1 + tX / tY) - fx), tol = 0.06 + 0.25 / tY;
     if (d > tol || d >= bd) continue;
     let clear = true;
@@ -699,7 +704,9 @@ function openCombatLog() {
 }
 function renderCompass() { const d = $('#compass-dial'); if (d && S.game) { S.compassTurns = nearestTurns(S.compassTurns || 0, S.game.player.dir); d.style.transform = `rotate(${-S.compassTurns * 90}deg)`; d.style.setProperty('--cr', `${S.compassTurns * 90}deg`); } }
 function nearestTurns(prev, dir) { const base = Math.round(prev / 4) * 4; let best = base + dir, bd = Math.abs(best - prev); for (const c of [base - 4 + dir, base + 4 + dir]) if (Math.abs(c - prev) < bd) { best = c; bd = Math.abs(c - prev); } return best; }
-function renderAll() { renderCompass(); announceTurn(); renderParty(); renderCombat(); renderLog(); }
+function renderAll() { renderCompass(); announceTurn(); renderParty(); renderCombat(); renderLog(); updateInvBadge(); }
+// 0.22.1: Punkt am Inventar-Knopf, solange etwas Neues drin ist
+function updateInvBadge() { const b = document.querySelector('[data-a="inv"]'); if (b && S.game) b.classList.toggle('hasnew', Object.keys(S.game.inv).some((k) => isNew(S.game, k))); }
 // 0.19.6 (Nutzer: „Der viele Text versperrt den Blick auf den Gang“): Außerhalb des Kampfs zeigt das Meldungsfeld höchstens 2 Meldungen,
 // jede höchstens 2 Zeilen, und blendet sie nach 3–6 s aus (länger bei langem Text). Im Kampf bleibt alles wie bisher (die letzten 2). Das Protokoll bleibt vollständig.
 function renderLog() {
@@ -845,7 +852,7 @@ function openModal(html, kind = 'generic') {
   S.held = [];
   $('#modal-box').scrollTop = 0;
 }
-function closeModal() { $('#modal').hidden = true; $('#modal-box').innerHTML = ''; S.modal = null; S.invUse = null; S.invEquip = null; S.invSell = null; S.shopId = null; S.shopSure = null; }
+function closeModal() { if (S.modal === 'inventory' && S.game) { clearNew(S.game); updateInvBadge(); } $('#modal').hidden = true; $('#modal-box').innerHTML = ''; S.modal = null; S.invUse = null; S.invEquip = null; S.invSell = null; S.shopId = null; S.shopSure = null; }
 const closeBtn = '<button class="mb" data-m="close">Schließen</button>';
 
 function openMenu() {
@@ -968,12 +975,12 @@ function gearDelta(h, id) {
 function openInventory() {
   const g = S.game, d = S.data;
   const rank = { consumable: 0, supply: 1, tool: 1, quest: 2, equip: 3 };
-  const items = Object.entries(g.inv).filter(([, n]) => n > 0).sort((a, b) => (rank[itemDef(g, d, a[0]).kind] - rank[itemDef(g, d, b[0]).kind]) || itemDef(g, d, a[0]).name.localeCompare(itemDef(g, d, b[0]).name, 'de'));
+  const items = Object.entries(g.inv).filter(([, n]) => n > 0).sort((a, b) => (isNew(g, b[0]) - isNew(g, a[0])) || (rank[itemDef(g, d, a[0]).kind] - rank[itemDef(g, d, b[0]).kind]) || itemDef(g, d, a[0]).name.localeCompare(itemDef(g, d, b[0]).name, 'de'));
   let html = `<h2>Inventar</h2><p>Gold: <b>${g.gold}</b></p>`;
   html += items.length ? items.map(([id, n]) => {
     const it = itemDef(g, d, id);
     const use = it.kind === 'consumable' && it.heal && !g.combat ? `<button class="mb" data-m="use:${id}">Benutzen</button>` : it.kind === 'supply' && !g.combat ? '<button class="mb" data-m="rest">Rasten</button>' : it.kind === 'equip' && !g.combat ? `<button class="mb" data-m="eqsel:${id}">Ausrüsten</button>` : '';
-    return `<div class="row nw${S.invEquip === id ? ' sel' : ''}"><div><b>${itemIcon(id, it)}${qTag(id, it)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}<div class="muted">${esc(it.desc)}</div></div>${use}</div>`;
+    return `<div class="row nw${S.invEquip === id ? ' sel' : ''}"><div><b>${itemIcon(id, it)}${qTag(id, it)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}${isNew(g, id) ? ' <span class="newtag">● neu</span>' : ''}<div class="muted">${esc(it.desc)}</div></div>${use}</div>`;
   }).join('') : '<p class="muted">Nichts dabei.</p>';
   if (S.invEquip && itemDef(g, d, S.invEquip) && (g.inv[S.invEquip] || 0) > 0) {
     html += `<h3>${qTag(S.invEquip, itemDef(g, d, S.invEquip))} an wen?</h3><div class="acts">` + g.heroes.map((h, i) =>

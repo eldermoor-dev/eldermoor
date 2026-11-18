@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.22.0 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.22.1 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -860,3 +860,12 @@ Nutzer: „Vorschlag umsetzen. Überlegungen zu magischen Wänden umsetzen.“ N
 - Hilfe: Abschnitte „Illusionswände“ und „Talent-Sondereffekte (★)“.
 - SIM.md neu: klug 100 %, Nebelhüter 87 % im 1. Versuch (Schadenssumme 109 % inkl. Heilung), Balance damit wie 0.21.1. BALANCE.md neu.
 - **Dungeongröße (Nutzerfrage):** Die bisherigen Gebiete bleiben klein (größtes: Schratgruben 35×15). Größere Ebenen (doppelte bis dreifache Fläche) kommen mit der Moorfestung (Akt 2) ab 0.23 laut Plan.
+
+## 0.22.1 (18.11.2026) – Rückmeldungen vom Gerät (Inventar, Kampfleiste, Fallen, Schrift, Gegnergröße)
+Nutzer-Screenshots 17:22–17:26. Nur headless geprüft (Node 107 Tests, Screenshots), **nicht auf Gerät getestet**.
+- **„● neu“ im Inventar** (Wunsch): `state.newItems` (optional, keine Migration), gesetzt bei Truhe, Beute, Kauf, Plündern (`markNew`); neue Gegenstände stehen oben mit gelbem „● neu“, Inventar-Knopf trägt einen gelben Punkt; Schließen des Inventars löscht die Markierung.
+- **Kampfleiste** (Fund: „Moorschrat ist betäubt und setzt aus“ war nur im Protokoll zu sehen, weil Brandschaden und „X ist am Zug“ die zwei Zeilen füllten): Während des Kampfs steht ein ganzer Zug als EINE Zeile (bis 3 Zeilen hoch), das Protokoll bleibt einzeln. Headless nachgestellt und behoben.
+- **Fallenbild je Art** (Fund: „Stahlspeere statt wie angekündigt Gift“): Ausgelöste Fallen zeigten immer Speere, auch beim Giftnebel (Schratgruben 12,3 hinter „GIFT“). Jetzt Giftnebel = grüne Schwaden, Runenfalle = leuchtender Runenkreis, Speerfalle wie bisher. Die Falle selbst war richtig (Giftnebel), nur das Bild falsch (Vermutung zum Spielgeschehen: der Nutzer sah das Bild; der Text war „Grüner Nebel“).
+- **Schriftzüge:** ruhigere Blutschrift (weniger Drehung/Versatz, gleichmäßigere Striche, seltener Abplatzer/Gerinnsel, kürzere Tropfen, nie in die nächste Zeile) – Fund „aus der Nähe zu undeutlich“; Türsturz der offenen Tür schneidet Schrift und Tropfen an der Unterkante ab – Fund „Schrift verläuft ins Leere“ (KAPELLE). Wandtafeln lassen sich jetzt auch schräg antippen (sobald ihre Vorderseite sichtbar ist) und mit ◉ vom eigenen Feld aus lesen.
+- **Gegnergröße** (Fund: im 1-Feld-Gang werden Gruppen klein, beim Tod eines Gegners größer): Alle Figuren haben jetzt dieselbe Größe wie Einzelgegner. Offene Fläche: nebeneinander (Abstand 0,62 / 0,56). Enger Gang: zwei vorn versetzt, die dritte dahinter; leichte Vergrößerung der hinteren gleicht die Perspektive aus. `GROUP_SIZE` ist ungenutzt.
+- Beobachtung (nicht geändert): Im Inventar-Screenshot standen viele gleiche „Eichenstab [Gut]“ einzeln. Erzeugte Beute stapelt nicht (jedes Stück eigene Kennung). Zusammenfassen gleicher Stücke wäre möglich.

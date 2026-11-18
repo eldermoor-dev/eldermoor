@@ -482,6 +482,12 @@ export function turn(state, data, delta) {
   return notes.length ? { encounter: null, notes } : { encounter: null };
 }
 
+// 0.22.1 (Nutzerwunsch): neu erhaltene Gegenstände tragen im Inventar „● neu“, bis das Inventar wieder geschlossen wird.
+// state.newItems = { <itemId|uid>: true } (optional, fehlt bei alten Ständen).
+export function markNew(state, id) { (state.newItems = state.newItems || {})[id] = true; }
+export function clearNew(state) { if (state.newItems) state.newItems = {}; }
+export const isNew = (state, id) => !!(state.newItems && state.newItems[id] && (state.inv[id] || 0) > 0);
+
 // ---------- Interaktion ----------
 function addLoot(state, data, loot) {
   const parts = [];
@@ -496,6 +502,7 @@ function addLoot(state, data, loot) {
     const n = e.n || 1;
     if (it.kind === 'quest') state.inv[e.item] = 1; // Questgegenstände nie mehrfach, nie verbrauchbar
     else state.inv[e.item] = (state.inv[e.item] || 0) + n;
+    markNew(state, e.item);
     parts.push(it.kind === 'quest' ? it.name : `${n}× ${it.name}`);
   }
   return parts.join(', ');
@@ -619,6 +626,8 @@ export function interact(state, data) {
     if (tr) { tr.spotted = true; tr.checked = true; return { msg: `Du untersuchst den Boden: eine Falle (${data.traps.kinds[tr.kind].name})! Noch einmal ◉ entschärft sie.`, sfx: 'ui' }; }
     const ws = wallSignAhead(state, data);
     if (ws) return { msg: ws.text, sfx: 'ui', long: true };
+    const hs = state.objs.find((q) => q.type === 'sign' && q.face != null && q.x === state.player.x && q.y === state.player.y); // 0.22.1: Tafel am eigenen Feld (seitlich) ist auch lesbar
+    if (hs && !blockerAt(state, f.x, f.y)) return { msg: hs.text, sfx: 'ui', long: true };
     const p = state.player, f2 = { x: f.x + DIRS[p.dir].dx, y: f.y + DIRS[p.dir].dy };
     const b2 = blockerAt(state, f2.x, f2.y);
     if (b2 && b2.type === 'sign' && cellChar(getLevel(data, state), f.x, f.y) === '.') return { msg: b2.text, sfx: 'ui', long: true }; // Tafeln lassen sich aus bis zu 2 Feldern Abstand lesen
@@ -923,6 +932,7 @@ export function addGear(state, data, inst) {
   const uid = 'g' + (state.uid = (state.uid || 0) + 1);
   state.gear[uid] = inst;
   state.inv[uid] = 1;
+  markNew(state, uid);
   return uid;
 }
 export const ownsItem = (state, id) => (state.inv[id] || 0) > 0 || state.heroes.some((h) => h.equip && SLOTS.some((s) => h.equip[s] === id));
@@ -935,7 +945,7 @@ function rollDrops(state, data, enemies, msgs) {
       const cand = (d.pick || [d.item]).filter((id) => data.items[id] && !ownsItem(state, id));
       if (!cand.length || !(rand(state) * 100 < (d.chance ?? 100))) continue;
       const id = cand[cand.length === 1 ? 0 : randInt(state, 0, cand.length - 1)];
-      state.inv[id] = (state.inv[id] || 0) + 1;
+      state.inv[id] = (state.inv[id] || 0) + 1; markNew(state, id);
       msgs.push(`Beute von ${e.name}: ${data.items[id].name} (einzigartig)!`);
     }
     const g = en.gearDrop;
@@ -985,6 +995,7 @@ export function buyItem(state, data, shopId, itemId) {
   if (state.gold < p) return { error: 'no-gold', price: p };
   state.gold -= p;
   state.inv[itemId] = (state.inv[itemId] || 0) + 1;
+  markNew(state, itemId);
   return { msg: `${it.name} gekauft: −${p} Gold.`, price: p, sfx: 'chest' };
 }
 
@@ -1276,7 +1287,7 @@ function finishVictory(state, data, msgs) {
   if (xp > 0) { msgs.push(`Erfahrung: +${xp} EP für jeden Helden, der noch steht.`); grantXp(state, data, xp, msgs); }
   rollDrops(state, data, c.enemies, msgs);
   { const ph = Math.min(25, partyFx(state, data, 'postheal')); if (ph > 0) { for (const h of state.heroes) if (h.hp > 0) h.hp = Math.min(h.maxHp, h.hp + Math.ceil((h.maxHp * ph) / 100)); msgs.push(`Nachsorge: alle wachen Helden +${ph} % LP.`); } } // Heiler (0.22.0)
-  { const lp = state.heroes.reduce((m, h) => Math.max(m, h.hp > 0 ? fxSum(data, h, 'loot_potion') : 0), 0); if (lp > 0 && rand(state) * 100 < lp) { state.inv.potion = (state.inv.potion || 0) + 1; msgs.push('Glückspilz: Ihr findet einen Heiltrank bei den Gegnern.'); } } // Gauner
+  { const lp = state.heroes.reduce((m, h) => Math.max(m, h.hp > 0 ? fxSum(data, h, 'loot_potion') : 0), 0); if (lp > 0 && rand(state) * 100 < lp) { state.inv.potion = (state.inv.potion || 0) + 1; markNew(state, 'potion'); msgs.push('Glückspilz: Ihr findet einen Heiltrank bei den Gegnern.'); } } // Gauner
   for (const h of state.heroes) if (h.hp <= 0) { h.hp = 1; msgs.push(`${h.name} kommt mit 1 LP wieder zu sich.`); } // vorläufig, bis die Rast kommt (Schritt 5)
   state.combat = null;
   return gold;

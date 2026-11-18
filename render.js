@@ -656,7 +656,7 @@ function paintPlaque(buf, N, title, kind, styleName, seed) {
 }
 // 0.16.17 (Nutzer: „Undeutlich, besser wieder nur Schriftzug, Schilder unnötig“): nur Schrift direkt auf Wand/Tür, ohne Tafel.
 // Helle Buchstaben mit dunkler Kontur, damit sie auf Holz und Stein lesbar bleiben.
-function genPlaque(title, kind, styleName, seed) {
+function genPlaque(title, kind, styleName, seed, clipY = PLQ) { // clipY (0.22.1): nichts unterhalb zeichnen (Türsturz: Schrift läuft nicht ins Leere)
   const N = PLQ, buf = new Uint8Array(N * N).fill(255);
   const lines = String(title || '').toUpperCase().split('|').slice(0, 2).filter(Boolean);
   const maxC = Math.max(1, ...lines.map((l) => [...l].slice(0, 8).length)), cw = 6;
@@ -675,27 +675,29 @@ function genPlaque(title, kind, styleName, seed) {
     chars.forEach((ch, ci) => {
       const g = (FONT[ch] || FONT[' ']).split('/');
       const gcx = lx + ci * cw * s + 2.5 * s, gcy = ly + 3.5 * s;
-      const rot = (hash(ci, li, seed + 50) - 0.5) * 0.2, shear = (hash(ci, li, seed + 51) - 0.5) * 0.16, dy0 = (hash(ci, li, seed + 52) - 0.5) * s * 1.1, sc = 0.94 + hash(ci, li, seed + 53) * 0.2;
+      const rot = (hash(ci, li, seed + 50) - 0.5) * 0.12, shear = (hash(ci, li, seed + 51) - 0.5) * 0.1, dy0 = (hash(ci, li, seed + 52) - 0.5) * s * 0.6, sc = 0.96 + hash(ci, li, seed + 53) * 0.12; // 0.22.1: ruhiger (Nutzer: aus der Nähe zu undeutlich)
       const cr = Math.cos(rot), sr = Math.sin(rot);
       for (let rw = 0; rw < 7; rw++) for (let c = 0; c < 5; c++) {
         if (g[rw][c] !== '1') continue;
         let ox = (c - 2) * s * sc, oy = (rw - 3) * s * sc;
         ox += shear * oy;
-        const jx = (hash(c + ci * 7, rw, seed + 54) - 0.5) * s * 0.22, jy = (hash(c, rw + li * 9 + ci * 3, seed + 55) - 0.5) * s * 0.22;
-        const cx = gcx + ox * cr - oy * sr + jx, cy = gcy + ox * sr + oy * cr + dy0 + jy + Math.sin(gcx * 0.3 + seed) * s * 0.3;
-        stamp(cx, cy, s * (0.5 + hash(c + 3, rw + 5, seed + 56) * 0.2));
+        const jx = (hash(c + ci * 7, rw, seed + 54) - 0.5) * s * 0.12, jy = (hash(c, rw + li * 9 + ci * 3, seed + 55) - 0.5) * s * 0.12;
+        const cx = gcx + ox * cr - oy * sr + jx, cy = gcy + ox * sr + oy * cr + dy0 + jy + Math.sin(gcx * 0.3 + seed) * s * 0.15;
+        stamp(cx, cy, s * (0.56 + hash(c + 3, rw + 5, seed + 56) * 0.1));
       }
     });
   });
   // Tropfen: dicke Streifen nach unten mit Kuppe am Ende
   const drip = new Uint8Array(N * N);
   for (let y = 0; y < N - 2; y++) for (let x = 0; x < N; x++) {
-    if (!mask[y * N + x] || mask[(y + 1) * N + x] || hash(x, y, seed + 11) < 0.9) continue;
-    const len = 4 + Math.floor(hash(x, y, seed + 12) * 16), wd = hash(x, y, seed + 13) > 0.55 ? 1 : 0;
+    if (!mask[y * N + x] || mask[(y + 1) * N + x] || hash(x, y, seed + 11) < 0.93) continue;
+    const lastLine = y >= ty0 + lh * (lines.length - 1), lmax = lastLine ? 10 : Math.max(2, 2 * s - 1); // 0.22.1: Tropfen kürzer, nie in die nächste Zeile
+    const len = 2 + Math.floor(hash(x, y, seed + 12) * lmax), wd = hash(x, y, seed + 13) > 0.6 ? 1 : 0;
     for (let k = 1; k <= len && y + k < N; k++) for (let d = 0; d <= wd; d++) { const X = x + d; if (X < N && !mask[(y + k) * N + X]) drip[(y + k) * N + X] = 1 + Math.min(2, Math.floor(k / (len / 3))); }
     for (let yy = -1; yy <= 1; yy++) for (let xx = -1; xx <= 1 + wd; xx++) { const X = x + xx, Y = y + len + 1 + yy; if (X >= 0 && X < N && Y >= 0 && Y < N && !mask[Y * N + X]) drip[Y * N + X] = 3; }
   }
   for (let i = 0; i < N * N; i++) if (drip[i]) mask[i] = 1;
+  if (clipY < N) for (let i = clipY * N; i < N * N; i++) { mask[i] = 0; drip[i] = 0; }
   const ol = 1; // dunkle Kontur: hebt die rote Schrift von grauem Stein ab
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     if (mask[y * N + x]) continue;
@@ -707,8 +709,8 @@ function genPlaque(title, kind, styleName, seed) {
     if (!mask[y * N + x]) continue;
     const dv = drip[y * N + x], hh = hash(x, y, seed + 3);
     if (dv) { buf[y * N + x] = P('blood', dv === 3 ? 5.2 : 3.6 + dv * 0.5 + hh * 0.6); continue; }
-    if (hh < 0.03) { buf[y * N + x] = P('stone', 1); continue; } // Abplatzer
-    const up = y > 0 && x > 0 && !mask[(y - 1) * N + x - 1], clot = hash(x >> 1, y >> 1, seed + 20) > 0.86;
+    if (hh < 0.012) { buf[y * N + x] = P('stone', 1); continue; } // Abplatzer
+    const up = y > 0 && x > 0 && !mask[(y - 1) * N + x - 1], clot = hash(x >> 1, y >> 1, seed + 20) > 0.93;
     buf[y * N + x] = P('blood', up ? 7 : clot ? 3.4 : 4.8 + hash(x >> 1, y >> 1, seed) * 1.8);
   }
   return { w: N, h: N, data: buf, noWrap: true };
@@ -743,7 +745,7 @@ function genDoorFrame(title, styleName, seed) {
     // 0.19.13 (Nutzer: Schrift auf der Türschwelle wird gelb): Goldschrift der Tafel übermalen und dieselbe Blutschrift wie im Raum darüberlegen
     const inkV = P(st.ink[0], st.ink[1]), fill = P(st.mat, st.sh + 0.4);
     for (let i = 0; i < hd.data.length; i++) if (hd.data[i] === inkV) hd.data[i] = fill;
-    const bt = genPlaque(title, 'door', styleName, 133);
+    const bt = genPlaque(title, 'door', styleName, 133, lh * 3 - 2);
     if (bt.w === hd.w) for (let i = 0; i < hd.data.length; i++) if (bt.data[i] !== 255) hd.data[i] = bt.data[i];
   }
   hd.noWrap = true;
@@ -1066,7 +1068,7 @@ function genKaefer(seed) {
 }
 
 // Falle am Boden (0.18.0): 'faint' = feine Spur (drei dunkle Schlitze, leicht zu übersehen), 'seen' = entdeckt (rote Markierung + Warnzeichen), 'sprung' = ausgelöst (Speere ragen heraus)
-function genTrap(mode, seed) {
+function genTrap(mode, seed, kind = 'spikes') { // kind (0.22.1, Nutzer: „Stahlspeere statt wie angekündigt Gift“): Bild passend zur Fallenart
   const t = mk(255);
   const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
   if (mode === 'faint') {
@@ -1082,6 +1084,25 @@ function genTrap(mode, seed) {
     for (let y = 30; y <= 50; y++) for (let x = 29; x <= 35; x++) { const w = 3 - Math.floor((y - 30) / 9); if (Math.abs(x - 32) <= Math.max(1, w) && y <= 45) set(x, y, P('glow', 7)); }
     for (let y = 49; y <= 53; y++) for (let x = 30; x <= 34; x++) set(x, y, P('glow', 7));
     for (let y = 28; y <= 55; y++) for (let x = 26; x <= 38; x++) if (t.data[y * TEX + x] === 255 && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => { const v = t.data[(y + b) * TEX + x + a]; return v !== 255 && v !== P('stone', 0); })) set(x, y, P('stone', 0));
+  } else if (kind === 'gas') { // Giftnebel: Düsen im Boden, grüne Schwaden
+    for (let x = 12; x <= 52; x++) set(x, 63, P('stone', 0.5));
+    for (const cx of [20, 32, 44]) for (let x = cx - 2; x <= cx + 2; x++) set(x, 62, P('stone', 0.2));
+    for (let y = 22; y <= 62; y++) for (let x = 6; x <= 58; x++) {
+      const d = Math.hypot((x - 32) / 26, (y - 50) / 15) + Math.sin(x * 0.4 + y * 0.25) * 0.08 + (hash(x >> 1, y >> 1, seed + 9) - 0.5) * 0.25;
+      const d2 = Math.hypot((x - 24) / 12, (y - 34) / 9), d3 = Math.hypot((x - 41) / 11, (y - 30) / 8);
+      const m = Math.min(d, d2 + 0.15, d3 + 0.2);
+      if (m < 1 && hash(x, y, seed + 4) > m * 0.55) set(x, y, P('flesh', 6.6 - m * 2.8 + hash(x >> 1, y, seed) * 0.6)); // flesh = in Moor-/Gruben-/Kellerpaletten grünlich
+    }
+  } else if (kind === 'rune') { // Runenfalle: leuchtender Runenkreis am Boden
+    for (let y = 52; y <= 63; y++) for (let x = 6; x <= 58; x++) {
+      const r = Math.hypot((x - 32) / 26, (y - 58) / 5.5);
+      if (r > 1.05) continue;
+      const ring = Math.abs(r - 0.88) < 0.1 || Math.abs(r - 0.5) < 0.07;
+      const glyph = r < 0.8 && Math.abs(Math.sin(Math.atan2(y - 58, (x - 32) / 4.7) * 3)) > 0.94;
+      if (ring || glyph) set(x, y, P('ice', 6.6 + hash(x, y, seed) * 0.4));
+      else if (r < 0.95 && hash(x, y, seed + 6) > 0.8) set(x, y, P('ice', 3.2));
+    }
+    for (let y = 30; y <= 51; y++) for (let x = 24; x <= 40; x++) if (Math.abs(x - 32) < 1 + (51 - y) * 0.02 && hash(x, y, seed + 8) > 0.35) set(x, y, P('ice', 4.4 + (y - 30) * 0.08));
   } else {
     for (let x = 12; x <= 52; x++) set(x, 63, P('stone', 0.5));
     for (const cx of [18, 25, 32, 39, 46]) { const h = 16 + Math.floor(hash(cx, 3, seed) * 8); for (let y = 63 - h; y <= 62; y++) { const w = y < 63 - h + 4 ? 0 : 1; for (let x = cx - w; x <= cx + w; x++) set(x, y, P('iron', x < cx ? 5.5 : 3.2)); } }
@@ -1666,7 +1687,7 @@ export function makeTextures(detail = 1) {
     wall: { [WALL_STONE]: stoneW, [WALL_SECRET]: genSecretWall(stoneW, 301), [WALL_SWITCH]: genSwitchWall(stoneW, false), [WALL_SWITCH_ON]: genSwitchWall(stoneW, true), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
     ceil: genCeil(53, nf),
-    sprites: { plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), trapSprung: genTrap('sprung', 401), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)), chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)), chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
@@ -1841,14 +1862,20 @@ export const GROUP_SCALE = 0.78, GROUP_GAP = 0.44, CHEST_SCALE = 0.58; // 0.16.4
 let combatFit = 1; // 0.16.17: im Kampf verkleinert die Kamera zu große Figuren so, dass sie samt Füßen über der Leiste ins Bild passen
 export const setCombatFit = (v) => { combatFit = v; };
 // 0.19.2: Gruppen je nach Größe kleiner, damit sich die Gestalten nicht überschneiden (Nutzer: „Gegner überschneiden sich“)
-export const GROUP_SIZE = { 2: 0.72, 3: 0.6 };
-export const spriteScale = (k, n) => (n > 1 ? GROUP_SIZE[Math.min(3, n)] || GROUP_SCALE : bossScale(k)) * (k === 'wolf' ? 1.65 : 1); // Wolf ist niedrig gebaut: größer ansetzen (0.19.3: 1,25 → 1,45; 0.19.5: 1,65, Nutzer: „noch etwas größer“)
+export const GROUP_SIZE = { 2: 0.84, 3: 0.72 }; // 0.22.1 (Nutzer: „Gegner wirken zu klein“): vorher 0.72 / 0.6
+export const spriteScale = (k, n) => bossScale(k) * // 0.22.1 (Nutzer: „alle gleich groß, wie auf offener Fläche“): Gruppengröße ändert die Figurengröße nicht mehr
+   (k === 'wolf' ? 1.65 : 1); // Wolf ist niedrig gebaut: größer ansetzen (0.19.3: 1,25 → 1,45; 0.19.5: 1,65, Nutzer: „noch etwas größer“)
 // Aufstellung einer Gruppe (0.16.4b): lat = seitlich (rechts +), dep = Tiefe (vom Betrachter weg). Im engen Gang (links und rechts Wand)
 // stehen die Gegner gestaffelt hintereinander statt nebeneinander, sonst ragen sie in die Wände (Nutzer-Screenshot 0.16.4).
+// 0.22.1: Alle Figuren in voller Größe. Offen: nebeneinander. Enger Gang (1 Feld): eine vorn, die anderen leicht versetzt dahinter;
+// grow gleicht die Perspektive teilweise aus, damit die hinteren nicht klein wirken (Nutzer: „im Gang werden sie klein“).
 export function groupOffsets(n, narrow) {
-  if (n <= 1) return [{ lat: 0, dep: 0 }];
-  const gap = narrow ? (n >= 3 ? 0.32 : 0.48) : (n >= 3 ? 0.42 : 0.5); // 0.19.3: Zweiergruppen weiter auseinander (größere Wölfe) // 0.19.2: Abstand so, dass die kleineren Gestalten nebeneinander passen
-  return Array.from({ length: n }, (_, i) => ({ lat: (i - (n - 1) / 2) * gap, dep: 0 }));
+  if (n <= 1) return [{ lat: 0, dep: 0, grow: 1 }];
+  if (narrow) return n >= 3
+    ? [{ lat: -0.2, dep: 0, grow: 1 }, { lat: 0.21, dep: 0.12, grow: 1.08 }, { lat: 0, dep: 0.6, grow: 1.36 }]
+    : [{ lat: -0.19, dep: 0, grow: 1 }, { lat: 0.21, dep: 0.12, grow: 1.08 }];
+  const gap = n >= 3 ? 0.56 : 0.62;
+  return Array.from({ length: n }, (_, i) => ({ lat: (i - (n - 1) / 2) * gap, dep: 0, grow: 1 }));
 }
 // Eng = beide Nachbarfelder quer zur Blickrichtung sind Wand (grid aus buildGrid: 0 = frei)
 export function isNarrowAt(g, x, y, angle) {
@@ -1878,7 +1905,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
   for (const o of objs) {
     if (o.type === 'plate') out.push({ x: o.x, y: o.y, tex: o.down ? tex.sprites.plateDown : tex.sprites.plate, scale: 1 });
     else if (o.type === 'boulder') out.push({ x: o.x, y: o.y, tex: tex.sprites.boulder, scale: 0.78 });
-    else if (o.type === 'trap') { if (!o.disarmed) out.push({ x: o.x, y: o.y, tex: o.sprung ? tex.sprites.trapSprung : o.spotted ? tex.sprites.trapSeen : tex.sprites.trapFaint, scale: 1 }); }
+    else if (o.type === 'trap') { if (!o.disarmed) out.push({ x: o.x, y: o.y, tex: o.sprung ? tex.sprites['trapSprung_' + o.kind] || tex.sprites.trapSprung : o.spotted ? tex.sprites.trapSeen : tex.sprites.trapFaint, scale: 1 }); }
     else if (o.type === 'chest') out.push({ x: o.x, y: o.y, tex: o.open ? tex.sprites.chestOpen : o.look === 'prunk' ? tex.sprites.chestPrunk : tex.sprites.chest, scale: CHEST_SCALE });
     else if (o.type === 'enemy' && !o.dead) {
       const tot = Array.isArray(o.kinds) ? Math.min(3, o.kinds.length) : 1;
@@ -1886,10 +1913,8 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
       const n = kindList ? kindList.length : av != null ? av : tot; // Gruppe: eine Gestalt je lebendem Gegner, nebeneinander
       const narrow = n > 1 && isNarrowAt(grid, o.x, o.y, angle), offs = groupOffsets(n, narrow);
       for (let i = 0; i < n; i++) {
-        let { lat, dep } = offs[i];
-        const kd = kindList ? kindList[i] : kindOf(o, i), sc = spriteScale(kd, n) * combatFit;
-        // 0.19.7 (Nutzer: „Gegner in der Wand“): im engen Gang ragten seitliche Figuren in die Mauern. Seitenabstand so begrenzen, dass die sichtbare Figur (ca. 76 % der Bildbreite) zwischen den Wänden bleibt; äußere Figuren dafür etwas nach hinten staffeln.
-        if (narrow) { const lim = Math.max(0.04, 0.47 - 0.38 * sc); if (Math.abs(lat) > lim) { lat = Math.sign(lat) * lim; if (n >= 3 || i === 1) dep += 0.3; } }
+        const { lat, dep, grow } = offs[i];
+        const kd = kindList ? kindList[i] : kindOf(o, i), sc = spriteScale(kd, n) * combatFit * (grow || 1);
         out.push({ x: o.x + rx * lat + fx * dep, y: o.y + ry * lat + fy * dep, tex: spriteFor(tex, kd), scale: sc * (1 + 0.02 * Math.sin(time * 3 + i)) });
       }
     }
