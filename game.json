@@ -2210,8 +2210,8 @@
         "text": "Kalte Luft. Wer hier liegt, liegt nicht still."
       },
       "foe": {
-        "hp": 150,
-        "atk": 130
+        "hp": 200,
+        "atk": 160
       }
     },
     "schratgruben": {
@@ -2582,8 +2582,8 @@
         "text": "Erz, Staub und Holz, das knarrt, ohne dass jemand es berührt."
       },
       "foe": {
-        "hp": 175,
-        "atk": 145
+        "hp": 245,
+        "atk": 195
       }
     },
     "nebelturm": {
@@ -2898,7 +2898,11 @@
           "title": "RUNEN",
           "face": 0
         }
-      ]
+      ],
+      "foe": {
+        "hp": 155,
+        "atk": 140
+      }
     }
   },
   "spot": {
@@ -3139,7 +3143,7 @@
     "arcane": {
       "name": "Arkanes Geschoss",
       "kind": "damage",
-      "cost": 8,
+      "cost": 7,
       "mult": 230,
       "sure": true,
       "desc": "Trifft immer, 230 % Schaden, verflucht 3 Runden (Verteidigung −30 %).",
@@ -3406,9 +3410,9 @@
             {
               "id": "w_zorn",
               "name": "Wut",
-              "desc": "+1 Angriff.",
+              "desc": "+2 Angriff.",
               "fx": {
-                "atk": 1
+                "atk": 2
               }
             },
             {
@@ -3484,9 +3488,9 @@
             {
               "id": "r_scharf",
               "name": "Scharfe Klinge",
-              "desc": "+1 Angriff.",
+              "desc": "+2 Angriff.",
               "fx": {
-                "atk": 1
+                "atk": 2
               }
             },
             {
@@ -3681,9 +3685,9 @@
             {
               "id": "p_keule",
               "name": "Streitkolben",
-              "desc": "+1 Angriff.",
+              "desc": "+2 Angriff.",
               "fx": {
-                "atk": 1
+                "atk": 2
               }
             },
             {
@@ -3759,9 +3763,10 @@
             {
               "id": "m_kalt",
               "name": "Kalte Hände",
-              "desc": "+4 Mana.",
+              "desc": "+4 Mana, Zauber +5 % Schaden.",
               "fx": {
-                "mp": 4
+                "mp": 4,
+                "abil": 5
               }
             },
             {
@@ -3807,18 +3812,19 @@
             {
               "id": "m_fluss",
               "name": "Fluss",
-              "desc": "Angriff und Verteidigen geben +1 Mana extra.",
+              "desc": "Angriff und Verteidigen geben +2 Mana extra.",
               "fx": {
-                "regen": 1
+                "regen": 2
               }
             },
             {
               "id": "m_tief",
               "name": "Tiefe Quelle",
-              "desc": "+10 Mana, +1 Angriff.",
+              "desc": "+10 Mana, +1 Angriff, Zauber +10 % Schaden.",
               "fx": {
                 "mp": 10,
-                "atk": 1
+                "atk": 1,
+                "abil": 10
               }
             },
             {

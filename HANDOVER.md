@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.21.0 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.21.1 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -843,3 +843,12 @@ Nutzer: „Mach direkt 21.0, ich teste danach alles zusammen.“ Nur headless ge
 - **Charakterbogen:** Effekte unter jedem Gegenstand, aktives Set in Grün. Hilfe: Abschnitte „Gegnertaktik“ und „Ausrüstungseffekte und Sets“.
 - **Simulation:** „klug“ lernt in der Kampagne jetzt Talente (nach jedem Kampf, Zweige der Reihe nach) und greift Wachen zuerst an. Ergebnis (SIM.md, 600 Läufe): klug 100 %, Ø Stufe 9,8, Nebelhüter im 1. Versuch 100 % (vorher ohne Talente 83 %), Schaden 37 % (vorher 99 %). **Befund (nicht geändert):** Mit Talenten wird das Spiel laut Simulation deutlich leichter; der Nutzer hatte den Nebelhüter (0.16.7, noch ohne Talente) als „passend“ bestätigt. Gegenwerte anheben ist eine offene Entscheidung des Nutzers.
 - **Gruppenauswertung (Auftrag des Nutzers 18.11.2026, Skript im Scratchpad, nicht im Repo):** Alle 126 Berufskombinationen (Mensch, ohne Talente, Strategie „klug“, Kampagne bis Nebelhüter) – stärkste: 3 Krieger + Waldläufer, dann 2 Krieger + Magier + Waldläufer; Schnellgruppe (Krieger, Schurke, Kleriker, Magier) Rang 37 von 126; Gruppen mit 3–4 Klerikern oder Alchemisten scheitern. Rassen wirken kaum (Unterschiede im Rauschen). Grenzen: feste Strategie, Simulation ohne Talente und ohne Ausrüstungseffekte, Kleriker wird von der Strategie nur zum Heilen genutzt.
+
+## 0.21.1 (18.11.2026) – Talente nachgeschärft, Gegner schwerer (mit Talenten kalibriert)
+Nutzer: „Ja schwerer und/oder welchen Optimierungsbedarf siehst du bei den Talenten“. Nur Simulation/Node, **nicht auf Gerät getestet**. Tests 105 grün.
+- **Talentanalyse (Simulation, je Held ein Zweig zuerst, 150 Läufe):** Die Zweige unterscheiden sich kaum (Boss-Schaden 31–44 %); schwächster Zweig Arkanist (Magier), Erste-Stufe-Talente „+1 Angriff“ kaum spürbar. Befund (Einschätzung, nicht gemessen): Talente wirken als viele kleine Zahlen; echte Entscheidungen entstehen erst mit dem 4. Talent.
+- **Änderungen:** Wut, Scharfe Klinge, Streitkolben +1 → +2 Angriff; Kalte Hände +5 % Zauberschaden; Fluss +2 statt +1 Mana; Tiefe Quelle zusätzlich +10 % Zauberschaden; Arkanes Geschoss kostet 7 statt 8.
+- **Simulation:** beide Strategien lernen jetzt Talente (jeder Spieler verteilt Punkte).
+- **Gebietsfaktoren (LP/Angriff in %):** Kultgruft 150/130 → 200/160, Schratgruben 175/145 → 245/195, Nebelturm neu 155/140 (Moorpfad unverändert 125/115). Wirkt zusätzlich zu „Schwer“.
+- **Ergebnis (SIM.md, 600 Läufe):** klug 100 % Kampagne; Hauptmann 100 % im 1. Versuch, 38 % Schaden; Grubenschrat 100 %, 28 %; Nebelhüter 91 % im 1. Versuch, 93 % Schaden (Zielbild: wie der vom Nutzer als „passend“ bestätigte Stand 0.16.7: 78–83 %, 99 %). Nur Angriff 0 % (scheitert ab Kultgruft-Boss häufig).
+- **Offen:** Talentzweige deutlicher unterscheiden (z. B. ein spürbarer Sondereffekt je Zweig auf Stufe 3) – Vorschlag, nicht gebaut. Illusionswände: Nutzerfrage 18.11.2026, siehe Antwort im Chat (Vorschlag: nur für optionale Geheimnisse, Hinweis per Talent/Inschrift).

@@ -136,7 +136,7 @@ function campaign(seed, strat) {
       while (!won && rec.tries < 3) {
         rec.tries++;
         const r = fight(s, f.id, strat);
-        if (strat === 'smart') autoTalents(s);
+        autoTalents(s); // 0.21.1: beide Strategien lernen Talente (jeder Spieler verteilt Punkte)
         if (rec.tries === 1) { rec.first = r.won; rec.ko = r.ko; rec.lost = r.hpLost / full; rec.rounds = r.rounds; }
         won = r.won;
         if (!won) L.applyDefeat(s, data);
