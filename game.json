@@ -310,6 +310,11 @@
       "name": "Festungsschlüssel",
       "kind": "quest",
       "desc": "Ein schwerer Schlüssel mit eingeprägtem Turm."
+    },
+    "keller_schluessel": {
+      "name": "Kellerschlüssel",
+      "kind": "quest",
+      "desc": "Ein langer Schlüssel, am Griff mit einem Schädel verziert. Er riecht nach Kalk."
     }
   },
   "races": {
@@ -1500,6 +1505,48 @@
         255,
         190,
         92
+      ]
+    },
+    "katakomben": {
+      "stone": [
+        104,
+        108,
+        128
+      ],
+      "moss": [
+        70,
+        96,
+        88
+      ],
+      "wood": [
+        102,
+        76,
+        56
+      ],
+      "iron": [
+        132,
+        138,
+        152
+      ],
+      "floor": [
+        84,
+        78,
+        80
+      ],
+      "ceil": [
+        46,
+        46,
+        58
+      ],
+      "flesh": [
+        196,
+        188,
+        164
+      ],
+      "glow": [
+        240,
+        200,
+        120
       ]
     }
   },
@@ -3518,14 +3565,18 @@
           ]
         },
         {
-          "id": "exit_festung",
-          "type": "exit",
+          "id": "stairs_festung_keller",
+          "type": "stairs",
           "x": 32,
           "y": 7,
           "look": "down",
-          "title": "Keller der Moorfestung",
-          "text": "Eine Treppe führt in die Tiefe.",
-          "again": "Hier geht es in einer späteren Version weiter."
+          "msg": "Ihr steigt hinab ins Kellergewölbe.",
+          "to": {
+            "level": "festung2",
+            "x": 3,
+            "y": 5,
+            "dir": 1
+          }
         },
         {
           "id": "niche_f1",
@@ -3563,6 +3614,574 @@
           "name": "Torwächter Gerwin",
           "look": "guard",
           "dialog": "gerwin"
+        }
+      ]
+    },
+    "festung2": {
+      "id": "festung2",
+      "name": "Moorfestung – Kellergewölbe",
+      "palette": "katakomben",
+      "start": {
+        "x": 3,
+        "y": 5,
+        "dir": 1
+      },
+      "foe": {
+        "hp": 280,
+        "atk": 215
+      },
+      "intro": {
+        "title": "Kellergewölbe",
+        "text": "Hier unten riecht es nach Kalk und alten Kerzen. Die Mauern sind älter als die Festung."
+      },
+      "map": [
+        "##########mrrrrrrrrrrrrrrrrrr#######################",
+        "##########m.....r...........r#roooooToooooToooooToo#",
+        "#mmmmTmmm#mrr.r.rrrrrrr.r.r.r#r...................o#",
+        "#m......m#m...r.........r...r#r...................o#",
+        "#m......mmm.rrrrr.r.r.rrr.rrr#r...................o#",
+        "#T..........r.....r...r.r...r#r...o..o..o..o..o...o#",
+        "#m......mmmrr.rrr.rrrrr.rrr.r#r...................o#",
+        "#m......m#m.r.r.r.........r.r#r...................o#",
+        "#mmmmmmmm#m.r.r.rrrrr.rrrrr.rrr...o..o..o..o..o...o#",
+        "##########r.r.......r.............................o#",
+        "##########r.r.rrrrr.rrr.r.r.rrr...................o#",
+        "##########r.r.r.........r...r#r...o..o..o..o..o...o#",
+        "##########r.r.r.rrrrrrr.r.rrr#r...................o#",
+        "##########r...r.......r...r.r#r...................o#",
+        "##########r.rrrrr.r.r.rrr.r.r#r...................o#",
+        "##########r.......r.........r#r...................o#",
+        "##########r.rrrrrrrrrrrrrrrrr#roooooTooo.oooToooooo#",
+        "#mmmmmmmmrr.rrTrrrrrrrrrTrrrrrroooTooooo.oooToooooom",
+        "#m.................................................m",
+        "#m.................................................m",
+        "#mm.mmmm.mmmmmmm.mmmmmmm.mmmmmmm.mmmmmmm.mmmmmmm.mmm",
+        "###.####.#######.#######.#######.#######.#######.###",
+        "###.##.....###.....###.....###.....###.....###.....#",
+        "###.##.....###.....###.....###.....###.....###.....#",
+        "###.##.....###.....###.....###......##.....###.....#",
+        "###.##.....###.....###.....###.....###.....###.....#",
+        "###.##.....###.....###.....###.....###.....###.....#",
+        "###.################################################",
+        "###.################################################",
+        "##o.ToooooToooooooooooooooooooooooooooooooooooooooo#",
+        "##o......................................o........o#",
+        "##o......o.....o.....o.....o.....o.......o........o#",
+        "##o...............................................o#",
+        "##o......................................o........o#",
+        "##o......o.....o.....o.....o.....o.......o........o#",
+        "##oo.....................................o........o#",
+        "###oooooToooooooooToooooooooToooooooooToooooooToooo#",
+        "####################################################"
+      ],
+      "objects": [
+        {
+          "id": "stairs_k_up",
+          "type": "stairs",
+          "x": 2,
+          "y": 5,
+          "look": "up",
+          "msg": "Ihr steigt hinauf in die Vorburg der Moorfestung.",
+          "to": {
+            "level": "festung1",
+            "x": 31,
+            "y": 7,
+            "dir": 3
+          }
+        },
+        {
+          "id": "sign_k_start",
+          "type": "sign",
+          "x": 4,
+          "y": 3,
+          "face": 0,
+          "title": "KELLER|GEWÖLBE",
+          "text": "Unter dem Wappen der Festung eingeritzt: „Wer hier unten Ordnung sucht, findet nur Knochen. Sie sind ordentlich gestapelt.“"
+        },
+        {
+          "id": "door_k_gaenge",
+          "type": "door",
+          "x": 8,
+          "y": 5,
+          "locked": false,
+          "title": "KNOCHEN-|GÄNGE",
+          "style": "dark"
+        },
+        {
+          "id": "en_k_m1",
+          "type": "enemy",
+          "x": 19,
+          "y": 9,
+          "kind": "kultwaechter",
+          "kinds": [
+            "kultwaechter",
+            "skeleton",
+            "skeleton"
+          ]
+        },
+        {
+          "id": "en_k_m2",
+          "type": "enemy",
+          "x": 25,
+          "y": 13,
+          "kind": "nebelgeist",
+          "kinds": [
+            "nebelgeist",
+            "kultwaechter"
+          ]
+        },
+        {
+          "id": "chest_k_m",
+          "type": "chest",
+          "x": 27,
+          "y": 13,
+          "guard": [
+            "en_k_m2"
+          ],
+          "loot": [
+            {
+              "item": "potion_m",
+              "n": 1
+            },
+            {
+              "gold": 40
+            },
+            {
+              "item": "zaubertrank_m",
+              "n": 1
+            }
+          ]
+        },
+        {
+          "id": "niche_k_m",
+          "type": "niche",
+          "x": 11,
+          "y": 7,
+          "face": 3,
+          "loot": [
+            {
+              "item": "gegengift",
+              "n": 1
+            },
+            {
+              "item": "ration",
+              "n": 1
+            }
+          ],
+          "text": "Zwischen zwei Schädeln steckt ein Bündel, sauber verschnürt."
+        },
+        {
+          "id": "trap_k_m",
+          "type": "trap",
+          "x": 11,
+          "y": 9,
+          "kind": "spikes"
+        },
+        {
+          "id": "sign_k_m",
+          "type": "sign",
+          "x": 11,
+          "y": 9,
+          "face": 3,
+          "title": "NICHT|TRETEN",
+          "text": "Ein Knochen zeigt auf die Bodenplatte. Jemand hat daneben „Ich schon“ geschrieben."
+        },
+        {
+          "id": "door_k_halle",
+          "type": "door",
+          "x": 30,
+          "y": 9,
+          "locked": false,
+          "title": "SÄULEN-|HALLE",
+          "style": "stone"
+        },
+        {
+          "id": "en_k_h1",
+          "type": "enemy",
+          "x": 40,
+          "y": 9,
+          "kind": "turmwache",
+          "kinds": [
+            "turmwache",
+            "brandmagier",
+            "turmwache"
+          ]
+        },
+        {
+          "id": "en_k_h2",
+          "type": "enemy",
+          "x": 47,
+          "y": 4,
+          "kind": "nebelgeist",
+          "kinds": [
+            "nebelgeist",
+            "brandmagier"
+          ]
+        },
+        {
+          "id": "chest_k_h",
+          "type": "chest",
+          "x": 49,
+          "y": 2,
+          "guard": [
+            "en_k_h2"
+          ],
+          "loot": [
+            {
+              "gear": {
+                "boost": 1
+              }
+            },
+            {
+              "gold": 35
+            },
+            {
+              "item": "potion_m",
+              "n": 1
+            }
+          ]
+        },
+        {
+          "id": "sign_k_h",
+          "type": "sign",
+          "x": 32,
+          "y": 2,
+          "face": 0,
+          "title": "SÄULEN-|HALLE",
+          "text": "Die Pfeiler tragen nichts mehr."
+        },
+        {
+          "id": "door_k_sued",
+          "type": "door",
+          "x": 40,
+          "y": 16,
+          "locked": false,
+          "title": "OSSU-|ARIUM",
+          "style": "dark"
+        },
+        {
+          "id": "sign_k_o",
+          "type": "sign",
+          "x": 12,
+          "y": 18,
+          "face": 0,
+          "title": "OSSU-|ARIUM",
+          "text": "Hier lagern, die niemand vermisst. Die Kammern sind nummeriert, die Ordnung stimmt nicht."
+        },
+        {
+          "id": "en_k_o1",
+          "type": "enemy",
+          "x": 26,
+          "y": 18,
+          "kind": "skeleton",
+          "kinds": [
+            "skeleton",
+            "skeleton",
+            "kultwaechter"
+          ]
+        },
+        {
+          "id": "trap_k_o",
+          "type": "trap",
+          "x": 30,
+          "y": 19,
+          "kind": "gas"
+        },
+        {
+          "id": "sign_k_o2",
+          "type": "sign",
+          "x": 30,
+          "y": 19,
+          "face": 2,
+          "title": "ATEM|ANHALTEN",
+          "text": "Ein Lappen vor dem Mund, an der Wand aufgehängt. Er riecht nach Essig."
+        },
+        {
+          "id": "door_k_c1",
+          "type": "door",
+          "x": 8,
+          "y": 21,
+          "locked": false,
+          "title": "KAMMER|1",
+          "style": "dark"
+        },
+        {
+          "id": "door_k_c2",
+          "type": "door",
+          "x": 16,
+          "y": 21,
+          "locked": false,
+          "title": "KAMMER|2",
+          "style": "moss"
+        },
+        {
+          "id": "door_k_c3",
+          "type": "door",
+          "x": 24,
+          "y": 21,
+          "locked": false,
+          "title": "KAMMER|3",
+          "style": "stone"
+        },
+        {
+          "id": "door_k_c4",
+          "type": "door",
+          "x": 32,
+          "y": 21,
+          "locked": false,
+          "title": "KAMMER|4",
+          "style": "dark"
+        },
+        {
+          "id": "door_k_c6",
+          "type": "door",
+          "x": 48,
+          "y": 21,
+          "locked": false,
+          "title": "KAMMER|6",
+          "style": "iron"
+        },
+        {
+          "id": "secret_k1",
+          "type": "secret",
+          "x": 40,
+          "y": 21,
+          "hint": "Die Wand klingt hohl, der Riss ist zu gerade für einen Zufall. Die Fackel in der Kammer weiter westlich sitzt lockerer als die anderen."
+        },
+        {
+          "id": "switch_k1",
+          "type": "lever",
+          "wall": true,
+          "torch": true,
+          "x": 35,
+          "y": 24,
+          "gate": "secret_k1",
+          "msg": "Die Fackel lässt sich drehen. Nebenan schabt Stein über Stein."
+        },
+        {
+          "id": "en_k_c1",
+          "type": "enemy",
+          "x": 8,
+          "y": 24,
+          "kind": "skeleton",
+          "kinds": [
+            "skeleton",
+            "skeleton",
+            "skeleton"
+          ]
+        },
+        {
+          "id": "niche_k_c1",
+          "type": "niche",
+          "x": 6,
+          "y": 24,
+          "face": 3,
+          "loot": [
+            {
+              "item": "potion_m",
+              "n": 1
+            },
+            {
+              "gold": 20
+            }
+          ],
+          "text": "Hinter einem Schädel versteckt sich ein Beutel."
+        },
+        {
+          "id": "chest_k_mimic",
+          "type": "chest",
+          "x": 16,
+          "y": 25,
+          "look": "prunk",
+          "mimic": "truhenmaul",
+          "loot": [
+            {
+              "gold": 60
+            },
+            {
+              "gear": {
+                "boost": 1
+              }
+            }
+          ]
+        },
+        {
+          "id": "en_k_c3",
+          "type": "enemy",
+          "x": 24,
+          "y": 24,
+          "kind": "erzkaefer",
+          "kinds": [
+            "erzkaefer",
+            "erzkaefer",
+            "nebelgeist"
+          ]
+        },
+        {
+          "id": "lever_k1",
+          "type": "lever",
+          "x": 24,
+          "y": 26,
+          "gate": "gate_k1",
+          "msg": "Der Hebel rastet ein. Weit entfernt rasselt ein Gitter nach oben."
+        },
+        {
+          "id": "gate_k1",
+          "type": "gate",
+          "x": 3,
+          "y": 28,
+          "hint": "Ein Gitter versperrt den Gang nach unten. Der Hebel dazu liegt in einer der Kammern."
+        },
+        {
+          "id": "sign_k_c4",
+          "type": "sign",
+          "x": 31,
+          "y": 22,
+          "face": 0,
+          "title": "KAMMER 4",
+          "text": "Eine Fackel in der Ostwand ist schief eingesetzt. Wer sie dreht, wird es hören."
+        },
+        {
+          "id": "en_k_c5",
+          "type": "enemy",
+          "x": 40,
+          "y": 24,
+          "kind": "brandmagier",
+          "kinds": [
+            "brandmagier",
+            "turmwache"
+          ]
+        },
+        {
+          "id": "chest_k_key",
+          "type": "chest",
+          "x": 40,
+          "y": 26,
+          "guard": [
+            "en_k_c5"
+          ],
+          "loot": [
+            {
+              "item": "keller_schluessel",
+              "n": 1
+            },
+            {
+              "gold": 30
+            }
+          ]
+        },
+        {
+          "id": "en_k_c6",
+          "type": "enemy",
+          "x": 48,
+          "y": 24,
+          "kind": "nebelgeist",
+          "kinds": [
+            "nebelgeist",
+            "brandmagier",
+            "brandmagier"
+          ]
+        },
+        {
+          "id": "chest_k_c6",
+          "type": "chest",
+          "x": 48,
+          "y": 26,
+          "guard": [
+            "en_k_c6"
+          ],
+          "loot": [
+            {
+              "gear": {
+                "boost": 2
+              }
+            },
+            {
+              "gold": 45
+            },
+            {
+              "item": "zaubertrank_m",
+              "n": 1
+            }
+          ]
+        },
+        {
+          "id": "trap_k_c6",
+          "type": "trap",
+          "x": 48,
+          "y": 20,
+          "kind": "rune"
+        },
+        {
+          "id": "en_k_s1",
+          "type": "enemy",
+          "x": 22,
+          "y": 32,
+          "kind": "hauptmann",
+          "kinds": [
+            "hauptmann",
+            "kultwaechter",
+            "kultwaechter"
+          ]
+        },
+        {
+          "id": "en_k_s2",
+          "type": "enemy",
+          "x": 12,
+          "y": 33,
+          "kind": "turmwache",
+          "kinds": [
+            "turmwache",
+            "brandmagier"
+          ]
+        },
+        {
+          "id": "trap_k_s",
+          "type": "trap",
+          "x": 37,
+          "y": 32,
+          "kind": "gas"
+        },
+        {
+          "id": "sign_k_s",
+          "type": "sign",
+          "x": 38,
+          "y": 30,
+          "face": 0,
+          "title": "SPERR-|HALLE",
+          "text": "In die Tür ist ein Turm geprägt, genau wie auf dem Schlüssel aus der Vorburg. Das Schloss will aber einen anderen."
+        },
+        {
+          "id": "door_k_ende",
+          "type": "door",
+          "x": 41,
+          "y": 32,
+          "locked": true,
+          "key": "keller_schluessel",
+          "title": "TIEFE",
+          "style": "iron"
+        },
+        {
+          "id": "en_k_e",
+          "type": "enemy",
+          "x": 45,
+          "y": 33,
+          "kind": "turmwache",
+          "kinds": [
+            "turmwache",
+            "turmwache",
+            "brandmagier"
+          ]
+        },
+        {
+          "id": "exit_k_tiefe",
+          "type": "exit",
+          "x": 48,
+          "y": 32,
+          "look": "down",
+          "title": "Tiefe Keller der Moorfestung",
+          "text": "Eine schmale Treppe führt noch tiefer hinab.",
+          "again": "Hier geht es in einer späteren Version weiter."
         }
       ]
     }

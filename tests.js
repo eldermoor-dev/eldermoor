@@ -489,13 +489,30 @@ export async function runTests(data, env = {}) {
     assert(!L.chestGuarded(t, data, t.objs.find((o) => o.id === 'chest_t_secret')), 'Truhe ohne Wächter frei');
   });
 
+  await test('Kellergewölbe der Moorfestung (0.26.0): größer als die Vorburg, lösbar, Treppen verbinden beide Ebenen, Schlüssel, Geheimkammer per Fackel, Monstertruhe', () => {
+    const f1 = data.levels.festung1, f2 = data.levels.festung2;
+    assert(f2 && f2.palette === 'katakomben' && data.palettes.katakomben, 'Level und Palette');
+    assert(f2.map.length * f2.map[0].length > f1.map.length * f1.map[0].length * 1.5, 'deutlich größer als die Vorburg');
+    assert(f2.map.every((r) => r.length === f2.map[0].length), 'Karte rechteckig');
+    const a = L.analyzeLevel(data, 'festung2'); assert(a.ok && a.keys.includes('keller_schluessel'), 'lösbar: ' + JSON.stringify(a));
+    const dn = f1.objects.find((o) => o.id === 'stairs_festung_keller'), up = f2.objects.find((o) => o.id === 'stairs_k_up');
+    assert(dn && dn.to.level === 'festung2' && up && up.to.level === 'festung1', 'Treppen in beide Richtungen');
+    assert(f1.map[up.to.y][up.to.x] === '.' && f2.map[dn.to.y][dn.to.x] === '.', 'Zielfelder begehbar');
+    const sw = f2.objects.find((o) => o.id === 'switch_k1'), se = f2.objects.find((o) => o.id === 'secret_k1');
+    assert(sw && sw.torch && sw.gate === 'secret_k1' && se, 'Fackelschalter öffnet Geheimkammer');
+    const mi = f2.objects.find((o) => o.id === 'chest_k_mimic'); assert(mi && mi.mimic && data.enemies[mi.mimic], 'Monstertruhe');
+    assert(f2.objects.some((o) => o.type === 'door' && o.key === 'keller_schluessel') && data.items.keller_schluessel, 'Schlüsseltür und Schlüssel');
+    const s = L.newGame(data, 5); L.jumpToLevel(s, data, 'festung2'); assert(s.levelId === 'festung2' && s.objs.length === f2.objects.length, 'Ebene lädt');
+    assert(f2.objects.every((o) => o.type === 'enemy' ? f2.map[o.y][o.x] === '.' : true), 'Gegner auf Boden');
+  });
+
   await test('Ausgang (0.16.4): erstes Betreten = Abschluss, danach kurzer Hinweis', () => {
-    const s = fresh(9); L.jumpToLevel(s, data, 'festung1'); s.objs.forEach((o) => { if (o.type === 'enemy') o.dead = true; });
-    put(s, 31, 7, 1);
+    const s = fresh(9); L.jumpToLevel(s, data, 'festung2'); s.objs.forEach((o) => { if (o.type === 'enemy') o.dead = true; });
+    put(s, 47, 32, 1);
     const a = L.tryMove(s, data, 'f'); assert(a.events.some((e) => e.type === 'exit'), 'erstes Mal: exit ' + JSON.stringify(a));
-    put(s, 31, 7, 1);
+    put(s, 47, 32, 1);
     const b = L.tryMove(s, data, 'f'); assert(b.events.some((e) => e.type === 'exitAgain') && !b.events.some((e) => e.type === 'exit'), 'danach: exitAgain ' + JSON.stringify(b));
-    const t = data.levels.festung1.objects.find((o) => o.id === 'exit_festung');
+    const t = data.levels.festung2.objects.find((o) => o.id === 'exit_k_tiefe');
     assert(t && /späteren Version/.test(t.again), 'Festungs-Ausgang hat Hinweistext');
   });
 
