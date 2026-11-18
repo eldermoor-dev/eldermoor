@@ -1655,7 +1655,7 @@ export async function runTests(data, env = {}) {
     s.player = { x: 7, y: 5, dir: 2 };
     r = L.interact(s, data);
     assert(r.changed && s.objs.find((o) => o.id === 'switch_t1').used && s.objs.find((o) => o.id === 'secret_t1').open, 'Schalterstein öffnet die Geheimwand');
-    assert(/schon eingedrückt/.test(L.interact(s, data).msg), 'zweites Drücken ändert nichts');
+    assert(/schon gedreht/.test(L.interact(s, data).msg), 'zweites Drehen ändert nichts (0.24.3: Fackelschalter im Nebelturm)');
     const s2 = L.deserialize(JSON.stringify(L.serialize(s)), data);
     assert(s2.objs.find((o) => o.id === 'secret_t1').open && s2.objs.find((o) => o.id === 'switch_t1').used, 'Zustand übersteht Speichern und Laden');
     s2.player = { x: 3, y: 5, dir: 2 };
@@ -1663,7 +1663,7 @@ export async function runTests(data, env = {}) {
     const a = L.analyzeLevel(data, 'nebelturm');
     assert(a.ok, 'Analyse: Kammer und Truhe erreichbar: ' + JSON.stringify(a.problems || a.errors || ''));
     const g = buildGrid(lv, s.objs.map((o) => (o.id === 'secret_t1' ? { ...o, open: false } : o))).grid;
-    assert(g[6 * lv.map[0].length + 3] === 9 && g[6 * lv.map[0].length + 7] === 11, 'Darstellung: Rissmauer und eingedrückter Stein');
+    assert(g[6 * lv.map[0].length + 3] === 9 && g[6 * lv.map[0].length + 7] === 5, 'Darstellung: Rissmauer und Fackelschalter');
   });
 
   await test('Heilzauber außerhalb des Kampfs (0.16.2): kostet Mana, nur Verletzte, nicht im Kampf; Debug-Sprung', () => {
@@ -1868,6 +1868,38 @@ export async function runTests(data, env = {}) {
     await test('Update-Robustheit (0.24.2): skipWaiting, allSettled, Knopf „Neueste Version laden“', () => {
       assert(/allSettled/.test(texts['sw.js'] || '') && /skipWaiting\(\)\)/.test(texts['sw.js'] || ''), 'sw.js');
       assert(/m === 'refresh'/.test(texts['main.js'] || '') && /unregister\(\)/.test(texts['main.js'] || ''), 'refresh-Knopf');
+    });
+    await test('Begegnungsdialoge (0.25.0): Wahl, Kosten, Gegenstände, Verschwinden, Kampf, Speichern', () => {
+      const s = L.newGame(data, 5); L.jumpToLevel(s, data, 'moorpfad');
+      const bram = s.objs.find((o) => o.id === 'npc_bram');
+      assert(bram && L.blockerAt(s, bram.x, bram.y) === bram, 'Person versperrt das Feld');
+      s.player = { x: bram.x + 1, y: bram.y, dir: 3 };
+      const r0 = L.interact(s, data); assert(r0.talk === 'npc_bram', 'Interagieren startet Gespräch');
+      let node = L.dialogStartNode(s, data, bram), v = L.dialogView(s, data, bram, node);
+      assert(v.choices.length === 3, 'drei Wahlmöglichkeiten');
+      let r = L.dialogChoose(s, data, bram, node, 1); assert(r.next === 'c', 'zu Knoten c');
+      v = L.dialogView(s, data, bram, 'c'); s.gold = 5;
+      assert(!L.dialogView(s, data, bram, 'c').choices[0].ok && /10 Gold/.test(v.choices[0].t), 'zu wenig Gold: gesperrt, Preis im Text');
+      assert(L.dialogChoose(s, data, bram, 'c', 0).error === 'not-possible', 'gesperrte Wahl wirkt nicht');
+      s.gold = 30; const gi = s.inv.gegengift || 0; r = L.dialogChoose(s, data, bram, 'c', 0);
+      assert(s.gold === 20 && s.inv.gegengift === gi + 1 && r.end, 'bezahlt, Gegengift erhalten');
+      assert(L.dialogStartNode(s, data, bram) === 'z', 'danach „again“-Knoten');
+      // Kultist: verbinden → Hinweis, Person verschwindet, Gold
+      L.jumpToLevel(s, data, 'kultgruft'); const k = s.objs.find((o) => o.id === 'npc_wund');
+      s.inv.potion = 0; assert(!L.dialogView(s, data, k, 'a').choices[0].ok, 'ohne Heiltrank gesperrt');
+      s.inv.potion = 1; r = L.dialogChoose(s, data, k, 'a', 0); assert(r.next === 'b' && s.inv.potion === 0, 'Heiltrank verbraucht');
+      const g0 = s.gold; r = L.dialogChoose(s, data, k, 'b', 0);
+      assert(k.gone && s.gold === g0 + 12 && L.blockerAt(s, k.x, k.y) === null, 'Person weg, 12 Gold, Feld frei');
+      const s2 = L.deserialize(JSON.stringify(L.serialize(s)), data); assert(s2.objs.find((o) => o.id === 'npc_wund').gone, 'bleibt weg nach Speichern');
+      // Angreifen → Kampf
+      const s3 = L.newGame(data, 6); L.jumpToLevel(s3, data, 'kultgruft'); const k3 = s3.objs.find((o) => o.id === 'npc_wund');
+      r = L.dialogChoose(s3, data, k3, 'a', 2); assert(r.encounter === k3 && k3.type === 'enemy' && k3.kind === 'kultist' && k3.hp > 0, 'wird zum Gegner');
+      // Gerwin: bedrohen → keine Hinweise mehr
+      L.jumpToLevel(s3, data, 'festung1'); const gw = s3.objs.find((o) => o.id === 'npc_gerwin');
+      s3.gold = 100; r = L.dialogChoose(s3, data, gw, 'a', 2); assert(r.next === 'd', 'bedrohen');
+      r = L.dialogChoose(s3, data, gw, 'd', 0); assert(gw.gone && s3.flags['gerwin:bedroht'] && s3.gold === 118, 'Gerwin flieht, 18 Gold');
+      for (const id of Object.keys(data.dialogs)) { const dl = data.dialogs[id]; assert(dl.nodes[dl.start] && (!dl.again || dl.nodes[dl.again]), id + ': Knoten'); for (const nd of Object.values(dl.nodes)) for (const c of nd.choices) assert(!c.to || dl.nodes[c.to], id + ': Ziel ' + c.to); }
+      for (const lvId of ['moorpfad', 'kultgruft', 'festung1']) assert(L.analyzeLevel(data, lvId).ok, 'Ebene weiter vollständig erreichbar: ' + lvId);
     });
     await test('Version: sw.js und main.js stimmen überein', () => {
       const re = /VERSION\s*=\s*'([^']+)'/;

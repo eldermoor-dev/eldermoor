@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.24.2 (18.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.24.3 (18.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -998,3 +998,17 @@ Tests 110 grün (Node). BALANCE.md/SIM.md unverändert (keine Werte geändert). 
 - „Vollbildmodus an/aus in den Einstellungen“: Knopf zeigt den Zustand und schaltet um; Ausschalten setzt `S.fsLeft` (kein automatischer Wiedereintritt). Nutzer meldete: Vollbild ließ sich nicht mehr beenden, Grund unklar (nicht nachgestellt; Android-Systemmeldung stammt nicht vom Spiel).
 - Meldung des Nutzers: neue Version lässt sich nicht installieren; Titelbild zeigt weiter „Version 0.23.3“ (zwei Screenshots, 19.11.). Ursache nicht gesichert (Live-Seite von hier nicht abrufbar). Maßnahmen: sw.js mit `skipWaiting` und `allSettled` (fehlende Einzeldatei bricht Installation nicht mehr ab), Einstellungen: „Neueste Version laden“ (Service Worker und Cache `eldermoor-*` entfernen, Spielstände bleiben). Prüfpunkt für den Nutzer: GitHub → sw.js → Zeile VERSION; Live-Seite im normalen Chrome-Tab öffnen.
 - Tests 123 grün.
+
+## 0.24.3 (19.11.2026) – Fackelschalter im Nebelturm (nicht auf Gerät getestet)
+- Auftrag „A“ des Nutzers (Empfehlung: je Ebene eine weitere Geheimwand per Fackel): Kultgruft hatte schon `switch_g2` (Fackel), neu: Nebelturm `switch_t1` mit `torch: true`, Text „Die Fackel lässt sich drehen …“, Hinweis an `secret_t1`. `switch_g1` (Kultgruft) bleibt ein Stein, `switch_f1` (Festung, Teleporter) unverändert (keine Geheimwand).
+- Test angepasst (zweites Drehen: „schon gedreht“; Darstellung Fackel statt Stein). Alte Stände ziehen `torch`/`msg` über `syncStatic` nach.
+- Tests 123 grün.
+
+## 0.25.0 (19.11.2026) – Begegnungsdialoge mit Folgen (nicht auf Gerät getestet)
+- Auftrag „B“ des Nutzers (Dialoge mit spürbaren Folgen). Neues Dialogsystem, rein in logic.js (ohne DOM), Oberfläche in main.js (`openDialog`, `dialogPick`, Modal-Art `dialog`, Knöpfe `data-m="dlg:<i>"`).
+- Schema in game.json: `dialogs.<id> = { name, start, again, nodes: { <id>: { text, choices: [ { t, to, if:{flag,noflag,item}, cost:{gold}, take:{item,n}, give:[…], set:[Flags], done, leave, attack, msg } ] } } }`. `done` merkt sich das Gespräch (`flags['d:'+npc.id]`), danach startet der `again`-Knoten. `attack` wandelt die Person in einen Gegner und startet den Kampf.
+- Personen (Objekttyp `npc`, blockiert das Feld, per ◉ oder Antippen ansprechbar): Torfstecher Bram (moorpfad 10,7; Hilfe gegen Gold, Gegengift), Wundkultist (kultgruft 4,8), Wachmann Gerwin (festung1 13,15). Inhalte und Folgen stehen in game.json (Entscheidung des Assistenten: wenige, klar unterscheidbare Folgen; Story-Bezüge nur indirekt).
+- Weitere Änderungen: `tapUseByTap` erkennt NPCs, `syncStatic` zieht lebende Gegnerpositionen nach, Render-Sprite für NPCs (`look`).
+- Prüfung: Tests 124 grün (inkl. Erreichbarkeit der drei Personen); Headless-Test (Playwright): Bram per ◉ ansprechen, „Um Hilfe bitten“ → „Bezahlen“: Gold 40→30, 1 Gegengift. Kultist-/Gerwin-Dialog nur in der Logik getestet, nicht in der Oberfläche.
+- Offen: Gerätetest durch den Nutzer; weitere Personen später über dasselbe Schema (nur game.json). BALANCE.md/SIM.md unverändert (keine Gegner-/Heldenwerte geändert, außer Wundkultist-Angriff nur als Kampfoption).
+- Nächster Schritt: C (0.26.0) Moorfestung in Stufen.

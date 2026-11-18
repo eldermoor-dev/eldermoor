@@ -254,6 +254,7 @@ export function blockerAt(state, x, y) {
     if (o.type === 'chest' && !o.open) return o; // geöffnete Truhen sind begehbar
     if ((o.type === 'gate' || o.type === 'secret') && !o.open) return o; // secret = Geheimwand: sieht aus wie Mauer mit feinem Riss
     if (o.type === 'lever' || o.type === 'boulder') return o; // boulder = beweglicher Stein (0.19.0)
+    if (o.type === 'npc' && !o.gone) return o; // 0.25.0: Begegnungsperson
     if (o.type === 'merchant' || o.type === 'runestone' || (o.type === 'sign' && o.face == null)) return o; // Tafel mit face hängt an der Wand und versperrt nichts (0.16.8)
     if (o.type === 'enemy' && !o.dead) return o;
   }
@@ -328,6 +329,7 @@ function blockedText(b) {
   if (b.type === 'door') return b.locked ? 'Die Tür ist verschlossen.' : 'Die Tür ist geschlossen.';
   if (b.type === 'chest') return 'Eine Truhe versperrt den Weg.';
   if (b.type === 'merchant') return 'Der Stand der Händlerin versperrt den Weg.';
+  if (b.type === 'npc') return `${b.name || 'Jemand'} steht im Weg. Mit ◉ sprichst du an.`;
   if (b.type === 'sign') return 'Eine Hinweistafel steht im Weg.';
   if (b.type === 'runestone') return 'Ein Runenstein. Die Zeichen glimmen schwach.';
   if (b.type === 'gate') return 'Ein Fallgitter versperrt den Weg.';
@@ -646,6 +648,7 @@ export function interact(state, data) {
     return { msg: 'Hier gibt es nichts zu tun.' };
   }
   if (o.type === 'enemy') return { encounter: o };
+  if (o.type === 'npc') return { talk: o.id, sfx: 'ui' };
   if (o.type === 'sign') return { msg: o.text, sfx: 'ui', long: true };
   if (o.type === 'runestone') return { msg: o.text, sfx: 'ui', long: true }; // 0.16.5: Inschrift übersetzt (später Reisenetz)
   if (o.type === 'merchant') {
@@ -692,6 +695,51 @@ export function interact(state, data) {
   }
   if (o.type === 'secret') return secretHint(state, data, o);
   return { msg: 'Hier gibt es nichts zu tun.' };
+}
+
+// ---------- Begegnungsdialoge (0.25.0) ----------
+// data.dialogs.<id> = { name, start, again, nodes: { <id>: { text, choices: [ { t, to, if, cost, take, give, set, done, leave, attack, msg } ] } } }
+// to: nächster Knoten (fehlt = Gespräch endet) · if: { flag, noflag, item } (sonst Wahl nicht sichtbar) · cost: { gold } / take: { item, n } (Wahl gesperrt, wenn nicht vorhanden)
+// give: Beute wie bei Truhen · set: Marken (state.flags) · done: Gespräch gilt als geführt (dann `again`) · leave: Person verschwindet · attack: Person wird zum Gegner dieser Art
+function dlgOf(data, npc) { return npc && data.dialogs && data.dialogs[npc.dialog]; }
+export function dialogStartNode(state, data, npc) {
+  const dl = dlgOf(data, npc);
+  if (!dl) return null;
+  return state.flags['d:' + npc.id] && dl.again ? dl.again : dl.start;
+}
+export function dialogView(state, data, npc, nodeId) {
+  const dl = dlgOf(data, npc), nd = dl && dl.nodes[nodeId];
+  if (!nd) return null;
+  const choices = [];
+  nd.choices.forEach((c, i) => {
+    const f = c.if || {};
+    if ((f.flag && !state.flags[f.flag]) || (f.noflag && state.flags[f.noflag]) || (f.item && !((state.inv[f.item] || 0) > 0))) return;
+    let ok = true, suffix = '';
+    if (c.cost && c.cost.gold) { suffix += ` (${c.cost.gold} Gold)`; if (state.gold < c.cost.gold) ok = false; }
+    if (c.take) { const it = data.items[c.take.item]; suffix += ` (${it ? it.name : c.take.item})`; if (!((state.inv[c.take.item] || 0) >= (c.take.n || 1))) ok = false; }
+    choices.push({ i, t: c.t + suffix, ok });
+  });
+  return { name: npc.name || dl.name, text: nd.text, choices };
+}
+export function dialogChoose(state, data, npc, nodeId, idx) {
+  const dl = dlgOf(data, npc), nd = dl && dl.nodes[nodeId], c = nd && nd.choices[idx];
+  if (!c) return { error: 'bad-choice' };
+  const view = dialogView(state, data, npc, nodeId), ch = view && view.choices.find((x) => x.i === idx);
+  if (!ch || !ch.ok) return { error: 'not-possible' };
+  const msgs = [];
+  if (c.cost && c.cost.gold) state.gold -= c.cost.gold;
+  if (c.take) state.inv[c.take.item] = (state.inv[c.take.item] || 0) - (c.take.n || 1);
+  if (c.give) msgs.push(`Erhalten: ${addLoot(state, data, c.give)}.`);
+  for (const f of c.set || []) state.flags[f] = true;
+  if (c.done) state.flags['d:' + npc.id] = true;
+  if (c.msg) msgs.unshift(c.msg);
+  if (c.leave) npc.gone = true;
+  if (c.attack) {
+    const en = data.enemies[c.attack];
+    Object.assign(npc, { type: 'enemy', kind: c.attack, hp: en.hp, dead: false });
+    return { end: true, encounter: npc, msg: msgs.join(' '), changed: true };
+  }
+  return { end: !c.to, next: c.to || null, msg: msgs.join(' '), changed: true, sfx: c.give ? 'chest' : 'ui' };
 }
 
 export function useItemOutside(state, data, itemId, heroIdx) {

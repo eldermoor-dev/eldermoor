@@ -1969,6 +1969,15 @@
           "text": "In den Stein geritzt: „Vorsicht. Der Boden beißt.“",
           "title": "VORSICHT",
           "face": 0
+        },
+        {
+          "id": "npc_bram",
+          "type": "npc",
+          "x": 10,
+          "y": 7,
+          "name": "Torfstecher Bram",
+          "look": "merchant",
+          "dialog": "bram"
         }
       ],
       "intro": {
@@ -2385,6 +2394,15 @@
           "deco": "graffiti",
           "title": "KRATZER",
           "text": "In den Stein geritzt: ein Strichmännchen, eine Strichliste mit vier Kerben – und ein Pfeil. Wer hier gewartet hat, hat die Tage gezählt."
+        },
+        {
+          "id": "npc_wund",
+          "type": "npc",
+          "x": 4,
+          "y": 8,
+          "name": "Verwundeter Kultist",
+          "look": "kultist",
+          "dialog": "wundkultist"
         }
       ],
       "intro": {
@@ -3103,7 +3121,7 @@
           "type": "secret",
           "x": 3,
           "y": 6,
-          "hint": "Die Wand klingt hohl. Der Riss ist zu gerade für einen Zufall."
+          "hint": "Die Wand klingt hohl. Der Riss ist zu gerade für einen Zufall. Eine der Fackeln hier sitzt lockerer als die anderen."
         },
         {
           "id": "switch_t1",
@@ -3112,7 +3130,8 @@
           "x": 7,
           "y": 6,
           "gate": "secret_t1",
-          "msg": "Der Stein gibt nach. Ein Stück weiter schabt Stein über Stein."
+          "msg": "Die Fackel lässt sich drehen. Ein Stück weiter schabt Stein über Stein.",
+          "torch": true
         },
         {
           "id": "chest_t_secret",
@@ -3535,6 +3554,15 @@
           "deco": "painting",
           "title": "GEMÄLDE",
           "text": "Ein Gemälde: ein Turm im Nebel, darüber ein bleicher Mond. Der Goldrahmen ist gesprungen, als hätte jemand mit der Faust hineingeschlagen."
+        },
+        {
+          "id": "npc_gerwin",
+          "type": "npc",
+          "x": 13,
+          "y": 15,
+          "name": "Torwächter Gerwin",
+          "look": "guard",
+          "dialog": "gerwin"
         }
       ]
     }
@@ -4882,6 +4910,227 @@
         "resist": 25
       },
       "desc": "Beide Teile: Heilzauber +6 LP, 25 % Statusabwehr."
+    }
+  },
+  "dialogs": {
+    "bram": {
+      "name": "Torfstecher Bram",
+      "start": "a",
+      "again": "z",
+      "nodes": {
+        "a": {
+          "text": "Ein alter Torfstecher stützt sich auf seinen Spaten. „Seit die Lichter in der Gruft brennen, geht keiner mehr freiwillig dorthin. Ihr schon?“",
+          "choices": [
+            {
+              "t": "Nach der Gruft fragen",
+              "to": "b"
+            },
+            {
+              "t": "Um Hilfe bitten",
+              "to": "c"
+            },
+            {
+              "t": "Gehen"
+            }
+          ]
+        },
+        "b": {
+          "text": "„Zwei von den Kapuzenleuten stehen bei der Pforte und hüten eine Truhe. Solange die beiden atmen, bleibt sie zu. Und das Moor holt sich, wer vom Pfad geht.“",
+          "choices": [
+            {
+              "t": "Um Hilfe bitten",
+              "to": "c"
+            },
+            {
+              "t": "Danke, das reicht",
+              "set": [
+                "bram:gruft"
+              ]
+            }
+          ]
+        },
+        "c": {
+          "text": "Bram kratzt sich den Bart. „Hilfe? Ich hab selbst nichts. Aber für ein paar Münzen gebe ich euch, was ich gegen den Torf-Giftschlamm trage.“",
+          "choices": [
+            {
+              "t": "Bezahlen",
+              "cost": {
+                "gold": 10
+              },
+              "give": [
+                {
+                  "item": "gegengift",
+                  "n": 1
+                },
+                {
+                  "item": "potion",
+                  "n": 1
+                }
+              ],
+              "done": true,
+              "msg": "Bram drückt euch ein Gegengift und einen Heiltrank in die Hand."
+            },
+            {
+              "t": "Nicht jetzt"
+            }
+          ]
+        },
+        "z": {
+          "text": "Bram nickt euch zu. „Passt auf eure Füße. Das Moor vergisst nichts.“",
+          "choices": [
+            {
+              "t": "Gehen"
+            }
+          ]
+        }
+      }
+    },
+    "wundkultist": {
+      "name": "Verwundeter Kultist",
+      "start": "a",
+      "again": "z",
+      "nodes": {
+        "a": {
+          "text": "Ein Kultist lehnt an der Wand, die dunkle Kutte nass vom Blut. Er hebt kaum den Kopf. „Tötet mich schnell – oder lasst mich in Ruhe.“",
+          "choices": [
+            {
+              "t": "Verbinden",
+              "take": {
+                "item": "potion",
+                "n": 1
+              },
+              "to": "b"
+            },
+            {
+              "t": "Ausfragen",
+              "to": "c"
+            },
+            {
+              "t": "Angreifen",
+              "attack": "kultist",
+              "msg": "Der Kultist reißt den Dolch hoch. Ihr habt ihn nicht überrascht."
+            },
+            {
+              "t": "Gehen"
+            }
+          ]
+        },
+        "b": {
+          "text": "Er trinkt, hustet und starrt euch an. „Warum? … Gut. Unten links, hinter dem Wandschrank: Die Fackel dort dreht sich, wenn man sie nicht anfasst wie eine Fackel. Mehr sage ich nicht. Mehr weiß ich nicht.“ Er schleppt sich davon und ist im Dunkel verschwunden.",
+          "choices": [
+            {
+              "t": "Weiter",
+              "leave": true,
+              "give": [
+                {
+                  "gold": 12
+                }
+              ],
+              "done": true,
+              "msg": "Im Gehen lässt er einen kleinen Beutel fallen."
+            }
+          ]
+        },
+        "c": {
+          "text": "Er presst die Lippen zusammen. „Nichts. Ihr bekommt nichts von mir.“ Seine Hand zittert am Dolchgriff.",
+          "choices": [
+            {
+              "t": "Doch angreifen",
+              "attack": "kultist",
+              "msg": "Der Kultist reißt den Dolch hoch."
+            },
+            {
+              "t": "Gehen"
+            }
+          ]
+        },
+        "z": {
+          "text": "Der Platz an der Wand ist leer. Nur dunkle Flecken am Stein.",
+          "choices": [
+            {
+              "t": "Gehen"
+            }
+          ]
+        }
+      }
+    },
+    "gerwin": {
+      "name": "Torwächter Gerwin",
+      "start": "a",
+      "again": "z",
+      "nodes": {
+        "a": {
+          "text": "Ein alter Torwächter sitzt auf einer umgestürzten Kiste. „Die Vorburg ist nicht mehr, was sie war. Wer hier lebt, lebt zwischen den Fallen. Was wollt ihr wissen?“",
+          "choices": [
+            {
+              "t": "Nach Gefahren fragen",
+              "to": "b"
+            },
+            {
+              "t": "Hinweis kaufen",
+              "cost": {
+                "gold": 25
+              },
+              "to": "c"
+            },
+            {
+              "t": "Bedrohen",
+              "to": "d"
+            },
+            {
+              "t": "Gehen"
+            }
+          ]
+        },
+        "b": {
+          "text": "„Am Boden sieht man es, wenn man hinschaut: Platten ohne Staub, feine Risse. Und mancher Stein in der Wand sitzt lockerer, als er sollte. Wer ihn berührt, hört danach etwas.“",
+          "choices": [
+            {
+              "t": "Zurück",
+              "to": "a"
+            }
+          ]
+        },
+        "c": {
+          "text": "Gerwin zählt die Münzen zweimal. „Der Gang ganz im Norden endet nicht dort, wo er endet. Ein Stein gibt nach, ein Licht erlischt. Das ist alles, was ich dafür weiß.“",
+          "choices": [
+            {
+              "t": "Danke",
+              "done": true,
+              "set": [
+                "gerwin:hinweis"
+              ]
+            }
+          ]
+        },
+        "d": {
+          "text": "Gerwin hebt die Hände. „Schon gut, schon gut! Nehmt, was ich habe.“ Er kramt in seiner Tasche und flüchtet dann humpelnd in den Hof.",
+          "choices": [
+            {
+              "t": "Weiter",
+              "leave": true,
+              "give": [
+                {
+                  "gold": 18
+                }
+              ],
+              "set": [
+                "gerwin:bedroht"
+              ],
+              "done": true,
+              "msg": "Er lässt 18 Gold zurück. Von ihm erfahrt ihr nun nichts mehr."
+            }
+          ]
+        },
+        "z": {
+          "text": "Der Platz auf der Kiste ist leer.",
+          "choices": [
+            {
+              "t": "Gehen"
+            }
+          ]
+        }
+      }
     }
   }
 }

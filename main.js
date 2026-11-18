@@ -4,13 +4,13 @@ import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
   buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
-  activeSets, coveredBy, isNew, clearNew,
+  activeSets, coveredBy, isNew, clearNew, dialogStartNode, dialogView, dialogChoose,
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.24.2';
+const VERSION = '0.25.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -355,6 +355,7 @@ function act(name) {
       if (g.combat) { say('Im Kampf stehen die Aktionsknöpfe zur Verfügung.'); break; }
       const r = interact(g, S.data);
       if (r.encounter) { if (r.msg) say(r.msg); if (r.sfx) S.sfx.play(r.sfx); startCombatUI(r.encounter); break; } // 0.20.0: Monstertruhe erwacht
+      if (r.talk) { S.held = []; openDialog(r.talk); break; } // 0.25.0: Begegnungsdialog
       if (r.shop) { if (r.msg) say(r.msg); S.shopTalk = r.msg || null; S.held = []; S.shopTab = 'buy'; S.shopSure = null; openShop(r.shop, true); break; }
       say(r.msg); if (r.sfx) S.sfx.play(r.sfx);
       if (r.moved) { S.target.x = g.player.x + 0.5; S.target.y = g.player.y + 0.5; beginTween(); toast(r.msg, 5000); } // Stein gezogen: Gruppe steht ein Feld weiter hinten
@@ -595,11 +596,11 @@ function tapUseByTap(e) {
   let best = null, bt = 1e9;
   for (const o of g.objs) {
     const big = o.type === 'door' || o.type === 'gate' || o.type === 'secret' || (o.type === 'lever' && o.wall);
-    if (!(big ? !o.open : o.type === 'chest' ? !o.open : o.type === 'lever' || o.type === 'merchant')) continue; // 0.16.5: Händlerin antippen = ansprechen
+    if (!(big ? !o.open : o.type === 'chest' ? !o.open : o.type === 'lever' || o.type === 'merchant' || (o.type === 'npc' && !o.gone))) continue; // 0.16.5: Händlerin antippen = ansprechen
     const sx = o.x + 0.5 - S.cam.x, sy = o.y + 0.5 - S.cam.y;
     const tX = inv * (dirY * sx - dirX * sy), tY = inv * (-plY * sx + plX * sy);
     if (tY <= 0.3 || tY > 2.6 || tY >= bt) continue;
-    const tol = big ? 0.31 / tY + 0.02 : o.type === 'merchant' ? 0.26 / tY + 0.03 : 0.16 / tY + 0.04;
+    const tol = big ? 0.31 / tY + 0.02 : o.type === 'merchant' || o.type === 'npc' ? 0.26 / tY + 0.03 : 0.16 / tY + 0.04;
     if (Math.abs(0.5 * (1 + tX / tY) - fx) > tol) continue;
     let clear = true;
     const dist = Math.hypot(sx, sy), steps = Math.ceil(dist / 0.2);
@@ -922,6 +923,27 @@ function renderCombat() {
 }
 
 // ---------------------------------------------------------------- Dialoge
+// 0.25.0 Begegnungsdialoge (Nutzerwunsch: Auswahl wie bei EOB2 mit spürbaren Folgen)
+function openDialog(id, node) {
+  const g = S.game, npc = g.objs.find((o) => o.id === id);
+  if (!npc) return;
+  const nid = node || dialogStartNode(g, S.data, npc), v = dialogView(g, S.data, npc, nid);
+  if (!v) return;
+  S.dlg = { id, node: nid };
+  openModal(`<h2>${esc(v.name)}</h2><p style="font-style:italic;line-height:1.45;margin:6px 0 10px">${esc(v.text)}</p><div class="acts" style="flex-direction:column;align-items:stretch">${v.choices.map((c) => `<button class="mb" data-m="dlg:${c.i}" ${c.ok ? '' : 'disabled'}>${esc(c.t)}</button>`).join('')}</div>`, 'dialog');
+}
+async function dialogPick(i) {
+  const g = S.game, d = S.dlg, npc = d && g.objs.find((o) => o.id === d.id);
+  if (!npc) return;
+  const r = dialogChoose(g, S.data, npc, d.node, i);
+  if (r.error) return;
+  if (r.msg) { say(r.msg); toast(r.msg, 4000); }
+  if (r.sfx) S.sfx.play(r.sfx);
+  if (r.encounter) { closeModal(); renderAll(); startCombatUI(r.encounter); return; }
+  if (r.next) { openDialog(d.id, r.next); renderAll(); return; }
+  closeModal(); renderAll();
+  try { if (!g.combat) await saveSlot('auto', true); } catch { /* egal */ }
+}
 function openModal(html, kind = 'generic') {
   $('#modal-box').innerHTML = html;
   $('#modal-box').dataset.kind = kind; // z. B. breiteres Kartenfenster (CSS)
@@ -930,7 +952,7 @@ function openModal(html, kind = 'generic') {
   S.held = [];
   $('#modal-box').scrollTop = 0;
 }
-function closeModal() { if (S.modal === 'inventory' && S.game) { clearNew(S.game); updateInvBadge(); } $('#modal').hidden = true; $('#modal-box').innerHTML = ''; S.modal = null; S.invUse = null; S.invEquip = null; S.invSell = null; S.shopId = null; S.shopSure = null; }
+function closeModal() { if (S.modal === 'inventory' && S.game) { clearNew(S.game); updateInvBadge(); } $('#modal').hidden = true; $('#modal-box').innerHTML = ''; S.modal = null; S.dlg = null; S.invUse = null; S.invEquip = null; S.invSell = null; S.shopId = null; S.shopSure = null; }
 const closeBtn = '<button class="mb" data-m="close">Schließen</button>';
 
 function openMenu() {
@@ -1551,6 +1573,7 @@ async function onModalClick(e) {
     renderAll(); openCharacter();
   }
   else if (m === 'shopgo') { S.shopTalk = null; openShop(S.shopId, false); }
+  else if (m.startsWith('dlg:')) dialogPick(+m.slice(4));
   else if (m.startsWith('use:')) { S.invUse = m.slice(4); openInventory(); }
   else if (m.startsWith('heal:')) {
     const r = useItemOutside(g, S.data, S.invUse || 'potion', +m.slice(5));
