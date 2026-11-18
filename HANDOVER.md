@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.23.1 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.23.2 (17.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -892,3 +892,8 @@ Nutzer: „Beim Wechsel auf Vollbild die Dauer der darauf folgenden Informatione
 - Einstellungen → „Vollbild“ schließt jetzt das Fenster; bei jedem Wechsel in/aus dem Vollbild (`fullscreenchange`) werden Meldungsleiste, Hinweis-Toast und Auftrittsbanner sofort ausgeblendet (`calmScreen`). Das Protokoll bleibt vollständig.
 - Grenze: Den Hinweis von Chrome selbst („Zum Beenden … wischen“) kann die Seite nicht verkürzen.
 - Tests 108 grün; nicht auf Gerät getestet.
+
+## 0.23.2 (18.11.2026) – Talentpunkt-Anzeige, Vollbild beim Start
+Nutzer: gelber Inventar-Punkt „gut sichtbar“ (bestätigt auf dem Gerät); Wunsch: gleiches für freie Talentpunkte (lila); „Spiel grundsätzlich im Vollbildmodus starten“. Nur headless geprüft, **nicht auf Gerät getestet**.
+- **Lila Punkt** am Charakter-Knopf, solange ein Held freie Talentpunkte hat (`updateTalBadge`); im Charakterbogen „Talente ● n frei“. Beide Punkte werden zusätzlich alle 0,7 s aktualisiert.
+- **Vollbild beim Start:** neue Einstellung „Beim Start Vollbild“ (Standard an, `autoFs`). Browser erlauben Vollbild nur nach einem Tipp: es wird beim ersten Tipp im Titelbild (Neues Spiel, Fortsetzen …) und bei jedem Tipp im Spiel angefordert, falls nicht schon aktiv. Als installierte App ohnehin Vollbild (manifest). Headless nicht prüfbar (Vermutung: Chrome auf Android erlaubt es nach dem Tipp).

@@ -10,7 +10,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPort
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.23.1';
+const VERSION = '0.23.2';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -19,7 +19,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&
 // settingsV 2 (v0.2.0): Schrittgeräusche standardmäßig aus (Nutzerentscheidung 13.11.2026)
 const SETTINGS_V = 3;
 // settingsV 3 (v0.19.9): Nutzer „Zu dunkel“ – Standard-Helligkeit 1,8 („Sehr hell“), neue Stufe „Maximal“ (2,4); alte Einstellung unter 1,8 wird einmalig angehoben
-const DEFAULTS = { volume: 0.7, muted: false, quality: 'medium', vibration: true, fontScale: 1, colorblind: false, debug: false, flicker: 0.35, bright: 1.8, steps: false, ambient: true, sharp: 'scharf', settingsV: SETTINGS_V };
+const DEFAULTS = { volume: 0.7, muted: false, quality: 'medium', vibration: true, fontScale: 1, colorblind: false, debug: false, flicker: 0.35, bright: 1.8, steps: false, ambient: true, sharp: 'scharf', autoFs: true, settingsV: SETTINGS_V };
 const REPEAT = new Set(['fwd', 'back', 'sl', 'sr', 'tl', 'tr']);
 const SLOT_KEYS = ['auto', 'slot1', 'slot2', 'slot3'];
 const SLOT_NAMES = { auto: 'Autosave', slot1: 'Slot 1', slot2: 'Slot 2', slot3: 'Slot 3' };
@@ -705,11 +705,21 @@ function openCombatLog() {
 }
 function renderCompass() { const d = $('#compass-dial'); if (d && S.game) { S.compassTurns = nearestTurns(S.compassTurns || 0, S.game.player.dir); d.style.transform = `rotate(${-S.compassTurns * 90}deg)`; d.style.setProperty('--cr', `${S.compassTurns * 90}deg`); } }
 function nearestTurns(prev, dir) { const base = Math.round(prev / 4) * 4; let best = base + dir, bd = Math.abs(best - prev); for (const c of [base - 4 + dir, base + 4 + dir]) if (Math.abs(c - prev) < bd) { best = c; bd = Math.abs(c - prev); } return best; }
-function renderAll() { renderCompass(); announceTurn(); renderParty(); renderCombat(); renderLog(); updateInvBadge(); }
+function renderAll() { renderCompass(); announceTurn(); renderParty(); renderCombat(); renderLog(); updateInvBadge(); updateTalBadge(); }
 // 0.22.1: Punkt am Inventar-Knopf, solange etwas Neues drin ist
 function updateInvBadge() { const b = document.querySelector('[data-a="inv"]'); if (b && S.game) b.classList.toggle('hasnew', Object.keys(S.game.inv).some((k) => isNew(S.game, k))); }
+// 0.23.2 (Nutzer): lila Punkt am Charakter-Knopf, solange ein Held freie Talentpunkte hat
+function updateTalBadge() { const b = document.querySelector('[data-a="char"]'); if (b && S.game) b.classList.toggle('hastal', !!S.data.talents && S.game.heroes.some((h) => talentPoints(S.data, h) > 0)); }
 // 0.19.6 (Nutzer: „Der viele Text versperrt den Blick auf den Gang“): Außerhalb des Kampfs zeigt das Meldungsfeld höchstens 2 Meldungen,
 // jede höchstens 2 Zeilen, und blendet sie nach 3–6 s aus (länger bei langem Text). Im Kampf bleibt alles wie bisher (die letzten 2). Das Protokoll bleibt vollständig.
+// 0.23.2 (Nutzer: „Spiel grundsätzlich im Vollbild starten“): Browser erlauben Vollbild nur nach einem Tipp – daher beim ersten Tipp im Titel bzw. auf einen Knopf.
+// Als installierte App startet das Spiel ohnehin im Vollbild (manifest: fullscreen).
+function autoFullscreen() {
+  if (!S.settings || S.settings.autoFs === false || document.fullscreenElement || !document.documentElement.requestFullscreen) return;
+  document.documentElement.requestFullscreen({ navigationUI: 'hide' }).then(() => { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); }).catch(() => {});
+}
+document.addEventListener('pointerdown', () => { if (S.game) autoFullscreen(); }, { capture: true });
+setInterval(() => { if (S.game) { updateInvBadge(); updateTalBadge(); } }, 700); // Punkte an Inventar/Charakter auch ohne neues Bild aktuell halten
 // 0.23.1 (Nutzer: nach dem Wechsel ins Vollbild verdecken Informationen das Bild zu lange): Meldungen und Hinweise sofort ausblenden.
 function calmScreen() { S.logTs = (S.logTs || []).map(() => 0); const t = $('#toast'); if (t) t.hidden = true; const ev = $('#event'); if (ev) ev.hidden = true; renderLog(); }
 document.addEventListener('fullscreenchange', () => { if (S.game) calmScreen(); });
@@ -1044,7 +1054,7 @@ function openCharacter() {
   openModal(`<h2>Charaktere</h2><div class="grid4">` + g.heroes.map((h, i) =>
     `<div class="hc"><b>${esc(h.name)}</b><div class="muted">${esc(raceName(h.race))} · ${esc(h.role)}</div><div class="muted">${h.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}</div>
     <div>Stufe ${h.level}</div><div class="muted">${xpLine(h)}</div>
-    <div>LP ${h.hp}/${h.maxHp}</div><div>Angriff ${h.atk}${bonusTxt(gearBonus(S.data, h, S.game).atk + talentSum(S.data, h, 'atk'))}</div><div>Verteidigung ${h.def}${bonusTxt(gearBonus(S.data, h, S.game).def + talentSum(S.data, h, 'def'))}</div><div>Initiative ${h.init}${bonusTxt(gearBonus(S.data, h, S.game).init + talentSum(S.data, h, 'init'))}</div><div>${h.ranged ? 'Fernkampf' : 'Nahkampf'}</div>${gearLines(h, i)}${charAbility(h)}<button class="mb" data-m="tal:${i}" style="margin-top:4px">Talente${talentPoints(S.data, h) > 0 ? ` (${talentPoints(S.data, h)} frei)` : ''}</button></div>`).join('') +
+    <div>LP ${h.hp}/${h.maxHp}</div><div>Angriff ${h.atk}${bonusTxt(gearBonus(S.data, h, S.game).atk + talentSum(S.data, h, 'atk'))}</div><div>Verteidigung ${h.def}${bonusTxt(gearBonus(S.data, h, S.game).def + talentSum(S.data, h, 'def'))}</div><div>Initiative ${h.init}${bonusTxt(gearBonus(S.data, h, S.game).init + talentSum(S.data, h, 'init'))}</div><div>${h.ranged ? 'Fernkampf' : 'Nahkampf'}</div>${gearLines(h, i)}${charAbility(h)}<button class="mb" data-m="tal:${i}" style="margin-top:4px">Talente${talentPoints(S.data, h) > 0 ? ` <span class="taldot">●</span> ${talentPoints(S.data, h)} frei` : ''}</button></div>`).join('') +
     `</div><p class="muted">Ausrüstung anlegen: Inventar → Gegenstand → „Ausrüsten“. Ablegen hier.</p><div class="acts">${closeBtn}</div>`, 'character');
 }
 
@@ -1233,6 +1243,7 @@ function openSettings() {
   openModal(`<h2>Einstellungen</h2>
   <div class="row"><label>Lautstärke</label><input type="range" min="0" max="1" step="0.05" value="${s.volume}" data-s="volume"></div>
   <div class="row"><label>Ton stumm (alles)</label>${chk('muted')}</div>
+  <div class="row"><label>Beim Start Vollbild</label>${chk('autoFs')}</div>
   <div class="row"><label>Schrittgeräusche</label>${chk('steps')}</div>
   <div class="row"><label>Hintergrundgeräusche (Wind, Tropfen, Fackel)</label>${chk('ambient')}</div>
   <div class="row"><label>Grafikqualität</label>${sel('quality', [['low', 'Niedrig'], ['medium', 'Mittel'], ['high', 'Hoch']])}</div>
@@ -1587,6 +1598,7 @@ async function onTitleClick(e) {
   if (!b || b.disabled) return;
   S.sfx.unlock();
   S.sfx.play('ui');
+  autoFullscreen();
   const t = b.dataset.t;
   if (t === 'new') openNewGame();
   else if (t === 'continue') { const l = await latestSave(); if (l) await loadSlot(l.key); }
