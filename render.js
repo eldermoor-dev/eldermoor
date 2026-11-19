@@ -1256,7 +1256,8 @@ function genPerson(seed, kind) {
     const skin = (b) => ['glow', b - l * 0.8 + n * 0.3]; // warmer Hautton (Material glow wie bei Hedda)
     // Gesicht, Augen, Mund (oben auf)
     if (kind !== 'wund' || py > hy - 1) {
-      if (ell(px, py, 32 + sh - 2.9, hy, 1.4, 1.6) <= 1 || ell(px, py, 32 + sh + 2.9, hy, 1.4, 1.6) <= 1) return ['ceil', 0];
+      const er = kind === 'torf' ? 1.05 : 1.4; // Bram: kleinere Augen (0.26.3)
+      if (ell(px, py, 32 + sh - 2.9, hy, er, er * 1.15) <= 1 || ell(px, py, 32 + sh + 2.9, hy, er, er * 1.15) <= 1) return ['ceil', 0];
     }
     if (kind === 'wund' && (ell(px, py, 32 + sh - 2.9, hy, 1.5, 1.6) <= 1 || ell(px, py, 32 + sh + 2.9, hy, 1.5, 1.6) <= 1)) return ['ice', 7];
     // Kopfbedeckung
@@ -1270,9 +1271,17 @@ function genPerson(seed, kind) {
       if (ell(px, py, 32 + sh, 10, 10.5, 10.5) <= 1 && !(ell(px, py, 32 + sh, 15, 6, 6) <= 1)) return ['stone', 1.6 - l * 0.8 + n * 0.6]; // Kapuze
     }
     // Kopf
+    if (kind === 'torf') { // 0.26.3: Bart statt Maske – V-förmige Wangenkante, Schnurrbart, spitz auslaufend, Haarsträhnen
+      const beard = () => ['stone', 5.6 - l * 0.8 + ((x + (y >> 2)) % 3 === 0 ? -0.9 : 0.5) + n * 0.5];
+      if (ell(px, py, 32, hy + 1.3, 1.25, 1.1) <= 1) return skin(4.2); // Nase
+      if (Math.abs(Math.abs(dx) - 2.9) < 2 && Math.abs(py - (hy - 2.7)) < 0.6 && ell(px, py, 32, hy, 6.6, 7.4) <= 1) return ['wood', 1.8]; // Brauen
+      if (ell(px, py, 32, hy, 6.6, 7.4) <= 1 && py > hy + 2.6 + (1 - Math.abs(dx) / 6.6) * 0 - Math.abs(dx) * 0.0) {
+        if (py > hy + 3.4 && py < hy + 4.6 && Math.abs(dx) < 2.2) return ['ceil', 0.6]; // Mund im Bart
+        return beard();
+      }
+      if (py > hy + 5 && py < hy + 11.5 && Math.abs(dx) < 5.2 - (py - hy - 5) * 0.72) return beard(); // Bart läuft unter dem Kinn spitz aus
+    }
     if (ell(px, py, 32 + sh, hy, 6.6, 7.4) <= 1) {
-      if (kind === 'torf' && py > hy + 2.5) return ['stone', 5.4 - l * 0.8 + n * 1.2]; // grauer Bart
-      if (kind === 'wund' && Math.abs(px - 32 - sh - (py - hy) * 0.6) < 1.1) return ['stone', 6.4]; // Kopfverband schräg
       return skin(5.2);
     }
     // Hals
@@ -2016,6 +2025,10 @@ export function groupOffsets(n, narrow, side = 0) { // side (0.23.4): -1 = Wand 
   if (narrow) return n >= 3
     ? [{ lat: -0.13, dep: 0, grow: 1 }, { lat: 0.14, dep: 0.12, grow: 1.08 }, { lat: 0, dep: 0.6, grow: 1.36 }]
     : [{ lat: -0.15, dep: 0, grow: 1 }, { lat: 0.17, dep: 0.14, grow: 1.08 }]; // 0.23.8: näher an der Mitte (breite Figuren mit Schild ragten an die Wand)
+  if (n >= 3 && side !== 0) { // 0.26.3 (Nutzer: im breiten Gang nebeneinander): Wand nur auf einer Seite – zwei vorn nebeneinander, die dritte mittig dahinter
+    const k = -side; // k: Richtung weg von der Wand
+    return [{ lat: k * 0.1, dep: 0, grow: 1 }, { lat: k * 0.7, dep: 0, grow: 1 }, { lat: k * 0.4, dep: 0.62, grow: 1.32 }];
+  }
   const gap = n >= 3 ? 0.56 : 0.62;
   const lats = Array.from({ length: n }, (_, i) => (i - (n - 1) / 2) * gap);
   if (side < 0) { const s = Math.max(0, -0.12 - Math.min(...lats)); for (let i = 0; i < n; i++) lats[i] += s; }
@@ -2031,7 +2044,7 @@ export function wallSides(g, x, y, angle) {
 }
 export function groupLayout(g, x, y, angle, n) {
   const { l, r } = wallSides(g, x, y, angle);
-  return groupOffsets(n, n > 1 && (l && r || (l || r) && n >= 3), l && !r ? -1 : r && !l ? 1 : 0); // drei Gegner mit Wand auf einer Seite: gestaffelt (sonst rutscht einer aus dem Bild)
+  return groupOffsets(n, n > 1 && l && r, l && !r ? -1 : r && !l ? 1 : 0); // Wand auf einer Seite: groupOffsets weicht von der Wand weg (drei: Dreieck)
 }
 // Eng = beide Nachbarfelder quer zur Blickrichtung sind Wand (grid aus buildGrid: 0 = frei)
 export function isNarrowAt(g, x, y, angle) {

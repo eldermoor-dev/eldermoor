@@ -6,6 +6,7 @@ Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ 
 ## 0.16.x (Inhaltsphase, Nebelturm und Nacharbeiten)
 | Version | Änderungen | Status |
 |---|---|---|
+| 0.26.3 | Gegner im Gang mit einer Wand: zwei nebeneinander, dritter dahinter; Bram: Bart neu; Wundkultist: Strich im Gesicht weg | headless, Gerät offen |
 | 0.26.2 | Türen lassen sich aus 2 Feldern Abstand per Antippen öffnen (nicht Riegeltüren); Tests 126 | headless, Gerät offen |
 | 0.26.1 | Eigene Bilder für Begegnungspersonen (Torfstecher Bram, Wachmann Gerwin, Wundkultist), nicht mehr Händlerin oder Gegnerbilder; Tests 125 | headless, Gerät offen |
 | 0.19.18 | Truhen neu gezeichnet (gewölbter Deckel, Eisenbänder mit Nieten, Goldschloss, Maserung, 128 px, scharf); Beute in Truhen gekürzt (weniger Gold und Tränke, weniger Ausrüstung, niedrigere Qualitätsstufen); Bodenspur der Fallen dezenter; Tests 103 | headless, Gerät offen |

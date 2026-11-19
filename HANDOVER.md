@@ -1032,3 +1032,9 @@ Nutzer: Türen sollen schon aus 2 Feldern Abstand durch Antippen aufgehen.
 - `doorAhead2(state, x, y)` (logic.js): Tür genau 2 Felder in Blickrichtung, Feld davor frei, Tür zu, keine Riegeltür (Riegelseite braucht Nähe). `interact(state, data, target)` nimmt ein Zielobjekt entgegen. main.js `tapUseByTap`: Tippen auf eine solche Tür öffnet sie sofort (Schloss/Schlüssel wie sonst); Gruppe bleibt stehen. Andere Objekte weiter „Geh näher heran.“
 - Tests 126 grün (neu: Tür aus 2 Feldern). Keine Werte geändert.
 
+## 0.26.3 (19.11.2026) – Aufstellung im breiten Gang, Personenbilder (nicht auf Gerät getestet)
+Nutzer: „Im breiten Gang könnten sich die Gegner nebeneinander stellen“, „Bart sieht komisch aus“, „Strich im Gesicht weg“.
+- render.js `groupOffsets/groupLayout`: Wand nur auf einer Seite und drei Gegner → zwei vorn nebeneinander (lat ±0.1/0.7 weg von der Wand), dritter mittig dahinter (dep 0.62, grow 1.32). Vorher: alle fast übereinander gestaffelt. Beidseitig Wand (enger Gang) unverändert gestaffelt; zwei Gegner mit einer Wand wie bisher.
+- genPerson: Bram mit V-förmigem Bart, Schnurrbart, Nase, Brauen, kleineren Augen, spitz auslaufend; Wundkultist ohne schrägen Verbandsstrich im Gesicht. Tests 126 grün.
+- Offen: Gerät prüfen, ob die Außenfigur bei lat 0.7 noch ganz im Bild ist (Kultgruft en_g4, Blick nach Osten).
+
