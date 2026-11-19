@@ -1041,3 +1041,6 @@ Nutzer: „Im breiten Gang könnten sich die Gegner nebeneinander stellen“, �
 ## 0.26.4 (19.11.2026) – unentdeckte Falle dezenter (nicht auf Gerät getestet)
 Nutzer: „Fallen viel zu offensichtlich sichtbar“. genTrap('faint'): Platte nur noch x 20–44/y 57–63 (vorher 14–50/54–63), Kontrast zum Boden deutlich geringer, nur 2 feine Risse, kaum Staub. Erkennung über Talent/Untersuchen unverändert. Gegenspiel zu 0.23.4 (damals „ohne Schurken nicht erkennbar“) – falls jetzt gar nicht mehr sichtbar, Wert in render.js nachziehen. Tests 126 grün.
 
+## 0.26.5 (19.11.2026) – Gegner näher beieinander (nicht auf Gerät getestet)
+Nutzer: „Stehen zu weit auseinander“ (zwei Gegner im offenen Raum). groupOffsets: Abstand frei stehend 2 Gegner 0.62→0.42, 3 Gegner 0.56→0.5; Dreieck mit einer Wand 0.1/0.7→0.1/0.6. Tests 126 grün. Gerät prüfen: überlappen breite Figuren (Schild) zu stark?
+

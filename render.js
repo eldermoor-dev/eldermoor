@@ -2028,9 +2028,9 @@ export function groupOffsets(n, narrow, side = 0) { // side (0.23.4): -1 = Wand 
     : [{ lat: -0.15, dep: 0, grow: 1 }, { lat: 0.17, dep: 0.14, grow: 1.08 }]; // 0.23.8: näher an der Mitte (breite Figuren mit Schild ragten an die Wand)
   if (n >= 3 && side !== 0) { // 0.26.3 (Nutzer: im breiten Gang nebeneinander): Wand nur auf einer Seite – zwei vorn nebeneinander, die dritte mittig dahinter
     const k = -side; // k: Richtung weg von der Wand
-    return [{ lat: k * 0.1, dep: 0, grow: 1 }, { lat: k * 0.7, dep: 0, grow: 1 }, { lat: k * 0.4, dep: 0.62, grow: 1.32 }];
+    return [{ lat: k * 0.1, dep: 0, grow: 1 }, { lat: k * 0.6, dep: 0, grow: 1 }, { lat: k * 0.35, dep: 0.62, grow: 1.32 }];
   }
-  const gap = n >= 3 ? 0.56 : 0.62;
+  const gap = n >= 3 ? 0.5 : 0.42; // 0.26.5 (Nutzer: „Stehen zu weit auseinander“): vorher 0.56/0.62
   const lats = Array.from({ length: n }, (_, i) => (i - (n - 1) / 2) * gap);
   if (side < 0) { const s = Math.max(0, -0.12 - Math.min(...lats)); for (let i = 0; i < n; i++) lats[i] += s; }
   else if (side > 0) { const s = Math.max(0, Math.max(...lats) - 0.12); for (let i = 0; i < n; i++) lats[i] -= s; }
