@@ -1038,3 +1038,6 @@ Nutzer: „Im breiten Gang könnten sich die Gegner nebeneinander stellen“, �
 - genPerson: Bram mit V-förmigem Bart, Schnurrbart, Nase, Brauen, kleineren Augen, spitz auslaufend; Wundkultist ohne schrägen Verbandsstrich im Gesicht. Tests 126 grün.
 - Offen: Gerät prüfen, ob die Außenfigur bei lat 0.7 noch ganz im Bild ist (Kultgruft en_g4, Blick nach Osten).
 
+## 0.26.4 (19.11.2026) – unentdeckte Falle dezenter (nicht auf Gerät getestet)
+Nutzer: „Fallen viel zu offensichtlich sichtbar“. genTrap('faint'): Platte nur noch x 20–44/y 57–63 (vorher 14–50/54–63), Kontrast zum Boden deutlich geringer, nur 2 feine Risse, kaum Staub. Erkennung über Talent/Untersuchen unverändert. Gegenspiel zu 0.23.4 (damals „ohne Schurken nicht erkennbar“) – falls jetzt gar nicht mehr sichtbar, Wert in render.js nachziehen. Tests 126 grün.
+

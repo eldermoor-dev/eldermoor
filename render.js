@@ -1129,12 +1129,13 @@ function genTrap(mode, seed, kind = 'spikes') { // kind (0.22.1, Nutzer: „Stah
   if (mode === 'faint') {
     // 0.19.9: sichtbare Platte; 0.19.18 (Nutzer: „Stein bei der Giftfalle jetzt zu deutlich“): dezenter – kleiner, kaum dunkler als der Boden, schmale feine Risse, wenig Staub
     // 0.23.4 (Nutzer: ohne Schurken nicht erkennbar): etwas höher und kontrastreicher – helle Kante oben, dunkle Fuge, deutlichere Risse; weiter dezenter als die entdeckte (rote) Falle
-    for (let y = 54; y <= 63; y++) for (let x = 14; x <= 50; x++) {
-      const edge = x === 14 || x === 50 || y === 54, lit = y === 55 && x > 14 && x < 50;
-      set(x, y, edge ? P('stone', 0.9) : lit ? P('stone', 5.2) : P('stone', 3.4 + hash(x >> 1, y, seed) * 0.9));
+    // 0.26.3 (Nutzer: „Fallen viel zu offensichtlich“): wieder schmaler und kontrastärmer – Kante und Fuge nur noch leicht, Platte kaum heller als Boden
+    for (let y = 57; y <= 63; y++) for (let x = 20; x <= 44; x++) {
+      const edge = x === 20 || x === 44 || y === 57, lit = y === 58 && x > 20 && x < 44;
+      set(x, y, edge ? P('stone', 1.7) : lit ? P('stone', 3.6) : P('stone', 2.7 + hash(x >> 1, y, seed) * 0.7));
     }
-    for (const cx of [22, 32, 42]) { let x = cx + Math.floor(hash(cx, 5, seed) * 3) - 1; for (let y = 56; y <= 63; y++) { set(x, y, P('stone', 0.7)); if (hash(x, y, seed + 2) > 0.55) x += hash(y, x, seed + 3) > 0.5 ? 1 : -1; } }
-    for (let x = 12; x <= 52; x++) for (let y = 51; y <= 53; y++) if (hash(x, y, seed + 7) > 0.9) set(x, y, P('stone', 4.6));
+    for (const cx of [26, 38]) { let x = cx + Math.floor(hash(cx, 5, seed) * 3) - 1; for (let y = 58; y <= 63; y++) { set(x, y, P('stone', 1.5)); if (hash(x, y, seed + 2) > 0.55) x += hash(y, x, seed + 3) > 0.5 ? 1 : -1; } }
+    for (let x = 12; x <= 52; x++) for (let y = 55; y <= 56; y++) if (hash(x, y, seed + 7) > 0.97) set(x, y, P('stone', 3.8));
   } else if (mode === 'seen') {
     for (let x = 12; x <= 52; x++) for (let y = 58; y <= 63; y++) { const edge = x === 12 || x === 52 || y === 58 || y === 63; set(x, y, edge ? P('glow', 6.5) : (x + y) % 4 < 2 ? P('glow', 3.2) : P('stone', 0.6)); }
     for (let y = 30; y <= 50; y++) for (let x = 29; x <= 35; x++) { const w = 3 - Math.floor((y - 30) / 9); if (Math.abs(x - 32) <= Math.max(1, w) && y <= 45) set(x, y, P('glow', 7)); }
