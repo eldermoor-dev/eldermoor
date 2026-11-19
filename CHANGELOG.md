@@ -6,6 +6,7 @@ Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ 
 ## 0.16.x (Inhaltsphase, Nebelturm und Nacharbeiten)
 | Version | Änderungen | Status |
 |---|---|---|
+| 0.26.6 | Standpfeil auf der Karte größer, mit schwarzem Rand | headless, Gerät offen |
 | 0.26.5 | Gegnergruppen stehen enger zusammen | headless, Gerät offen |
 | 0.26.4 | Unentdeckte Falle im Bild dezenter (kleiner, kontrastärmer) | headless, Gerät offen |
 | 0.26.3 | Gegner im Gang mit einer Wand: zwei nebeneinander, dritter dahinter; Bram: Bart neu; Wundkultist: Strich im Gesicht weg | headless, Gerät offen |

@@ -1044,3 +1044,6 @@ Nutzer: „Fallen viel zu offensichtlich sichtbar“. genTrap('faint'): Platte n
 ## 0.26.5 (19.11.2026) – Gegner näher beieinander (nicht auf Gerät getestet)
 Nutzer: „Stehen zu weit auseinander“ (zwei Gegner im offenen Raum). groupOffsets: Abstand frei stehend 2 Gegner 0.62→0.42, 3 Gegner 0.56→0.5; Dreieck mit einer Wand 0.1/0.7→0.1/0.6. Tests 126 grün. Gerät prüfen: überlappen breite Figuren (Schild) zu stark?
 
+## 0.26.6 (19.11.2026) – Standpfeil auf der Karte größer (nicht auf Gerät getestet)
+Nutzer: eigener Standpfeil größer. main.js drawMapSym 'player': Radius 0.38→0.9 Feldbreiten auf der Karte (Legende 0.45), schwarzer Rand für Kontrast. Tests grün.
+

@@ -10,7 +10,7 @@ import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPort
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.26.5';
+const VERSION = '0.26.6';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -1306,12 +1306,12 @@ function drawMapSym(c, k, x0, y0, cs, horiz = true, dir = 1) {
   else if (k === 'enemy') txt('×', '#d05040');
   else if (k === 'note') { c.fillStyle = '#ffe066'; c.beginPath(); c.moveTo(cx, y0 + 3); c.lineTo(x0 + cs - 3, cy); c.lineTo(cx, y0 + cs - 3); c.lineTo(x0 + 3, cy); c.fill(); }
   else if (k === 'player') {
-    const a = dir * Math.PI / 2, r = cs * 0.38;
-    c.fillStyle = '#ffffff'; c.beginPath();
+    const a = dir * Math.PI / 2, r = cs * (horiz ? 0.45 : 0.9); // 0.26.6 (Nutzer: eigener Standpfeil größer): auf der Karte ragt er über das Feld hinaus; horiz=true = Legende
+    c.fillStyle = '#ffffff'; c.strokeStyle = '#000000'; c.lineWidth = Math.max(1, cs * 0.14); c.lineJoin = 'round'; c.beginPath();
     c.moveTo(cx + Math.sin(a) * r, cy - Math.cos(a) * r);
     c.lineTo(cx + Math.sin(a + 2.5) * r, cy - Math.cos(a + 2.5) * r);
     c.lineTo(cx + Math.sin(a - 2.5) * r, cy - Math.cos(a - 2.5) * r);
-    c.fill();
+    c.closePath(); c.stroke(); c.fill();
   }
 }
 // Legende neben der Karte (0.16.6, Nutzerwunsch; vorher eigenes Fenster): nur Zeichen, die in diesem Gebiet schon
