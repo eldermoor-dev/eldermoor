@@ -1567,7 +1567,7 @@ function pickTarget(state, en, data = null) {
 
 // Gegnerzauber: enemies.<art>.cast = [{ name, kind: 'bolt' | 'heal' | 'curse', every, mult, all, inflict, heal, announce }]
 // every = jeder n-te eigene Zug. announce: großer Zauber, wird einen Zug vorher angesagt (wie der schwere Schlag).
-// bolt: Zauberschaden, trifft immer, halbe Rüstung, bevorzugt die Hinterreihe · heal: heilt den am stärksten verletzten Gegner · curse: Statuswirkung auf alle Helden
+// bolt: Zauberschaden, trifft immer, halbe Rüstung, bevorzugt die Hinterreihe · drain (0.27.0): Biss mit voller Rüstung auf den Schwächsten, heilt den Gegner um leech % des Schadens · heal: heilt den am stärksten verletzten Gegner · curse: Statuswirkung auf alle Helden
 function pickCast(state, e, en, msgs) {
   if (!en.cast || !en.cast.length) return null;
   e.ct = (e.ct || 0) + 1;
@@ -1590,19 +1590,23 @@ function enemyCast(state, data, ei, e, en, sp, msgs, opts) {
     return 'heal';
   }
   const alive = state.heroes.map((h, i) => (h.hp > 0 ? i : -1)).filter((i) => i >= 0);
-  const targets = sp.all || sp.kind === 'curse' ? alive : [pickTarget(state, { ai: 'backline' })];
+  const targets = sp.all || sp.kind === 'curse' ? alive : [pickTarget(state, { ai: sp.kind === 'drain' ? 'weakest' : 'backline' })]; // drain (0.27.0): Blutbiss trifft den Schwächsten
   let sfx = 'miss';
   for (const ti of targets) {
     const t = state.heroes[ti];
     if (opts.god) { msgs.push(`${sp.name} trifft ${t.name}, doch Debug-Unverwundbarkeit hält.`); sfx = 'hurt'; continue; }
-    if (sp.kind === 'bolt') {
+    if (sp.kind === 'bolt' || sp.kind === 'drain') {
       const tr = {};
-      let d = calcDamage(state, effAtk(state, 'e', ei, rageAtk(e, foeAtk(state, data, en.atk))), Math.floor(heroDef(data, t, state) / 2), { sure: true, defending: !!c.defending[ti], mult: sp.mult, trace: tr });
+      let d = calcDamage(state, effAtk(state, 'e', ei, rageAtk(e, foeAtk(state, data, en.atk))), sp.kind === 'drain' ? effDef(state, 'h', ti, heroDef(data, t, state)) : Math.floor(heroDef(data, t, state) / 2), { sure: true, defending: !!c.defending[ti], mult: sp.mult, trace: tr });
       const cap = Math.max(1, Math.ceil(t.maxHp * (sp.all ? 0.4 : 0.5))); // ein Zauber nimmt höchstens die Hälfte der Max-LP (schützt den Magier)
       if (d > cap) { d = cap; tr.total = d; tr.cap = cap; }
       d = manaShield(data, t, d, msgs);
       t.hp = Math.max(0, t.hp - d);
-      msgs.push(`${sp.name} trifft ${t.name} für ${d} ${sp.element && data.elements[sp.element] ? data.elements[sp.element].name + 'schaden' : 'Schaden'} (Zauber: halbe Rüstung${c.defending[ti] ? ', verteidigt: halber Schaden' : ''}).${SEP}${explain(tr)}`);
+      if (sp.kind === 'drain') {
+        msgs.push(`${sp.name} trifft ${t.name} für ${d} Schaden${c.defending[ti] ? ' (verteidigt: halber Schaden)' : ''}.${SEP}${explain(tr)}`);
+        const gain = d > 0 && e.hp > 0 ? Math.min(e.maxHp - e.hp, Math.round(d * (sp.leech || 50) / 100)) : 0;
+        if (gain > 0) { e.hp += gain; msgs.push(`${e.name} trinkt und erholt sich um ${gain} LP.`); }
+      } else msgs.push(`${sp.name} trifft ${t.name} für ${d} ${sp.element && data.elements[sp.element] ? data.elements[sp.element].name + 'schaden' : 'Schaden'} (Zauber: halbe Rüstung${c.defending[ti] ? ', verteidigt: halber Schaden' : ''}).${SEP}${explain(tr)}`);
       sfx = 'hurt';
       if (t.hp === 0) { msgs.push(`${t.name} sinkt bewusstlos zu Boden.`); delete c.status['h' + ti]; continue; }
     }

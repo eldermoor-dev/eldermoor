@@ -1323,6 +1323,93 @@ function genPerson(seed, kind) {
   }, 128, true);
 }
 
+// ---------- Vampire (0.27.0, Blutgruft): 'diener' (Blutdiener: Livree, Kerzenleuchter), 'brut' (Vampirbrut: kahl, Fledermausohren, Reißzahnmaul, Rippen), 'graefin' (Blutgräfin: hoher Kragen, schwarzes Haar, Umhang mit Blutfutter) ----------
+// Haut = Material 'iron' (blass, kühl), Augen 'blood' (rot), Reißzähne 'glow' (knochengelb), Kleidung 'ceil' (schwarz) und 'blood' (Futter)
+function genVampire(seed, kind) {
+  const gr = kind === 'graefin', br = kind === 'brut';
+  return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y }) => {
+    const l = lit(px, py), n = nz(x >> 1, y >> 1), dx = px - 32;
+    const skin = (b) => ['iron', b - l * 0.9 + n * 0.35];
+    const cloth = (b) => ['ceil', b - l * 0.5 + n * 0.5];
+    const lining = (b) => ['blood', b - l * 0.6 + n * 0.6];
+    const fang = ['glow', 6.5];
+    const hy = br ? 14 : 13;
+    // Augen
+    if (br) { if (ell(px, py, 28.8, hy, 1.8, 1.5) <= 1 || ell(px, py, 35.2, hy, 1.8, 1.5) <= 1) return ['blood', 7]; }
+    else if (ell(px, py, 29.2, hy, 1.45, 1.1) <= 1 || ell(px, py, 34.8, hy, 1.45, 1.1) <= 1) return ['blood', 7];
+    // Brauen (finster, schräg)
+    if (cap(px, py, 25.8, hy - 4.2, 30.6, hy - 2.4, 0.55, 0.4) || cap(px, py, 38.2, hy - 4.2, 33.4, hy - 2.4, 0.55, 0.4)) return ['ceil', 0];
+    // Mund und Reißzähne
+    if (br) {
+      if (ell(px, py, 32, 20.2, 4.8, 2.7) <= 1 && py > 18.2) {
+        for (let i = 0; i < 4; i++) if (cap(px, py, 29.2 + i * 1.9, 18.4, 29.4 + i * 1.9, 21.2, 0.6, 0.08)) return fang;
+        if (cap(px, py, 29.4, 23.4, 29.4, 20.4, 0.7, 0.08) || cap(px, py, 34.6, 23.4, 34.6, 20.4, 0.7, 0.08)) return fang;
+        return ['ceil', 0];
+      }
+      if (ell(px, py, 31, 17, 0.55, 0.8) <= 1 || ell(px, py, 33, 17, 0.55, 0.8) <= 1) return ['ceil', 0]; // Nasenschlitze
+    } else {
+      if (cap(px, py, 30.4, 19.4, 30.4, 22.4, 0.6, 0.08) || cap(px, py, 33.6, 19.4, 33.6, 22.4, 0.6, 0.08)) return fang;
+      if (cap(px, py, 29.4, 19.3, 34.6, 19.3, 0.75, 0.75)) return gr ? lining(4.6) : ['ceil', 0.4];
+    }
+    // Kopf
+    if (gr) {
+      const face = ell(px, py, 32, 14.4, 6.2, 7.6) <= 1;
+      if (face) return skin(5.9);
+      if (ell(px, py, 32, 12, 9.6, 10.4) <= 1 && py < 22) return cloth(0.3);                 // schwarzes Haar
+      if (Math.abs(Math.abs(dx) - 8) < 2.2 && py > 14 && py < 36 - Math.abs(dx) * 0.4) return cloth(0.4); // Strähnen
+      // hoher Kragen hinter dem Kopf
+      if (cap(px, py, 18.5, 29, 15.5, 7, 3.6, 1.3) || cap(px, py, 45.5, 29, 48.5, 7, 3.6, 1.3)) return lining(2.4);
+    } else if (br) {
+      if (cap(px, py, 25.8, 12, 17.6, 1.6, 2.6, 0.3) || cap(px, py, 38.2, 12, 46.4, 1.6, 2.6, 0.3)) return skin(4.2); // Fledermausohren
+      if (ell(px, py, 32, hy, 6.8, 8) <= 1) return skin(5.1);
+    } else {
+      if (ell(px, py, 32, 8.6, 6.8, 4.6) <= 1 && py < 10.2 + Math.abs(dx) * 0.2) return cloth(0.3);   // glatt zurückgekämmtes Haar
+      if (ell(px, py, 32, 13.2, 6.4, 7.4) <= 1) return skin(5.8);
+    }
+    // Hals
+    if (Math.abs(dx) < 2.5 && py > 20 && py < 26) return br ? skin(4) : skin(4.8);
+    if (!gr && !br && Math.abs(dx) < 4.6 && py > 22 && py < 25) return ['glow', 5.4 - l * 0.6]; // weißer Kragen des Dieners
+    // Hände mit Krallen
+    const hand = (cx, cy) => ell(px, py, cx, cy, 2.3, 2.8) <= 1;
+    const claws = (cx, cy) => [-1, 0, 1].some((k) => cap(px, py, cx + k * 1.3, cy + 2, cx + k * 1.7, cy + (br ? 8 : 5.5), 0.5, 0.1));
+    const hxL = gr ? 14.2 : 15.5, hxR = gr ? 49.8 : 48.5, hyy = br ? 46 : 43.5;
+    if (hand(hxL, hyy) || hand(hxR, hyy)) return skin(4.8);
+    if (claws(hxL, hyy) || claws(hxR, hyy)) return ['iron', 7];
+    // Kerzenleuchter des Dieners (rechts)
+    if (!gr && !br) {
+      if (ell(px, py, 48.5, 25.5, 1.7, 2.3) <= 1) return ['glow', 7];
+      if (cap(px, py, 48.5, 27, 48.5, 42, 0.8, 0.8) || cap(px, py, 45.8, 42, 51.2, 42, 0.8, 0.8)) return ['wood', 3.4 - l * 0.8];
+    }
+    // Arme
+    const arm = br ? skin(4) : gr ? lining(2.9) : cloth(1.7);
+    if (cap(px, py, 23.4, 27, hxL + 1, hyy - 3, br ? 2.4 : 3.5, br ? 1.9 : 2.8) || cap(px, py, 40.6, 27, hxR - 1, hyy - 3, br ? 2.4 : 3.5, br ? 1.9 : 2.8)) return arm;
+    // Rumpf, Umhang, Beine
+    if (gr) {
+      const hw = 8.4 + Math.max(0, py - 26) * 0.42;
+      if (py >= 24 && py < 60 - (Math.sin(px * 1.1 + seed) + 1) * 1.3 && Math.abs(dx) < hw) {
+        if (Math.abs(dx) > hw - 3.6 && py > 28) return lining(2.9);
+        if (Math.abs(dx) < 0.6 && py > 27 && py < 44) return ['iron', 2.6];
+        if (py > 24 && py < 30 && Math.abs(dx) < 4.4) return skin(5.2); // Dekolleté
+        return cloth(1 + n * 0.5);
+      }
+    } else if (br) {
+      const hw = 8.2 + Math.max(0, py - 30) * 0.05;
+      if (py >= 24 && py < 47 && Math.abs(dx) < hw) {
+        if (Math.abs(dx) < 3.6 && py < 44) return (py * 1.7) % 3.4 < 1.3 ? ['ceil', 0.8] : skin(4);   // Rippen
+        return cloth(1.2 + n * 0.9);
+      }
+      if (py >= 46 && py < 60 && (Math.abs(dx - 5.4) < 3.5 || Math.abs(dx + 5.4) < 3.5) && py < 60 - Math.abs(Math.sin(px * 1.5 + seed)) * 2.4) return cloth(1.5 + n * 0.6); // zerfetzte Hosenbeine
+    } else {
+      if (py >= 24 && py < 46 && Math.abs(dx) < 9) {
+        if (Math.abs(dx) < 3.3 && py > 25) { if (Math.abs(dx) < 0.7 && ((py - 29) % 5 < 1.2)) return ['glow', 6.4]; return lining(3.6 - l * 0.4); } // rote Weste mit Knöpfen
+        return cloth(1.7);
+      }
+      if (py >= 45 && py < 59 && (Math.abs(dx - 4.2) < 3.3 || Math.abs(dx + 4.2) < 3.3)) return py > 56 ? ['ceil', 0.3] : cloth(1.2);
+    }
+    return null;
+  }, 128, true);
+}
+
 function genSkeleton(seed) { // Gruftskelett: Rosthelm, Rippen, rostiges Schwert, Rundschild, glühende Augen
   return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y }) => {
     const dx = px - 32, l = lit(px, py), n = nz(x >> 1, y >> 1);
@@ -1835,7 +1922,7 @@ export function makeTextures(detail = 1) {
     wall: { [WALL_STONE]: stoneW, [WALL_SECRET]: genSecretWall(stoneW, 301), [WALL_SWITCH]: genSwitchWall(stoneW, false), [WALL_SWITCH_ON]: genSwitchWall(stoneW, true), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
     ceil: genCeil(53, nf),
-    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)), chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), wache: sm2(genPerson(721, 'wache')), wund: sm2(genPerson(731, 'wund')), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)), chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), diener: sm2(genVampire(741, 'diener')), brut: sm2(genVampire(742, 'brut')), graefin: sm2(genVampire(743, 'graefin')), wache: sm2(genPerson(721, 'wache')), wund: sm2(genPerson(731, 'wund')), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
@@ -2008,8 +2095,8 @@ export function buildGrid(lvl, objs) {
   for (const o of objs) { if (o.type === 'secret' && !o.open) grid[o.y * w + o.x] = WALL_SECRET; else if (o.type === 'lever' && o.wall) grid[o.y * w + o.x] = o.torch ? WALL_TORCH : o.used ? WALL_SWITCH_ON : WALL_SWITCH; } // torch (0.23.7): Schalter sieht aus wie eine gewöhnliche Wandfackel
   return { grid, gw: w, gh: h };
 }
-const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'turmwache' ? tex.sprites.turmwache : k === 'wolf' ? tex.sprites.wolf : k === 'kultist' ? tex.sprites.kultist : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'truhenmaul' ? tex.sprites.mimic : k === 'brandmagier' ? tex.sprites.magier : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
-const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' ? 1.12 : k === 'truhenmaul' ? 0.8 : 0.9); // Bosse stehen größer im Gang
+const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'turmwache' ? tex.sprites.turmwache : k === 'wolf' ? tex.sprites.wolf : k === 'kultist' ? tex.sprites.kultist : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'truhenmaul' ? tex.sprites.mimic : k === 'brandmagier' ? tex.sprites.magier : k === 'blutdiener' ? tex.sprites.diener : k === 'vampirbrut' ? tex.sprites.brut : k === 'blutgraefin' ? tex.sprites.graefin : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
+const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' || k === 'blutgraefin' ? 1.12 : k === 'truhenmaul' ? 0.8 : 0.9); // Bosse stehen größer im Gang
 export const GROUP_SCALE = 0.78, GROUP_GAP = 0.44, CHEST_SCALE = 0.58; // 0.16.4: Gruppen vorher 0.62/0.36, Truhe 0.5 (Nutzer: zu klein, hinter der Leiste)
 let combatFit = 1; // 0.16.17: im Kampf verkleinert die Kamera zu große Figuren so, dass sie samt Füßen über der Leiste ins Bild passen
 export const setCombatFit = (v) => { combatFit = v; };

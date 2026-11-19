@@ -85,7 +85,7 @@ function fight(s, objId, strat) {
 // die Zauberer unter halbem Mana sind (mit Proviant, sonst hungrig; der Rückweg zu einem sicheren Rastplatz wird nicht simuliert),
 // und kauft vor jedem Gebiet bei Hedda nach (bis 4 Heiltränke, 3 Proviant, solange das Gold reicht). Niederlage: Regel des Spiels
 // (halbe LP, 25 % Gold weg), Rast, neuer Versuch; nach 3 Niederlagen am selben Gegner gilt der Lauf als gescheitert.
-const CAMPAIGN = ['test1', 'test2', 'moorpfad', 'kultgruft', 'schratgruben', 'nebelturm', 'festung1'];
+const CAMPAIGN = ['test1', 'test2', 'moorpfad', 'kultgruft', 'schratgruben', 'nebelturm', 'festung1', 'festung2', 'festung3']; // 0.27.0: Keller 1 und Blutgruft dazu
 function simRest(s) {
   const need = s.heroes.some((h) => h.hp / h.maxHp < 0.6) || s.heroes.some((h) => data.classes[h.cls].res.name === 'Mana' && h.mp < h.maxMp / 2);
   if (!need) return;
@@ -194,7 +194,7 @@ for (const strat of ['simple', 'smart']) for (const rest of [false, 'ration', tr
   out(`| ${strat === 'simple' ? 'nur Angriff' : 'klug'} | ${rest === true ? 'immer voll' : rest === 'ration' ? 'mit Proviant (3)' : 'nein'} | ${pct(w1 / RUNS)} | ${pct(w2 / RUNS)} | ${pct(w3 / RUNS)} | ${f1(stats(kos))} |`);
 }
 out('');
-out('## C) Ganze Kampagne (Testgewölbe → Nebelturm), natürliche Stufen, Beute, Rast, Einkauf');
+out('## C) Ganze Kampagne (Testgewölbe → Blutgruft), natürliche Stufen, Beute, Rast, Einkauf');
 out('Annahmen stehen in sim.js über `campaign`. „1. Versuch“ = Sieg ohne vorherige Niederlage gegen diesen Gegner. Schaden = Anteil der Max-LP der Gruppe, den die Gegner im 1. Versuch abziehen.');
 const CR = Math.max(100, Math.round(RUNS / 5));
 const camp = {};

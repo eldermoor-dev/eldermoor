@@ -1050,3 +1050,16 @@ Nutzer: eigener Standpfeil größer. main.js drawMapSym 'player': Radius 0.38→
 ## 0.26.7 (19.11.2026) – Kellertreppe „Tiefe“ an die Wand (nicht auf Gerät getestet)
 Nutzer: „Tür in der Mitte des Raums“ (letzter Raum vor dem neuen Bereich). Gemeint war vermutlich die frei stehende Treppe exit_k_tiefe (festung2, vorher 48/32, von der Seite als schmale Platte sichtbar). Jetzt 49/32 direkt an der Ostwand → wird als Wand-Abziehbild gezeichnet. Test angepasst (Spieler auf 48/32). Tür „TIEFE“ (41/32) unverändert. Nachfrage an Nutzer: stimmt die Deutung? Tests grün.
 
+## 0.27.0 (19.11.2026) – Keller 2: Blutgruft, Vampire (nicht auf Gerät getestet)
+Nutzer: „Nächstes Level mit roter Grundfarbe und gruseligen Vampiren“.
+- **Neues Gebiet `festung3` „Moorfestung – Blutgruft“** (60×44, größer als Keller 1 mit 52×38), Palette `blut` (rote Wände, Boden, Decke). Bauart anders als Keller 1: Vorhalle → Blutpforte → **Hauptschiff** mit Säulenreihen, fünf **Grüfte** nördlich (Hebel in Gruft II, Monstertruhe in Gruft III, Falle/Nische in IV, Wächtertruhe in V), **Ahnengalerie** nordwestlich, **Kerker-Labyrinth** südlich hinter Gitter (Hebel), dort der **Blutschlüssel** (`blut_schluessel`), **Thronsaal** ostwärts hinter Eisentür. Foe-Zuschlag 300 % LP / 225 % Angriff.
+- **Verbindung:** `exit_k_tiefe` in festung2 ist jetzt `stairs_k_tiefe` (49/32, Wand) → festung3 (3/22); Rückweg `stairs_b_up` (2/22) → festung2 (48/32). Der Abschluss-Ausgang `exit_b_tiefe` (56/22, „späteren Version“) liegt jetzt im Thronsaal.
+- **Gegner:** `blutdiener` (60 LP, Blutung), `vampirbrut` (95 LP, Blutbiss), `blutgraefin` (Boss 230 LP, Phasen Blutrausch/Fledermausschwarm). Schwach gegen Feuer (−50 %), Eis +25 %.
+- **Neu in logic.js:** Zauberart `drain` (Blutbiss): trifft den Schwächsten mit voller Rüstung, heilt den Gegner um `leech` % des Schadens. In der Doku-Zeile über `pickCast` ergänzt.
+- **render.js:** `genVampire` (diener/brut/graefin), Sprites `diener`, `brut`, `graefin`, `spriteFor`, Boss größer.
+- **Balance:** sim.js CAMPAIGN enthält jetzt festung2 und festung3; BALANCE.md/SIM.md neu erzeugt (3000 Läufe). Boss Gräfin: ca. 57 % Sieg im 1. Versuch (klug), Normalkämpfe meist 84–100 %. Die Kampagne insgesamt bleibt für „nur Angriff“ sehr schwer (0 %), „klug“ 56 % – Altlast aus Keller 1, nicht neu.
+- Tests 127 grün. Offen: Gerätetest (Blutgruft, Vampirbilder, Blutbiss-Meldungen), Balance durch Spielen prüfen.
+
+## NÄCHSTES (vom Nutzer, 19.11.2026, noch nicht begonnen): Moorsee
+Flusslauf mit Brücke, See mit Fuhrmann (Fahrt gegen Gold) zur Schatzinsel mit Haus; dort Gnom mit Würfelspiel (Zufallszahl 1–10; ungerade → Gnom wird schwarze Riesenspinne = gefährlicher Kampf; gerade → Glücksamulett: Gruppe findet sehr selten Gold am Boden).
+

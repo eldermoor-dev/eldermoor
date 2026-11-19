@@ -315,6 +315,11 @@
       "name": "Kellerschlüssel",
       "kind": "quest",
       "desc": "Ein langer Schlüssel, am Griff mit einem Schädel verziert. Er riecht nach Kalk."
+    },
+    "blut_schluessel": {
+      "name": "Blutschlüssel",
+      "kind": "quest",
+      "desc": "Ein Schlüssel aus dunklem Eisen. Der Griff ist warm, obwohl niemand ihn gehalten hat."
     }
   },
   "races": {
@@ -1294,6 +1299,147 @@
       "gearDrop": {
         "chance": 8
       }
+    },
+    "blutdiener": {
+      "name": "Blutdiener",
+      "hp": 60,
+      "atk": 15,
+      "def": 3,
+      "init": 6,
+      "gold": 14,
+      "xp": 75,
+      "ai": "weakest",
+      "onHit": {
+        "status": "bleed",
+        "chance": 30,
+        "turns": 2
+      },
+      "resist": {
+        "ice": 25,
+        "fire": -25
+      },
+      "gearDrop": {
+        "chance": 6
+      },
+      "intro": {
+        "title": "Blutdiener",
+        "text": "Er trägt noch die Livree. Sein Gesicht hat die Farbe von altem Wachs."
+      }
+    },
+    "vampirbrut": {
+      "name": "Vampirbrut",
+      "hp": 95,
+      "atk": 18,
+      "def": 5,
+      "init": 8,
+      "gold": 24,
+      "xp": 125,
+      "ai": "weakest",
+      "cast": [
+        {
+          "name": "Blutbiss",
+          "kind": "drain",
+          "every": 3,
+          "mult": 115,
+          "leech": 50
+        }
+      ],
+      "resist": {
+        "ice": 25,
+        "fire": -50
+      },
+      "gearDrop": {
+        "chance": 9
+      },
+      "intro": {
+        "title": "Vampirbrut",
+        "text": "Sie hängt kopfüber an der Säule und öffnet langsam die Augen."
+      }
+    },
+    "blutgraefin": {
+      "name": "Blutgräfin",
+      "hp": 230,
+      "atk": 16,
+      "def": 7,
+      "init": 9,
+      "gold": 160,
+      "xp": 420,
+      "boss": true,
+      "cast": [
+        {
+          "name": "Blutbiss",
+          "kind": "drain",
+          "every": 2,
+          "mult": 110,
+          "leech": 50
+        }
+      ],
+      "resist": {
+        "ice": 25,
+        "fire": -50
+      },
+      "phases": [
+        {
+          "below": 66,
+          "name": "Blutrausch",
+          "msg": "Die Gräfin leckt sich über die Lippen. Der Raum riecht nach Eisen.",
+          "set": {
+            "atk": 17,
+            "cast": [
+              {
+                "name": "Blutbiss",
+                "kind": "drain",
+                "every": 2,
+                "mult": 115,
+                "leech": 60
+              },
+              {
+                "name": "Fluch der Schwäche",
+                "kind": "curse",
+                "every": 3,
+                "inflict": {
+                  "status": "weak",
+                  "chance": 60,
+                  "turns": 2
+                }
+              }
+            ]
+          }
+        },
+        {
+          "below": 33,
+          "name": "Fledermausschwarm",
+          "msg": "Ihr Umhang zerfällt in Hunderte schwarzer Flügel.",
+          "set": {
+            "atk": 18,
+            "cast": [
+              {
+                "name": "Fledermausschwarm",
+                "kind": "bolt",
+                "all": true,
+                "every": 3,
+                "mult": 70,
+                "announce": true
+              },
+              {
+                "name": "Blutbiss",
+                "kind": "drain",
+                "every": 2,
+                "mult": 115,
+                "leech": 60
+              }
+            ]
+          }
+        }
+      ],
+      "gearDrop": {
+        "chance": 100,
+        "boost": 2
+      },
+      "intro": {
+        "title": "Die Blutgräfin",
+        "text": "Sie sitzt auf dem Thron, als hätte sie auf euch gewartet. Sie lächelt mit geschlossenem Mund."
+      }
     }
   },
   "palettes": {
@@ -1547,6 +1693,48 @@
         240,
         200,
         120
+      ]
+    },
+    "blut": {
+      "stone": [
+        150,
+        84,
+        80
+      ],
+      "moss": [
+        120,
+        44,
+        54
+      ],
+      "wood": [
+        104,
+        58,
+        42
+      ],
+      "iron": [
+        124,
+        114,
+        126
+      ],
+      "floor": [
+        96,
+        52,
+        54
+      ],
+      "ceil": [
+        54,
+        28,
+        34
+      ],
+      "flesh": [
+        176,
+        112,
+        112
+      ],
+      "glow": [
+        255,
+        172,
+        84
       ]
     }
   },
@@ -4174,13 +4362,596 @@
           ]
         },
         {
-          "id": "exit_k_tiefe",
-          "type": "exit",
+          "id": "stairs_k_tiefe",
+          "type": "stairs",
           "x": 49,
           "y": 32,
           "look": "down",
-          "title": "Tiefe Keller der Moorfestung",
-          "text": "Eine schmale Treppe führt noch tiefer hinab.",
+          "msg": "Ihr steigt tiefer hinab. Es wird wärmer, und die Wände sind nicht mehr grau.",
+          "to": {
+            "level": "festung3",
+            "x": 3,
+            "y": 22,
+            "dir": 1
+          }
+        }
+      ]
+    },
+    "festung3": {
+      "id": "festung3",
+      "name": "Moorfestung – Blutgruft",
+      "palette": "blut",
+      "start": {
+        "x": 3,
+        "y": 22,
+        "dir": 1
+      },
+      "foe": {
+        "hp": 300,
+        "atk": 225
+      },
+      "intro": {
+        "title": "Blutgruft",
+        "text": "Die Luft ist warm und riecht nach Eisen. An den Wänden läuft etwas, das kein Wasser ist."
+      },
+      "map": [
+        "############################################################",
+        "############################################################",
+        "############################################################",
+        "##rTrrrrrrrrTr##############################################",
+        "##r..........r##############################################",
+        "##r..........rmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm###############",
+        "##r..........rm.....m.....m.....m.....m.....m###############",
+        "##r..........rm.....m.....m.....m.....m.....m###############",
+        "##r..........rm.....m.....m.....m.....m.....m###############",
+        "##rrr.rrrrrrrrm.....m.....m.....m.....m.....m###############",
+        "####r.r#######m.....m.....m.....m.....m.....m###############",
+        "####r.r######rmmm.Tmmmm.mmmmm.Tmmmm.mmmmm.mmm###############",
+        "####r.r######r...............................###############",
+        "####r.r######r...............................#TrrrrrrrrrTr##",
+        "####r.r######r...............................#...........r##",
+        "####r.r######r....r...r...r...r...r...r...r..#...........r##",
+        "####r.r######r...............................#...........r##",
+        "####r.r######r...............................#...r...r...r##",
+        "#####.##T#####...............................#...........T##",
+        "##.......#####....r...r...r...r...r...r...r..#...........r##",
+        "#T.......#####...............................T...........r##",
+        "##.......##T##...............................#...........r##",
+        "##.......................................................r##",
+        "##.......#####...............................#...........r##",
+        "#T.......#####...............................T...........r##",
+        "##.......#####....r...r...r...r...r...r...r..#...........r##",
+        "##############...............................#...........T##",
+        "##############...............................#...r...r...r##",
+        "##############...............................#...........r##",
+        "##############....r...r...r...r...r...r...r..#...........r##",
+        "##############...............................#...........r##",
+        "##############...............................#rrrrrrrrrrrr##",
+        "############################T.T#############################",
+        "########################m.........m#########################",
+        "##mmmmmmmmmmmmmmmmmmmmmmmmmmm.mmmmmmmmmmmmmmmmmmmmmmmmmmmmm#",
+        "##m...m...m.............m...m.m.m...........m.............m#",
+        "##m.m.m.m.m.mmmmm.mmmmmmm.m.m.m.m.m.mmmmmmm.m.mmmmmmm.mmmmm#",
+        "##m.m.m.m...m...m.m.......m...m...m.m.m...m.m...m...m.....m#",
+        "##m.mmm.mmmmm.m.m.m.mmmmmmmmmmmmmmm.m.m.m.m.mmmmm.m.mmm.m.m#",
+        "##m...m...m...m.m.m.m...m.....m...m.m.m.m.m...m...m...m.m.m#",
+        "##m.m.mmm.mmm.m.m.m.m.m.mmm.m.m.m.m.m.m.m.mmm.m.mmmmm.mmm.m#",
+        "##m.m.........m.m.....m.....m...m...m...m.......m.........m#",
+        "##mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm#",
+        "############################################################"
+      ],
+      "objects": [
+        {
+          "id": "stairs_b_up",
+          "type": "stairs",
+          "x": 2,
+          "y": 22,
+          "look": "up",
+          "msg": "Ihr steigt hinauf in das Kellergewölbe.",
+          "to": {
+            "level": "festung2",
+            "x": 48,
+            "y": 32,
+            "dir": 3
+          }
+        },
+        {
+          "id": "sign_b_start",
+          "type": "sign",
+          "x": 4,
+          "y": 19,
+          "face": 0,
+          "title": "BLUT|GRUFT",
+          "text": "Der Boden ist feucht und warm. Wer hier unten Ruhe sucht, sucht am falschen Ort."
+        },
+        {
+          "id": "trap_b_gang",
+          "type": "trap",
+          "x": 5,
+          "y": 14,
+          "kind": "gas"
+        },
+        {
+          "id": "sign_b_a1",
+          "type": "sign",
+          "x": 4,
+          "y": 4,
+          "face": 0,
+          "title": "AHNEN|GALERIE",
+          "text": "Zehn Rahmen, zehn Gesichter. Keines altert. Bei allen ist der Mund etwas zu rot gemalt."
+        },
+        {
+          "id": "sign_b_a2",
+          "type": "sign",
+          "x": 11,
+          "y": 4,
+          "face": 0,
+          "title": "LEERER|RAHMEN",
+          "text": "Das letzte Bild ist herausgeschnitten. Auf der Wand dahinter steht nur: „Nicht wieder.“"
+        },
+        {
+          "id": "en_b_a1",
+          "type": "enemy",
+          "x": 8,
+          "y": 6,
+          "kind": "vampirbrut",
+          "kinds": [
+            "vampirbrut",
+            "blutdiener",
+            "blutdiener"
+          ]
+        },
+        {
+          "id": "chest_b_a",
+          "type": "chest",
+          "x": 12,
+          "y": 4,
+          "guard": [
+            "en_b_a1"
+          ],
+          "loot": [
+            {
+              "gold": 50
+            },
+            {
+              "item": "potion_m",
+              "n": 1
+            },
+            {
+              "item": "zaubertrank_m",
+              "n": 1
+            }
+          ]
+        },
+        {
+          "id": "niche_b_a",
+          "type": "niche",
+          "x": 3,
+          "y": 6,
+          "face": 3,
+          "loot": [
+            {
+              "item": "gegengift",
+              "n": 1
+            },
+            {
+              "item": "ration",
+              "n": 1
+            }
+          ],
+          "text": "Hinter einem Bilderrahmen steckt ein Beutel. Der Rahmen zeigt jemanden, der nicht zurückschaut."
+        },
+        {
+          "id": "door_b_pforte",
+          "type": "door",
+          "x": 11,
+          "y": 22,
+          "title": "BLUT-|PFORTE",
+          "style": "dark"
+        },
+        {
+          "id": "sign_b_n",
+          "type": "sign",
+          "x": 14,
+          "y": 21,
+          "face": 3,
+          "title": "HAUPT|SCHIFF",
+          "text": "Die Säulen stehen in Reihen wie Zähne. Von der Decke tropft es, warm und langsam."
+        },
+        {
+          "id": "en_b_n1",
+          "type": "enemy",
+          "x": 24,
+          "y": 22,
+          "kind": "vampirbrut",
+          "kinds": [
+            "vampirbrut",
+            "blutdiener",
+            "skeleton"
+          ]
+        },
+        {
+          "id": "en_b_n2",
+          "type": "enemy",
+          "x": 34,
+          "y": 17,
+          "kind": "blutdiener",
+          "kinds": [
+            "blutdiener",
+            "vampirbrut",
+            "blutdiener"
+          ]
+        },
+        {
+          "id": "en_b_n3",
+          "type": "enemy",
+          "x": 38,
+          "y": 26,
+          "kind": "vampirbrut",
+          "kinds": [
+            "vampirbrut",
+            "vampirbrut"
+          ]
+        },
+        {
+          "id": "en_b_n4",
+          "type": "enemy",
+          "x": 20,
+          "y": 29,
+          "kind": "skeleton",
+          "kinds": [
+            "skeleton",
+            "blutdiener",
+            "skeleton"
+          ]
+        },
+        {
+          "id": "trap_b_n",
+          "type": "trap",
+          "x": 28,
+          "y": 22,
+          "kind": "rune"
+        },
+        {
+          "id": "door_b_g1",
+          "type": "door",
+          "x": 17,
+          "y": 11,
+          "title": "GRUFT|I",
+          "style": "dark"
+        },
+        {
+          "id": "door_b_g2",
+          "type": "door",
+          "x": 23,
+          "y": 11,
+          "title": "GRUFT|II",
+          "style": "moss"
+        },
+        {
+          "id": "door_b_g3",
+          "type": "door",
+          "x": 29,
+          "y": 11,
+          "title": "GRUFT|III",
+          "style": "stone"
+        },
+        {
+          "id": "door_b_g4",
+          "type": "door",
+          "x": 35,
+          "y": 11,
+          "title": "GRUFT|IV",
+          "style": "iron"
+        },
+        {
+          "id": "door_b_g5",
+          "type": "door",
+          "x": 41,
+          "y": 11,
+          "title": "GRUFT|V",
+          "style": "dark"
+        },
+        {
+          "id": "en_b_g1",
+          "type": "enemy",
+          "x": 17,
+          "y": 8,
+          "kind": "blutdiener",
+          "kinds": [
+            "blutdiener",
+            "blutdiener",
+            "blutdiener"
+          ]
+        },
+        {
+          "id": "chest_b_g1",
+          "type": "chest",
+          "x": 17,
+          "y": 6,
+          "guard": [
+            "en_b_g1"
+          ],
+          "loot": [
+            {
+              "gold": 25
+            },
+            {
+              "item": "potion_m",
+              "n": 1
+            }
+          ]
+        },
+        {
+          "id": "sign_b_g1",
+          "type": "sign",
+          "x": 15,
+          "y": 8,
+          "face": 3,
+          "title": "SARG|I",
+          "text": "Ein offener Sarg. Das Polster ist eingedrückt, die Form ist noch warm."
+        },
+        {
+          "id": "lever_b1",
+          "type": "lever",
+          "x": 23,
+          "y": 7,
+          "gate": "gate_b1",
+          "msg": "Der Hebel rastet ein. Tief unten rasselt ein Gitter nach oben."
+        },
+        {
+          "id": "en_b_g2",
+          "type": "enemy",
+          "x": 23,
+          "y": 9,
+          "kind": "vampirbrut",
+          "kinds": [
+            "vampirbrut",
+            "blutdiener"
+          ]
+        },
+        {
+          "id": "sign_b_g2",
+          "type": "sign",
+          "x": 21,
+          "y": 8,
+          "face": 3,
+          "title": "SARG|II",
+          "text": "Der Sarg ist leer. Am Fußende ragt ein Hebel aus Knochen aus dem Boden."
+        },
+        {
+          "id": "chest_b_mimic",
+          "type": "chest",
+          "x": 29,
+          "y": 7,
+          "look": "prunk",
+          "mimic": "truhenmaul",
+          "loot": [
+            {
+              "gold": 80
+            },
+            {
+              "gear": {
+                "boost": 1
+              }
+            }
+          ]
+        },
+        {
+          "id": "sign_b_g3",
+          "type": "sign",
+          "x": 27,
+          "y": 8,
+          "face": 3,
+          "title": "SARG|III",
+          "text": "Ein Prunksarg aus dunklem Holz, zu schön für diese Gruft."
+        },
+        {
+          "id": "niche_b_g4",
+          "type": "niche",
+          "x": 33,
+          "y": 8,
+          "face": 3,
+          "loot": [
+            {
+              "item": "potion_m",
+              "n": 1
+            },
+            {
+              "gold": 30
+            }
+          ],
+          "text": "In der Wand steckt ein Sargnagel, und dahinter ein Beutel."
+        },
+        {
+          "id": "sign_b_g4",
+          "type": "sign",
+          "x": 33,
+          "y": 9,
+          "face": 3,
+          "title": "FLIESEN",
+          "text": "Die Fliesen vor dem Sarg sind sauberer als die anderen. Jemand läuft hier nie."
+        },
+        {
+          "id": "trap_b_g4",
+          "type": "trap",
+          "x": 35,
+          "y": 9,
+          "kind": "spikes"
+        },
+        {
+          "id": "en_b_g5",
+          "type": "enemy",
+          "x": 41,
+          "y": 8,
+          "kind": "vampirbrut",
+          "kinds": [
+            "vampirbrut",
+            "vampirbrut",
+            "brandmagier"
+          ]
+        },
+        {
+          "id": "chest_b_g5",
+          "type": "chest",
+          "x": 41,
+          "y": 6,
+          "guard": [
+            "en_b_g5"
+          ],
+          "loot": [
+            {
+              "gear": {
+                "boost": 2
+              }
+            },
+            {
+              "gold": 45
+            },
+            {
+              "item": "zaubertrank_m",
+              "n": 1
+            }
+          ]
+        },
+        {
+          "id": "gate_b1",
+          "type": "gate",
+          "x": 29,
+          "y": 32,
+          "hint": "Ein Gitter versperrt den Weg nach unten. Der Mechanismus liegt irgendwo oben in den Grüften."
+        },
+        {
+          "id": "sign_b_gal",
+          "type": "sign",
+          "x": 25,
+          "y": 33,
+          "face": 3,
+          "title": "KERKER",
+          "text": "Unter der Gruft liegt der Kerker. Die Gänge sind enger als die Gerüchte."
+        },
+        {
+          "id": "chest_b_key",
+          "type": "chest",
+          "x": 47,
+          "y": 37,
+          "guard": [
+            "en_b_m3"
+          ],
+          "loot": [
+            {
+              "item": "blut_schluessel",
+              "n": 1
+            },
+            {
+              "gold": 40
+            }
+          ]
+        },
+        {
+          "id": "en_b_m3",
+          "type": "enemy",
+          "x": 45,
+          "y": 37,
+          "kind": "vampirbrut",
+          "kinds": [
+            "vampirbrut",
+            "blutdiener",
+            "vampirbrut"
+          ]
+        },
+        {
+          "id": "trap_b_m",
+          "type": "trap",
+          "x": 45,
+          "y": 36,
+          "kind": "gas"
+        },
+        {
+          "id": "en_b_m1",
+          "type": "enemy",
+          "x": 17,
+          "y": 35,
+          "kind": "skeleton",
+          "kinds": [
+            "skeleton",
+            "blutdiener",
+            "skeleton"
+          ]
+        },
+        {
+          "id": "en_b_m2",
+          "type": "enemy",
+          "x": 9,
+          "y": 41,
+          "kind": "vampirbrut",
+          "kinds": [
+            "vampirbrut",
+            "nebelgeist"
+          ]
+        },
+        {
+          "id": "door_b_thron",
+          "type": "door",
+          "x": 45,
+          "y": 22,
+          "locked": true,
+          "key": "blut_schluessel",
+          "title": "BLUT-|THRON",
+          "style": "iron"
+        },
+        {
+          "id": "sign_b_t",
+          "type": "sign",
+          "x": 46,
+          "y": 23,
+          "face": 3,
+          "title": "THRON|SAAL",
+          "text": "Der Thron ist sauber. Der Boden davor ist voller Spuren, alle führen zum Thron hin und keine zurück."
+        },
+        {
+          "id": "en_b_boss",
+          "type": "enemy",
+          "x": 51,
+          "y": 22,
+          "kind": "blutgraefin",
+          "kinds": [
+            "blutgraefin",
+            "vampirbrut",
+            "vampirbrut"
+          ]
+        },
+        {
+          "id": "chest_b_t",
+          "type": "chest",
+          "x": 55,
+          "y": 15,
+          "guard": [
+            "en_b_boss"
+          ],
+          "loot": [
+            {
+              "gear": {
+                "boost": 2
+              }
+            },
+            {
+              "gold": 120
+            },
+            {
+              "item": "zaubertrank_m",
+              "n": 1
+            }
+          ]
+        },
+        {
+          "id": "exit_b_tiefe",
+          "type": "exit",
+          "x": 56,
+          "y": 22,
+          "look": "down",
+          "title": "Tiefe der Blutgruft",
+          "text": "Eine schmale Wendeltreppe führt tiefer hinab. Die Stufen sind feucht.",
           "again": "Hier geht es in einer späteren Version weiter."
         }
       ]

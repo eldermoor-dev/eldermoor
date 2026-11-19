@@ -43,6 +43,9 @@ Gegner (EP: jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die vol
 | Nebelhüter | 480 | 26 | 8 | 6 | 320 | 80 | Zaubert: Nebelspeer (jeden 3. Zug, angekündigt); Boss, Phasen: Nebelwand ab ≤ 66 % LP (Angriff 27), Sturm der Schleier ab ≤ 33 % LP (Angriff 28) |
 | Truhenmaul | 60 | 12 | 5 | 7 | 120 | 45 | Zuschnappen jeden 3. Zug, angekündigt (170 %); Treffer: Blutung 30 % |
 | Brandmagier | 70 | 17 | 3 | 7 | 110 | 20 | zielt auf die Hinterreihe; Zaubert: Feuerball (jeden 4. Zug, angekündigt), Feuerpfeil (jeden 2. Zug) |
+| Blutdiener | 60 | 15 | 3 | 6 | 75 | 14 | zielt auf den schwächsten Helden; Treffer: Blutung 30 % |
+| Vampirbrut | 95 | 18 | 5 | 8 | 125 | 24 | zielt auf den schwächsten Helden; Zaubert: Blutbiss (jeden 3. Zug) |
+| Blutgräfin | 230 | 16 | 7 | 9 | 420 | 160 | Zaubert: Blutbiss (jeden 2. Zug); Boss, Phasen: Blutrausch ab ≤ 66 % LP (Angriff 17), Fledermausschwarm ab ≤ 33 % LP (Angriff 18) |
 
 ## Rassen (Modifikatoren)
 
@@ -270,6 +273,9 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 | Nebelhüter | 100 %, Boost 2 | – |
 | Truhenmaul | 100 %, Boost 1 | – |
 | Brandmagier | 8 % | – |
+| Blutdiener | 6 % | – |
+| Vampirbrut | 9 % | – |
+| Blutgräfin | 100 %, Boost 2 | – |
 
 ## Ausrüstungseffekte und Sets
 

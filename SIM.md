@@ -23,14 +23,14 @@ Ohne Rast: LP bleiben, besiegte Helden stehen mit 1 LP auf (aktuelle Übergangsr
 | klug | mit Proviant (3) | 100 % | 100 % | 100 % | 0.4 |
 | klug | immer voll | 100 % | 100 % | 100 % | 0.4 |
 
-## C) Ganze Kampagne (Testgewölbe → Nebelturm), natürliche Stufen, Beute, Rast, Einkauf
+## C) Ganze Kampagne (Testgewölbe → Blutgruft), natürliche Stufen, Beute, Rast, Einkauf
 Annahmen stehen in sim.js über `campaign`. „1. Versuch“ = Sieg ohne vorherige Niederlage gegen diesen Gegner. Schaden = Anteil der Max-LP der Gruppe, den die Gegner im 1. Versuch abziehen.
 600 Läufe je Strategie.
 
 | Strategie | Kampagne geschafft | Ø Stufe am Ende | Niederlagen je Lauf |
 |---|---|---|---|
 | nur Angriff | 0 % | 6.3 | 4.0 |
-| klug | 100 % | 10.8 | 0.2 |
+| klug | 63 % | 13.4 | 3.0 |
 
 | Gebiet | Gegner | Strategie | erreicht | Ø Stufe | Sieg 1. Versuch | Runden | KO-Helden | Schaden |
 |---|---|---|---|---|---|---|---|---|
@@ -83,18 +83,66 @@ Annahmen stehen in sim.js über `campaign`. „1. Versuch“ = Sieg ohne vorheri
 | Nebelturm | Nebelgeist + Nebelgeist + Nebelgeist | nur Angriff | 2 % | 7.9 | 20 % | 5.0 | 3.6 | 67 % |
 | Nebelturm | Nebelgeist + Nebelgeist + Nebelgeist | klug | 100 % | 8.9 | 100 % | 3.1 | 0.2 | 30 % |
 | Nebelturm | Nebelhüter (Boss) | nur Angriff | 1 % | 8.1 | 0 % | 6.8 | 4.0 | 55 % |
-| Nebelturm | Nebelhüter (Boss) | klug | 100 % | 8.9 | 87 % | 10.4 | 0.7 | 113 % |
+| Nebelturm | Nebelhüter (Boss) | klug | 100 % | 8.9 | 88 % | 10.3 | 0.7 | 112 % |
 | Moorfestung – Vorburg | en_f1 | nur Angriff | 0 % | – | – | – | – | – |
 | Moorfestung – Vorburg | Gruftskelett + Kultwächter + Gruftskelett | klug | 100 % | 9.7 | 100 % | 2.3 | 0.0 | 10 % |
 | Moorfestung – Vorburg | en_f2 | nur Angriff | 0 % | – | – | – | – | – |
-| Moorfestung – Vorburg | Turmwache + Brandmagier | klug | 100 % | 9.8 | 98 % | 5.0 | 0.3 | 59 % |
+| Moorfestung – Vorburg | Turmwache + Brandmagier | klug | 100 % | 9.8 | 98 % | 4.9 | 0.3 | 59 % |
 | Moorfestung – Vorburg | en_f3 | nur Angriff | 0 % | – | – | – | – | – |
 | Moorfestung – Vorburg | Nebelgeist + Brandmagier | klug | 100 % | 9.9 | 100 % | 2.6 | 0.0 | 21 % |
 | Moorfestung – Vorburg | en_f4 | nur Angriff | 0 % | – | – | – | – | – |
-| Moorfestung – Vorburg | Turmwache + Nebelgeist | klug | 100 % | 10.0 | 99 % | 4.6 | 0.2 | 49 % |
+| Moorfestung – Vorburg | Turmwache + Nebelgeist | klug | 100 % | 10.0 | 100 % | 4.5 | 0.2 | 48 % |
 | Moorfestung – Vorburg | en_f5 | nur Angriff | 0 % | – | – | – | – | – |
 | Moorfestung – Vorburg | Erzkäfer + Kultwächter + Erzkäfer | klug | 100 % | 10.0 | 100 % | 2.7 | 0.0 | 18 % |
 | Moorfestung – Vorburg | en_f6 | nur Angriff | 0 % | – | – | – | – | – |
 | Moorfestung – Vorburg | Brandmagier + Turmwache | klug | 100 % | 10.7 | 99 % | 3.7 | 0.1 | 35 % |
+| Moorfestung – Kellergewölbe | en_k_m1 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Kellergewölbe | Kultwächter + Gruftskelett + Gruftskelett | klug | 100 % | 10.8 | 100 % | 2.1 | 0.0 | 6 % |
+| Moorfestung – Kellergewölbe | en_k_m2 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Kellergewölbe | Nebelgeist + Kultwächter | klug | 100 % | 10.9 | 100 % | 2.4 | 0.0 | 13 % |
+| Moorfestung – Kellergewölbe | en_k_h1 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Kellergewölbe | Turmwache + Brandmagier + Turmwache | klug | 100 % | 10.9 | 18 % | 7.0 | 3.5 | 143 % |
+| Moorfestung – Kellergewölbe | en_k_h2 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Kellergewölbe | Nebelgeist + Brandmagier | klug | 72 % | 11.0 | 100 % | 2.5 | 0.0 | 19 % |
+| Moorfestung – Kellergewölbe | en_k_o1 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Kellergewölbe | Gruftskelett + Gruftskelett + Kultwächter | klug | 72 % | 11.5 | 100 % | 2.0 | 0.0 | 5 % |
+| Moorfestung – Kellergewölbe | en_k_c1 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Kellergewölbe | Gruftskelett + Gruftskelett + Gruftskelett | klug | 72 % | 11.6 | 100 % | 2.0 | 0.0 | 4 % |
+| Moorfestung – Kellergewölbe | en_k_c3 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Kellergewölbe | Erzkäfer + Erzkäfer + Nebelgeist | klug | 72 % | 11.8 | 100 % | 3.2 | 0.0 | 26 % |
+| Moorfestung – Kellergewölbe | en_k_c5 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Kellergewölbe | Brandmagier + Turmwache | klug | 72 % | 11.9 | 99 % | 4.2 | 0.2 | 47 % |
+| Moorfestung – Kellergewölbe | en_k_c6 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Kellergewölbe | Nebelgeist + Brandmagier + Brandmagier | klug | 72 % | 11.9 | 92 % | 4.6 | 0.7 | 58 % |
+| Moorfestung – Kellergewölbe | en_k_s2 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Kellergewölbe | Turmwache + Brandmagier | klug | 72 % | 12.0 | 96 % | 4.5 | 0.5 | 49 % |
+| Moorfestung – Kellergewölbe | en_k_e | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Kellergewölbe | Turmwache + Turmwache + Brandmagier | klug | 72 % | 12.4 | 42 % | 7.6 | 2.8 | 121 % |
+| Moorfestung – Kellergewölbe | en_k_s1 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Kellergewölbe | Kultwächter-Hauptmann + Kultwächter + Kultwächter (Boss) | klug | 63 % | 12.6 | 100 % | 6.5 | 0.2 | 27 % |
+| Moorfestung – Blutgruft | en_b_a1 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Blutgruft | Vampirbrut + Blutdiener + Blutdiener | klug | 63 % | 12.8 | 99 % | 6.3 | 0.4 | 56 % |
+| Moorfestung – Blutgruft | en_b_n1 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Blutgruft | Vampirbrut + Blutdiener + Gruftskelett | klug | 63 % | 12.9 | 100 % | 4.0 | 0.1 | 27 % |
+| Moorfestung – Blutgruft | en_b_n2 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Blutgruft | Blutdiener + Vampirbrut + Blutdiener | klug | 63 % | 12.9 | 100 % | 5.3 | 0.3 | 45 % |
+| Moorfestung – Blutgruft | en_b_n3 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Blutgruft | Vampirbrut + Vampirbrut | klug | 63 % | 13.3 | 99 % | 4.5 | 0.1 | 32 % |
+| Moorfestung – Blutgruft | en_b_n4 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Blutgruft | Gruftskelett + Blutdiener + Gruftskelett | klug | 63 % | 13.5 | 100 % | 2.3 | 0.0 | 8 % |
+| Moorfestung – Blutgruft | en_b_g1 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Blutgruft | Blutdiener + Blutdiener + Blutdiener | klug | 63 % | 13.6 | 100 % | 4.1 | 0.2 | 31 % |
+| Moorfestung – Blutgruft | en_b_g2 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Blutgruft | Vampirbrut + Blutdiener | klug | 63 % | 13.8 | 100 % | 3.4 | 0.1 | 18 % |
+| Moorfestung – Blutgruft | en_b_g5 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Blutgruft | Vampirbrut + Vampirbrut + Brandmagier | klug | 63 % | 13.8 | 93 % | 7.8 | 0.8 | 74 % |
+| Moorfestung – Blutgruft | en_b_m3 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Blutgruft | Vampirbrut + Blutdiener + Vampirbrut | klug | 63 % | 13.9 | 82 % | 8.1 | 1.2 | 83 % |
+| Moorfestung – Blutgruft | en_b_m1 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Blutgruft | Gruftskelett + Blutdiener + Gruftskelett | klug | 63 % | 14.1 | 100 % | 2.5 | 0.0 | 9 % |
+| Moorfestung – Blutgruft | en_b_m2 | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Blutgruft | Vampirbrut + Nebelgeist | klug | 63 % | 14.3 | 100 % | 3.7 | 0.0 | 22 % |
+| Moorfestung – Blutgruft | en_b_boss | nur Angriff | 0 % | – | – | – | – | – |
+| Moorfestung – Blutgruft | Blutgräfin + Vampirbrut + Vampirbrut (Boss) | klug | 63 % | 14.5 | 66 % | 14.0 | 1.9 | 143 % |
 
 Hinweis: Die Simulation nutzt die echten Regeln, aber nur zwei feste Strategien. Ein echter Spieler liegt dazwischen.

@@ -506,14 +506,40 @@ export async function runTests(data, env = {}) {
     assert(f2.objects.every((o) => o.type === 'enemy' ? f2.map[o.y][o.x] === '.' : true), 'Gegner auf Boden');
   });
 
-  await test('Ausgang (0.16.4): erstes Betreten = Abschluss, danach kurzer Hinweis', () => {
-    const s = fresh(9); L.jumpToLevel(s, data, 'festung2'); s.objs.forEach((o) => { if (o.type === 'enemy') o.dead = true; });
-    put(s, 48, 32, 1);
+  await test('Ausgang (0.16.4, seit 0.27.0 in der Blutgruft): erstes Betreten = Abschluss, danach kurzer Hinweis', () => {
+    const s = fresh(9); L.jumpToLevel(s, data, 'festung3'); s.objs.forEach((o) => { if (o.type === 'enemy') o.dead = true; });
+    put(s, 55, 22, 1);
     const a = L.tryMove(s, data, 'f'); assert(a.events.some((e) => e.type === 'exit'), 'erstes Mal: exit ' + JSON.stringify(a));
-    put(s, 48, 32, 1);
+    put(s, 55, 22, 1);
     const b = L.tryMove(s, data, 'f'); assert(b.events.some((e) => e.type === 'exitAgain') && !b.events.some((e) => e.type === 'exit'), 'danach: exitAgain ' + JSON.stringify(b));
-    const t = data.levels.festung2.objects.find((o) => o.id === 'exit_k_tiefe');
-    assert(t && /späteren Version/.test(t.again), 'Festungs-Ausgang hat Hinweistext');
+    const t = data.levels.festung3.objects.find((o) => o.id === 'exit_b_tiefe');
+    assert(t && /späteren Version/.test(t.again), 'Ausgang hat Hinweistext');
+  });
+
+  await test('Blutgruft (0.27.0): Treppe aus dem Keller, rote Palette, Vampire, Blutbiss heilt den Gegner, Schlüssel erreichbar', () => {
+    const f2 = data.levels.festung2, f3 = data.levels.festung3;
+    assert(f3 && f3.palette === 'blut' && data.palettes.blut && Object.keys(data.palettes.blut).length === Object.keys(data.palettes.katakomben).length, 'Level und Palette');
+    assert(f2.objects.some((o) => o.type === 'stairs' && o.to.level === 'festung3') && f3.objects.some((o) => o.type === 'stairs' && o.to.level === 'festung2'), 'Treppen hin und zurück');
+    assert(f3.map.length * f3.map[0].length > f2.map.length * f2.map[0].length, 'Ebene größer als Keller 1');
+    for (const k of ['blutdiener', 'vampirbrut', 'blutgraefin']) assert(data.enemies[k] && data.enemies[k].intro, `Gegner ${k}`);
+    assert(f3.objects.every((o) => o.type === 'enemy' ? f3.map[o.y][o.x] === '.' && (o.kinds || [o.kind]).every((k) => data.enemies[k]) : true), 'Gegner auf Boden, Arten bekannt');
+    // Erreichbarkeit: vom Start zu Schlüsseltruhe, Thron und Ausgang (Türen/Gitter offen, nur Wände sperren)
+    const w = f3.map[0].length, h = f3.map.length, seen = new Set([f3.start.y * w + f3.start.x]), q = [[f3.start.x, f3.start.y]];
+    while (q.length) { const [x, y] = q.shift(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (f3.map[ny] && f3.map[ny][nx] === '.' && !seen.has(ny * w + nx)) { seen.add(ny * w + nx); q.push([nx, ny]); } } }
+    for (const id of ['chest_b_key', 'en_b_boss', 'exit_b_tiefe', 'lever_b1', 'chest_b_g5']) { const o = f3.objects.find((q2) => q2.id === id); assert(o && seen.has(o.y * w + o.x), `${id} erreichbar`); }
+    const gate = f3.objects.find((o) => o.id === 'gate_b1'), lever = f3.objects.find((o) => o.id === 'lever_b1');
+    assert(gate && lever && lever.gate === gate.id, 'Hebel öffnet Gitter');
+    const th = f3.objects.find((o) => o.id === 'door_b_thron'); assert(th && th.locked && th.key === 'blut_schluessel' && data.items.blut_schluessel && f3.objects.some((o) => o.type === 'chest' && o.loot.some((l) => l.item === 'blut_schluessel')), 'Thron braucht den Blutschlüssel aus dem Kerker');
+    // Blutbiss: Schaden am Helden, Gegner erholt sich um 60 %
+    const s = fresh(21); L.jumpToLevel(s, data, 'festung3');
+    L.startCombat(s, data, { id: 'bt', kind: 'vampirbrut', hp: 110 });
+    s.heroes.forEach((x) => { x.maxHp = x.hp = 300; });
+    const e = s.combat.enemies[0]; const sp = data.enemies.vampirbrut.cast[0]; assert(sp.kind === 'drain', 'Blutbiss ist drain');
+    e.hp = 10; e.ct = 2; // nächster Zug = dritter -> Blutbiss
+    const msgs = [];
+    const before = s.heroes.reduce((n, x) => n + x.hp, 0);
+    for (let i = 0; i < 12 && !(e.hp > 10); i++) { const cur = L.currentActor(s); if (!cur) break; if (cur.side === 'e') { e.ct = 2; L.enemyStep(s, data); } else L.heroAction(s, data, { type: 'defend' }); }
+    assert(e.hp > 10 && s.heroes.reduce((n, x) => n + x.hp, 0) < before, 'Blutbiss: Held verliert LP, Vampir heilt sich (' + e.hp + ')');
   });
 
   await test('Runenstein (0.16.5): versperrt den Weg, Inschrift lesbar, alter Ausgang verschwindet aus alten Ständen', () => {
