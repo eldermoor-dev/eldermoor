@@ -3,14 +3,14 @@
 import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
+  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
   activeSets, coveredBy, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogChoose,
 } from './logic.js';
-import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
+import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.27.0';
+const VERSION = '0.28.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -277,7 +277,7 @@ function frame(now) {
   updateViewAdjust(now);
   const vc = viewCam();
   const sprites = buildSprites(S.game.objs, S.tex, now / 1000, S.cam.a, aliveMap(), { grid, gw, gh });
-  S.rc.render({ px: vc.x, py: vc.y, angle: vc.a, horizon: S.vh * H, grid, gw, gh, decals: buildDecals(S.lvl, S.game.objs, S.tex), sprites, time: now / 1000 });
+  S.rc.render({ px: vc.x, py: vc.y, angle: vc.a, horizon: S.vh * H, grid, gw, gh, decals: buildDecals(S.lvl, S.game.objs, S.tex), sprites, time: now / 1000, floorGrid: buildFloorGrid(S.lvl) });
   S.ctx.putImageData(S.img, 0, 0);
   placeFoeTags(sprites);
   S.frameMs = S.frameMs * 0.9 + (performance.now() - t0) * 0.1;
@@ -386,6 +386,7 @@ function doMove(rel) {
     S.target.x = g.player.x + 0.5; S.target.y = g.player.y + 0.5;
     beginTween();
     (r.events || []).forEach(onEvent);
+    if (r.luck) { say(r.luck); toast(r.luck, 4500); S.sfx.play('chest'); vib(20); } // Glücksamulett (0.28.0)
     if (r.notes) { S.held = []; r.notes.forEach((t) => { say(t); toast(t, 5000); }); S.sfx.play('warn'); vib([40, 40, 40]); S.nextAllowed = performance.now() + 500; }
     if (r.encounter) startCombatUI(r.encounter, r.ambush);
   } else if (r.encounter) startCombatUI(r.encounter);
@@ -413,18 +414,21 @@ function doTurn(d) {
   if (r.notes) { r.notes.forEach((t) => { say(t); toast(t, 5000); }); S.sfx.play('warn'); vib([40, 40, 40]); }
   if (r.encounter) startCombatUI(r.encounter, r.ambush);
 }
+async function afterAreaChange(r) { // Gebietswechsel (Treppe oder Fähre) in der Oberfläche nachziehen
+  S.lvl = getLevel(S.data, S.game);
+  S.rc.setPalette(S.data.palettes[S.lvl.palette]);
+  S.held = []; S.queued = null;
+  snapCam();
+  say(r.msg);
+  renderAll();
+  introOnce('area:' + S.game.levelId, S.lvl.intro);
+  await saveSlot('auto', true);
+}
 async function onEvent(ev) {
   if (ev.type === 'stairs') {
     const r = changeArea(S.game, S.data, ev.id);
     if (!r.ok) { say(r.msg); return; }
-    S.lvl = getLevel(S.data, S.game);
-    S.rc.setPalette(S.data.palettes[S.lvl.palette]);
-    S.held = []; S.queued = null;
-    snapCam();
-    say(r.msg);
-    renderAll();
-    introOnce('area:' + S.game.levelId, S.lvl.intro);
-    await saveSlot('auto', true);
+    await afterAreaChange(r);
     return;
   }
   if (ev.type === 'teleport') { S.held = []; S.queued = null; snapCam(); if (!ev.hidden) { say(ev.msg); toast(ev.msg, 3000); S.sfx.play('sting'); flash(); vib(40); } renderAll(); return; } // 0.23.0: versteckte Teleporter ohne Meldung – nur die Umgebung und der Kompass verraten es
@@ -942,6 +946,7 @@ async function dialogPick(i) {
   if (r.msg) { say(r.msg); toast(r.msg, 4000); }
   if (r.sfx) S.sfx.play(r.sfx);
   if (r.encounter) { closeModal(); renderAll(); startCombatUI(r.encounter); return; }
+  if (r.goto) { closeModal(); const t = travelTo(g, S.data, r.goto, r.msg); if (!t.ok) { say(t.msg); renderAll(); return; } S.sfx.play('door'); await afterAreaChange(t); return; } // 0.28.0: Fähre
   if (r.next) { openDialog(d.id, r.next); renderAll(); return; }
   closeModal(); renderAll();
   try { if (!g.combat) await saveSlot('auto', true); } catch { /* egal */ }
@@ -1238,11 +1243,11 @@ function drawMap() {
   const wallObj = new Set(g.objs.filter((o) => (o.type === 'secret' && !o.open) || (o.type === 'lever' && o.wall) || (o.type === 'illusion' && !o.found)).map((o) => o.x + ',' + o.y)); // Geheimwand und Schalterstein zählen auf der Karte als Mauer
   const cellChar = (l, x, y) => (wallObj.has(x + ',' + y) ? '#' : cellCharRaw(l, x, y));
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    if (cellChar(lvl, x, y) === '.') { if (seen(x, y)) { c.fillStyle = '#4a4034'; c.fillRect(x * cs, y * cs, cs, cs); } }
+    if (cellChar(lvl, x, y) === '.') { if (seen(x, y)) { c.fillStyle = lvl.floor && '=|'.includes(lvl.floor[y][x]) ? '#7a5a34' : '#4a4034'; c.fillRect(x * cs, y * cs, cs, cs); } } // Bohlen (Brücke, Steg) braun (0.28.0)
     else {
       let near = false;
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (cellChar(lvl, x + dx, y + dy) === '.' && seen(x + dx, y + dy)) near = true;
-      if (near) { c.fillStyle = '#8a7a5e'; c.fillRect(x * cs, y * cs, cs, cs); }
+      if (near) { c.fillStyle = cellChar(lvl, x, y) === '~' ? '#2f5f8f' : '#8a7a5e'; c.fillRect(x * cs, y * cs, cs, cs); } // Wasser blau
     }
   }
   for (const o of g.objs) {

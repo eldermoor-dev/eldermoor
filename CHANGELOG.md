@@ -6,6 +6,7 @@ Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ 
 ## 0.16.x (Inhaltsphase, Nebelturm und Nacharbeiten)
 | Version | Änderungen | Status |
 |---|---|---|
+| 0.28.0 | Moorsee: Fluss mit Brücke, See mit Steg, Fuhrmann (20 Gold) zur Schatzinsel, Gnom mit Würfelspiel (gerade Glücksamulett, ungerade Riesenspinne), Wasser/Bohlen im Raycaster und auf der Karte | headless, Gerät offen |
 | 0.27.0 | Keller 2 „Blutgruft“: rote Palette, größere Ebene, Vampire (Diener, Brut, Gräfin), Zauberart Blutbiss (Lebensraub), Treppe aus dem Keller; sim.js bis Blutgruft | headless, Gerät offen |
 | 0.26.7 | Kellertreppe „Tiefe“ steht an der Ostwand statt frei im Raum | headless, Gerät offen |
 | 0.26.6 | Standpfeil auf der Karte größer, mit schwarzem Rand | headless, Gerät offen |

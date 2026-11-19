@@ -320,6 +320,11 @@
       "name": "Blutschlüssel",
       "kind": "quest",
       "desc": "Ein Schlüssel aus dunklem Eisen. Der Griff ist warm, obwohl niemand ihn gehalten hat."
+    },
+    "gluecksamulett": {
+      "name": "Glücksamulett",
+      "kind": "quest",
+      "desc": "Ein Amulett aus rotem Glas an einem Lederband. Wer es bei sich trägt, stolpert sehr selten über verlorene Münzen."
     }
   },
   "races": {
@@ -1440,6 +1445,37 @@
         "title": "Die Blutgräfin",
         "text": "Sie sitzt auf dem Thron, als hätte sie auf euch gewartet. Sie lächelt mit geschlossenem Mund."
       }
+    },
+    "riesenspinne": {
+      "name": "Riesenspinne",
+      "hp": 80,
+      "atk": 14,
+      "def": 4,
+      "init": 9,
+      "gold": 70,
+      "xp": 160,
+      "ai": "weakest",
+      "onHit": {
+        "status": "poison",
+        "chance": 60,
+        "turns": 3
+      },
+      "heavy": {
+        "name": "Giftbiss",
+        "every": 3,
+        "mult": 160
+      },
+      "resist": {
+        "fire": -25
+      },
+      "gearDrop": {
+        "chance": 100,
+        "boost": 1
+      },
+      "intro": {
+        "title": "Riesenspinne",
+        "text": "Der Gnom ist verschwunden. An seiner Stelle sitzt etwas Schwarzes, das fast bis zur Decke reicht."
+      }
     }
   },
   "palettes": {
@@ -2213,6 +2249,20 @@
           "name": "Torfstecher Bram",
           "look": "torf",
           "dialog": "bram"
+        },
+        {
+          "id": "stairs_pfad_see",
+          "type": "stairs",
+          "x": 22,
+          "y": 7,
+          "look": "path",
+          "msg": "Ein schmaler Pfad führt hinunter zum Seeufer.",
+          "to": {
+            "level": "moorsee",
+            "x": 2,
+            "y": 8,
+            "dir": 1
+          }
         }
       ],
       "intro": {
@@ -4955,6 +5005,299 @@
           "again": "Hier geht es in einer späteren Version weiter."
         }
       ]
+    },
+    "moorsee": {
+      "id": "moorsee",
+      "name": "Moorsee",
+      "palette": "moor",
+      "start": {
+        "x": 2,
+        "y": 8,
+        "dir": 1
+      },
+      "foe": {
+        "hp": 130,
+        "atk": 120
+      },
+      "intro": {
+        "title": "Moorsee",
+        "text": "Hinter dem Pfad öffnet sich das Moor. Ein Fluss, ein See, und über allem der Geruch von nassem Torf."
+      },
+      "map": [
+        "#mmTm#mmmT#mmmm#Tmmm#mmmm#mmmm#mm#",
+        "m..........~~~...................m",
+        "m..........~~~...................m",
+        "#...m....m.~~~..........~~~~~~~~~m",
+        "m..........~~~..m......~~~~~~~~~~#",
+        "m......m...~~~........~~~~~~~~~~~m",
+        "#...m......~~~...m....~~~~~~~~~~~m",
+        "m.........m~~~.....m.~~~~~~~~~~~~m",
+        "m.......................~~~~~~~~~#",
+        "#..............m....~~~~~~~~~~~~~m",
+        "m..........~~~.......~~~~~~~~~~~~m",
+        "m....m.....~~~...m....~~~~~~~~~~~m",
+        "#..........~~~........~~~~~~~~~~~#",
+        "m..m...m...~~~....m....~~~~~~~~~~m",
+        "m..........~~~..........~~~~~~~~~m",
+        "#.......m..~~~..m........~~~~~~~~m",
+        "m..........~~~.............~~~~~~#",
+        "m..........~~~...................m",
+        "#mmT#mmm#mmm#mmm#mTm#mmm#mmm#mmm#m"
+      ],
+      "floor": [
+        "..................................",
+        "..................................",
+        "..................................",
+        "..................................",
+        "..................................",
+        "..................................",
+        "..................................",
+        "..................................",
+        "...........===......====..........",
+        "...........===....................",
+        "..................................",
+        "..................................",
+        "..................................",
+        "..................................",
+        "..................................",
+        "..................................",
+        "..................................",
+        "..................................",
+        ".................................."
+      ],
+      "objects": [
+        {
+          "id": "stairs_see_back",
+          "type": "stairs",
+          "x": 1,
+          "y": 8,
+          "look": "path",
+          "msg": "Du gehst zurück auf den Moorpfad.",
+          "to": {
+            "level": "moorpfad",
+            "x": 21,
+            "y": 7,
+            "dir": 0
+          }
+        },
+        {
+          "id": "sign_s_brueck",
+          "type": "sign",
+          "x": 10,
+          "y": 8,
+          "face": 0,
+          "title": "BRÜCKE",
+          "text": "Die Bohlen sind nass, halten aber. Der Fluss darunter ist kälter, als er aussieht."
+        },
+        {
+          "id": "sign_s_faehre",
+          "type": "sign",
+          "x": 19,
+          "y": 8,
+          "face": 0,
+          "title": "FÄHRE",
+          "text": "Wer zur Insel will, redet mit dem Fuhrmann am Steg. Umsonst fährt hier niemand."
+        },
+        {
+          "id": "en_see1",
+          "type": "enemy",
+          "x": 6,
+          "y": 13,
+          "kind": "wolf",
+          "kinds": [
+            "wolf",
+            "wolf"
+          ]
+        },
+        {
+          "id": "chest_see1",
+          "type": "chest",
+          "x": 3,
+          "y": 15,
+          "guard": [
+            "en_see1"
+          ],
+          "loot": [
+            {
+              "gold": 30
+            },
+            {
+              "item": "potion",
+              "n": 1
+            }
+          ]
+        },
+        {
+          "id": "en_see2",
+          "type": "enemy",
+          "x": 17,
+          "y": 13,
+          "kind": "moorlicht",
+          "kinds": [
+            "moorlicht",
+            "wolf",
+            "moorlicht"
+          ]
+        },
+        {
+          "id": "chest_see2",
+          "type": "chest",
+          "x": 18,
+          "y": 3,
+          "loot": [
+            {
+              "gold": 25
+            },
+            {
+              "item": "ration",
+              "n": 1
+            }
+          ]
+        },
+        {
+          "id": "npc_fuhrmann",
+          "type": "npc",
+          "x": 23,
+          "y": 8,
+          "name": "Fuhrmann",
+          "look": "fuhrmann",
+          "dialog": "fuhrmann_ufer"
+        },
+        {
+          "id": "decor_boot_s",
+          "type": "decor",
+          "x": 23,
+          "y": 9,
+          "look": "boot"
+        }
+      ]
+    },
+    "schatzinsel": {
+      "id": "schatzinsel",
+      "name": "Schatzinsel",
+      "palette": "moor",
+      "start": {
+        "x": 7,
+        "y": 10,
+        "dir": 0
+      },
+      "foe": {
+        "hp": 150,
+        "atk": 130
+      },
+      "intro": {
+        "title": "Schatzinsel",
+        "text": "Ein Häuschen, drei Kisten, ein Steg. Das Wasser ringsum ist so still, dass man den eigenen Atem hört."
+      },
+      "map": [
+        "mmmmmmmmmmmmmmm",
+        "m~~~~~~~~~~~~~m",
+        "m~~~.......~~~m",
+        "m~~.........~~m",
+        "m~..mmmTmmm..~m",
+        "m~..m.....m..~m",
+        "m~..m.....m..~m",
+        "m~..m.....m..~m",
+        "m~..mmm.mmm..~m",
+        "m~...........~m",
+        "m~~.........~~m",
+        "m~~~.......~~~m",
+        "m~~~~~~~~~~~~~m",
+        "mmmmmmmmmmmmmmm"
+      ],
+      "objects": [
+        {
+          "id": "door_i_haus",
+          "type": "door",
+          "x": 7,
+          "y": 8,
+          "title": "HÄUS-|CHEN",
+          "style": "stone"
+        },
+        {
+          "id": "sign_i_haus",
+          "type": "sign",
+          "x": 5,
+          "y": 9,
+          "face": 0,
+          "title": "WÜRFEL|HAUS",
+          "text": "Auf dem Schild sind zwei Würfel gemalt. Darunter steht: „Gerade gewinnt der Gast.“"
+        },
+        {
+          "id": "npc_gnom",
+          "type": "npc",
+          "x": 7,
+          "y": 6,
+          "name": "Gnom",
+          "look": "gnom",
+          "dialog": "gnom"
+        },
+        {
+          "id": "chest_i1",
+          "type": "chest",
+          "x": 4,
+          "y": 2,
+          "loot": [
+            {
+              "gold": 45
+            },
+            {
+              "item": "potion",
+              "n": 1
+            }
+          ]
+        },
+        {
+          "id": "chest_i2",
+          "type": "chest",
+          "x": 10,
+          "y": 2,
+          "loot": [
+            {
+              "gold": 35
+            },
+            {
+              "item": "ration",
+              "n": 1
+            },
+            {
+              "item": "gegengift",
+              "n": 1
+            }
+          ]
+        },
+        {
+          "id": "chest_i3",
+          "type": "chest",
+          "x": 11,
+          "y": 10,
+          "loot": [
+            {
+              "gold": 60
+            },
+            {
+              "item": "potion_m",
+              "n": 1
+            }
+          ]
+        },
+        {
+          "id": "npc_fuhrmann_i",
+          "type": "npc",
+          "x": 8,
+          "y": 11,
+          "name": "Fuhrmann",
+          "look": "fuhrmann",
+          "dialog": "fuhrmann_insel"
+        },
+        {
+          "id": "decor_boot_i",
+          "type": "decor",
+          "x": 7,
+          "y": 12,
+          "look": "boot"
+        }
+      ]
     }
   },
   "spot": {
@@ -6514,6 +6857,127 @@
         },
         "z": {
           "text": "Der Platz auf der Kiste ist leer.",
+          "choices": [
+            {
+              "t": "Gehen"
+            }
+          ]
+        }
+      }
+    },
+    "fuhrmann_ufer": {
+      "name": "Fuhrmann",
+      "start": "a",
+      "nodes": {
+        "a": {
+          "text": "Ein wettergegerbter Mann lehnt am Ruder. „Zur Insel? Zwanzig Gold, hin und zurück, wenn ich Lust habe.“",
+          "choices": [
+            {
+              "t": "Übersetzen",
+              "cost": {
+                "gold": 20
+              },
+              "goto": {
+                "level": "schatzinsel",
+                "x": 7,
+                "y": 10,
+                "dir": 0
+              },
+              "msg": "Der Fuhrmann stößt vom Steg ab. Das Wasser ist erstaunlich still."
+            },
+            {
+              "t": "Was ist auf der Insel?",
+              "to": "b"
+            },
+            {
+              "t": "Nein, danke"
+            }
+          ]
+        },
+        "b": {
+          "text": "„Ein Häuschen. Ein Gnom, der Würfel liebt. Und ein paar Kisten, die nie jemand geholt hat. Fragt nicht, warum.“",
+          "choices": [
+            {
+              "t": "Übersetzen",
+              "cost": {
+                "gold": 20
+              },
+              "goto": {
+                "level": "schatzinsel",
+                "x": 7,
+                "y": 10,
+                "dir": 0
+              },
+              "msg": "Der Fuhrmann stößt vom Steg ab. Das Wasser ist erstaunlich still."
+            },
+            {
+              "t": "Nein, danke"
+            }
+          ]
+        }
+      }
+    },
+    "fuhrmann_insel": {
+      "name": "Fuhrmann",
+      "start": "a",
+      "nodes": {
+        "a": {
+          "text": "Der Fuhrmann hat das Boot schon gedreht. „Zurück? Das kostet nichts. Ich bin nur ungern lange auf dieser Insel.“",
+          "choices": [
+            {
+              "t": "Zurück zum Ufer",
+              "goto": {
+                "level": "moorsee",
+                "x": 22,
+                "y": 8,
+                "dir": 1
+              },
+              "msg": "Das Boot gleitet zurück zum Steg."
+            },
+            {
+              "t": "Noch bleiben"
+            }
+          ]
+        }
+      }
+    },
+    "gnom": {
+      "name": "Gnom",
+      "start": "a",
+      "again": "z",
+      "nodes": {
+        "a": {
+          "text": "Der Gnom hüpft von seinem Fass. „Gäste! Hihi. Ich spiele nur ein Spiel: Ich würfle eine Zahl von eins bis zehn. Ist sie gerade, gehört euch mein Glücksamulett. Ist sie ungerade, gewinne ich. Na?“",
+          "choices": [
+            {
+              "t": "Würfeln",
+              "dice": {
+                "even": {
+                  "give": [
+                    {
+                      "item": "gluecksamulett",
+                      "n": 1
+                    }
+                  ],
+                  "done": true,
+                  "set": [
+                    "gnom:gewonnen"
+                  ],
+                  "msg": "Der Gnom knirscht mit den Zähnen und wirft euch das Amulett zu. „Glück muss man haben. Hihi.“"
+                },
+                "odd": {
+                  "attack": "riesenspinne",
+                  "msg": "Der Gnom lacht. Sein Lachen wird tiefer, sein Rücken wölbt sich, und acht schwarze Beine schieben sich aus der Jacke."
+                }
+              }
+            },
+            {
+              "t": "Lieber nicht"
+            }
+          ]
+        },
+        "z": {
+          "text": "Der Gnom winkt mit einem Würfel. „Ihr habt gewonnen. Mehr gibt es nicht. Hihi.“",
           "choices": [
             {
               "t": "Gehen"

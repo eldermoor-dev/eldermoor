@@ -1060,6 +1060,17 @@ Nutzer: „Nächstes Level mit roter Grundfarbe und gruseligen Vampiren“.
 - **Balance:** sim.js CAMPAIGN enthält jetzt festung2 und festung3; BALANCE.md/SIM.md neu erzeugt (3000 Läufe). Boss Gräfin: ca. 57 % Sieg im 1. Versuch (klug), Normalkämpfe meist 84–100 %. Die Kampagne insgesamt bleibt für „nur Angriff“ sehr schwer (0 %), „klug“ 56 % – Altlast aus Keller 1, nicht neu.
 - Tests 127 grün. Offen: Gerätetest (Blutgruft, Vampirbilder, Blutbiss-Meldungen), Balance durch Spielen prüfen.
 
-## NÄCHSTES (vom Nutzer, 19.11.2026, noch nicht begonnen): Moorsee
-Flusslauf mit Brücke, See mit Fuhrmann (Fahrt gegen Gold) zur Schatzinsel mit Haus; dort Gnom mit Würfelspiel (Zufallszahl 1–10; ungerade → Gnom wird schwarze Riesenspinne = gefährlicher Kampf; gerade → Glücksamulett: Gruppe findet sehr selten Gold am Boden).
+## 0.28.0 (19.11.2026) – Moorsee, Fähre, Schatzinsel (nicht auf Gerät getestet)
+Nutzer: Flusslauf mit Brücke, See mit Boot und Fuhrmann (Fahrt gegen Gold) zur Schatzinsel mit Haus; Gnom mit Würfelspiel (1–10; ungerade → schwarze Riesenspinne, gerade → Glücksamulett).
+- **Gebiete:** `moorsee` (34×19; Fluss x=11..13 mit Bohlenbrücke y=8..9, See im Osten, Steg x=20..23 y=8, Fuhrmann `npc_fuhrmann` 23/8, Boot als Zierobjekt) und `schatzinsel` (15×14; Haus mit Tür `door_i_haus`, Gnom `npc_gnom`, drei Truhen, Rückfahrt-Fuhrmann `npc_fuhrmann_i`). Zugang: `stairs_pfad_see` (Moorpfad 22/7) → Moorsee 2/8; Rückweg `stairs_see_back` (1/8).
+- **Entscheidungen (von mir getroffen):** Anbindung über den Moorpfad; keine Bootssteuerung, Überfahrt per Dialog (`goto`, 20 Gold hin, zurück gratis); Wasser ist Bodenfeld `~` und sperrt mit Meldung. Würfel: gerade → Glücksamulett, ungerade → Gnom wird `riesenspinne` (Wortlaut des Nutzers so gedeutet). Spinne gibt EP/Gold/Ausrüstung, kein Amulett; wer verliert, kann das Amulett nicht mehr bekommen (Gnom ist dann Gegner). Amulett: ca. 0,6 % pro Schritt, 3–14 Gold.
+- **Neu in logic.js:** `travelTo` (Gebietswechsel ohne Treppe), Dialogfelder `goto` und `dice {even, odd}`, `decor` (blockiert, statisch), Glücksamulett-Wurf in `tryMove` (RNG nur mit Amulett verbraucht → alte Seeds unverändert), `analyzeLevel` zählt Fuhrmann-Dialog mit `goto` als Ausgang.
+- **render.js:** Boden-Raster `buildFloorGrid` (Wasser animiert, Bohlen quer/längs), Sprites Fuhrmann, Boot, Gnom, Riesenspinne; Karte (main.js drawMap): Wasser blau, Bohlen braun.
+- **Daten:** Objekt-IDs im Moorsee heißen `en_see1`, `en_see2`, `chest_see1`, `chest_see2` (IDs müssen über alle Gebiete eindeutig sein).
+- Tests 128 grün, BALANCE.md neu (Riesenspinne). SIM.md nicht neu: bestehende Werte unverändert, Riesenspinne nicht in der Kampagne.
+- Offen: Gerätetest (Fähre, Wasserdarstellung, Würfel gerade/ungerade, Spinnenkampf, Amulett, Karte).
 
+## NÄCHSTES 0.29.0 (vom Nutzer, 19.11.2026, noch nicht begonnen)
+- Spätere Ebene: Gefangener in kleinem Gefängnisraum befreibar; erfüllt einen Wunsch (Vorschläge liefern) und schenkt einen magischen Ring (Vorschläge, was er kann).
+- Allgemein mehr Ringe und Amulette mit Boni/Mali, teils verflucht; bestimmte Talente erkennen Flüche früh genug.
+- Zweiter Händler in der Blutgruft (festung3), deutlich bessere Ausrüstung als Hedda; neuer NPC muss anders aussehen als alle bisherigen.

@@ -223,7 +223,11 @@ export function arrivalDir(target, to) {
 export function changeArea(state, data, stairsId) {
   const st = state.objs.find((o) => o.id === stairsId && o.type === 'stairs');
   if (!st || !st.to) return { ok: false, msg: 'Hier führt nichts weiter.' };
-  const to = st.to, target = data.levels[to.level];
+  return travelTo(state, data, st.to, st.msg);
+}
+// Gebietswechsel zu einem Ziel { level, x, y, dir } (Treppe oder Fähre, 0.28.0)
+export function travelTo(state, data, to, msg) {
+  const target = data.levels[to.level];
   if (!target) return { ok: false, msg: 'Das Ziel ist unbekannt.' };
   if (cellChar(target, to.x, to.y) !== '.') return { ok: false, msg: 'Der Weg ist versperrt.' };
   state.areas = state.areas || {};
@@ -234,7 +238,7 @@ export function changeArea(state, data, stairsId) {
   state.objs = a.objs; state.seen = a.seen; state.notes = a.notes || [];
   state.player = { x: to.x, y: to.y, dir: arrivalDir(target, to) };
   markSeen(state, data);
-  return { ok: true, msg: st.msg || `Du erreichst: ${target.name}.`, levelName: target.name };
+  return { ok: true, msg: msg || `Du erreichst: ${target.name}.`, levelName: target.name };
 }
 
 // Truhen-Wächter (0.16.4): game.json → chest.guard = [Gegner-Objekt-IDs im selben Gebiet]. Solange einer davon lebt, bleibt die Truhe zu.
@@ -255,6 +259,7 @@ export function blockerAt(state, x, y) {
     if ((o.type === 'gate' || o.type === 'secret') && !o.open) return o; // secret = Geheimwand: sieht aus wie Mauer mit feinem Riss
     if (o.type === 'lever' || o.type === 'boulder') return o; // boulder = beweglicher Stein (0.19.0)
     if (o.type === 'npc' && !o.gone) return o; // 0.25.0: Begegnungsperson
+    if (o.type === 'decor') return o; // 0.28.0: feste Dekoration (Boot)
     if (o.type === 'merchant' || o.type === 'runestone' || (o.type === 'sign' && o.face == null)) return o; // Tafel mit face hängt an der Wand und versperrt nichts (0.16.8)
     if (o.type === 'enemy' && !o.dead) return o;
   }
@@ -344,7 +349,7 @@ export function tryMove(state, data, rel) {
   const p = state.player;
   const d = rel === 'f' ? p.dir : rel === 'b' ? (p.dir + 2) % 4 : rel === 'l' ? (p.dir + 3) % 4 : (p.dir + 1) % 4;
   const nx = p.x + DIRS[d].dx, ny = p.y + DIRS[d].dy;
-  if (isWallChar(cellChar(lvl, nx, ny))) return { moved: false, wall: true };
+  { const cc = cellChar(lvl, nx, ny); if (cc === '~') return { moved: false, wall: true, msg: 'Das Wasser ist tief und kalt. Hier kommt ihr nicht durch.' }; if (isWallChar(cc)) return { moved: false, wall: true }; }
   let b = blockerAt(state, nx, ny);
   const pushNotes = [];
   if (b && b.type === 'boulder') {
@@ -386,6 +391,11 @@ export function tryMove(state, data, rel) {
   } else if (ex) res.events.push({ type: 'exitAgain', id: ex.id }); // 0.16.4: erneutes Betreten zeigt einen kurzen Hinweis
   const stairs = state.objs.find((o) => o.type === 'stairs' && o.x === nx && o.y === ny);
   if (stairs) { res.events.push({ type: 'stairs', id: stairs.id }); return res; }
+  if ((state.inv.gluecksamulett || 0) > 0 && rand(state) < 0.006) { // 0.28.0: Glücksamulett – sehr selten Gold am Boden (ca. alle 170 Schritte)
+    const g = randInt(state, 3, 14);
+    state.gold += g;
+    res.luck = `Das Amulett wärmt sich kurz auf: Im Staub liegen ${g} Gold!`;
+  }
   res.encounter = enemyInFront(state);
   if (!res.encounter) { const sp = spottedEnemy(state, data); if (sp) { res.encounter = sp.enemy; res.ambush = sp.ambush; } }
   if (!res.encounter) { const notes = [...scanTraps(state, data), ...scanSecrets(state, data)]; if (notes.length) res.notes = notes; }
@@ -701,6 +711,7 @@ export function interact(state, data, target = null) { // target (0.26.2): Objek
 // data.dialogs.<id> = { name, start, again, nodes: { <id>: { text, choices: [ { t, to, if, cost, take, give, set, done, leave, attack, msg } ] } } }
 // to: nächster Knoten (fehlt = Gespräch endet) · if: { flag, noflag, item } (sonst Wahl nicht sichtbar) · cost: { gold } / take: { item, n } (Wahl gesperrt, wenn nicht vorhanden)
 // give: Beute wie bei Truhen · set: Marken (state.flags) · done: Gespräch gilt als geführt (dann `again`) · leave: Person verschwindet · attack: Person wird zum Gegner dieser Art
+// 0.28.0: goto: { level, x, y, dir } = Gebietswechsel (Fähre) · dice: { even: {…}, odd: {…} } = Zufallszahl 1–10, gerade/ungerade wählt die Folge (Felder wie bei einer Wahl)
 function dlgOf(data, npc) { return npc && data.dialogs && data.dialogs[npc.dialog]; }
 export function dialogStartNode(state, data, npc) {
   const dl = dlgOf(data, npc);
@@ -729,17 +740,27 @@ export function dialogChoose(state, data, npc, nodeId, idx) {
   const msgs = [];
   if (c.cost && c.cost.gold) state.gold -= c.cost.gold;
   if (c.take) state.inv[c.take.item] = (state.inv[c.take.item] || 0) - (c.take.n || 1);
-  if (c.give) msgs.push(`Erhalten: ${addLoot(state, data, c.give)}.`);
-  for (const f of c.set || []) state.flags[f] = true;
-  if (c.done) state.flags['d:' + npc.id] = true;
-  if (c.msg) msgs.unshift(c.msg);
-  if (c.leave) npc.gone = true;
-  if (c.attack) {
-    const en = data.enemies[c.attack];
-    Object.assign(npc, { type: 'enemy', kind: c.attack, hp: en.hp, dead: false });
+  let eff = c, next = c.to || null;
+  if (c.dice) { // 0.28.0: Würfel – Zahl 1–10; gerade → dice.even, ungerade → dice.odd (Felder wie bei einer Wahl: give, set, done, leave, attack, goto, msg, to)
+    const roll = randInt(state, 1, 10);
+    eff = Object.assign({}, c.dice[roll % 2 === 0 ? 'even' : 'odd']);
+    msgs.push(`Der Würfel zeigt ${roll}.`);
+    next = eff.to || null;
+    if (c.msg) msgs.push(c.msg);
+  }
+  if (eff.give) msgs.push(`Erhalten: ${addLoot(state, data, eff.give)}.`);
+  for (const f of eff.set || []) state.flags[f] = true;
+  if (eff.done || c.done) state.flags['d:' + npc.id] = true;
+  if (eff.msg) msgs.push(eff.msg);
+  if (c.msg && !c.dice) msgs.unshift(c.msg);
+  if (eff.leave) npc.gone = true;
+  if (eff.goto) return { end: true, goto: eff.goto, msg: msgs.join(' '), changed: true, sfx: 'ui' };
+  if (eff.attack) {
+    const en = data.enemies[eff.attack];
+    Object.assign(npc, { type: 'enemy', kind: eff.attack, hp: en.hp, dead: false });
     return { end: true, encounter: npc, msg: msgs.join(' '), changed: true };
   }
-  return { end: !c.to, next: c.to || null, msg: msgs.join(' '), changed: true, sfx: c.give ? 'chest' : 'ui' };
+  return { end: !next, next, msg: msgs.join(' '), changed: true, sfx: eff.give ? 'chest' : 'ui' };
 }
 
 export function useItemOutside(state, data, itemId, heroIdx) {
@@ -1830,7 +1851,7 @@ export function validateState(state, data) {
 
 // Gleicht feste Objekte (Treppen, Tafeln, Händler, Ausgänge) und neu hinzugekommene Objekte aller bekannten Gebiete mit game.json ab.
 // So bekommen alte Spielstände Neuerungen (z. B. eine neue Treppe) ohne neue Speicherversion. Truhen, Türen und Gegner behalten ihren Zustand (nur `title` und `style` werden aus game.json nachgezogen).
-const STATIC_TYPES = new Set(['stairs', 'sign', 'merchant', 'exit', 'runestone']);
+const STATIC_TYPES = new Set(['stairs', 'sign', 'merchant', 'exit', 'runestone', 'decor']);
 export function syncStatic(state, data) {
   for (const h of state.heroes || []) if (h && data.classes[h.cls] && h.role !== data.classes[h.cls].name) h.role = data.classes[h.cls].name; // umbenannte Berufe (Priester → Kleriker)
   const areas = [{ id: state.levelId, objs: state.objs }, ...Object.entries(state.areas || {}).map(([id, a]) => ({ id, objs: a.objs }))];
@@ -1927,7 +1948,8 @@ export function analyzeLevel(data, levelId) {
   const lvl = data.levels[levelId];
   const doors = lvl.objects.filter((o) => o.type === 'door');
   const chests = lvl.objects.filter((o) => o.type === 'chest');
-  const exits = lvl.objects.filter((o) => o.type === 'exit' || o.type === 'stairs'); // Ausgang = Runenstein oder Treppe
+  const hasGoto = (o) => o.type === 'npc' && o.dialog && Object.values(data.dialogs?.[o.dialog]?.nodes || {}).some((n) => (n.choices || []).some((c) => c.goto));
+  const exits = lvl.objects.filter((o) => o.type === 'exit' || o.type === 'stairs' || hasGoto(o)); // Ausgang = Runenstein, Treppe oder Fährmann (Dialog mit goto)
   const have = new Set();
   const opened = new Set();
   const gatesOpen = new Set(); // Gitter, deren Hebel erreichbar ist

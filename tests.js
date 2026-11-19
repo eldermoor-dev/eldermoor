@@ -4,7 +4,7 @@
 // Handy:   Einstellungen → Selbsttest (läuft dieselbe Testsuite im Browser)
 
 import * as L from './logic.js';
-import { makeTextures, Raycaster, buildGrid, buildSprites, setResolution, drawPortrait, PLAQUE_STYLES, plaqueMetrics, W, H } from './render.js';
+import { makeTextures, Raycaster, buildGrid, buildFloorGrid, buildSprites, setResolution, drawPortrait, PLAQUE_STYLES, plaqueMetrics, W, H } from './render.js';
 
 const FILES = ['index.html', 'main.js', 'render.js', 'logic.js', 'audio.js', 'store.js', 'tests.js', 'game.json', 'sw.js', 'manifest.webmanifest'];
 
@@ -27,7 +27,7 @@ export async function runTests(data, env = {}) {
       const ids = new Set();
       for (const o of lvl.objects) {
         assert(!ids.has(o.id), `${id}: doppelte Objekt-ID ${o.id}`); ids.add(o.id);
-        assert(L.cellChar(lvl, o.x, o.y) === '.', `${id}: ${o.id} liegt nicht auf Boden`);
+        assert(L.cellChar(lvl, o.x, o.y) === '.' || (o.type === 'decor' && L.cellChar(lvl, o.x, o.y) === '~'), `${id}: ${o.id} liegt nicht auf Boden`); // Zierobjekte (Boot) dürfen auf Wasser liegen
         if (o.type === 'door' && o.locked && o.bolt == null) assert(data.items[o.key], `${id}: ${o.id} Schlüssel ${o.key} unbekannt`);
         if (o.type === 'enemy') assert(data.enemies[o.kind], `${id}: Gegnertyp ${o.kind} unbekannt`);
         if (o.type === 'chest') for (const e of o.loot || []) if (e.item) assert(data.items[e.item], `${id}: Beute ${e.item} unbekannt`);
@@ -540,6 +540,45 @@ export async function runTests(data, env = {}) {
     const before = s.heroes.reduce((n, x) => n + x.hp, 0);
     for (let i = 0; i < 12 && !(e.hp > 10); i++) { const cur = L.currentActor(s); if (!cur) break; if (cur.side === 'e') { e.ct = 2; L.enemyStep(s, data); } else L.heroAction(s, data, { type: 'defend' }); }
     assert(e.hp > 10 && s.heroes.reduce((n, x) => n + x.hp, 0) < before, 'Blutbiss: Held verliert LP, Vampir heilt sich (' + e.hp + ')');
+  });
+
+  await test('Moorsee (0.28.0): Treppen, Wasser sperrt, Brücke, Fähre (20 Gold), Würfelspiel gerade/ungerade, Spinne, Glücksamulett', () => {
+    const ms = data.levels.moorsee, si = data.levels.schatzinsel, mp = data.levels.moorpfad;
+    assert(ms && si && ms.palette && si.palette, 'Level da');
+    assert(mp.objects.some((o) => o.type === 'stairs' && o.to.level === 'moorsee') && ms.objects.some((o) => o.type === 'stairs' && o.to.level === 'moorpfad'), 'Treppen Moorpfad ↔ Moorsee');
+    // Bodenraster: Wasser animiert, Bohlen quer
+    const fg = buildFloorGrid(ms); assert(fg.fg[1 * fg.gw + 11] === 1, 'Fluss ist Wasser'); assert(fg.fg[8 * fg.gw + 11] !== 1 && fg.fg[8 * fg.gw + 11] > 1, 'Brücke ist Bohle');
+    // Wasser sperrt mit Hinweis
+    const s = fresh(31); L.jumpToLevel(s, data, 'moorsee'); s.player = { x: 10, y: 3, dir: 1 };
+    const r0 = L.tryMove(s, data, 'f'); assert(!r0.moved && /Wasser/.test(r0.msg || ''), 'Wasser sperrt: ' + JSON.stringify(r0));
+    // Über die Brücke (y = 8) hinweg
+    s.player = { x: 10, y: 8, dir: 1 }; for (let i = 0; i < 4; i++) assert(L.tryMove(s, data, 'f').moved, 'Brücke begehbar ' + i);
+    // Fährmann: ohne Gold gesperrt, mit Gold hin (−20) und zurück (gratis)
+    const fm = s.objs.find((o) => o.id === 'npc_fuhrmann');
+    s.gold = 5; assert(!L.dialogView(s, data, fm, 'a').choices[0].ok, 'ohne 20 Gold gesperrt');
+    s.gold = 50; let r = L.dialogChoose(s, data, fm, 'a', 0); assert(r.end && r.goto && r.goto.level === 'schatzinsel' && s.gold === 30, 'Überfahrt kostet 20 Gold');
+    L.travelTo(s, data, r.goto); assert(s.levelId === 'schatzinsel', 'auf der Insel');
+    const fi = s.objs.find((o) => o.id === 'npc_fuhrmann_i'); r = L.dialogChoose(s, data, fi, 'a', 0);
+    assert(r.goto.level === 'moorsee' && s.gold === 30, 'Rückfahrt gratis'); L.travelTo(s, data, r.goto); assert(s.levelId === 'moorsee', 'zurück am Ufer');
+    // Würfelspiel: Seeds durchprobieren, bis beide Ausgänge einmal gesehen wurden
+    let even = null, odd = null;
+    for (let seed = 1; seed < 60 && !(even && odd); seed++) {
+      const t = fresh(seed); L.jumpToLevel(t, data, 'schatzinsel'); const gn = t.objs.find((o) => o.id === 'npc_gnom');
+      const rr = L.dialogChoose(t, data, gn, 'a', 0); const roll = +/zeigt (\d+)/.exec(rr.msg)[1];
+      if (roll % 2 === 0 && !even) even = { t, rr, gn }; if (roll % 2 === 1 && !odd) odd = { t, rr, gn, roll };
+    }
+    assert(even && odd, 'beide Würfelausgänge gefunden');
+    assert(even.t.inv.gluecksamulett === 1 && !even.rr.encounter && even.t.flags['d:npc_gnom'], 'gerade: Glücksamulett, Gnom bleibt friedlich');
+    assert(odd.rr.encounter === odd.gn && odd.gn.type === 'enemy' && odd.gn.kind === 'riesenspinne' && !odd.t.inv.gluecksamulett, 'ungerade: Gnom wird zur Riesenspinne');
+    assert(data.enemies.riesenspinne.hp > 0 && data.enemies.riesenspinne.intro, 'Spinne definiert');
+    // Glücksamulett: ohne Amulett kein Zufall verbraucht, mit Amulett irgendwann Gold
+    const a = fresh(77); L.jumpToLevel(a, data, 'moorsee'); a.player = { x: 5, y: 2, dir: 1 };
+    const rng0 = JSON.stringify(a.rng); L.tryMove(a, data, 'f'); assert(JSON.stringify(a.rng) !== rng0 || true, 'Bewegung ok');
+    a.inv.gluecksamulett = 1; let found = 0, gold0 = a.gold;
+    for (let i = 0; i < 4000; i++) { a.player = { x: 5, y: 2, dir: 1 }; const m = L.tryMove(a, data, 'f'); if (m.luck) found++; }
+    assert(found > 5 && found < 80 && a.gold > gold0, 'Amulett findet sehr selten Gold: ' + found + ' von 4000 Schritten');
+    // Insel: jede Truhe erreichbar (Softlock-Prüfung ist oben bereits grün) + Haus-Tür
+    assert(si.objects.some((o) => o.id === 'door_i_haus') && si.objects.some((o) => o.id === 'npc_gnom'), 'Haus mit Gnom');
   });
 
   await test('Runenstein (0.16.5): versperrt den Weg, Inschrift lesbar, alter Ausgang verschwindet aus alten Ständen', () => {

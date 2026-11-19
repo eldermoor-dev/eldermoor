@@ -46,6 +46,7 @@ Gegner (EP: jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die vol
 | Blutdiener | 60 | 15 | 3 | 6 | 75 | 14 | zielt auf den schwächsten Helden; Treffer: Blutung 30 % |
 | Vampirbrut | 95 | 18 | 5 | 8 | 125 | 24 | zielt auf den schwächsten Helden; Zaubert: Blutbiss (jeden 3. Zug) |
 | Blutgräfin | 230 | 16 | 7 | 9 | 420 | 160 | Zaubert: Blutbiss (jeden 2. Zug); Boss, Phasen: Blutrausch ab ≤ 66 % LP (Angriff 17), Fledermausschwarm ab ≤ 33 % LP (Angriff 18) |
+| Riesenspinne | 80 | 14 | 4 | 9 | 160 | 70 | zielt auf den schwächsten Helden; Giftbiss jeden 3. Zug, angekündigt (160 %); Treffer: Gift 60 % |
 
 ## Rassen (Modifikatoren)
 
@@ -276,6 +277,7 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 | Blutdiener | 6 % | – |
 | Vampirbrut | 9 % | – |
 | Blutgräfin | 100 %, Boost 2 | – |
+| Riesenspinne | 100 %, Boost 1 | – |
 
 ## Ausrüstungseffekte und Sets
 
