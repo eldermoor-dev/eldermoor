@@ -508,9 +508,9 @@ export async function runTests(data, env = {}) {
 
   await test('Ausgang (0.16.4): erstes Betreten = Abschluss, danach kurzer Hinweis', () => {
     const s = fresh(9); L.jumpToLevel(s, data, 'festung2'); s.objs.forEach((o) => { if (o.type === 'enemy') o.dead = true; });
-    put(s, 47, 32, 1);
+    put(s, 48, 32, 1);
     const a = L.tryMove(s, data, 'f'); assert(a.events.some((e) => e.type === 'exit'), 'erstes Mal: exit ' + JSON.stringify(a));
-    put(s, 47, 32, 1);
+    put(s, 48, 32, 1);
     const b = L.tryMove(s, data, 'f'); assert(b.events.some((e) => e.type === 'exitAgain') && !b.events.some((e) => e.type === 'exit'), 'danach: exitAgain ' + JSON.stringify(b));
     const t = data.levels.festung2.objects.find((o) => o.id === 'exit_k_tiefe');
     assert(t && /späteren Version/.test(t.again), 'Festungs-Ausgang hat Hinweistext');

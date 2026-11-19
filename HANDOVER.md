@@ -1047,3 +1047,6 @@ Nutzer: „Stehen zu weit auseinander“ (zwei Gegner im offenen Raum). groupOff
 ## 0.26.6 (19.11.2026) – Standpfeil auf der Karte größer (nicht auf Gerät getestet)
 Nutzer: eigener Standpfeil größer. main.js drawMapSym 'player': Radius 0.38→0.9 Feldbreiten auf der Karte (Legende 0.45), schwarzer Rand für Kontrast. Tests grün.
 
+## 0.26.7 (19.11.2026) – Kellertreppe „Tiefe“ an die Wand (nicht auf Gerät getestet)
+Nutzer: „Tür in der Mitte des Raums“ (letzter Raum vor dem neuen Bereich). Gemeint war vermutlich die frei stehende Treppe exit_k_tiefe (festung2, vorher 48/32, von der Seite als schmale Platte sichtbar). Jetzt 49/32 direkt an der Ostwand → wird als Wand-Abziehbild gezeichnet. Test angepasst (Spieler auf 48/32). Tür „TIEFE“ (41/32) unverändert. Nachfrage an Nutzer: stimmt die Deutung? Tests grün.
+

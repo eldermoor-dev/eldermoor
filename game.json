@@ -4176,7 +4176,7 @@
         {
           "id": "exit_k_tiefe",
           "type": "exit",
-          "x": 48,
+          "x": 49,
           "y": 32,
           "look": "down",
           "title": "Tiefe Keller der Moorfestung",
