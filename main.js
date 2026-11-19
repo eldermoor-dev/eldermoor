@@ -3,14 +3,14 @@
 import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
+  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, pushError, formatErrorLog, itemDef, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
   activeSets, coveredBy, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogChoose,
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.28.0';
+const VERSION = '0.29.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -1065,7 +1065,7 @@ function openHelp() { openModal(helpHtml(), 'help'); }
 
 // Symbol vor dem Gegenstandsnamen (Waffe, Rüstung, Trank, Gegengift, Öl, Proviant, Schlüssel …)
 function itemIcon(id, it) {
-  const ic = it.icon || (it.kind === 'equip' ? (it.slot === 'armor' ? '🛡' : '⚔') : it.kind === 'quest' ? '🗝' : it.heal ? '🧪' : it.cure ? '💧' : it.throw ? '🔥' : it.kind === 'supply' ? '🍞' : '');
+  const ic = it.icon || (it.kind === 'equip' ? (it.slot === 'armor' ? '🛡' : it.slot === 'ring' ? '💍' : it.slot === 'amulet' ? '📿' : '⚔') : it.kind === 'quest' ? '🗝' : it.heal ? '🧪' : it.cure ? '💧' : it.throw ? '🔥' : it.kind === 'supply' ? '🍞' : '');
   return ic ? `<span class="ic">${ic}</span> ` : '';
 }
 // Name mit Qualitätsfarbe, z. B. „Eisenschwert des Wolfs [Selten]“
@@ -1101,7 +1101,7 @@ function openInventory() {
   html += items.length ? items.map(([id, n, nw]) => {
     const it = itemDef(g, d, id);
     const use = it.kind === 'consumable' && (it.heal || it.mana) && !g.combat ? `<button class="mb" data-m="use:${id}">Benutzen</button>` : it.kind === 'supply' && !g.combat ? '<button class="mb" data-m="rest">Rasten</button>' : it.kind === 'equip' && !g.combat ? `<button class="mb" data-m="eqsel:${id}">Ausrüsten</button>` : '';
-    return `<div class="row nw${S.invEquip === id ? ' sel' : ''}"><div><b>${itemIcon(id, it)}${qTag(id, it)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}${nw ? ' <span class="newtag">● neu</span>' : ''}<div class="muted">${esc(it.desc)}</div></div>${use}</div>`;
+    return `<div class="row nw${S.invEquip === id ? ' sel' : ''}"><div><b>${itemIcon(id, it)}${qTag(id, it)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}${nw ? ' <span class="newtag">● neu</span>' : ''}<div class="muted">${esc(it.desc)}</div>${isCursed(it) && curseKnown(g, d, id) ? `<div style="font-size:.8em;color:#e86060">⚠ Verflucht: ${esc(curseText(it))}</div>` : ''}</div>${use}</div>`;
   }).join('') : '<p class="muted">Nichts dabei.</p>';
   if (S.invEquip && itemDef(g, d, S.invEquip) && (g.inv[S.invEquip] || 0) > 0) {
     html += `<h3>${qTag(S.invEquip, itemDef(g, d, S.invEquip))} an wen?</h3><div class="acts">` + g.heroes.map((h, i) =>
@@ -1134,9 +1134,10 @@ function charAbility(h) {
 }
 const bonusTxt = (n) => (n ? ` <span class="muted">(+${n})</span>` : '');
 function gearLines(h, i) {
-  return ['weapon', 'armor'].map((s) => {
+  return Object.keys(S.data.slots).map((s) => {
     const id = h.equip && h.equip[s], it = id && itemDef(S.game, S.data, id);
-    const fx = it && it.fx ? `<div class="muted" style="font-size:.72em">${esc(fxText(it.fx))}</div>` : '';
+    const cu = it && isCursed(it) && curseKnown(S.game, S.data, id) ? `<div style="font-size:.72em;color:#e86060">⚠ Fluch: ${esc(curseText(it))}</div>` : '';
+    const fx = (it && it.fx ? `<div class="muted" style="font-size:.72em">${esc(fxText(it.fx))}</div>` : '') + cu;
     return `<div class="muted">${S.data.slots[s]}: ${it ? qTag(id, it) + ` <button class="mb" data-m="uneq:${i}:${s}" style="padding:1px 6px;min-height:0">Ablegen</button>` : '–'}</div>${fx}`;
   }).join('') + activeSets(S.data, h).map((st) => `<div style="font-size:.74em;color:#6fdc8c">Set „${esc(st.name)}“: ${esc(fxText(st.bonus))}</div>`).join('');
 }

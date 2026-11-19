@@ -749,6 +749,8 @@ export function dialogChoose(state, data, npc, nodeId, idx) {
     if (c.msg) msgs.push(c.msg);
   }
   if (eff.give) msgs.push(`Erhalten: ${addLoot(state, data, eff.give)}.`);
+  if (eff.xp) { const um = []; grantXp(state, data, eff.xp, um); msgs.push(`Erfahrung: +${eff.xp} EP.`, ...um); } // 0.29.0: Wunsch „Erfahrung“
+  if (eff.reveal) { const lv = getLevel(data, state); (lv.map || []).forEach((row, y) => [...row].forEach((ch, x) => { if (!state.objs.some((o) => (o.type === 'secret' || o.type === 'illusion') && o.x === x && o.y === y)) state.seen[y * row.length + x] = 1; })); msgs.push('Die Karte dieses Gebiets ist euch nun bekannt.'); } // 0.29.0: Wunsch „Karte“
   for (const f of eff.set || []) state.flags[f] = true;
   if (eff.done || c.done) state.flags['d:' + npc.id] = true;
   if (eff.msg) msgs.push(eff.msg);
@@ -945,12 +947,21 @@ function checkRage(state, data, msgs) {
 // ---------- Ausrüstung (Schritt 5b) ----------
 // hero.equip = { weapon: itemId|null, armor: itemId|null } (optional; fehlt es, ist nichts angelegt).
 // Die gespeicherten Werte atk/def bleiben die Grundwerte; Boni werden beim Rechnen addiert.
-export const SLOTS = ['weapon', 'armor'];
+export const SLOTS = ['weapon', 'armor', 'ring', 'amulet']; // 0.29.0: Ring und Amulett (je Held höchstens eines)
+// Flüche (0.29.0): item.curse = { atk, def, init, fx } – verstecktes Malus, wirkt immer. Erkannt, wenn der Gegenstand einmal getragen wurde (flags['id:<id>']) oder ein wacher Held Geheimwände spüren kann (Talent 'secret' >= CURSE_SENSE).
+export const CURSE_SENSE = 25;
+export const isCursed = (it) => !!(it && it.curse);
+export const curseKnown = (state, data, id) => !!(state.flags && state.flags['id:' + id]) || partySkill(state, data, 'secret') >= CURSE_SENSE;
+export function curseText(it) {
+  const c = it && it.curse; if (!c) return '';
+  const n = { atk: 'Angriff', def: 'Verteidigung', init: 'Initiative' };
+  return Object.entries(c).filter(([k, v]) => k !== 'fx' && v).map(([k, v]) => `${n[k] || k} ${v > 0 ? '+' : '−'}${Math.abs(v)}`).join(', ');
+}
 // Gegenstandsdefinition: erzeugte Ausrüstung (state.gear) hat Vorrang vor den festen Gegenständen (data.items)
 export const itemDef = (state, data, id) => (state && state.gear && state.gear[id]) || data.items[id];
 export function gearBonus(data, h, state) {
   const b = { atk: 0, def: 0, init: 0 };
-  for (const s of SLOTS) { const it = h.equip && h.equip[s] && itemDef(state, data, h.equip[s]); if (it && it.kind === 'equip') { b.atk += it.atk || 0; b.def += it.def || 0; b.init += it.init || 0; } }
+  for (const s of SLOTS) { const it = h.equip && h.equip[s] && itemDef(state, data, h.equip[s]); if (it && it.kind === 'equip') { b.atk += (it.atk || 0) + ((it.curse && it.curse.atk) || 0); b.def += (it.def || 0) + ((it.curse && it.curse.def) || 0); b.init += (it.init || 0) + ((it.curse && it.curse.init) || 0); } }
   return b;
 }
 export const heroAtk = (data, h, state) => h.atk + gearBonus(data, h, state).atk + talentSum(data, h, 'atk') + Math.min(3, partyFx(state, data, 'aura_atk')); // aura_atk (0.22.0): Kampfruf der Anführer
@@ -971,8 +982,10 @@ export function equipItem(state, data, itemId, heroIdx) {
   state.inv[itemId]--;
   if (old) state.inv[old] = (state.inv[old] || 0) + 1;
   h.equip[it.slot] = itemId;
+  let curseMsg = '';
+  if (it.curse && !(state.flags['id:' + itemId])) { state.flags['id:' + itemId] = true; curseMsg = ` Ein Fluch! ${it.name}: ${curseText(it)}.`; }
   for (const k of Object.keys(state.inv)) if (state.inv[k] === 0 && itemDef(state, data, k).kind === 'equip') delete state.inv[k];
-  return { msg: `${h.name} legt ${it.name} an${old ? ` (${itemDef(state, data, old).name} zurück ins Inventar)` : ''}.`, sfx: 'ui' };
+  return { msg: `${h.name} legt ${it.name} an${old ? ` (${itemDef(state, data, old).name} zurück ins Inventar)` : ''}.${curseMsg}`, sfx: 'ui' };
 }
 export function unequipItem(state, data, heroIdx, slot) {
   if (state.combat) return { error: 'in-combat' };

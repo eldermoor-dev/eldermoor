@@ -581,6 +581,52 @@ export async function runTests(data, env = {}) {
     assert(si.objects.some((o) => o.id === 'door_i_haus') && si.objects.some((o) => o.id === 'npc_gnom'), 'Haus mit Gnom');
   });
 
+  await test('Ringe und Amulette (0.29.0): je Held ein Ring + ein Amulett, Werte, Fluch versteckt/erkannt, selten (nur Boss/Rätsel), Gefangener, Händler Valdis', () => {
+    const s = fresh(41); const h0 = s.heroes[0];
+    for (const id of ['ring_siegel', 'ring_last', 'amulett_moor']) s.inv[id] = 1;
+    const a0 = L.heroAtk(data, h0, s);
+    assert(L.equipItem(s, data, 'ring_siegel', 0).msg && L.heroAtk(data, h0, s) === a0 + 1 && L.fxSum(data, h0, 'crit') >= 6, 'Ring: Angriff +1, Krit +6');
+    L.equipItem(s, data, 'ring_last', 0); assert(h0.equip.ring === 'ring_last' && s.inv.ring_siegel === 1, 'Zweiter Ring ersetzt den ersten (höchstens 1 Ring)');
+    L.equipItem(s, data, 'amulett_moor', 0); assert(h0.equip.amulet === 'amulett_moor' && h0.equip.ring === 'ring_last', 'Amulett zusätzlich zum Ring');
+    assert(L.unequipItem(s, data, 0, 'ring').msg && s.inv.ring_last === 1, 'Ring ablegen');
+    // Fluch: versteckt bis getragen; Talent erkennt ihn früh
+    const t = fresh(42); t.inv.ring_blutdurst = 1; const ti = data.items.ring_blutdurst;
+    assert(L.isCursed(ti) && !L.curseKnown(t, data, 'ring_blutdurst'), 'Fluch zunächst unbekannt');
+    const d0 = L.heroDef(data, t.heroes[0], t);
+    const r = L.equipItem(t, data, 'ring_blutdurst', 0);
+    assert(/Fluch/.test(r.msg) && L.heroDef(data, t.heroes[0], t) === d0 - 3 && L.curseKnown(t, data, 'ring_blutdurst'), 'Anlegen verrät den Fluch, Malus wirkt: ' + r.msg);
+    const u = fresh(43); u.heroes[0].cls = 'ranger'; u.heroes[0].tal = { g_auge: true };
+    assert(L.talentSum(data, u.heroes[0], 'secret') >= L.CURSE_SENSE && L.curseKnown(u, data, 'ring_blutdurst'), 'Talent „Scharfes Auge“ erkennt den Fluch schon vor dem Anlegen');
+    // Seltenheit: Ringe/Amulette nur als Boss-Drop, Rätsel-/Truhenfund (kein Händler)
+    const rare = Object.entries(data.items).filter(([, i]) => i.kind === 'equip' && (i.slot === 'ring' || i.slot === 'amulet')).map(([k]) => k);
+    assert(rare.length >= 6, 'mehrere Ringe/Amulette: ' + rare.length);
+    for (const k of rare) { assert(!Object.values(data.shops).some((sh) => sh.stock.some((x) => x.item === k)), `${k} nicht im Handel`); assert(!(data.lootBases || []).includes(k), `${k} nicht in Zufallsbeute`); }
+    const fromBoss = rare.filter((k) => Object.values(data.enemies).some((e) => (e.drops || []).some((dr) => dr.item === k || (dr.pick || []).includes(k))));
+    const fromChest = rare.filter((k) => Object.values(data.levels).some((lv) => lv.objects.some((o) => o.type === 'chest' && (o.loot || []).some((l) => l.item === k))));
+    const fromTalk = rare.filter((k) => Object.values(data.dialogs).some((dl) => Object.values(dl.nodes).some((n) => n.choices.some((c) => (c.give || []).some((l) => l.item === k)))));
+    for (const k of rare) assert(fromBoss.includes(k) || fromChest.includes(k) || fromTalk.includes(k), `${k} hat keine Fundquelle`);
+    assert(rare.every((k) => data.items[k].q === 'unique'), 'alle einzigartig (nicht verkäuflich)');
+    // Gefangener: Zelle, Schlüssel in der Galerie-Truhe, Wunsch + Ring
+    const f3 = data.levels.festung3, zd = f3.objects.find((o) => o.id === 'door_b_zelle');
+    assert(zd && zd.locked && f3.objects.some((o) => o.type === 'chest' && o.loot.some((l) => l.item === zd.key)), 'Zellentür verschlossen, Schlüssel in einer Truhe');
+    assert(L.analyzeLevel(data, 'festung3').ok, 'festung3 weiter lösbar');
+    const w = fresh(44); L.jumpToLevel(w, data, 'festung3'); const pr = w.objs.find((o) => o.id === 'npc_gefangener'); assert(pr, 'Gefangener da');
+    const g0 = w.gold; let rr = L.dialogChoose(w, data, pr, 'b', 0);
+    assert(w.gold === g0 + 200 && w.inv.ring_wunsch === 1 && pr.gone && rr.end, 'Wunsch Reichtum: 200 Gold + Ring');
+    const w2 = fresh(45); L.jumpToLevel(w2, data, 'festung3'); const p2 = w2.objs.find((o) => o.id === 'npc_gefangener'); const xp0 = w2.heroes[0].xp;
+    rr = L.dialogChoose(w2, data, p2, 'b', 2); assert(w2.heroes[0].xp > xp0 && w2.inv.ring_wunsch === 1, 'Wunsch Erfahrung');
+    const w3 = fresh(46); L.jumpToLevel(w3, data, 'festung3'); const p3 = w3.objs.find((o) => o.id === 'npc_gefangener'); const sn = w3.seen.filter(Boolean).length;
+    L.dialogChoose(w3, data, p3, 'b', 3); assert(w3.seen.filter(Boolean).length > sn + 100, 'Wunsch Karte deckt auf');
+    const w4 = fresh(47); L.jumpToLevel(w4, data, 'festung3'); L.dialogChoose(w4, data, w4.objs.find((o) => o.id === 'npc_gefangener'), 'b', 1);
+    assert(Object.keys(w4.gear || {}).length === 1 && w4.inv.ring_wunsch === 1, 'Wunsch Rüstzeug: erzeugte Ausrüstung + Ring');
+    // Händler Valdis: besser als Hedda
+    const v = f3.objects.find((o) => o.type === 'merchant'), best = (shop, slot) => Math.max(0, ...shop.stock.map((x) => data.items[x.item]).filter((i) => i.slot === slot).map((i) => (i.atk || 0) + (i.def || 0)));
+    assert(v && data.shops[v.shop] && best(data.shops[v.shop], 'weapon') > best(data.shops.moorrand, 'weapon') && best(data.shops[v.shop], 'armor') > best(data.shops.moorrand, 'armor'), 'Valdis verkauft stärkere Waffen und Rüstungen als Hedda');
+    assert(v.look && v.look !== 'merchant', 'eigenes Aussehen');
+    // Speichern/Laden mit Ring
+    const sv = fresh(48); sv.inv.ring_siegel = 1; L.equipItem(sv, data, 'ring_siegel', 1); const sv2 = L.deserialize(JSON.stringify(L.serialize(sv)), data); assert(sv2.heroes[1].equip.ring === 'ring_siegel', 'Ring überlebt Speichern/Laden');
+  });
+
   await test('Runenstein (0.16.5): versperrt den Weg, Inschrift lesbar, alter Ausgang verschwindet aus alten Ständen', () => {
     const s = fresh(10); s.objs.forEach((o) => { if (o.type === 'door') { o.open = true; o.locked = false; } if (o.type === 'enemy') o.dead = true; });
     put(s, 18, 7, 1);
@@ -753,7 +799,7 @@ export async function runTests(data, env = {}) {
     assert(threw, 'falscher Slot im Spielstand wird abgelehnt');
     const q2 = fresh(8); q2.inv.iron_sword = 1; L.startCombat(q2, data, q2.objs.find((o) => o.type === 'enemy'));
     assert(L.equipItem(q2, data, 'iron_sword', 0).error === 'in-combat', 'im Kampf nicht wechseln');
-    for (const [k, it] of Object.entries(data.items)) if (it.kind === 'equip') assert(it.slot && (it.atk || it.def) && it.desc, `Item ${k} vollständig`);
+    for (const [k, it] of Object.entries(data.items)) if (it.kind === 'equip') assert(it.slot && (it.atk || it.def || it.init || it.fx) && it.desc, `Item ${k} vollständig`);
   });
   await test('Mehrere Gegner (3c): Gruppen, Zielwahl, Alle angreifen, Schwerer Schlag, KI, Aufstehen, Rechenweg', () => {
     const enemyObj = (id) => { const s = L.newGame(data, 31); return [s, s.objs.find((o) => o.id === id)]; };
@@ -1087,10 +1133,10 @@ export async function runTests(data, env = {}) {
     for (const q of data.quality) assert(q.weight > 0 && Number.isInteger(q.statBonus) && Number.isInteger(q.affixes) && q.name && q.color, `Qualität ${q.id}`);
     const stats = new Set(['atk', 'def', 'init']);
     for (const a of data.affixes) { assert(stats.has(a.stat) && a.min >= 1 && a.max >= a.min && a.name, `Eigenschaft ${a.id}`); assert(a.slots.every((x) => data.slots[x]), `Eigenschaft ${a.id}: Platz`); }
-    for (const slot of Object.keys(data.slots)) assert(data.affixes.some((a) => a.slots.includes(slot)), `keine Eigenschaft für ${slot}`);
+    for (const slot of ['weapon', 'armor']) assert(data.affixes.some((a) => a.slots.includes(slot)), `keine Eigenschaft für ${slot}`);
     assert(data.quality.some((q) => q.affixes > 0) && data.quality.every((q) => q.affixes <= data.affixes.length), 'Eigenschaftenzahl');
     for (const id of data.lootBases) assert(data.items[id] && data.items[id].kind === 'equip', `Grundgegenstand ${id}`);
-    for (const [id, it] of Object.entries(data.items)) if (it.q === 'unique') assert(it.kind === 'equip' && it.classes && it.classes.every((c) => data.classes[c]), `Unikat ${id}`);
+    for (const [id, it] of Object.entries(data.items)) if (it.q === 'unique') assert(it.kind === 'equip' && (!it.classes ? ['ring', 'amulet'].includes(it.slot) : it.classes.every((c) => data.classes[c])), `Unikat ${id}`); // Ringe/Amulette für alle Berufe
     for (const [id, en] of Object.entries(data.enemies)) {
       for (const d of en.drops || []) for (const x of d.pick || [d.item]) assert(data.items[x] && data.items[x].q === 'unique', `${id}: Drop ${x} ist kein Unikat`);
       if (en.gearDrop) assert(en.gearDrop.chance > 0 && en.gearDrop.chance <= 100, `${id}: gearDrop`);

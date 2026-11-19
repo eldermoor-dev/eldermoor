@@ -266,17 +266,17 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 | Moorlicht | 3 % | – |
 | Gruftskelett | 4 % | – |
 | Kultwächter | 8 % | – |
-| Kultwächter-Hauptmann | 100 %, Boost 1 | Siegelpanzer oder Nebelmantel (100 %, nur einmal) |
-| Moorschrat | 100 %, Boost 1 | Schratdorn oder Wurzelstab (100 %, nur einmal) |
+| Kultwächter-Hauptmann | 100 %, Boost 1 | Siegelpanzer oder Nebelmantel (100 %, nur einmal); Siegelring des Hauptmanns (100 %, nur einmal) |
+| Moorschrat | 100 %, Boost 1 | Schratdorn oder Wurzelstab (100 %, nur einmal); Moorstein-Amulett (100 %, nur einmal) |
 | Nebelgeist | 4 % | – |
 | Kultpriester | 8 % | – |
 | Turmwache | 8 % | – |
-| Nebelhüter | 100 %, Boost 2 | – |
+| Nebelhüter | 100 %, Boost 2 | Nebeltränen-Amulett (100 %, nur einmal) |
 | Truhenmaul | 100 %, Boost 1 | – |
 | Brandmagier | 8 % | – |
 | Blutdiener | 6 % | – |
 | Vampirbrut | 9 % | – |
-| Blutgräfin | 100 %, Boost 2 | – |
+| Blutgräfin | 100 %, Boost 2 | Ring der Blutgräfin (100 %, nur einmal) |
 | Riesenspinne | 100 %, Boost 1 | – |
 
 ## Ausrüstungseffekte und Sets
@@ -291,6 +291,14 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 | Moorpanzer | Rüstung | Vert. +3 | Dornen 2 | Moorwächter |
 | Nebelstab | Waffe | Angriff +3 | Fähigkeiten % 10 | Nebelweber |
 | Nebelrobe | Rüstung | Vert. +2 | Ressource + 1 | Nebelweber |
+| Siegelring des Hauptmanns | Ring | Angriff +1 | Krit % 6 | – |
+| Ring der Last | Ring | Vert. +1 | Schaden − 1 | – |
+| Ring der Blutgräfin | Ring | Init +1 | Lebensraub % 12 | – |
+| Ring des Befreiten | Ring | Init +1 | Ausweichen % 8, Ressource + 1 | – |
+| Ring des Blutdurstes | Ring | Angriff +3 | Lebensraub % 10 | – |
+| Moorstein-Amulett | Amulett | Vert. +1 | Statusabwehr % 25 | – |
+| Nebeltränen-Amulett | Amulett |  | Ausweichen % 6, Fähigkeiten % 10 | – |
+| Kette der Gier | Amulett |  | gold 40 | – |
 
 | Set | Teile | Bonus (alle Teile) |
 |---|---|---|

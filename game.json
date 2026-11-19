@@ -325,6 +325,161 @@
       "name": "Glücksamulett",
       "kind": "quest",
       "desc": "Ein Amulett aus rotem Glas an einem Lederband. Wer es bei sich trägt, stolpert sehr selten über verlorene Münzen."
+    },
+    "ring_siegel": {
+      "name": "Siegelring des Hauptmanns",
+      "kind": "equip",
+      "slot": "ring",
+      "q": "unique",
+      "atk": 1,
+      "fx": {
+        "crit": 6
+      },
+      "desc": "Ring. +1 Angriff, Krit +6 %. Vom Hauptmann der Kultgruft."
+    },
+    "ring_last": {
+      "name": "Ring der Last",
+      "kind": "equip",
+      "slot": "ring",
+      "q": "unique",
+      "def": 1,
+      "fx": {
+        "soak": 1
+      },
+      "desc": "Ring. +1 Verteidigung, Schaden gegen dich −1. Lag im Raum, in dem der Stein die Last trägt."
+    },
+    "ring_blut": {
+      "name": "Ring der Blutgräfin",
+      "kind": "equip",
+      "slot": "ring",
+      "q": "unique",
+      "init": 1,
+      "fx": {
+        "lifesteal": 12
+      },
+      "desc": "Ring. +1 Initiative, Lebensraub 12 %. Von der Blutgräfin."
+    },
+    "ring_wunsch": {
+      "name": "Ring des Befreiten",
+      "kind": "equip",
+      "slot": "ring",
+      "q": "unique",
+      "init": 1,
+      "fx": {
+        "dodge": 8,
+        "regen": 1
+      },
+      "desc": "Ring. +1 Initiative, Ausweichen 8 %, +1 Ressource je Angriff/Verteidigen. Geschenk des Gefangenen."
+    },
+    "ring_blutdurst": {
+      "name": "Ring des Blutdurstes",
+      "kind": "equip",
+      "slot": "ring",
+      "q": "unique",
+      "atk": 3,
+      "fx": {
+        "lifesteal": 10
+      },
+      "curse": {
+        "def": -3,
+        "init": -2
+      },
+      "desc": "Ring. +3 Angriff, Lebensraub 10 %."
+    },
+    "amulett_moor": {
+      "name": "Moorstein-Amulett",
+      "kind": "equip",
+      "slot": "amulet",
+      "q": "unique",
+      "def": 1,
+      "fx": {
+        "resist": 25
+      },
+      "desc": "Amulett. +1 Verteidigung, Statusabwehr 25 %. Aus dem Herzen des Grubenschrats."
+    },
+    "amulett_nebel": {
+      "name": "Nebeltränen-Amulett",
+      "kind": "equip",
+      "slot": "amulet",
+      "q": "unique",
+      "fx": {
+        "dodge": 6,
+        "abil": 10
+      },
+      "desc": "Amulett. Ausweichen 6 %, Fähigkeiten +10 %. Vom Nebelhüter."
+    },
+    "amulett_gier": {
+      "name": "Kette der Gier",
+      "kind": "equip",
+      "slot": "amulet",
+      "q": "unique",
+      "fx": {
+        "gold": 40
+      },
+      "curse": {
+        "def": -2,
+        "atk": -1
+      },
+      "desc": "Amulett. Gold +40 % aus Kämpfen."
+    },
+    "zellenschluessel": {
+      "name": "Zellenschlüssel",
+      "kind": "quest",
+      "desc": "Ein schwerer Eisenschlüssel mit Blutflecken. Passt in die kleine Zelle der Ahnengalerie."
+    },
+    "stahlschwert": {
+      "name": "Stahlschwert",
+      "kind": "equip",
+      "slot": "weapon",
+      "atk": 4,
+      "classes": [
+        "warrior",
+        "rogue",
+        "ranger"
+      ],
+      "desc": "Waffe. +4 Angriff. Für Krieger, Schurke, Waldläufer.",
+      "value": 120
+    },
+    "runenstab": {
+      "name": "Runenstab",
+      "kind": "equip",
+      "slot": "weapon",
+      "atk": 4,
+      "classes": [
+        "mage",
+        "priest",
+        "alchemist"
+      ],
+      "desc": "Waffe. +4 Angriff. Für Magier, Kleriker und Alchemisten.",
+      "value": 120
+    },
+    "schuppenpanzer": {
+      "name": "Schuppenpanzer",
+      "kind": "equip",
+      "slot": "armor",
+      "def": 3,
+      "classes": [
+        "rogue",
+        "mage",
+        "priest",
+        "ranger",
+        "alchemist"
+      ],
+      "desc": "Rüstung. +3 Verteidigung. Für alle außer Krieger.",
+      "value": 110
+    },
+    "plattenpanzer": {
+      "name": "Plattenpanzer",
+      "kind": "equip",
+      "slot": "armor",
+      "def": 4,
+      "classes": [
+        "warrior",
+        "priest",
+        "ranger"
+      ],
+      "desc": "Rüstung. +4 Verteidigung. Für Krieger, Kleriker, Waldläufer.",
+      "value": 190
     }
   },
   "races": {
@@ -948,6 +1103,10 @@
             "nebelmantel"
           ],
           "chance": 100
+        },
+        {
+          "item": "ring_siegel",
+          "chance": 100
         }
       ],
       "intro": {
@@ -1031,6 +1190,10 @@
             "schratdorn",
             "wurzelstab"
           ],
+          "chance": 100
+        },
+        {
+          "item": "amulett_moor",
           "chance": 100
         }
       ],
@@ -1225,7 +1388,13 @@
       "intro": {
         "title": "Der Nebelhüter",
         "text": "Auf dem Thron sitzt etwas, das einmal eine Gestalt hatte."
-      }
+      },
+      "drops": [
+        {
+          "item": "amulett_nebel",
+          "chance": 100
+        }
+      ]
     },
     "truhenmaul": {
       "name": "Truhenmaul",
@@ -1444,7 +1613,13 @@
       "intro": {
         "title": "Die Blutgräfin",
         "text": "Sie sitzt auf dem Thron, als hätte sie auf euch gewartet. Sie lächelt mit geschlossenem Mund."
-      }
+      },
+      "drops": [
+        {
+          "item": "ring_blut",
+          "chance": 100
+        }
+      ]
     },
     "riesenspinne": {
       "name": "Riesenspinne",
@@ -2632,9 +2807,13 @@
             {
               "item": "moorklinge",
               "n": 1
+            },
+            {
+              "item": "amulett_gier",
+              "n": 1
             }
           ],
-          "lootV": 2
+          "lootV": 3
         },
         {
           "id": "ill_g1",
@@ -3061,9 +3240,13 @@
             {
               "item": "moorpanzer",
               "n": 1
+            },
+            {
+              "item": "ring_last",
+              "n": 1
             }
           ],
-          "lootV": 2
+          "lootV": 3
         },
         {
           "id": "ill_s1",
@@ -4446,9 +4629,9 @@
       },
       "map": [
         "############################################################",
-        "############################################################",
-        "############################################################",
-        "##rTrrrrrrrrTr##############################################",
+        "####.....###################################################",
+        "####.....###################################################",
+        "##rTrr.rrrrrTr##############################################",
         "##r..........r##############################################",
         "##r..........rmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm###############",
         "##r..........rm.....m.....m.....m.....m.....m###############",
@@ -4570,8 +4753,13 @@
             {
               "item": "zaubertrank_m",
               "n": 1
+            },
+            {
+              "item": "zellenschluessel",
+              "n": 1
             }
-          ]
+          ],
+          "lootV": 2
         },
         {
           "id": "niche_b_a",
@@ -4861,8 +5049,13 @@
             {
               "item": "zaubertrank_m",
               "n": 1
+            },
+            {
+              "item": "ring_blutdurst",
+              "n": 1
             }
-          ]
+          ],
+          "lootV": 2
         },
         {
           "id": "gate_b1",
@@ -5003,6 +5196,36 @@
           "title": "Tiefe der Blutgruft",
           "text": "Eine schmale Wendeltreppe führt tiefer hinab. Die Stufen sind feucht.",
           "again": "Hier geht es in einer späteren Version weiter."
+        },
+        {
+          "id": "door_b_zelle",
+          "type": "door",
+          "x": 6,
+          "y": 3,
+          "locked": true,
+          "key": "zellenschluessel",
+          "title": "ZELLE"
+        },
+        {
+          "id": "npc_gefangener",
+          "type": "npc",
+          "x": 6,
+          "y": 1,
+          "name": "Gefangener",
+          "look": "gefangener",
+          "dialog": "gefangener"
+        },
+        {
+          "id": "merchant_valdis",
+          "type": "merchant",
+          "x": 7,
+          "y": 24,
+          "shop": "blutgruft",
+          "look": "haendler2",
+          "talk": {
+            "flag": "talk_valdis",
+            "text": "Valdis: Ich handle mit allem, was scharf ist und nicht an der Gruft hängt. Drei Dinge: Geht nie ohne Gegengift ins Schiff. Die Gräfin mag Eisen nicht. Und wer in der Ahnengalerie eine Zelle hört, hat sich nicht verhört."
+          }
         }
       ]
     },
@@ -5310,7 +5533,9 @@
   },
   "slots": {
     "weapon": "Waffe",
-    "armor": "Rüstung"
+    "armor": "Rüstung",
+    "ring": "Ring",
+    "amulet": "Amulett"
   },
   "elements": {
     "fire": {
@@ -5751,6 +5976,43 @@
         },
         {
           "item": "chain_mail"
+        }
+      ]
+    },
+    "blutgruft": {
+      "name": "Valdis' Waffenstand",
+      "owner": "Valdis",
+      "greeting": "Valdis klopft auf seinen Zweihänder. „Ich verkaufe, was die Gruft nicht verdient. Preise sind Preise.“",
+      "stock": [
+        {
+          "item": "potion_m"
+        },
+        {
+          "item": "potion_g"
+        },
+        {
+          "item": "zaubertrank_m"
+        },
+        {
+          "item": "zaubertrank_g"
+        },
+        {
+          "item": "gegengift"
+        },
+        {
+          "item": "ration"
+        },
+        {
+          "item": "stahlschwert"
+        },
+        {
+          "item": "runenstab"
+        },
+        {
+          "item": "schuppenpanzer"
+        },
+        {
+          "item": "plattenpanzer"
         }
       ]
     }
@@ -6978,6 +7240,124 @@
         },
         "z": {
           "text": "Der Gnom winkt mit einem Würfel. „Ihr habt gewonnen. Mehr gibt es nicht. Hihi.“",
+          "choices": [
+            {
+              "t": "Gehen"
+            }
+          ]
+        }
+      }
+    },
+    "gefangener": {
+      "name": "Gefangener",
+      "start": "a",
+      "again": "z",
+      "nodes": {
+        "a": {
+          "text": "Ein ausgemergelter Mann hängt in Ketten. „Ihr seid… keine von ihnen? Der Schlüssel in euren Händen, ja? Ich war ein Wanderer. Befreit mich, und ich vergelte es.“",
+          "choices": [
+            {
+              "t": "Ketten lösen",
+              "to": "b"
+            },
+            {
+              "t": "Wer hat dich hier eingesperrt?",
+              "to": "i"
+            },
+            {
+              "t": "Später"
+            }
+          ]
+        },
+        "i": {
+          "text": "„Die Gräfin sammelt Gäste. Meistens bleiben sie. Nun, bei mir hat sie vergessen, dass ich lange hungern kann.“",
+          "choices": [
+            {
+              "t": "Ketten lösen",
+              "to": "b"
+            },
+            {
+              "t": "Später"
+            }
+          ]
+        },
+        "b": {
+          "text": "Die Ketten fallen. Der Mann reibt sich die Handgelenke. „Frei. Ein Wunsch, so wahr ich lebe. Und den Ring nehmt ihr ohnehin mit – er hat mich in dieser Zelle am Leben gehalten. Was wünscht ihr euch?“",
+          "choices": [
+            {
+              "t": "Reichtum",
+              "give": [
+                {
+                  "gold": 200
+                },
+                {
+                  "item": "ring_wunsch",
+                  "n": 1
+                }
+              ],
+              "set": [
+                "gefangener:frei"
+              ],
+              "done": true,
+              "leave": true,
+              "msg": "Er gräbt in einem Mauerspalt und reicht euch einen Beutel: 200 Gold. „Aus besseren Zeiten.“ Dann verschwindet er im Dunkel."
+            },
+            {
+              "t": "Rüstzeug",
+              "give": [
+                {
+                  "gear": {
+                    "boost": 3
+                  }
+                },
+                {
+                  "item": "ring_wunsch",
+                  "n": 1
+                }
+              ],
+              "set": [
+                "gefangener:frei"
+              ],
+              "done": true,
+              "leave": true,
+              "msg": "„Das Gewölbe lässt Dinge liegen.“ Er zieht ein Bündel unter dem Stroh hervor. Dann ist er fort."
+            },
+            {
+              "t": "Erfahrung",
+              "xp": 400,
+              "give": [
+                {
+                  "item": "ring_wunsch",
+                  "n": 1
+                }
+              ],
+              "set": [
+                "gefangener:frei"
+              ],
+              "done": true,
+              "leave": true,
+              "msg": "„Ich erzähle euch, was ich hier unten gesehen habe.“ Es dauert lange. Ihr geht klüger hinaus."
+            },
+            {
+              "t": "Wissen: Karte der Gruft",
+              "reveal": true,
+              "give": [
+                {
+                  "item": "ring_wunsch",
+                  "n": 1
+                }
+              ],
+              "set": [
+                "gefangener:frei"
+              ],
+              "done": true,
+              "leave": true,
+              "msg": "Er malt mit dem Finger Linien in den Staub. „Hier, hier und hier.“ Ihr prägt sie euch ein."
+            }
+          ]
+        },
+        "z": {
+          "text": "Die Zelle ist leer.",
           "choices": [
             {
               "t": "Gehen"
