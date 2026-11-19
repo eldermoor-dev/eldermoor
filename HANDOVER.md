@@ -1027,3 +1027,8 @@ Nutzer: Die anderen Personen sollen nicht wie die Händlerin aussehen, sondern u
 - Tests 125 grün. Bilder headless im Vergleich zu Händlerin, Kultist und Wächter gesehen (Ausgabe als Bild), **nicht auf Gerät getestet**. Keine Werte geändert, BALANCE.md/SIM.md unverändert.
 - Arbeitsweise (Nutzer 19.11.): Claude lädt neue Versionen selbst ins Repo hoch (Push auf `main`); Testlisten immer als Abhakliste mit ✓ und ✗; beides ohne erneute Aufforderung anbieten.
 
+## 0.26.2 (19.11.2026) – Türen aus 2 Feldern öffnen (nicht auf Gerät getestet)
+Nutzer: Türen sollen schon aus 2 Feldern Abstand durch Antippen aufgehen.
+- `doorAhead2(state, x, y)` (logic.js): Tür genau 2 Felder in Blickrichtung, Feld davor frei, Tür zu, keine Riegeltür (Riegelseite braucht Nähe). `interact(state, data, target)` nimmt ein Zielobjekt entgegen. main.js `tapUseByTap`: Tippen auf eine solche Tür öffnet sie sofort (Schloss/Schlüssel wie sonst); Gruppe bleibt stehen. Andere Objekte weiter „Geh näher heran.“
+- Tests 126 grün (neu: Tür aus 2 Feldern). Keine Werte geändert.
+

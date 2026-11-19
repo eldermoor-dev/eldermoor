@@ -626,9 +626,9 @@ export function wallSignAhead(state, data) {
   if (isWallChar(cellChar(lvl, fx, fy)) || blockerAt(state, fx, fy)) return null;
   return at(fx, fy) || null;
 }
-export function interact(state, data) {
+export function interact(state, data, target = null) { // target (0.26.2): Objekt, das aus 2 Feldern Abstand benutzt wird (nur Türen)
   const f = frontCell(state);
-  const o = blockerAt(state, f.x, f.y);
+  const o = target || blockerAt(state, f.x, f.y);
   if (!o) {
     const il = illusionAt(state, f.x, f.y);
     if (il) { const sk = partySkill(state, data, 'secret'); il.sensed = il.sensed || sk > 0; return { msg: il.hint || (sk > 0 ? `${bestAt(state, data, 'secret').name}: „Das ist keine Mauer. Das Licht bricht sich falsch darin.“` : 'Die Steine wirken seltsam unscharf, als läge ein Schleier darüber.'), sfx: 'ui' }; }
@@ -1975,4 +1975,14 @@ export function analyzeLevel(data, levelId) {
     ok: exits.length > 0 && !unreachableExits.length && !unreachableChests.length && !lockedNoKey.length,
     reachable: reach.size, unreachableExits, unreachableChests, lockedNoKey, keys: [...have]
   };
+}
+
+// 0.26.2: Tür 2 Felder voraus (freie Sicht, Feld davor frei) – Antippen öffnet sie schon dort. Riegeltüren brauchen die Nähe (Seitenprüfung).
+export function doorAhead2(state, x, y) {
+  const p = state.player, d = DIRS[p.dir], f = { x: p.x + d.dx, y: p.y + d.dy };
+  const o = state.objs.find((q) => q.type === 'door' && q.x === x && q.y === y);
+  if (!o || o.open || o.bolt != null) return null;
+  if (x !== f.x + d.dx || y !== f.y + d.dy) return null;
+  if (blockerAt(state, f.x, f.y)) return null;
+  return o;
 }

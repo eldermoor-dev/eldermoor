@@ -2327,6 +2327,16 @@ export async function runTests(data, env = {}) {
     const ia = all.findIndex((m) => /Kraft für Feuerball/.test(m)), ic = all.findIndex((m) => /wirkt Feuerball/.test(m));
     assert(ia >= 0 && ic > ia, 'Feuerball wird angesagt'); assert(all.slice(ic).filter((m) => /Feuerball trifft .* Feuerschaden/.test(m)).length >= 3, 'Feuerball trifft mehrere Helden mit Feuerschaden');
   });
+  await test('Tür aus 2 Feldern öffnen (0.26.2): nur Türen geradeaus, freies Feld davor, keine Riegeltür', () => {
+    const s = L.newGame(data, 3); L.jumpToLevel(s, data, 'festung1'); s.objs.forEach((o) => { if (o.type === 'enemy') o.dead = true; });
+    const door = s.objs.find((o) => o.id === 'door_f_hof');
+    s.player = { x: door.x - 2, y: door.y, dir: 1 };
+    assert(L.doorAhead2(s, door.x, door.y) === door, 'Tür 2 Felder voraus erkannt');
+    const r = L.interact(s, data, door); assert(r.changed && door.open, 'Tür öffnet sich aus 2 Feldern');
+    s.player = { x: door.x - 1, y: door.y, dir: 1 }; door.open = false; assert(L.doorAhead2(s, door.x, door.y) === null, '1 Feld Abstand ist normaler Fall');
+    s.player = { x: door.x - 2, y: door.y, dir: 3 }; assert(L.doorAhead2(s, door.x, door.y) === null, 'Blick in die falsche Richtung');
+    const rb = s.objs.find((o) => o.id === 'door_f_riegel2'); s.player = { x: rb.x - 2, y: rb.y, dir: 1 }; assert(L.doorAhead2(s, rb.x, rb.y) === null, 'Riegeltür braucht Nähe');
+  });
   const failed = results.filter((r) => !r.ok).length; // 0.23.0: erst am Ende zählen (vorher fehlten spätere Tests in der Summe)
   return { results, passed: results.length - failed, failed };
 }

@@ -4,13 +4,13 @@ import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
   buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, pushError, formatErrorLog, itemDef, qualityOf, changeArea, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
-  activeSets, coveredBy, isNew, clearNew, dialogStartNode, dialogView, dialogChoose,
+  activeSets, coveredBy, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogChoose,
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.26.1';
+const VERSION = '0.26.2';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -608,7 +608,9 @@ function tapUseByTap(e) {
     if (clear) { best = o; bt = tY; }
   }
   if (!best) return false;
-  if (best.x === f.x && best.y === f.y) act('interact'); else { say('Geh näher heran.'); toast('Geh näher heran.', 1500); }
+  if (best.x === f.x && best.y === f.y) act('interact');
+  else if (best.type === 'door' && doorAhead2(g, best.x, best.y)) { const r = interact(g, S.data, best); say(r.msg); if (r.sfx) S.sfx.play(r.sfx); if (r.changed) vib(20); renderAll(); } // 0.26.2: Tür aus 2 Feldern öffnen
+  else { say('Geh näher heran.'); toast('Geh näher heran.', 1500); }
   return true;
 }
 
