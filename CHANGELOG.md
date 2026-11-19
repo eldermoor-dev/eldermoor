@@ -6,6 +6,7 @@ Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ 
 ## 0.16.x (Inhaltsphase, Nebelturm und Nacharbeiten)
 | Version | Änderungen | Status |
 |---|---|---|
+| 0.26.1 | Eigene Bilder für Begegnungspersonen (Torfstecher Bram, Wachmann Gerwin, Wundkultist), nicht mehr Händlerin oder Gegnerbilder; Tests 125 | headless, Gerät offen |
 | 0.19.18 | Truhen neu gezeichnet (gewölbter Deckel, Eisenbänder mit Nieten, Goldschloss, Maserung, 128 px, scharf); Beute in Truhen gekürzt (weniger Gold und Tränke, weniger Ausrüstung, niedrigere Qualitätsstufen); Bodenspur der Fallen dezenter; Tests 103 | headless, Gerät offen |
 | 0.19.22 | Nebelhüter neu (Nutzer: „zu sehr Strichmännchen“): breiter Geisterkönig mit Eiszackenkrone, Stachelschultern, Rippen und leuchtendem Siegel in der Brust, Knochenklauen, Kristallstab, gezackter Mantelsaum, hoher Dornenthron mit Schädeln; Tests 103 | headless, Gerät offen |
 | 0.19.21 | Nebelturm: Moos an den Wänden jetzt dunkelgrün statt blassblau-weiß (sah wie eine schlecht gemachte Geheimtür aus); Tests 103 | headless, Gerät offen |

@@ -1020,3 +1020,10 @@ Tests 110 grün (Node). BALANCE.md/SIM.md unverändert (keine Werte geändert). 
 - Verknüpfung: in `festung1` wurde `exit_festung` durch Treppe `stairs_festung_keller` ersetzt (Ziel festung2 3/5); Rückweg `stairs_k_up` → festung1 31/7. Alte Spielstände: Ausgang erscheint über `syncStatic` als Treppe (nicht auf Gerät getestet; Vermutung, dass ein alter `exit_festung`-Zustand ohne Wirkung bleibt).
 - Tests 125 grün (neu: Kellergewölbe, Ausgangstest auf festung2 umgestellt). Headless: Ebene lädt, Sichten aus 6 Positionen ohne Fehler. `analyzeLevel` ok (alle Truhen/Ausgänge erreichbar).
 - Offen: Balance der Gegner im Keller (Gerätetest/Simulation), Keller 2 bis 5 (jeweils größer, wieder andere Bauart), Runenstein-Abkürzungen, Siegel, falsche Statuen.
+
+## 0.26.1 (19.11.2026) – Eigene Bilder für die Begegnungspersonen (nicht auf Gerät getestet)
+Nutzer: Die anderen Personen sollen nicht wie die Händlerin aussehen, sondern unterschiedlich. Bram nutzte das Händlerinnen-Bild (`look: merchant`), Wundkultist und Gerwin teilten sich Bilder mit Gegnern.
+- `genPerson(seed, kind)` (render.js, 128 px, `paintFigure`, warmer Hautton über Material `glow`): `torf` (Torfstecher Bram: Schlapphut, grauer Bart, grüner Rock, Spaten), `wache` (Wachmann Gerwin: Rundhelm mit Nasenschutz, Kettenhemd, roter Wappenrock, Speer), `wund` (Wundkultist: Kapuze, Kopf- und Brustverband, Blutflecken, gebeugt, zerrissener Saum). In game.json `look` der drei Personen entsprechend gesetzt.
+- Tests 125 grün. Bilder headless im Vergleich zu Händlerin, Kultist und Wächter gesehen (Ausgabe als Bild), **nicht auf Gerät getestet**. Keine Werte geändert, BALANCE.md/SIM.md unverändert.
+- Arbeitsweise (Nutzer 19.11.): Claude lädt neue Versionen selbst ins Repo hoch (Push auf `main`); Testlisten immer als Abhakliste mit ✓ und ✗; beides ohne erneute Aufforderung anbieten.
+

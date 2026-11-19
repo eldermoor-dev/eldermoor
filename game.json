@@ -2023,7 +2023,7 @@
           "x": 10,
           "y": 7,
           "name": "Torfstecher Bram",
-          "look": "merchant",
+          "look": "torf",
           "dialog": "bram"
         }
       ],
@@ -2448,7 +2448,7 @@
           "x": 4,
           "y": 8,
           "name": "Verwundeter Kultist",
-          "look": "kultist",
+          "look": "wund",
           "dialog": "wundkultist"
         }
       ],
@@ -3612,7 +3612,7 @@
           "x": 13,
           "y": 15,
           "name": "Torwächter Gerwin",
-          "look": "guard",
+          "look": "wache",
           "dialog": "gerwin"
         }
       ]

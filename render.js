@@ -1246,6 +1246,73 @@ function paintFigure(seed, build, SN = 128, outline = true) {
   return t;
 }
 
+// ---------- Begegnungspersonen (0.26.1): drei eigene Figuren, nicht mehr die Händlerin / Gegnerbilder ----------
+// kind: 'torf' (Torfstecher: Schlapphut, Bart, Spaten), 'wache' (Wachmann: Rundhelm, Lederharnisch, Wappenrock, Speer), 'wund' (verwundeter Kultist: Kapuze, Verbände, gebeugt)
+function genPerson(seed, kind) {
+  return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y }) => {
+    const l = lit(px, py), n = nz(x >> 1, y >> 1);
+    const sh = kind === 'wund' ? -2.5 : 0; // gebeugt: Oberkörper nach links
+    const dx = px - 32 - (py < 40 ? sh * (1 - py / 40) : 0), hy = kind === 'wund' ? 15 : 13;
+    const skin = (b) => ['glow', b - l * 0.8 + n * 0.3]; // warmer Hautton (Material glow wie bei Hedda)
+    // Gesicht, Augen, Mund (oben auf)
+    if (kind !== 'wund' || py > hy - 1) {
+      if (ell(px, py, 32 + sh - 2.9, hy, 1.4, 1.6) <= 1 || ell(px, py, 32 + sh + 2.9, hy, 1.4, 1.6) <= 1) return ['ceil', 0];
+    }
+    if (kind === 'wund' && (ell(px, py, 32 + sh - 2.9, hy, 1.5, 1.6) <= 1 || ell(px, py, 32 + sh + 2.9, hy, 1.5, 1.6) <= 1)) return ['ice', 7];
+    // Kopfbedeckung
+    if (kind === 'torf') {
+      if (Math.abs(py - 8.4) < 1.2 && Math.abs(dx) < 12.5) return ['wood', 2.2 + n * 0.8 - l * 0.8]; // breite Krempe
+      if (ell(px, py, 32, 6.5, 7.2, 4.6) <= 1 && py < 8.4) return ['wood', 2.6 - l * 1 + n * 0.6];
+    } else if (kind === 'wache') {
+      if (ell(px, py, 32, 9, 8.6, 6.4) <= 1 && py < 10.5) return ['iron', 3.8 - l * 1.4 + n * 0.5];
+      if (Math.abs(dx) < 1.1 && py >= 10 && py < 16) return ['iron', 3.2]; // Nasenschutz
+    } else {
+      if (ell(px, py, 32 + sh, 10, 10.5, 10.5) <= 1 && !(ell(px, py, 32 + sh, 15, 6, 6) <= 1)) return ['stone', 1.6 - l * 0.8 + n * 0.6]; // Kapuze
+    }
+    // Kopf
+    if (ell(px, py, 32 + sh, hy, 6.6, 7.4) <= 1) {
+      if (kind === 'torf' && py > hy + 2.5) return ['stone', 5.4 - l * 0.8 + n * 1.2]; // grauer Bart
+      if (kind === 'wund' && Math.abs(px - 32 - sh - (py - hy) * 0.6) < 1.1) return ['stone', 6.4]; // Kopfverband schräg
+      return skin(5.2);
+    }
+    // Hals
+    if (Math.abs(px - 32 - sh * 0.8) < 2.6 && py > 19 && py < 23.5) return skin(4);
+    // Werkzeug / Waffe rechts im Bild
+    if (kind === 'torf') {
+      if (cap(px, py, 48, 52, 47, 14, 1, 1)) return ['wood', 3 - l * 0.8];
+      if (py > 6 && py < 16 && Math.abs(px - 47.3) < 4.2 - (py - 6) * 0.14 && ell(px, py, 47.5, 12, 4.4, 6.4) <= 1) return ['iron', 4.4 - l * 1.2 + n * 0.5]; // Spatenblatt
+    } else if (kind === 'wache') {
+      if (cap(px, py, 50, 56, 50, 3, 0.9, 0.9)) return ['wood', 3 - l * 0.8];
+      if (py < 9.5 && py > 1 && Math.abs(px - 50) < (py - 1) * 0.52) return ['iron', 5.4 - l];
+    }
+    // Arme
+    const armMat = kind === 'wache' ? ['iron', 3 - l] : kind === 'torf' ? ['moss', 2.2 - l * 0.8 + n * 0.5] : ['stone', 1.8 - l * 0.8];
+    if (cap(px, py, 22 + sh, 26, 17 + sh * 0.6, 38, 3.3, 2.7) || cap(px, py, 42 + sh * 0.2, 26, 47, 38, 3.3, 2.7)) return armMat;
+    if (ell(px, py, 16.5 + sh * 0.6, 39.5, 2.5, 2.7) <= 1 || ell(px, py, 47.3, 39.5, 2.5, 2.7) <= 1) return skin(4.6); // Hände
+    // Rumpf und Beine
+    const hw = 9.5 + Math.max(0, py - 26) * (kind === 'wund' ? 0.22 : 0.1);
+    if (py >= 23 && py < 58 && Math.abs(dx) < hw && py < 58 - (kind === 'wund' ? Math.abs(Math.sin(px * 1.3 + seed)) * 2 : 0)) {
+      if (kind === 'torf') {
+        if (Math.abs(dx) < 1 && py < 46) return ['wood', 2];
+        if (py > 44 && py < 46) return ['wood', 1.4]; // Gürtel
+        return py > 46 ? ['wood', 1.8 + n * 0.9 - l * 0.6] : ['moss', 2.6 + n * 1 - l * 1.2];
+      }
+      if (kind === 'wache') {
+        if (py > 47) return ['wood', 2 + n * 0.6 - l * 0.6]; // Hose
+        if (Math.abs(dx) < 3.4 && py > 25) return ['blood', 4 + n * 0.4 - l * 0.6]; // Wappenrock
+        if (py > 44 && py < 46) return ['wood', 1.2];
+        return ['iron', 2.8 + (((x >> 1) + (y >> 1)) & 1) * 0.35 - l * 1.1]; // Kettenhemd
+      }
+      // wund: zerlumpte Robe, Verband quer über die Brust, Blutflecken
+      if (Math.abs(py - 31 - dx * 0.35) < 1.9) return ['stone', 6.2 - l * 0.6];
+      if (ell(px, py, 28 + sh, 36, 2.4, 3.2) <= 1 || ell(px, py, 38, 48, 2, 2.4) <= 1) return ['blood', 4.6];
+      return ['stone', 1.6 + n * 1.1 - l * 0.9];
+    }
+    if (kind === 'wund' && py >= 56 && py < 60 && Math.abs(dx) < 9) return ['stone', 1.2 + n * 0.8]; // Saum
+    return null;
+  }, 128, true);
+}
+
 function genSkeleton(seed) { // Gruftskelett: Rosthelm, Rippen, rostiges Schwert, Rundschild, glühende Augen
   return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y }) => {
     const dx = px - 32, l = lit(px, py), n = nz(x >> 1, y >> 1);
@@ -1758,7 +1825,7 @@ export function makeTextures(detail = 1) {
     wall: { [WALL_STONE]: stoneW, [WALL_SECRET]: genSecretWall(stoneW, 301), [WALL_SWITCH]: genSwitchWall(stoneW, false), [WALL_SWITCH_ON]: genSwitchWall(stoneW, true), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
     ceil: genCeil(53, nf),
-    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)), chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)), chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), wache: sm2(genPerson(721, 'wache')), wund: sm2(genPerson(731, 'wund')), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
