@@ -782,7 +782,7 @@ export function dialogView(state, data, npc, nodeId) {
 // data.dicegame = { stakes, rules, amulet, devilKind, devilGame, intro:{...}, hint, amuletLine, devilLine, murmelLoses[], murmelWins[], roundWin[], roundLose[] }
 // Ablauf: Jede Runde würfeln beide drei Würfel (Murmels liegen offen). Die Gruppe darf einen eigenen Würfel einmal neu werfen, danach wirft Murmel seinen niedrigsten
 // Würfel neu, wenn er unter 3 zeigt. Höhere Summe gewinnt die Runde, Gleichstand = Runde wird wiederholt. Wer zuerst 2 Runden hat, gewinnt das Spiel.
-// Marken: gnom:g1/g2 = 1./2. Spiel gespielt · gnom:w1/w2 = 1./2. Sieg (2. Sieg = Glücksamulett) · gnom:teufel = Verwandlung (Niederlage im 2. Spiel).
+// Marken: gnom:g1/g2 = 1./2. Spiel gespielt · gnom:w1/w2 = 1./2. Sieg (2. Sieg = Glücksamulett) · gnom:teufel = Verwandlung (erste Niederlage ab dem 2. Spiel, 0.32.1: vorher nur im genau 2. Spiel).
 export const DICE_WIN_ROUNDS = 2;
 const dsum = (a) => a.reduce((x, y) => x + y, 0);
 const d6 = (state) => randInt(state, 1, 6);
@@ -835,7 +835,7 @@ export function diceFinish(state, data, npc, g) {
     return { won: true, msg: msgs.join(' '), changed: true };
   }
   if (g.stake) msgs.push(`Einsatz verloren: −${g.stake} Gold.`);
-  if (n === cfg.devilGame && npc && npc.type === 'npc') { // Verwandlung: Murmel wird zum Teufel, die Hütte zum Spielsalon
+  if (n >= cfg.devilGame && !f['gnom:teufel'] && npc && npc.type === 'npc') { // Verwandlung: Murmel wird zum Teufel, die Hütte zum Spielsalon
     f['gnom:teufel'] = true;
     const en = data.enemies[cfg.devilKind];
     Object.assign(npc, { type: 'enemy', kind: cfg.devilKind, hp: en.hp, dead: false });

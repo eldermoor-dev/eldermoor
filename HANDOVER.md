@@ -1234,3 +1234,8 @@ Nutzerwünsche: Würfelspiel Variante B mit Murmel; Glücksamulett erst nach wie
 - Nutzer: „Hängematte in der Luft“. Ursache (Vermutung, per Render bestätigt): Billboard-Sprite hing auf Kopfhöhe und drehte sich mit der Kamera, Enden trafen die Palmenstämme nicht.
 - Fix: Hängematte hat feste Ebene (`axis [0,1]` im Decor-Push, nur für `look: haengematte`), Aufhängung/Durchhang tiefer (`sag = 53 + 6 * (1 - u*u)`, Seile bei y≈48–52). Aus Ost/West (Kantenansicht) wird sie schmal/unsichtbar – bewusst, da Ebene zwischen den Palmen.
 - Screenshot 21:57 (Würfelhaus mit Schrift „WÜRFELHA“, offene Tür) entspricht dem Stand vor dem Tür-Fix; vermutlich alte gecachte Version – bei Nutzer nachfragen, ob Titelbild 0.32.1 zeigt.
+
+### 0.32.1 – Nachtrag 3 (20.11.2026, 22:10; headless, nicht auf Gerät getestet)
+- Nutzer: „Trotz absichtlich verlieren kommt es nicht zur Verwandlung von Gnom und Spielumgebung.“ Ursache (aus Code belegt): Teufel kam nur bei einer Niederlage im **genau** 2. Spiel (`n === devilGame`). Wer das 2. Spiel gewonnen oder nach Altstand/Mehrfachspielen schon im 3.+ Spiel verliert, sah ihn nie.
+- Entscheidung (Assistent): Verwandlung bei der **ersten Niederlage ab dem 2. Spiel** (`n >= devilGame`, nur einmal, `gnom:teufel` noch nicht gesetzt). Gilt auch für Aufgeben. Nachteil: Wer im 2. Spiel verliert, bekommt das Amulett nicht mehr (Murmel ist dann Gegner) – wie bisher.
+- Ob beim Nutzer ein Altstand oder ein anderer Fall vorlag, ist nicht gesichert; falls es weiter ausbleibt: Spielnummer/Meldung nennen.

@@ -628,9 +628,9 @@ export async function runTests(data, env = {}) {
       const r2 = L.diceFinish(s, data, npc, play(s, npc, 10, true)); assert(s.inv.gluecksamulett === 1 && s.flags['gnom:w2'] && /Glücksamulett/.test(r2.msg), '2. Sieg: Amulett');
       assert(L.dialogStartNode(s, data, npc) === 'c', 'danach anderer Gesprächsanfang');
       L.diceFinish(s, data, npc, play(s, npc, 10, true)); assert(s.inv.gluecksamulett === 1, 'Amulett nur einmal'); }
-    // Niederlage im 3. Spiel: kein Teufel mehr
+    // Niederlage ab dem 3. Spiel (Teufel noch nicht erschienen, z. B. 2. Spiel gewonnen): jetzt Verwandlung, danach nicht erneut
     { const s = fresh(1); L.jumpToLevel(s, data, 'schatzinsel'); s.flags['gnom:g1'] = true; s.flags['gnom:g2'] = true; s.gold = 100; const npc = s.objs.find((o) => o.id === 'npc_gnom');
-      const g = L.diceNew(s, data, 0).g; g.won = false; g.phase = 'end'; assert(!L.diceFinish(s, data, npc, g).devil && npc.type === 'npc', 'Teufel nur im 2. Spiel'); }
+      const g = L.diceNew(s, data, 0).g; g.won = false; g.phase = 'end'; const r = L.diceFinish(s, data, npc, g); assert(r.devil && npc.type === 'enemy' && s.flags['gnom:teufel'], 'Teufel auch nach gewonnenem 2. Spiel bei der ersten Niederlage'); }
     // Altstand mit Amulett nach den alten Regeln: kein zweites Amulett
     { const s = fresh(1); L.jumpToLevel(s, data, 'schatzinsel'); s.flags['gnom:gewonnen'] = true; s.inv.gluecksamulett = 1; s.gold = 100; const npc = s.objs.find((o) => o.id === 'npc_gnom');
       const g = L.diceNew(s, data, 10).g; g.won = true; g.phase = 'end'; L.diceFinish(s, data, npc, g); assert(s.inv.gluecksamulett === 1, 'Altstand bekommt kein zweites Amulett'); }
