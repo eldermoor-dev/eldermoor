@@ -2850,7 +2850,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
     else if (o.type === 'door' && o.open && grid) { // offene Tür: Rahmen + aufgeklapptes Blatt, nur beim Blick längs des Durchgangs (sonst stünde der Rahmen quer)
       const wl = (x, y) => x < 0 || y < 0 || x >= grid.gw || y >= grid.gh || grid.grid[y * grid.gw + x] !== 0;
       const ns = wl(o.x - 1, o.y) && wl(o.x + 1, o.y);
-      out.push({ x: o.x, y: o.y, tex: cachedTex(tex, 'frames', styleFor(o) + (o.look || '') + (o.title || ''), () => genDoorFrame(o.title, styleFor(o), 137, o.look)), scale: 1, axis: ns ? [0, 1] : [1, 0] });
+      out.push({ x: o.x, y: o.y, tex: cachedTex(tex, 'frames', styleFor(o) + (o.look || '') + (o.textless ? '#' : o.title || ''), () => genDoorFrame(o.textless ? '' : o.title, styleFor(o), 137, o.look)), scale: 1, axis: ns ? [0, 1] : [1, 0] });
     }
     else if (o.type === 'gate' && o.open && grid) { // offenes Gitter: hochgezogene Stäbe im Durchgang (nur beim Blick längs, wie offene Tür)
       const wl = (x, y) => x < 0 || y < 0 || x >= grid.gw || y >= grid.gh || grid.grid[y * grid.gw + x] !== 0;
