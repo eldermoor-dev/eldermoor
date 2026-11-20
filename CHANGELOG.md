@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.31.14 (20.11.2026, headless)
+- Fuhrmann am Moorsee: ab der zweiten Überfahrt anderer Text, Preis 10 statt 20 Gold, mit Spruch.
+
 ## 0.31.13 (20.11.2026, headless)
 - Würfelhaus: Schild mit zwei weißen Würfeln statt Text, Namensschild entfernt; Insel 19×19, Hütte mit 5×5-Innenraum, Holzboden und Möbeln (Bett, Kamin, Regal, Tisch, Stuhl, Fässer); Alt-Spielstände werden repariert.
 

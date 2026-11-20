@@ -564,6 +564,10 @@ export async function runTests(data, env = {}) {
     L.travelTo(s, data, r.goto); assert(s.levelId === 'schatzinsel', 'auf der Insel');
     const fi = s.objs.find((o) => o.id === 'npc_fuhrmann_i'); r = L.dialogChoose(s, data, fi, 'a', 0);
     assert(r.goto.level === 'moorsee' && s.gold === 30, 'Rückfahrt gratis'); L.travelTo(s, data, r.goto); assert(s.levelId === 'moorsee', 'zurück am Ufer');
+    // Zweite Überfahrt: anderer Text, 10 Gold
+    const fm2 = s.objs.find((o) => o.id === 'npc_fuhrmann'); const v2 = L.dialogView(s, data, fm2, L.dialogStartNode(s, data, fm2));
+    assert(/kennen/.test(v2.text) && v2.choices[0].t.includes('10 Gold'), 'Stammkunde: anderer Text, 10 Gold: ' + JSON.stringify(v2));
+    r = L.dialogChoose(s, data, fm2, L.dialogStartNode(s, data, fm2), 0); assert(r.goto && s.gold === 20, 'zweite Überfahrt kostet 10 Gold');
     // Würfelspiel: Seeds durchprobieren, bis beide Ausgänge einmal gesehen wurden
     let even = null, odd = null;
     for (let seed = 1; seed < 60 && !(even && odd); seed++) {

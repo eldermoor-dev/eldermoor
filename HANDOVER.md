@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.31.13 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.31.14 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1193,3 +1193,8 @@ Nutzer (Screenshot 19:51): „Laden fehlgeschlagen: Spielstand ungültig: Spiele
 - Tests angepasst (Kartengröße-Reparatur); `node tests.js`: 132 bestanden, 0 fehlgeschlagen.
 - OFFEN (Nutzerwunsch): Gnom-Spiel zu einem richtigen Würfelspiel mit Würfeln beider Seiten (ca. 1 min) ausbauen; Vorschläge im Chat, Entscheidung des Nutzers ausstehend. Außerdem Vorschläge Insel/Gnom-Interaktion.
 - Spätere Erinnerungen: Talent-Alternativen B–F; Truhen-Option C (Sondertruhen).
+
+## Änderungen 0.31.14 (20.11.2026, headless, nicht auf Gerät getestet)
+- Nutzer: „Bei erneutem Wunsch auf die Insel anderer Text. Man kennt sich ja. Preis dann nur noch 10 mit lustigem Spruch.“
+- Dialog `fuhrmann_ufer`: Die erste Überfahrt (beide „Übersetzen“-Wahlen) setzt `done` → Folgegespräche starten im Knoten `w` („Stammkunde“): neuer Text, Überfahrt 10 Gold, Spruch beim Ablegen. Alte Spielstände ohne erste Überfahrt sehen den Erstkontakt einmal (20 Gold). Rückfahrt gratis wie bisher.
+- Test erweitert (132 grün). Offen unverändert: Würfelspiel-Ausbau (Vorschläge im Chat), Insel-/Murmel-Ideen.

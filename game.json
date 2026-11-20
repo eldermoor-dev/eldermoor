@@ -7625,7 +7625,8 @@
                 "y": 14,
                 "dir": 0
               },
-              "msg": "Der Fuhrmann stößt vom Steg ab. Das Wasser ist erstaunlich still."
+              "msg": "Der Fuhrmann stößt vom Steg ab. Das Wasser ist erstaunlich still.",
+              "done": true
             },
             {
               "t": "Was ist auf der Insel?",
@@ -7650,14 +7651,37 @@
                 "y": 14,
                 "dir": 0
               },
-              "msg": "Der Fuhrmann stößt vom Steg ab. Das Wasser ist erstaunlich still."
+              "msg": "Der Fuhrmann stößt vom Steg ab. Das Wasser ist erstaunlich still.",
+              "done": true
+            },
+            {
+              "t": "Nein, danke"
+            }
+          ]
+        },
+        "w": {
+          "text": "Der Fuhrmann grinst, als er dich sieht. „Ach, die Würfelfreunde. Zehn Gold, weil wir uns kennen. Das Ruder hat sich an euch gewöhnt, der Rücken noch nicht.“",
+          "choices": [
+            {
+              "t": "Übersetzen",
+              "cost": {
+                "gold": 10
+              },
+              "goto": {
+                "level": "schatzinsel",
+                "x": 9,
+                "y": 14,
+                "dir": 0
+              },
+              "msg": "„Zehn Gold, Stammkundenpreis. Haltet die Füße trocken, der Gnom schuldet mir noch eine Runde.“"
             },
             {
               "t": "Nein, danke"
             }
           ]
         }
-      }
+      },
+      "again": "w"
     },
     "fuhrmann_insel": {
       "name": "Fuhrmann",
