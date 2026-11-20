@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.31.0 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.31.1 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1104,3 +1104,9 @@ Nutzer: „Alternativen für Talent“ → aus meiner Liste (A–F) wählte er *
 - **Autospeichern:** alle 10 Minuten in Slot „auto“ (nicht im Kampf, nur wenn ein Spiel läuft), kurze Meldung „Automatisch gespeichert.“ (1,4 s).
 - Tests 131 grün (neu: Talent-Wahl). Headless-Screenshot des Talentfensters gesehen.
 - **Später (vom Nutzer zurückgestellt, bei passender Gelegenheit erinnern, z. B. beim Taverne-Bau bzw. nach den Gerätetests):** B weniger, stärkere Talente (kleine Zahlentalente zusammenlegen); C Haltungen im Kampf; D Lehrer in der Taverne; E Gruppentalente; F günstigeres Umlernen. Empfehlung des Assistenten: B als Nächstes, D mit der Taverne, C erst nach gemessener Balance.
+
+## 0.31.1 (20.11.2026) – Tränke im Kampf aus dem Inventar (nicht auf Gerät getestet)
+Nutzer: „Tränke sollen während des Kampfes nutzbar sein“; Rückfrage per Auswahl: gewünscht ist „Inventar im Kampf mit ‚Benutzen‘“ (die Regel aus 0.15.10 bleibt).
+- Vorher ging es nur über den Kampfknopf „Gegenstand“; im Inventar fehlte „Benutzen“ im Kampf (main.js `openInventory`, `!g.combat`).
+- Jetzt: Inventar zeigt im Kampf „Benutzen“ bei Heil- und Zaubertränken. Held am Zug trinkt für sich (`heroAct({type:'item'})`, Fenster schließt, Zug läuft normal); Alchemist wählt den Helden; nicht am Zug: Meldung „Gerade ist kein Held am Zug.“. Fehlermeldungen (volle LP/Mana) kommen als Kampfmeldung. Kein Spielstand-/Wertwechsel.
+- Headless geprüft (Kampf, Inventar → Benutzen: Trank −1, LP des Helden am Zug +), Tests 131 grün.

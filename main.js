@@ -10,7 +10,7 @@ import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, build
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.31.0';
+const VERSION = '0.31.1';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -1120,7 +1120,7 @@ function openInventory() {
   let html = `<h2>Inventar</h2><p>Gold: <b>${g.gold}</b></p>`;
   html += items.length ? items.map(([id, n, nw]) => {
     const it = itemDef(g, d, id);
-    const use = it.kind === 'consumable' && (it.heal || it.mana) && !g.combat ? `<button class="mb" data-m="use:${id}">Benutzen</button>` : it.kind === 'supply' && !g.combat ? '<button class="mb" data-m="rest">Rasten</button>' : it.kind === 'equip' && !g.combat ? `<button class="mb" data-m="eqsel:${id}">Ausrüsten</button>` : '';
+    const use = it.kind === 'consumable' && (it.heal || it.mana) ? `<button class="mb" data-m="use:${id}">Benutzen</button>` : it.kind === 'supply' && !g.combat ? '<button class="mb" data-m="rest">Rasten</button>' : it.kind === 'equip' && !g.combat ? `<button class="mb" data-m="eqsel:${id}">Ausrüsten</button>` : '';
     return `<div class="row nw${S.invEquip === id ? ' sel' : ''}"><div><b>${itemIcon(id, it)}${qTag(id, it)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}${nw ? ' <span class="newtag">● neu</span>' : ''}<div class="muted">${esc(it.desc)}</div>${it.kind === 'equip' ? betterFor(id) : ''}${isCursed(it) && curseKnown(g, d, id) ? `<div style="font-size:.8em;color:#e86060">⚠ Verflucht: ${esc(curseText(it))}</div>` : ''}</div>${use}</div>`;
   }).join('') : '<p class="muted">Nichts dabei.</p>';
   if (S.invEquip && itemDef(g, d, S.invEquip) && (g.inv[S.invEquip] || 0) > 0) {
@@ -1131,7 +1131,7 @@ function openInventory() {
     html += `<h3>${esc(itemDef(g, d, S.invUse).name)} an wem anwenden?</h3><div class="acts">` + g.heroes.map((h, i) =>
       `<button class="mb headbtn" data-m="heal:${i}" ${itemDef(g, d, S.invUse).mana ? (h.hp > 0 && h.mp < h.maxMp ? '' : 'disabled') : (h.hp > 0 && h.hp < h.maxHp ? '' : 'disabled')}><img src="${makePortrait(h).toDataURL()}" alt=""><span>${esc(h.name)}<br>${itemDef(g, d, S.invUse).mana ? h.mp + '/' + h.maxMp : h.hp + '/' + h.maxHp}</span></button>`).join('') + '</div>';
   }
-  if (g.combat) html += '<p class="muted">Im Kampf: Gegenstände über den Knopf „Gegenstand“ benutzen.</p>';
+  if (g.combat) html += '<p class="muted">Im Kampf: „Benutzen“ gilt für den Helden, der gerade am Zug ist (Alchemist: für jeden Helden). Alternativ der Knopf „Gegenstand“.</p>';
   else if (items.some(([id]) => sellPrice(g, d, id) != null)) html += '<p class="muted">Verkaufen kannst du bei einer Händlerin.</p>';
   html += `<div class="acts"><button class="mb" data-m="gear">Ausrüstung</button>${closeBtn}</div>`;
   openModal(html, 'inventory');
@@ -1606,7 +1606,15 @@ async function onModalClick(e) {
   }
   else if (m === 'shopgo') { S.shopTalk = null; openShop(S.shopId, false); }
   else if (m.startsWith('dlg:')) dialogPick(+m.slice(4));
-  else if (m.startsWith('use:')) { S.invUse = m.slice(4); openInventory(); }
+  else if (m.startsWith('use:')) {
+    if (g.combat) { // 0.31.1: Tränke im Kampf aus dem Inventar: Held am Zug trinkt für sich (Alchemist wählt den Helden)
+      const a = currentActor(g);
+      if (!a || a.side !== 'h' || S.lock) { toast('Gerade ist kein Held am Zug.'); return; }
+      if (S.data.classes[g.heroes[a.idx].cls].potionGiver) { S.invUse = m.slice(4); openInventory(); }
+      else { closeModal(); heroAct({ type: 'item', item: m.slice(4), hero: a.idx }); }
+    } else { S.invUse = m.slice(4); openInventory(); }
+  }
+  else if (m.startsWith('heal:') && g.combat) { const id = S.invUse; closeModal(); if (id) heroAct({ type: 'item', item: id, hero: +m.slice(5) }); }
   else if (m.startsWith('heal:')) {
     const r = useItemOutside(g, S.data, S.invUse || 'potion', +m.slice(5));
     if (r.msg) { say(r.msg); S.sfx.play(r.sfx); toast(r.msg); }
