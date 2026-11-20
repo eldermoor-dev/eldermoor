@@ -10,7 +10,7 @@ import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, build
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.32.1';
+const VERSION = '0.32.2';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -1634,7 +1634,7 @@ async function onModalClick(e) {
     if (r.msg) { say(r.msg); S.sfx.play(r.sfx); toast(r.msg); } else toast('Das geht nicht.');
     renderAll(); openShop(S.shopId);
   }
-  else if (m.startsWith('eqsel:')) { S.invEquip = m.slice(6); openInventory(); }
+  else if (m.startsWith('eqsel:')) { S.invEquip = m.slice(6); openInventory(); const hs = $('#modal-box [data-m^="eq:"]'); if (hs && hs.parentElement) (hs.parentElement.previousElementSibling || hs.parentElement).scrollIntoView({ block: 'end' }); } // 0.32.2: Heldenauswahl automatisch ins Bild scrollen
   else if (m.startsWith('eq:')) {
     const r = equipItem(g, S.data, S.invEquip, +m.slice(3));
     if (r.msg) { say(r.msg); S.sfx.play('ui'); toast(r.msg); } else toast('Das geht nicht.');
