@@ -546,7 +546,7 @@ export async function runTests(data, env = {}) {
     assert(e.hp > 10 && s.heroes.reduce((n, x) => n + x.hp, 0) < before, 'Blutbiss: Held verliert LP, Vampir heilt sich (' + e.hp + ')');
   });
 
-  await test('Moorsee (0.28.0): Treppen, Wasser sperrt, Brücke, Fähre (20 Gold), Würfelspiel gerade/ungerade, Spinne, Glücksamulett', () => {
+  await test('Moorsee (0.28.0): Treppen, Wasser sperrt, Brücke, Fähre (20 Gold), Glücksamulett', () => {
     const ms = data.levels.moorsee, si = data.levels.schatzinsel, mp = data.levels.moorpfad;
     assert(ms && si && ms.palette && si.palette, 'Level da');
     assert(mp.objects.some((o) => o.type === 'stairs' && o.to.level === 'moorsee') && ms.objects.some((o) => o.type === 'stairs' && o.to.level === 'moorpfad'), 'Treppen Moorpfad ↔ Moorsee');
@@ -568,17 +568,8 @@ export async function runTests(data, env = {}) {
     const fm2 = s.objs.find((o) => o.id === 'npc_fuhrmann'); const v2 = L.dialogView(s, data, fm2, L.dialogStartNode(s, data, fm2));
     assert(/kennen/.test(v2.text) && v2.choices[0].t.includes('10 Gold'), 'Stammkunde: anderer Text, 10 Gold: ' + JSON.stringify(v2));
     r = L.dialogChoose(s, data, fm2, L.dialogStartNode(s, data, fm2), 0); assert(r.goto && s.gold === 20, 'zweite Überfahrt kostet 10 Gold');
-    // Würfelspiel: Seeds durchprobieren, bis beide Ausgänge einmal gesehen wurden
-    let even = null, odd = null;
-    for (let seed = 1; seed < 60 && !(even && odd); seed++) {
-      const t = fresh(seed); L.jumpToLevel(t, data, 'schatzinsel'); const gn = t.objs.find((o) => o.id === 'npc_gnom');
-      const rr = L.dialogChoose(t, data, gn, 'a', 0); const roll = +/zeigt (\d+)/.exec(rr.msg)[1];
-      if (roll % 2 === 0 && !even) even = { t, rr, gn }; if (roll % 2 === 1 && !odd) odd = { t, rr, gn, roll };
-    }
-    assert(even && odd, 'beide Würfelausgänge gefunden');
-    assert(even.t.inv.gluecksamulett === 1 && !even.rr.encounter && even.t.flags['d:npc_gnom'], 'gerade: Glücksamulett, Gnom bleibt friedlich');
-    assert(odd.rr.encounter === odd.gn && odd.gn.type === 'enemy' && odd.gn.kind === 'riesenspinne' && !odd.t.inv.gluecksamulett, 'ungerade: Gnom wird zur Riesenspinne');
-    assert(data.enemies.riesenspinne.hp > 0 && data.enemies.riesenspinne.intro, 'Spinne definiert');
+    // Würfelspiel: eigener Test (0.32.0)
+    assert(data.enemies.teufel.hp > 0 && data.enemies.teufel.intro, 'Teufel definiert');
     // Glücksamulett: ohne Amulett kein Zufall verbraucht, mit Amulett irgendwann Gold
     const a = fresh(77); L.jumpToLevel(a, data, 'moorsee'); a.player = { x: 5, y: 2, dir: 1 };
     const rng0 = JSON.stringify(a.rng); L.tryMove(a, data, 'f'); assert(JSON.stringify(a.rng) !== rng0 || true, 'Bewegung ok');
@@ -587,6 +578,69 @@ export async function runTests(data, env = {}) {
     assert(found > 5 && found < 80 && a.gold > gold0, 'Amulett findet sehr selten Gold: ' + found + ' von 4000 Schritten');
     // Insel: jede Truhe erreichbar (Softlock-Prüfung ist oben bereits grün) + Haus-Tür
     assert(si.objects.some((o) => o.id === 'door_i_haus') && si.objects.some((o) => o.id === 'npc_gnom'), 'Haus mit Gnom');
+  });
+
+  await test('Würfelspiel mit Murmel (0.32.0): Regeln, Einsatz, Amulett nach dem 2. Sieg, Teufel bei Niederlage im 2. Spiel, Raum wird Spielsalon, Speichern', () => {
+    // Hilfsfunktion: ein ganzes Spiel mit festem Ausgang spielen (Seeds durchprobieren, bis das gewünschte Ergebnis fällt)
+    const play = (s, npc, stake, wantWin) => {
+      const r = L.diceNew(s, data, stake); assert(!r.error, 'diceNew ' + JSON.stringify(r)); const g = r.g;
+      let guard = 0; while (g.phase !== 'end' && guard++ < 40) {
+        if (g.phase === 'roll') L.diceRoll(s, g);
+        else if (g.phase === 'keep') { const lo = Math.min(...g.p), i = g.p.indexOf(lo); L.diceKeep(s, g, lo < 4 ? i : null); }
+        else if (g.phase === 'show') L.diceNext(g);
+      }
+      assert(g.phase === 'end' && (g.pw === 2 || g.mw === 2) && g.won === (g.pw === 2), 'Spiel endet bei 2 Runden');
+      return g;
+    };
+    const find = (wins) => { // Seed, bei dem die Folge der Spiele genau `wins` (Array true/false) ergibt
+      for (let seed = 1; seed < 400; seed++) {
+        const s = fresh(seed); L.jumpToLevel(s, data, 'schatzinsel'); s.gold = 500; const npc = s.objs.find((o) => o.id === 'npc_gnom'); let ok = true;
+        for (const w of wins) { const g = play(s, npc, 10, w); if (g.won !== w) { ok = false; break; } L.diceFinish(s, data, npc, g); if (npc.type !== 'npc') break; }
+        if (ok) return seed;
+      }
+      return null;
+    };
+    // Regeln: Würfel 1–6, Murmel wirft niedrigsten neu unter 3, Gleichstand wiederholt
+    { const s = fresh(3); L.jumpToLevel(s, data, 'schatzinsel'); s.gold = 100; const g = L.diceNew(s, data, 10).g; assert(s.gold === 90, 'Einsatz sofort abgezogen');
+      L.diceRoll(s, g); assert(g.p.length === 3 && g.m.length === 3 && [...g.p, ...g.m].every((v) => v >= 1 && v <= 6) && g.phase === 'keep', 'Würfe 1–6');
+      const before = g.m.slice(), lo = Math.min(...before); L.diceKeep(s, g, null);
+      assert(g.phase === 'show' && (lo < 3 ? g.mrerolled !== null : g.mrerolled === null), 'Murmel wirft nur Würfel unter 3 neu (' + before + ')');
+      assert(L.diceNew(fresh(1), data, 7).error === 'bad-stake', 'nur erlaubte Einsätze');
+      const poor = fresh(1); poor.gold = 5; assert(L.diceNew(poor, data, 30).error === 'gold', 'ohne Gold kein Einsatz'); }
+    // 1. Spiel verloren: nur Geld weg, nichts sonst
+    const l1 = find([false]); assert(l1, 'Seed für verlorenes 1. Spiel');
+    { const s = fresh(l1); L.jumpToLevel(s, data, 'schatzinsel'); s.gold = 500; const npc = s.objs.find((o) => o.id === 'npc_gnom'); const g = play(s, npc, 10, false); const r = L.diceFinish(s, data, npc, g);
+      assert(!r.devil && npc.type === 'npc' && s.gold === 490 && !s.flags['gnom:teufel'] && s.flags['gnom:g1'] && !s.flags['gnom:g2'] && !s.inv.gluecksamulett, '1. Niederlage: nur Einsatz verloren'); }
+    // 2. Spiel verloren: Teufel, Raum verändert, Kampf
+    const l2 = find([false, false]); assert(l2, 'Seed für zwei verlorene Spiele');
+    let saved;
+    { const s = fresh(l2); L.jumpToLevel(s, data, 'schatzinsel'); s.gold = 500; const npc = s.objs.find((o) => o.id === 'npc_gnom');
+      L.diceFinish(s, data, npc, play(s, npc, 10, false)); const g = play(s, npc, 10, false); const r = L.diceFinish(s, data, npc, g);
+      assert(r.devil && r.encounter === npc && npc.type === 'enemy' && npc.kind === 'teufel' && s.flags['gnom:teufel'], '2. Niederlage: Murmel wird Teufel');
+      const lvl = L.getLevel(data, s); assert(lvl.map.some((row) => row.includes('v')) && !lvl.map.some((row) => row.includes('h')) && lvl.floor.some((row) => row.includes('+')), 'Wände und Boden des Spielsalons');
+      const ids = s.objs.map((o) => o.id); assert(ids.includes('v_roulette') && ids.includes('v_slot1') && !ids.includes('m_bett') && ids.includes('m_kamin'), 'Möbel getauscht (Bett weg, Roulette da, Kamin bleibt)');
+      assert(data.levels.schatzinsel.map.some((row) => row.includes('h')), 'Originalgebiet bleibt unverändert');
+      const back = L.deserialize(L.serialize(s), data); assert(back.flags['gnom:teufel'] && back.objs.some((o) => o.id === 'v_slot2') && !back.objs.some((o) => o.id === 'm_tisch'), 'Spielsalon übersteht Speichern/Laden');
+      assert(L.startCombat(s, data, npc) || true, 'Kampf startbar');
+      saved = s; }
+    // Sieg im 1. Spiel: nur Hinweis, kein Amulett; Sieg im 2. Spiel: Amulett; weiteres Spiel nur Gold
+    const w2 = find([true, true]); assert(w2, 'Seed für zwei gewonnene Spiele');
+    { const s = fresh(w2); L.jumpToLevel(s, data, 'schatzinsel'); s.gold = 500; const npc = s.objs.find((o) => o.id === 'npc_gnom');
+      const r1 = L.diceFinish(s, data, npc, play(s, npc, 10, true)); assert(s.gold === 510 && !s.inv.gluecksamulett && s.flags['gnom:w1'] && /zweites Mal/.test(r1.msg), '1. Sieg: +Einsatz, Hinweis, kein Amulett');
+      const r2 = L.diceFinish(s, data, npc, play(s, npc, 10, true)); assert(s.inv.gluecksamulett === 1 && s.flags['gnom:w2'] && /Glücksamulett/.test(r2.msg), '2. Sieg: Amulett');
+      assert(L.dialogStartNode(s, data, npc) === 'c', 'danach anderer Gesprächsanfang');
+      L.diceFinish(s, data, npc, play(s, npc, 10, true)); assert(s.inv.gluecksamulett === 1, 'Amulett nur einmal'); }
+    // Niederlage im 3. Spiel: kein Teufel mehr
+    { const s = fresh(1); L.jumpToLevel(s, data, 'schatzinsel'); s.flags['gnom:g1'] = true; s.flags['gnom:g2'] = true; s.gold = 100; const npc = s.objs.find((o) => o.id === 'npc_gnom');
+      const g = L.diceNew(s, data, 0).g; g.won = false; g.phase = 'end'; assert(!L.diceFinish(s, data, npc, g).devil && npc.type === 'npc', 'Teufel nur im 2. Spiel'); }
+    // Altstand mit Amulett nach den alten Regeln: kein zweites Amulett
+    { const s = fresh(1); L.jumpToLevel(s, data, 'schatzinsel'); s.flags['gnom:gewonnen'] = true; s.inv.gluecksamulett = 1; s.gold = 100; const npc = s.objs.find((o) => o.id === 'npc_gnom');
+      const g = L.diceNew(s, data, 10).g; g.won = true; g.phase = 'end'; L.diceFinish(s, data, npc, g); assert(s.inv.gluecksamulett === 1, 'Altstand bekommt kein zweites Amulett'); }
+    // Daten: Texte, Gegner, Dekoration
+    assert(data.dicegame.murmelLoses.length >= 4 && data.dicegame.murmelWins.length >= 2, 'Sprüche vorhanden');
+    assert(data.levels.schatzinsel.objects.filter((o) => o.look === 'kaktus').length >= 4 && data.levels.schatzinsel.objects.some((o) => o.look === 'haengematte'), 'Kakteen und Hängematte');
+    { const si = data.levels.schatzinsel, hm = si.objects.find((o) => o.look === 'haengematte'), pl = si.objects.filter((o) => o.look === 'palme');
+      assert(pl.some((p) => p.y === hm.y && p.x === hm.x - 1) && pl.some((p) => p.y === hm.y && p.x === hm.x + 1), 'Hängematte hängt zwischen zwei Palmen'); }
   });
 
   await test('Vergrabener Schatz (0.31.11): nur Schurke/Alchemist bemerkt ihn, Graben bringt Beute, Sandboden und Palmen', () => {

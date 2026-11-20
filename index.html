@@ -125,6 +125,14 @@ button{font:inherit;color:inherit}
 #modal-box .headbtn{display:flex;align-items:center;gap:8px;text-align:left}
 #modal-box .headbtn img{width:44px;height:44px;image-rendering:pixelated;border-radius:4px;flex:none}
 #modal-box .row.nw{flex-wrap:nowrap}
+/* 0.32.0: Würfelspiel */
+.die{display:inline-grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);width:44px;height:44px;padding:6px;gap:2px;border-radius:9px;background:#f0e6cf;box-shadow:inset 0 -3px 0 #c4b490,0 2px 4px #000a;vertical-align:middle}
+.die i{border-radius:50%;display:block}.die i.on{background:#2a1a10}
+.die.red{background:#8a2020;box-shadow:inset 0 -3px 0 #5e1414,0 2px 4px #000a}.die.red i.on{background:#f4e6c8}
+.die.sel{outline:3px solid #e0a840}.die.tap{cursor:pointer;outline:2px dashed #7a6a48}
+#modal-box .drow{display:flex;gap:8px;align-items:center;margin:8px 0}#modal-box .drow b{min-width:58px}
+#modal-box .dsum{font-size:1.5em;min-width:30px;text-align:center;color:#e0a840}
+#modal-box .dscore{font-size:.85em;opacity:.8;margin-bottom:2px}#modal-box .dinfo{min-height:2.6em;line-height:1.35;margin:4px 0}
 #modal-box .row.sel{background:#3a2c14;box-shadow:inset 3px 0 0 #e0a840,0 0 0 1px #e0a840;border-radius:6px;padding-left:8px}
 #modal-box .row.sel>button{border-color:#e0a840;color:#e0a840}
 #modal-box .row.nw>div:first-child{flex:1 1 auto;min-width:0}

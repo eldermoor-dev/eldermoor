@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.31.14 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.32.0 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1198,3 +1198,15 @@ Nutzer (Screenshot 19:51): „Laden fehlgeschlagen: Spielstand ungültig: Spiele
 - Nutzer: „Bei erneutem Wunsch auf die Insel anderer Text. Man kennt sich ja. Preis dann nur noch 10 mit lustigem Spruch.“
 - Dialog `fuhrmann_ufer`: Die erste Überfahrt (beide „Übersetzen“-Wahlen) setzt `done` → Folgegespräche starten im Knoten `w` („Stammkunde“): neuer Text, Überfahrt 10 Gold, Spruch beim Ablegen. Alte Spielstände ohne erste Überfahrt sehen den Erstkontakt einmal (20 Gold). Rückfahrt gratis wie bisher.
 - Test erweitert (132 grün). Offen unverändert: Würfelspiel-Ausbau (Vorschläge im Chat), Insel-/Murmel-Ideen.
+
+## Änderungen 0.32.0 (20.11.2026, headless, nicht auf Gerät getestet)
+Nutzerwünsche: Würfelspiel Variante B mit Murmel; Glücksamulett erst nach wiederholtem Sieg (Murmel deutet es an); Siegesspruch/Niederlagenspruch; 1. Spiel verloren = nur Geld weg; Niederlage im 2. Spiel = Gnom wird Teufel, Raum wird „böses Las Vegas“; dazu Kakteen und Hängematte zwischen zwei Palmen.
+- **Spiel (logic.js `diceNew/diceRoll/diceKeep/diceNext/diceFinish`, Daten `data.dicegame`):** Einsatz 0/10/30 Gold (sofort abgezogen, Gewinn = doppelter Einsatz). Jede Runde 3 Würfel je Seite (Murmels liegen offen), Gruppe darf einen eigenen Würfel einmal neu werfen, dann wirft Murmel seinen niedrigsten neu, wenn er unter 3 liegt. Höhere Summe gewinnt die Runde, Gleichstand = wiederholen, 2 Runden gewinnen das Spiel (ca. 1 Min.). Aufgeben = Niederlage. Zufall über `state.rng`.
+- **Marken:** `gnom:g1/g2` (1./2. Spiel gespielt), `gnom:w1/w2` (1./2. Sieg), `gnom:teufel`, `gnom:gewonnen` (Amulett erhalten). 1. Sieg = Hinweis („Wer mich ein zweites Mal schlägt …“), 2. Sieg = Glücksamulett (nur einmal), später nur Gold. Murmel kommentiert jede Niederlage mit Spruch (`murmelLoses`), Siege mit `murmelWins`. Altstände mit `gnom:gewonnen` gelten als 2 Siege (kein zweites Amulett).
+- **Verwandlung:** Niederlage im 2. Spiel (egal ob 1. gewonnen oder verloren; auch Aufgeben) → Murmel wird `teufel` (Gegner: 100 LP, Angriff 14, Verteidigung 5, Feuer 75 % resistent, Eis +25 %; Höllenfeuer alle 3 Züge angekündigt, Pechsträhne (Fluch) 25 %, Phase „Alles auf Rot“ ab 50 %; Gebietsfaktor Insel 150/130; Beute 150 Gold, 300 EP, sichere Ausrüstung Boost 2). Das Glücksamulett gibt der Teufel NICHT.
+- **Raum-Umbau:** Gebietsfeld `alt = {flag, patch, remove, objects}`; `levelFor/getLevel` liefern bei gesetzter Marke den umgebauten Stand (Wand `v` = Spielsalon-Tapete mit Neonband, Teppich-Boden `+`, Möbel getauscht: Roulette, drei Spielautomaten, zwei Pokertische; Kamin und Stuhl bleiben). `syncStatic` zieht den Umbau auch in Altständen nach. Original bleibt in `data.levels` unverändert.
+- **Oberfläche (main.js):** Gesprächsknopf „Würfeln“ (`game: 'wuerfel'`) öffnet das Würfelfenster (Einsatzwahl → Würfeln → eigenen Würfel antippen oder „Behalten“ → Ergebnis → Weiter). Autospeichern ist während des Spiels gesperrt. Dev-Hook `S.fn.openDice`.
+- **Insel:** fünf Kakteen, Hängematte (`haengematte_i`, 4/9) zwischen zwei neuen Palmen (3/9 und 5/9, Sprite zweifach breit), neue Sprites `kaktus`, `haengematte`, `spielautomat`, `roulette`, `kartentisch`, `teufel`, Wand `v`, Bodenzeichen `+`.
+- Dialog Murmel: `startBy` (Gesprächsanfang nach Marken), Knoten a/e/b/c/r; die alte Zufallszahl-Regel (gerade/ungerade, Riesenspinne) ist entfernt. `riesenspinne` bleibt als ungenutzter Gegner in den Daten.
+- Tests: 133 grün (neu: Würfelspiel komplett inkl. Teufel, Amulett, Altstand, Speichern). BALANCE.md neu. SIM.md unverändert (Teufel nicht in der Kampagne). Nicht auf Gerät getestet.
+- Offen: Gerätetest, Teufel-Balance (Schätzung des Assistenten, nicht simuliert), weitere Ideen (Murmels Gerüchte, Würfelrangliste, Buch im Regal, zweiter Schatz) nicht gebaut.

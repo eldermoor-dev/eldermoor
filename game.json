@@ -1651,6 +1651,59 @@
         "title": "Riesenspinne",
         "text": "Murmel ist verschwunden. An seiner Stelle sitzt etwas Schwarzes, das fast bis zur Decke reicht."
       }
+    },
+    "teufel": {
+      "name": "Teufel",
+      "hp": 100,
+      "atk": 14,
+      "def": 5,
+      "init": 8,
+      "gold": 150,
+      "xp": 300,
+      "ai": "weakest",
+      "onHit": {
+        "status": "curse",
+        "chance": 25,
+        "turns": 2
+      },
+      "cast": [
+        {
+          "name": "Höllenfeuer",
+          "kind": "bolt",
+          "element": "fire",
+          "all": true,
+          "every": 3,
+          "mult": 80,
+          "announce": true,
+          "inflict": {
+            "status": "burn",
+            "chance": 40,
+            "turns": 2
+          }
+        }
+      ],
+      "resist": {
+        "fire": 75,
+        "ice": -25
+      },
+      "phases": [
+        {
+          "below": 50,
+          "name": "Alles auf Rot",
+          "msg": "Der Teufel schiebt alle Chips in die Mitte. „Alles auf Rot!“",
+          "set": {
+            "atk": 17
+          }
+        }
+      ],
+      "gearDrop": {
+        "chance": 100,
+        "boost": 2
+      },
+      "intro": {
+        "title": "Der Teufel",
+        "text": "Murmel lacht, und plötzlich riecht es nach Zigarre und Schwefel. Die Hütte ist ein Spielsalon geworden."
+      }
     }
   },
   "palettes": {
@@ -5768,6 +5821,70 @@
           "y": 9,
           "look": "fass",
           "scale": 0.6
+        },
+        {
+          "id": "palme_i3_9",
+          "type": "decor",
+          "x": 3,
+          "y": 9,
+          "look": "palme",
+          "scale": 1.45
+        },
+        {
+          "id": "palme_i5_9",
+          "type": "decor",
+          "x": 5,
+          "y": 9,
+          "look": "palme",
+          "scale": 1.45
+        },
+        {
+          "id": "haengematte_i",
+          "type": "decor",
+          "x": 4,
+          "y": 9,
+          "look": "haengematte",
+          "scale": 2.0
+        },
+        {
+          "id": "kaktus_i1",
+          "type": "decor",
+          "x": 6,
+          "y": 11,
+          "look": "kaktus",
+          "scale": 0.9
+        },
+        {
+          "id": "kaktus_i2",
+          "type": "decor",
+          "x": 12,
+          "y": 11,
+          "look": "kaktus",
+          "scale": 1.0
+        },
+        {
+          "id": "kaktus_i3",
+          "type": "decor",
+          "x": 13,
+          "y": 8,
+          "look": "kaktus",
+          "scale": 0.85
+        },
+        {
+          "id": "kaktus_i4",
+          "type": "decor",
+          "x": 14,
+          "y": 5,
+          "look": "kaktus",
+          "scale": 1.0
+        },
+        {
+          "id": "kaktus_i5",
+          "type": "decor",
+          "x": 3,
+          "y": 7,
+          "look": "kaktus",
+          "scale": 0.9
         }
       ],
       "hall": {
@@ -5800,7 +5917,111 @@
         "...................",
         "...................",
         "..................."
-      ]
+      ],
+      "alt": {
+        "flag": "gnom:teufel",
+        "patch": {
+          "map": [
+            "mmmmmmmmmmmmmmmmmmm",
+            "m~~~~~~~~~~~~~~~~~m",
+            "m~~~~~.......~~~~~m",
+            "m~~~...........~~~m",
+            "m~~...vvvTvvv...~~m",
+            "m~~...v.....v...~~m",
+            "m~~...v.....v...~~m",
+            "m~~...v.....v...~~m",
+            "m~~...v.....v...~~m",
+            "m~~...v.....v...~~m",
+            "m~~...vvv.vvv...~~m",
+            "m~~~...........~~~m",
+            "m~~~~.........~~~~m",
+            "m~~~~~.......~~~~~m",
+            "m~~~~~~.....~~~~~~m",
+            "m~~~~~~.....~~~~~~m",
+            "m~~~~~~~~~~~~~~~~~m",
+            "m~~~~~~~~~~~~~~~~~m",
+            "mmmmmmmmmmmmmmmmmmm"
+          ],
+          "floor": [
+            "...................",
+            "...................",
+            "...................",
+            "...................",
+            "...................",
+            ".......+++++.......",
+            ".......+++++.......",
+            ".......+++++.......",
+            ".......+++++.......",
+            ".......+++++.......",
+            ".........=.........",
+            "...................",
+            "...................",
+            "...................",
+            "...................",
+            "...................",
+            "...................",
+            "...................",
+            "..................."
+          ]
+        },
+        "remove": [
+          "m_bett",
+          "m_regal",
+          "m_tisch",
+          "m_fass1",
+          "m_fass2"
+        ],
+        "objects": [
+          {
+            "id": "v_roulette",
+            "type": "decor",
+            "x": 7,
+            "y": 5,
+            "look": "roulette",
+            "scale": 1.0
+          },
+          {
+            "id": "v_slot1",
+            "type": "decor",
+            "x": 11,
+            "y": 5,
+            "look": "spielautomat",
+            "scale": 1.0
+          },
+          {
+            "id": "v_slot2",
+            "type": "decor",
+            "x": 11,
+            "y": 8,
+            "look": "spielautomat",
+            "scale": 1.0
+          },
+          {
+            "id": "v_slot3",
+            "type": "decor",
+            "x": 11,
+            "y": 9,
+            "look": "spielautomat",
+            "scale": 1.0
+          },
+          {
+            "id": "v_karten1",
+            "type": "decor",
+            "x": 7,
+            "y": 7,
+            "look": "kartentisch",
+            "scale": 0.95
+          },
+          {
+            "id": "v_karten2",
+            "type": "decor",
+            "x": 7,
+            "y": 9,
+            "look": "kartentisch",
+            "scale": 0.95
+          }
+        ]
+      }
     }
   },
   "spot": {
@@ -7710,41 +7931,94 @@
     "gnom": {
       "name": "Murmel",
       "start": "a",
-      "again": "z",
+      "startBy": [
+        {
+          "if": {
+            "flag": "gnom:w2"
+          },
+          "node": "c"
+        },
+        {
+          "if": {
+            "flag": "gnom:w1"
+          },
+          "node": "b"
+        },
+        {
+          "if": {
+            "flag": "gnom:g1"
+          },
+          "node": "e"
+        }
+      ],
       "nodes": {
         "a": {
-          "text": "Murmel hüpft von seinem Fass. „Gäste! Hihi. Ich spiele nur ein Spiel: Ich würfle eine Zahl von eins bis zehn. Ist sie gerade, gehört euch mein Glücksamulett. Ist sie ungerade, gewinne ich. Na?“",
+          "text": "Murmel hüpft von seinem Fass. „Gäste! Hihi. Ich liebe nur eins: Würfel. Drei pro Kopf, den Einsatz bestimmt ihr. Na?“",
           "choices": [
             {
-              "t": "Würfeln",
-              "dice": {
-                "even": {
-                  "give": [
-                    {
-                      "item": "gluecksamulett",
-                      "n": 1
-                    }
-                  ],
-                  "done": true,
-                  "set": [
-                    "gnom:gewonnen"
-                  ],
-                  "msg": "Murmel knirscht mit den Zähnen und wirft euch das Amulett zu. „Glück muss man haben. Hihi.“"
-                },
-                "odd": {
-                  "attack": "riesenspinne",
-                  "msg": "Murmel lacht. Sein Lachen wird tiefer, sein Rücken wölbt sich, und acht schwarze Beine schieben sich aus der Jacke."
-                }
-              }
+              "game": "wuerfel",
+              "t": "Würfeln"
+            },
+            {
+              "to": "r",
+              "t": "Wie geht das Spiel?"
             },
             {
               "t": "Lieber nicht"
             }
           ]
         },
-        "z": {
-          "text": "Murmel winkt mit einem Würfel. „Ihr habt gewonnen. Mehr gibt es nicht. Hihi.“",
+        "e": {
+          "text": "Murmel strahlt. „Noch eine Runde? Das Glück ist ein scheues Reh. Man muss es einkreisen. Hihi.“",
           "choices": [
+            {
+              "game": "wuerfel",
+              "t": "Würfeln"
+            },
+            {
+              "to": "r",
+              "t": "Wie geht das Spiel?"
+            },
+            {
+              "t": "Gehen"
+            }
+          ]
+        },
+        "b": {
+          "text": "Murmel schmollt. „Einmal ist keinmal. Wer mich ein zweites Mal schlägt, bekommt etwas, das glänzt und Glück verspricht. Hihi.“",
+          "choices": [
+            {
+              "game": "wuerfel",
+              "t": "Würfeln"
+            },
+            {
+              "to": "r",
+              "t": "Wie geht das Spiel?"
+            },
+            {
+              "t": "Gehen"
+            }
+          ]
+        },
+        "c": {
+          "text": "Murmel wirft einen Würfel in die Luft. „Das Amulett habt ihr. Aber um Gold spiele ich immer gern. Hihi.“",
+          "choices": [
+            {
+              "game": "wuerfel",
+              "t": "Würfeln"
+            },
+            {
+              "t": "Gehen"
+            }
+          ]
+        },
+        "r": {
+          "text": "Jeder wirft drei Würfel. Ihr dürft einen eurer Würfel einmal neu werfen, danach wirft Murmel seinen niedrigsten neu, wenn er unter 3 liegt. Die höhere Summe gewinnt die Runde. Wer zuerst zwei Runden hat, gewinnt das Spiel.",
+          "choices": [
+            {
+              "game": "wuerfel",
+              "t": "Würfeln"
+            },
             {
               "t": "Gehen"
             }
@@ -7870,5 +8144,39 @@
         }
       }
     }
+  },
+  "dicegame": {
+    "stakes": [
+      0,
+      10,
+      30
+    ],
+    "amulet": "gluecksamulett",
+    "devilKind": "teufel",
+    "devilGame": 2,
+    "rules": "Jeder wirft drei Würfel. Ihr dürft einen eurer Würfel einmal neu werfen, danach wirft Murmel seinen niedrigsten neu, wenn er unter 3 liegt. Die höhere Summe gewinnt die Runde. Wer zuerst zwei Runden hat, gewinnt das Spiel.",
+    "hint": "Murmel knirscht mit den Zähnen. „Wer mich ein zweites Mal schlägt, bekommt etwas Glänzendes von mir. Aber nicht heute, hihi.“",
+    "amuletLine": "Murmel wirft euch zähneknirschend das Glücksamulett zu. „Zweimal! Das ist Betrug mit Charme.“",
+    "devilLine": "Murmel kichert. Das Kichern wird tiefer, die Hütte flackert in Rot und Gold, aus dem Kamin riecht es nach Schwefel, und seine Mütze wächst zu zwei Hörnern. „Das Haus gewinnt immer. Hihi.“",
+    "murmelLoses": [
+      "„Die Würfel sind verhext. Ich verlange ein Gutachten.“",
+      "„Das war Absicht. Ich wollte euch Mut machen.“",
+      "„Mein Würfel hat heute frei, und sein Vertreter ist ein Idiot.“",
+      "„Ich habe nur die Wahrscheinlichkeit gestreichelt. Sie hat zurückgebissen.“",
+      "„Verloren? Das passiert guten Gastgebern. Hihi.“"
+    ],
+    "murmelWins": [
+      "„Hihi! Das Glück trägt heute meine Hausschuhe.“",
+      "„Gewonnen! Ich würde ja bescheiden tun, aber ich kann es nicht.“",
+      "„So ist das mit den Würfeln: Sie mögen mich einfach.“"
+    ],
+    "roundWin": [
+      "Die Runde geht an euch.",
+      "Die Runde gehört euch. Murmel zuckt zusammen."
+    ],
+    "roundLose": [
+      "Murmel gewinnt die Runde.",
+      "Murmel tanzt einen kleinen Schritt."
+    ]
   }
 }

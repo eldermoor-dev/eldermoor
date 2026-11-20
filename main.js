@@ -4,13 +4,13 @@ import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
   buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, pushError, formatErrorLog, itemDef, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
-  activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogChoose,
+  activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogChoose, diceNew, diceRoll, diceKeep, diceNext, diceFinish, diceRoundLine,
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.31.14';
+const VERSION = '0.32.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -31,7 +31,7 @@ const S = {
   debug: { god: false }, itemMode: false, abMode: false, spMode: false, spSel: 0, foe: 0, invUse: null, draft: null, fps: 60, frameMs: 0, lastRender: 0,
   installEvent: null, loadMs: null, hadController: false
 };
-if (new URLSearchParams(location.search).has('dev')) { window.__S = S; S.snapCam = () => snapCam(); S.fn = { openMap: () => openMap(), renderCombat: () => renderCombat(), startCombatUI: (o) => startCombatUI(o), showEvent: (a, b) => showEvent(a, b), openShop: (id) => openShop(id, true), gotoArea: (id) => { jumpToLevel(S.game, S.data, id); S.lvl = getLevel(S.data, S.game); S.rc.setPalette(S.data.palettes[S.lvl.palette]); S.held = []; S.queued = null; snapCam(); renderAll(); } }; } // nur für automatische Tests (?dev)
+if (new URLSearchParams(location.search).has('dev')) { window.__S = S; S.snapCam = () => snapCam(); S.fn = { openMap: () => openMap(), renderCombat: () => renderCombat(), startCombatUI: (o) => startCombatUI(o), showEvent: (a, b) => showEvent(a, b), openDice: (id) => openDice(id), openShop: (id) => openShop(id, true), gotoArea: (id) => { jumpToLevel(S.game, S.data, id); S.lvl = getLevel(S.data, S.game); S.rc.setPalette(S.data.palettes[S.lvl.palette]); S.held = []; S.queued = null; snapCam(); renderAll(); } }; } // nur für automatische Tests (?dev)
 
 // ---------------------------------------------------------------- Fehlerlog
 const ERR = { list: [], saveT: 0 };
@@ -560,7 +560,7 @@ async function heroAct(a) {
 function readSignByTap(e) {
   const g = S.game;
   if (!g || g.combat || S.lock || !$('#modal').hidden) return false;
-  const lvl = S.data.levels[g.levelId];
+  const lvl = getLevel(S.data, g);
   const r = $('#view').getBoundingClientRect();
   const fx = (e.clientX - r.left) / r.width;
   const a = S.cam.a, dirX = Math.sin(a), dirY = -Math.cos(a), plX = Math.cos(a) * 0.8, plY = Math.sin(a) * 0.8;
@@ -590,7 +590,7 @@ function readSignByTap(e) {
 function tapUseByTap(e) {
   const g = S.game;
   if (!g || g.combat || S.lock || !$('#modal').hidden) return false;
-  const lvl = S.data.levels[g.levelId];
+  const lvl = getLevel(S.data, g);
   const r = $('#view').getBoundingClientRect();
   const fx = (e.clientX - r.left) / r.width;
   const a = S.cam.a, dirX = Math.sin(a), dirY = -Math.cos(a), plX = Math.cos(a) * 0.8, plY = Math.sin(a) * 0.8;
@@ -752,7 +752,7 @@ document.addEventListener('pointerdown', () => { if (S.game) autoFullscreen(); }
 setInterval(() => { if (S.game) { updateInvBadge(); updateTalBadge(); } }, 700);
 // 0.31.0: Autospeichern alle 10 Minuten (nicht im Kampf, nicht vor Spielstart); Slot „auto“ wie bei Gebietswechseln
 const AUTOSAVE_MS = 10 * 60 * 1000;
-setInterval(async () => { try { if (S.started && S.game && !S.game.combat && await saveSlot('auto', true)) toast('Automatisch gespeichert.', 1400); } catch { /* egal */ } }, AUTOSAVE_MS); // Punkte an Inventar/Charakter auch ohne neues Bild aktuell halten
+setInterval(async () => { try { if (S.started && S.game && !S.game.combat && !S.dice && await saveSlot('auto', true)) toast('Automatisch gespeichert.', 1400); } catch { /* egal */ } }, AUTOSAVE_MS); // Punkte an Inventar/Charakter auch ohne neues Bild aktuell halten
 // 0.23.1 (Nutzer: nach dem Wechsel ins Vollbild verdecken Informationen das Bild zu lange): Meldungen und Hinweise sofort ausblenden.
 function calmScreen() { S.logTs = (S.logTs || []).map(() => 0); const t = $('#toast'); if (t) t.hidden = true; const ev = $('#event'); if (ev) ev.hidden = true; renderLog(); }
 document.addEventListener('fullscreenchange', () => { if (document.fullscreenElement) S.fsLeft = false; else if (S.game) S.fsLeft = true; if (S.game) calmScreen(); });
@@ -950,9 +950,52 @@ async function dialogPick(i) {
   if (r.sfx) S.sfx.play(r.sfx);
   if (r.encounter) { closeModal(); renderAll(); startCombatUI(r.encounter); return; }
   if (r.goto) { closeModal(); const t = travelTo(g, S.data, r.goto, r.msg); if (!t.ok) { say(t.msg); renderAll(); return; } S.sfx.play('door'); await afterAreaChange(t); return; } // 0.28.0: Fähre
+  if (r.game) { closeModal(); openDice(d.id); return; } // 0.32.0: Würfelspiel mit Murmel
   if (r.next) { openDialog(d.id, r.next); renderAll(); return; }
   closeModal(); renderAll();
   try { if (!g.combat) await saveSlot('auto', true); } catch { /* egal */ }
+}
+// ---------- Würfelspiel mit Murmel (0.32.0), Regeln und Logik: logic.js (diceNew … diceFinish) ----------
+const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+const dieHtml = (n, cls = '', attr = '') => `<span class="die ${cls}" ${attr}>${[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => `<i class="${n && PIPS[n].includes(i) ? 'on' : ''}"></i>`).join('')}</span>`;
+function openDice(npcId) { S.dice = { npcId, g: null, res: null, line: '' }; renderDice(); }
+function renderDice() {
+  const D = S.dice, cfg = S.data.dicegame, g = S.game;
+  if (!D) return;
+  if (!D.g) { // Einsatzwahl
+    openModal(`<h2>Würfeln mit Murmel</h2><p style="line-height:1.4;margin:4px 0 8px">${esc(cfg.rules)}</p><p style="margin:4px 0 6px">Einsatz wählen (Gewinn = doppelter Einsatz, Gold: ${g.gold}):</p>
+      <div class="acts" style="flex-direction:column;align-items:stretch">${cfg.stakes.map((st) => `<button class="mb" data-m="dice-stake:${st}" ${g.gold >= st ? '' : 'disabled'}>${st ? st + ' Gold' : 'Nur zum Spaß (kein Einsatz)'}</button>`).join('')}<button class="mb" data-m="dice-cancel">Doch nicht</button></div>`, 'dice');
+    return;
+  }
+  const d = D.g, sum = (a) => a.reduce((x, y) => x + y, 0), keep = d.phase === 'keep', shown = d.phase === 'keep' || d.phase === 'show' || d.phase === 'end';
+  const mine = shown ? d.p.map((v, i) => dieHtml(v, (d.rerolled === i && d.phase !== 'keep' ? 'sel ' : '') + (keep ? 'tap' : ''), keep ? `data-m="dice-re:${i}"` : '')).join('') : [0, 0, 0].map(() => dieHtml(0)).join('');
+  const his = shown ? d.m.map((v, i) => dieHtml(v, 'red' + (d.mrerolled === i && d.phase !== 'keep' ? ' sel' : ''))).join('') : [0, 0, 0].map(() => dieHtml(0, 'red')).join('');
+  let foot = '', info = '';
+  if (d.phase === 'roll') { info = d.round === 1 && !d.history.length ? 'Beide würfeln drei Würfel.' : 'Nächste Würfe.'; foot = `<button class="mb primary" data-m="dice-roll">Würfeln</button><button class="mb" data-m="dice-giveup">Aufgeben</button>`; }
+  else if (keep) { info = 'Tippt einen eurer Würfel an, um ihn neu zu werfen – oder behaltet alle.'; foot = `<button class="mb primary" data-m="dice-re:-1">Behalten</button>`; }
+  else if (d.phase === 'show') { info = `${D.line} (${sum(d.p)} : ${sum(d.m)})`; foot = `<button class="mb primary" data-m="dice-next">Weiter</button>`; }
+  else if (d.phase === 'end') { info = `${d.won ? 'Ihr gewinnt das Spiel.' : 'Murmel gewinnt das Spiel.'} ${D.res ? D.res.msg : ''}`; foot = `<button class="mb primary" data-m="dice-done">Weiter</button>`; }
+  const tot = shown ? `<div class="dsum">${sum(d.p)}</div>` : '<div class="dsum">·</div>', tot2 = shown ? `<div class="dsum">${sum(d.m)}</div>` : '<div class="dsum">·</div>';
+  openModal(`<h2>Würfeln mit Murmel</h2><div class="dscore">Einsatz ${d.stake ? d.stake + ' Gold' : 'keiner'} · Runde ${d.round} · Ihr ${d.pw} : ${d.mw} Murmel</div>
+    <div class="drow"><b>Murmel</b>${his}${tot2}</div><div class="drow"><b>Ihr</b>${mine}${tot}</div>
+    <p class="dinfo">${esc(info)}</p><div class="acts" style="margin-top:6px">${foot}</div>`, 'dice');
+}
+async function diceAction(m) {
+  const D = S.dice, g = S.game; if (!D) { closeModal(); return; }
+  const npc = g.objs.find((o) => o.id === D.npcId);
+  if (m.startsWith('dice-stake:')) { const r = diceNew(g, S.data, +m.slice(11)); if (r.error) { toast('Nicht genug Gold.'); return; } D.g = r.g; renderAll(); renderDice(); return; }
+  if (!D.g) { S.dice = null; closeModal(); return; } // dice-cancel
+  if (m === 'dice-roll') { diceRoll(g, D.g); renderDice(); return; }
+  if (m.startsWith('dice-re:')) { const i = +m.slice(8); if (D.g.phase !== 'keep') return; diceKeep(g, D.g, i < 0 ? null : i); D.line = diceRoundLine(g, S.data, D.g); renderDice(); return; }
+  if (m === 'dice-next') { diceNext(D.g); if (D.g.phase === 'end') { D.res = diceFinish(g, S.data, npc, D.g); S.sfx.play(D.g.won ? 'chest' : 'warn'); renderAll(); } renderDice(); return; }
+  if (m === 'dice-giveup') { if (D.g.phase !== 'roll' && D.g.phase !== 'keep') return; D.g.won = false; D.g.phase = 'end'; D.res = diceFinish(g, S.data, npc, D.g); S.sfx.play('warn'); renderAll(); renderDice(); return; }
+  if (m === 'dice-done') {
+    const res = D.res; S.dice = null; closeModal();
+    if (res && res.msg) { say(res.msg); toast(res.msg, 5000); }
+    if (res && res.devil) { S.lvl = getLevel(S.data, g); S.held = []; S.queued = null; renderAll(); startCombatUI(res.encounter); return; } // Raum ist jetzt der Spielsalon
+    renderAll();
+    try { if (!g.combat) await saveSlot('auto', true); } catch { /* egal */ }
+  }
 }
 function openModal(html, kind = 'generic') {
   $('#modal-box').innerHTML = html;
@@ -963,7 +1006,7 @@ function openModal(html, kind = 'generic') {
   S.held = [];
   $('#modal-box').scrollTop = 0;
 }
-function closeModal() { if (S.modal === 'inventory' && S.game) { clearNew(S.game); updateInvBadge(); } $('#modal').hidden = true; $('#modal-box').innerHTML = ''; S.modal = null; S.dlg = null; S.invUse = null; S.invEquip = null; S.invSell = null; S.shopId = null; S.shopSure = null; }
+function closeModal() { if (S.modal === 'dice') S.dice = null; if (S.modal === 'inventory' && S.game) { clearNew(S.game); updateInvBadge(); } $('#modal').hidden = true; $('#modal-box').innerHTML = ''; S.modal = null; S.dlg = null; S.invUse = null; S.invEquip = null; S.invSell = null; S.shopId = null; S.shopSure = null; }
 const closeBtn = '<button class="mb" data-m="close">Schließen</button>';
 
 function openMenu() {
@@ -1608,6 +1651,7 @@ async function onModalClick(e) {
   }
   else if (m === 'shopgo') { S.shopTalk = null; openShop(S.shopId, false); }
   else if (m.startsWith('dlg:')) dialogPick(+m.slice(4));
+  else if (m.startsWith('dice-')) diceAction(m);
   else if (m.startsWith('use:')) {
     if (g.combat) { // 0.31.1: Tränke im Kampf aus dem Inventar: Held am Zug trinkt für sich (Alchemist wählt den Helden)
       const a = currentActor(g);

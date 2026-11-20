@@ -13,7 +13,7 @@ const PAL_N = MATS.length * 8, BLOOD_DEFAULT = [206, 38, 32], ICE_DEFAULT = [96,
 const P = (mat, shade) => M[mat] * 8 + Math.max(0, Math.min(7, Math.round(shade)));
 
 // Wandtextur-IDs im Raster: 0 = frei, 1 Stein, 2 Moos, 3 Tür, 4 verschlossene Tür
-export const WALL_STONE = 1, WALL_MOSS = 2, WALL_DOOR = 3, WALL_DOOR_LOCKED = 4, WALL_TORCH = 5, WALL_ROCK = 6, WALL_LICHEN = 7, WALL_GATE = 8, WALL_SECRET = 9, WALL_SWITCH = 10, WALL_SWITCH_ON = 11, WALL_HOUSE = 12;
+export const WALL_STONE = 1, WALL_MOSS = 2, WALL_DOOR = 3, WALL_DOOR_LOCKED = 4, WALL_TORCH = 5, WALL_ROCK = 6, WALL_LICHEN = 7, WALL_GATE = 8, WALL_SECRET = 9, WALL_SWITCH = 10, WALL_SWITCH_ON = 11, WALL_HOUSE = 12, WALL_VEGAS = 13;
 
 // ---------- Palette: 8 Materialien × 8 Helligkeitsstufen = 64 feste Farben ----------
 export function buildPalette(def, lift = 1) {
@@ -1607,7 +1607,7 @@ function genFerryman(seed) { // Fuhrmann: Strohhut, wetterbraunes Gesicht, Ölma
 }
 // 0.31.13: Möbel für das Innere der Blockhütte (Typ decor, look = Name)
 function genFurn(kind, seed) {
-  return paintFigure(seed, ({ ell, lit, nz, px, py, x, y, vn }) => {
+  return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y, vn }) => {
     const l = lit(px, py), n = nz(x >> 1, y >> 1), ax = Math.abs(px - 32), wd = (b) => ['wood', b - l * 0.9 + n * 0.45];
     if (kind === 'fass') {
       const rx = 14 + (1 - Math.pow((py - 40) / 20, 2)) * 3;
@@ -1647,10 +1647,103 @@ function genFurn(kind, seed) {
       }
       if (py >= 14 && py < 18 && ax < 24) return ['stone', 4.8 - l * 0.6];
       if (py >= 2 && py < 14 && ax < 9) return ['stone', 3.2 - l * 0.6 + n * 0.4];
+    } else if (kind === 'kaktus') { // 0.32.0: Säulenkaktus mit Armen, Rippen, Dornen und Blüte
+      const rib = Math.sin(px * 2.1) * 0.35, col = (b) => ['moss', b - l * 0.9 + rib + n * 0.3];
+      if (ell(px, py, 32, 15.5, 2.6, 1.7) <= 1) return ['blood', 5.2];
+      if (cap(px, py, 32, 61, 32, 20, 6.2, 5.2) || cap(px, py, 32, 41, 19, 41, 3.8, 3.8) || cap(px, py, 19, 41, 19, 28, 3.4, 3) || cap(px, py, 32, 34, 45, 34, 3.8, 3.8) || cap(px, py, 45, 34, 45, 22, 3.4, 3)) {
+        if (hash(x, y, seed + 4) > 0.965) return ['glow', 6.6];
+        return col(3.2);
+      }
+    } else if (kind === 'haengematte') { // 0.32.0: Hängematte zwischen zwei Palmen (Sprite zweifach breit: Enden liegen an den Stämmen der Nachbarfelder)
+      const u = (px - 32) / 27, sag = 31 + 14 * (1 - u * u);
+      const band = Math.floor((px + 40) / 3) % 2;
+      if (Math.abs(u) <= 1 && py >= sag && py < sag + 4) return band ? ['blood', 4.4 - l * 0.7 + n * 0.3] : ['glow', 5.6 - l * 0.7 + n * 0.3];
+      if (ell(px, py, 22, sag - 0.9, 5, 1.8) <= 1 && Math.abs(u) <= 1) return ['ice', 6.4 - l * 0.4]; // Kissen
+      if (cap(px, py, 0, 27.5, 5, 31.5, 0.9, 0.9) || cap(px, py, 64, 27.5, 59, 31.5, 0.9, 0.9)) return ['wood', 2.4]; // Seile
+    } else if (kind === 'spielautomat') { // 0.32.0: einarmiger Bandit
+      if (py >= 6 && py <= 61 && ax < 15) {
+        if (py < 17 && ax < 13) return (Math.abs(px - 32) < 8 && py > 9 && py < 14) ? ['glow', 7.2] : ['blood', 3.6 - l * 0.7];                 // Leuchtschild
+        if (py >= 20 && py < 38 && ax < 11.5) { const k3 = Math.floor((px - 20.5) / 7.7); const cx = 24.2 + k3 * 7.8; if (k3 >= 0 && k3 < 3 && Math.abs(px - cx) < 3.3) { if (ell(px, py, cx, 29, 2.2, 2.4) <= 1) return k3 === 1 ? ['ceil', 0.3] : ['blood', 4.8]; return ['stone', 6.8]; } return ['ceil', 0.5]; }
+        if (py >= 46 && py < 54 && ax < 9) return hash(x, y, seed) > 0.9 ? ['glow', 6.6] : ['ceil', 0.3];   // Münzfach
+        if (ax >= 13.2 || (py > 17 && py < 20) || (py > 38 && py < 41)) return ['glow', 5.2 - l * 0.6];       // Goldrand
+        return ['blood', 3.2 - l * 0.8 + n * 0.3];
+      }
+      if (cap(px, py, 47, 36, 53, 24, 1.1, 1.1) || ell(px, py, 53.5, 22.5, 2.6, 2.6) <= 1) return py < 25.5 && px > 50 ? ['blood', 5.4] : ['iron', 4.6]; // Hebel
+    } else if (kind === 'roulette') { // 0.32.0: Roulettetisch mit Kessel
+      if (py >= 44 && py <= 61 && (Math.abs(ax - 25) < 2.6)) return wd(2.4);
+      if (py >= 38 && py < 44 && ax < 29) return wd(3.2 - (py - 38) * 0.15);
+      if (py >= 30 && py < 38 && ax < 29) { const wx = (px - 32) / 13, wy = (py - 34.5) / 4.4; const q = wx * wx + wy * wy; if (q <= 1) return q < 0.12 ? ['glow', 7] : q < 0.45 ? ['ceil', 0.4] : (Math.floor((Math.atan2(wy, wx) + 3.15) / 0.52) % 2 ? ['blood', 4.4] : ['ceil', 0.6]); if (q <= 1.35) return wd(4.4); return ['moss', 3.1 - l * 0.5 + n * 0.25]; }
+      if (py >= 24 && py < 30 && Math.abs(px - 48) < 6) return ['glow', 6 + n]; // Chipstapel
+    } else if (kind === 'kartentisch') { // 0.32.0: Pokertisch (grüner Filz, Karten, Chips)
+      if (py >= 44 && py <= 61 && Math.abs(ax - 20) < 2.4) return wd(2.2);
+      if (ell(px, py, 32, 39, 29, 7.2) <= 1) {
+        if (ell(px, py, 32, 39, 26.5, 5.6) > 1) return ['blood', 3.4 - l * 0.6];
+        const cx = Math.floor((px - 17) / 6.5), inCard = cx >= 0 && cx < 5 && py > 35.5 && py < 41 && ((px - 17) % 6.5) < 5;
+        if (inCard) return ((px - 17) % 6.5) > 1.5 && ((px - 17) % 6.5) < 3.4 && py > 37 && py < 39.5 ? ['blood', 4.8] : ['stone', 6.8];
+        if (ell(px, py, 12 + 3, 37, 2.6, 1.3) <= 1 || ell(px, py, 49, 41, 2.6, 1.3) <= 1) return ['glow', 6.4];
+        return ['moss', 3 - l * 0.5 + n * 0.25];
+      }
     }
     return null;
   }, 128, true);
 }
+// 0.32.0: Teufel (Murmel verwandelt sich): roter Spieler im Nadelstreifenanzug mit Sonnenbrille, Zigarre, Riesenwürfel und Dreizack-Stock
+function genDevil(seed) {
+  return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y }) => {
+    const l = lit(px, py), n = nz(x >> 1, y >> 1), skin = (b) => ['blood', b - l * 0.9 + n * 0.3];
+    const suit = (b) => ['ceil', b - l * 0.5 + n * 0.2 + (((px * 1.4) % 4.2) < 0.55 ? 0.9 : 0)];
+    // Zigarre + Glut
+    if (ell(px, py, 43.8, 25.6, 1.3, 1.3) <= 1) return ['glow', 7.4];
+    if (cap(px, py, 34.5, 24.3, 43, 25.6, 0.95, 0.95)) return ['wood', 2.6];
+    // Sonnenbrille mit Glanz
+    if (py > 14.2 && py < 18.6 && px > 24.2 && px < 39.8) { if (Math.abs(px - 32) < 1.1) return ['iron', 3]; if (Math.abs(px - 28.2) < 3.4 || Math.abs(px - 35.8) < 3.4) return (py < 15.8 && (px < 27 || (px > 34.4 && px < 36.6))) ? ['stone', 6.8] : ['ceil', 0.15]; }
+    // Hörner (dunkel, Spitzen hell) und Ohren
+    for (const sg of [-1, 1]) {
+      if (cap(px, py, 32 + sg * 7, 11, 32 + sg * 13, 1.5, 2.5, 0.5)) return ((py < 6) ? ['stone', 5.2 - l * 0.4] : ['ceil', 1.1 - l * 0.4 + n * 0.2]);
+      if (cap(px, py, 32 + sg * 8.5, 17, 32 + sg * 14.5, 13.5, 1.8, 0.5)) return skin(4.2);
+    }
+    // Gesicht
+    if (ell(px, py, 32, 17.5, 8.4, 9.8) <= 1) {
+      if (py > 22.8 && py < 26.4 && Math.abs(px - 32) < 5.8 && py < 25.2 + Math.abs(px - 32) * 0.05) return ((px * 1.1 + py) % 3 < 1.2) ? ['stone', 7] : ['ceil', 0.25]; // Grinsen mit Zähnen
+      if (Math.abs(px - 32) < 2.4 && py > 27 && py < 31) return ['ceil', 1.3 + n * 0.4]; // Spitzbart
+      if (py > 12 && py < 14.4 && Math.abs(Math.abs(px - 32) - 4.2) < 3.2) return ['ceil', 0.7]; // Brauen
+      return skin(4.7);
+    }
+    if (ell(px, py, 32, 30, 2.7, 4) <= 1 && py > 27) return ['ceil', 1.3 + n * 0.4];
+    // Schleife und Weste
+    if (py > 29.4 && py < 33.4 && ((Math.abs(px - 32) < 1.2) || ((Math.abs(px - 32) < 5) && (Math.abs(py - 31.4) < 2.1 - Math.abs(px - 32) * 0.28)))) return ['blood', 5.6 - l * 0.4];
+    // Würfel (links, in der Hand)
+    if (px > 2.5 && px < 17.5 && py > 40 && py < 55) { const cx = 10, cy = 47.5; for (const [dx, dy] of [[-4, -4], [4, -4], [0, 0], [-4, 4], [4, 4]]) if (Math.hypot(px - cx - dx, py - cy - dy) < 1.5) return ['ceil', 0.2]; return ['stone', 7.2 - l * 0.8 - ((px < 4.5 || py > 53.3) ? 0.9 : 0)]; }
+    // Hände
+    if (ell(px, py, 12, 52, 3.4, 3) <= 1 || ell(px, py, 54.5, 49, 3.2, 3.2) <= 1) return skin(4.3);
+    // Dreizack-Stock rechts
+    if (cap(px, py, 55.5, 22, 55.5, 62, 0.85, 0.85) || cap(px, py, 52, 12, 52, 22, 0.75, 0.75) || cap(px, py, 59, 12, 59, 22, 0.75, 0.75) || cap(px, py, 52, 22, 59, 22, 0.8, 0.8) || cap(px, py, 55.5, 7, 55.5, 22, 0.8, 0.8)) return ['iron', 5.4 - l * 0.5];
+    // Arme (Anzug)
+    if (cap(px, py, 17.5, 33, 11.5, 50, 5.6, 4.2) || cap(px, py, 46.5, 33, 54, 48, 5.6, 4.2)) return suit(1.6);
+    // Körper: Jackett, Revers, Weste
+    if (py >= 29 && py <= 56) { const hw = 11 + (py - 29) * 0.34; if (Math.abs(px - 32) < hw) { if (Math.abs(px - 32) < 3.4 + (py - 29) * 0.12 && py > 33) return Math.abs(px - 32) < 1.2 && ((py | 0) % 5 === 0) ? ['blood', 4] : ['glow', 5.4 - l * 0.6 + n * 0.3]; return suit(1.7); } }
+    // Schwanz
+    if (cap(px, py, 44, 54, 58, 57, 1.3, 1.1) || (ell(px, py, 59, 55.5, 3, 2.4) <= 1 && px > 57)) return skin(3.6);
+    // Beine und Schuhe
+    if (py > 55 && (cap(px, py, 26, 55, 26, 61, 4.2, 4) || cap(px, py, 38, 55, 38, 61, 4.2, 4))) return suit(1.4);
+    if (ell(px, py, 25, 62.2, 5.4, 1.9) <= 1 || ell(px, py, 39, 62.2, 5.4, 1.9) <= 1) return ['ceil', 0.3 + l * 0.2];
+    return null;
+  }, 128, true);
+}
+
+// 0.32.0: Spielhöllen-Teppich (Bodenzeichen '+'): rot-schwarzes Karomuster mit goldenen Rauten
+function genCarpet(seed, n) {
+  const t = { w: n, h: n, data: new Uint8Array(n * n) }, q = n / 4;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const cx = Math.floor(x / q), cy = Math.floor(y / q), u = (x % q) / q - 0.5, v = (y % q) / q - 0.5, red = (cx + cy) % 2 === 0;
+    let c = red ? P('blood', 3.6 + (hash(x >> 1, y >> 1, seed) - 0.5) * 0.5) : P('ceil', 0.5 + (hash(x >> 1, y >> 1, seed + 1) - 0.5) * 0.4);
+    const rim = Math.min(Math.abs(u), Math.abs(v)) > 0.44 ? 1 : 0;
+    if (Math.abs(u) + Math.abs(v) < 0.2 || rim) c = P('glow', red ? 5.8 : 6.4);
+    t.data[y * n + x] = c;
+  }
+  return t;
+}
+
 function genBoat(seed) { // Ruderboot von der Seite, zwei Ruder, Sitzbrett, aufgerollte Leine
   return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y }) => {
     const l = lit(px, py), n = nz(x >> 1, y >> 1), dx = px - 32, ax = Math.abs(dx);
@@ -2206,6 +2299,26 @@ function genSecretWall(base, seed) {
   return t;
 }
 // 0.31.7/0.31.10: Blockhüttenwand (Nutzer: „aus dunkelbraunen Holzbalken“): waagerechte, runde Stämme mit Fugen, Maserung und vereinzelten Astlöchern
+// 0.32.0: Spielsalon-Wand (Kartenzeichen 'v', nur nach der Verwandlung): rote Tapete mit Rautenmuster, Goldstreifen, Neonband und Glühbirnenreihe
+function genVegasWall(seed, n = TEX) {
+  const t = { w: n, h: n, data: new Uint8Array(n * n) }, k = n / TEX;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const u = x / n, v = y / n, fu = (u * 4) % 1, fv = (v * 4) % 1;
+    let c;
+    if (v > 0.8) c = P('ceil', 0.5 + hash(x >> 1, y >> 1, seed) * 0.4);                                   // dunkle Sockelleiste
+    else {
+      const dia = Math.abs(fu - 0.5) + Math.abs(fv - 0.5);
+      c = P('blood', 2.6 + (dia < 0.2 ? 0.7 : 0) + (hash(x >> 1, y >> 1, seed + 2) - 0.5) * 0.45);
+      if (((u * 8) % 1) < 0.05) c = P('glow', 5.2);                                                       // goldene Streifen
+    }
+    if (Math.abs(v - 0.8) < 0.012) c = P('glow', 6.2);                                                     // Goldleiste
+    if (v > 0.46 && v < 0.54) c = P('ice', v > 0.49 && v < 0.51 ? 7.6 : 5.2);                              // Neonband
+    if (v > 0.06 && v < 0.12) { const bx = ((u * 8) % 1) - 0.5, by = (v - 0.09) / 0.03; if (bx * bx * 4 + by * by < 0.8) c = P('glow', ((u * 8) | 0) % 2 ? 7.6 : 6.4); } // Glühbirnen
+    t.data[y * n + x] = c;
+  }
+  return t;
+}
+
 function genHouseWall(seed, n = TEX) {
   const t = { w: n, h: n, data: new Uint8Array(n * n) }, k = n / TEX, LOG = 8; // 8 Stämme je Wand
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
@@ -2235,14 +2348,15 @@ export function makeTextures(detail = 1) {
   const n = TEX * (detail > 1 ? 4 : 1), nf = TEX * (detail > 1 ? 2 : 1); // Wände 256, Boden/Decke 128: Eigenauflösung statt hochskaliert (Potenzen von 2 wegen Maskierung)
   const stoneW = genStone(11, n);
   return {
-    wall: { [WALL_STONE]: stoneW, [WALL_HOUSE]: genHouseWall(37, n), [WALL_SECRET]: genSecretWall(stoneW, 301), [WALL_SWITCH]: genSwitchWall(stoneW, false), [WALL_SWITCH_ON]: genSwitchWall(stoneW, true), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
+    wall: { [WALL_STONE]: stoneW, [WALL_HOUSE]: genHouseWall(37, n), [WALL_VEGAS]: genVegasWall(38, n), [WALL_SECRET]: genSecretWall(stoneW, 301), [WALL_SWITCH]: genSwitchWall(stoneW, false), [WALL_SWITCH_ON]: genSwitchWall(stoneW, true), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
     sand: genSand(47, nf),
     sm2,
     water: genWater(61, nf),
     plank: genPlanks(62, nf),
+    carpet: genCarpet(63, nf),
     ceil: genCeil(53, nf),
-    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), rail: genRail(441), palme: sm2(genPalm(461)), fass: sm2(genFurn('fass', 471)), tisch: sm2(genFurn('tisch', 472)), stuhl: sm2(genFurn('stuhl', 473)), bett: sm2(genFurn('bett', 474)), regal: sm2(genFurn('regal', 475)), kamin: sm2(genFurn('kamin', 476)), mound: sm2(genMound(463)), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)),  chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), fuhrmann: sm2(genFerryman(771)), boot: sm2(genBoat(772)), gnom: sm2(genGnome(773)), spinne: sm2(genSpider(774)), diener: sm2(genVampire(741, 'diener')), brut: sm2(genVampire(742, 'brut')), graefin: sm2(genVampire(743, 'graefin')), wache: sm2(genPerson(721, 'wache')), haendler2: sm2(genVendor2(751)), gefangener: sm2(genPrisoner(761)), wund: sm2(genPerson(731, 'wund')), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), rail: genRail(441), palme: sm2(genPalm(461)), fass: sm2(genFurn('fass', 471)), tisch: sm2(genFurn('tisch', 472)), stuhl: sm2(genFurn('stuhl', 473)), bett: sm2(genFurn('bett', 474)), regal: sm2(genFurn('regal', 475)), kamin: sm2(genFurn('kamin', 476)), kaktus: sm2(genFurn('kaktus', 477)), haengematte: sm2(genFurn('haengematte', 478)), spielautomat: sm2(genFurn('spielautomat', 479)), roulette: sm2(genFurn('roulette', 480)), kartentisch: sm2(genFurn('kartentisch', 481)), teufel: sm2(genDevil(482)), mound: sm2(genMound(463)), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)),  chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), fuhrmann: sm2(genFerryman(771)), boot: sm2(genBoat(772)), gnom: sm2(genGnome(773)), spinne: sm2(genSpider(774)), diener: sm2(genVampire(741, 'diener')), brut: sm2(genVampire(742, 'brut')), graefin: sm2(genVampire(743, 'graefin')), wache: sm2(genPerson(721, 'wache')), haendler2: sm2(genVendor2(751)), gefangener: sm2(genPrisoner(761)), wund: sm2(genPerson(731, 'wund')), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
@@ -2318,11 +2432,12 @@ export class Raycaster {
           continue;
         }
         if (fl0 && view.floorGrid && tex.water) { // 0.28.0: Wasser (1) und Bohlen (2 = quer zur x-Achse, 3 = quer zur y-Achse) je Feld
-          const fg = view.floorGrid.fg, fw = view.floorGrid.gw, fh = view.floorGrid.gh, wd = tex.water.data, pd = tex.plank.data, wob = t * 7;
+          const fg = view.floorGrid.fg, fw = view.floorGrid.gw, fh = view.floorGrid.gh, wd = tex.water.data, pd = tex.plank.data, cd = tex.carpet ? tex.carpet.data : pd, wob = t * 7;
           for (let x = 0; x < W; x++) {
             const cx = Math.floor(fx), cy = Math.floor(fy), k = cx >= 0 && cy >= 0 && cx < fw && cy < fh ? fg[cy * fw + cx] : 0;
             let c;
             if (k === 1) c = wd[((((fy * FN + Math.sin(fx * 2.3 + t) * 2) | 0) & FM) * FN) + (((fx * FN + wob) | 0) & FM)];
+            else if (k === 4) { c = cd[((((fy * FN) | 0) & FM) * FN) + (((fx * FN) | 0) & FM)]; }
             else if (k >= 2) { const tx = ((fx * FN) | 0) & FM, ty = ((fy * FN) | 0) & FM; c = k === 2 ? pd[ty * FN + tx] : pd[tx * FN + ty]; }
             else c = src[(((fy * FN) | 0) & FM) * FN + (((fx * FN) | 0) & FM)];
             buf[row + x] = tbl[c];
@@ -2441,7 +2556,7 @@ export function buildFloorGrid(lvl) {
   let any = false;
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const f = lvl.floor && lvl.floor[y] ? lvl.floor[y][x] : '.';
-    const v = lvl.map[y][x] === '~' ? 1 : f === '=' ? 2 : f === '|' ? 3 : 0;
+    const v = lvl.map[y][x] === '~' ? 1 : f === '=' ? 2 : f === '|' ? 3 : f === '+' ? 4 : 0;
     if (v) { fg[y * w + x] = v; any = true; }
   }
   const r = any ? { fg, gw: w, gh: h } : null;
@@ -2453,7 +2568,7 @@ export function buildGrid(lvl, objs) {
   const grid = new Uint8Array(w * h);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const c = lvl.map[y][x];
-    grid[y * w + x] = c === '#' ? WALL_STONE : c === 'm' ? WALL_MOSS : c === 'T' ? WALL_TORCH : c === 'r' ? WALL_ROCK : c === 'o' ? WALL_LICHEN : c === 'h' ? WALL_HOUSE : 0;
+    grid[y * w + x] = c === '#' ? WALL_STONE : c === 'm' ? WALL_MOSS : c === 'T' ? WALL_TORCH : c === 'r' ? WALL_ROCK : c === 'o' ? WALL_LICHEN : c === 'h' ? WALL_HOUSE : c === 'v' ? WALL_VEGAS : 0;
   }
   for (const o of objs) if (o.type === 'illusion' && !o.found) { // 0.22.0: Illusionswand = Mauer wie die Nachbarn
     const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => grid[(o.y + dy) * w + o.x + dx]).find((v) => v === WALL_STONE || v === WALL_MOSS || v === WALL_ROCK || v === WALL_LICHEN);
@@ -2464,8 +2579,8 @@ export function buildGrid(lvl, objs) {
   for (const o of objs) { if (o.type === 'secret' && !o.open) grid[o.y * w + o.x] = WALL_SECRET; else if (o.type === 'lever' && o.wall) grid[o.y * w + o.x] = o.torch ? WALL_TORCH : o.used ? WALL_SWITCH_ON : WALL_SWITCH; } // torch (0.23.7): Schalter sieht aus wie eine gewöhnliche Wandfackel
   return { grid, gw: w, gh: h };
 }
-const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'turmwache' ? tex.sprites.turmwache : k === 'wolf' ? tex.sprites.wolf : k === 'kultist' ? tex.sprites.kultist : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'truhenmaul' ? tex.sprites.mimic : k === 'brandmagier' ? tex.sprites.magier : k === 'riesenspinne' ? tex.sprites.spinne : k === 'blutdiener' ? tex.sprites.diener : k === 'vampirbrut' ? tex.sprites.brut : k === 'blutgraefin' ? tex.sprites.graefin : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
-const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' || k === 'blutgraefin' ? 1.12 : k === 'truhenmaul' ? 0.8 : k === 'riesenspinne' ? 1.15 : 0.9); // Bosse stehen größer im Gang
+const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'turmwache' ? tex.sprites.turmwache : k === 'wolf' ? tex.sprites.wolf : k === 'kultist' ? tex.sprites.kultist : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'truhenmaul' ? tex.sprites.mimic : k === 'brandmagier' ? tex.sprites.magier : k === 'riesenspinne' ? tex.sprites.spinne : k === 'blutdiener' ? tex.sprites.diener : k === 'vampirbrut' ? tex.sprites.brut : k === 'blutgraefin' ? tex.sprites.graefin : k === 'teufel' ? tex.sprites.teufel : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
+const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' || k === 'blutgraefin' ? 1.12 : k === 'truhenmaul' ? 0.8 : k === 'riesenspinne' ? 1.15 : k === 'teufel' ? 1.12 : 0.9); // Bosse stehen größer im Gang
 export const GROUP_SCALE = 0.78, GROUP_GAP = 0.44, CHEST_SCALE = 0.58; // 0.16.4: Gruppen vorher 0.62/0.36, Truhe 0.5 (Nutzer: zu klein, hinter der Leiste)
 let combatFit = 1; // 0.16.17: im Kampf verkleinert die Kamera zu große Figuren so, dass sie samt Füßen über der Leiste ins Bild passen
 export const setCombatFit = (v) => { combatFit = v; };

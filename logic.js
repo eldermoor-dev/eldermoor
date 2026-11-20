@@ -26,7 +26,16 @@ export function randInt(state, a, b) {
 }
 
 // ---------- Level-Helfer ----------
-export function getLevel(data, state) { return data.levels[state.levelId]; }
+// 0.32.0: Gebiete können nach einem Ereignis (Marke state.flags[alt.flag]) umgebaut sein: lvl.alt = { flag, patch (Felder des Gebiets), remove: [Objekt-IDs], objects: [neue Objekte] }
+const altCache = new WeakMap();
+export function levelFor(data, id, flags) {
+  const lvl = data.levels[id];
+  if (!lvl || !lvl.alt || !flags || !flags[lvl.alt.flag]) return lvl;
+  let m = altCache.get(lvl);
+  if (!m) { const rm = new Set(lvl.alt.remove || []); m = Object.assign({}, lvl, lvl.alt.patch || {}, { objects: lvl.objects.filter((o) => !rm.has(o.id)).concat(lvl.alt.objects || []) }); altCache.set(lvl, m); }
+  return m;
+}
+export function getLevel(data, state) { return levelFor(data, state.levelId, state.flags); }
 export function cellChar(lvl, x, y) {
   const r = lvl.map[y];
   if (!r || x < 0 || x >= r.length) return '#';
@@ -731,6 +740,7 @@ function dlgOf(data, npc) { return npc && data.dialogs && data.dialogs[npc.dialo
 export function dialogStartNode(state, data, npc) {
   const dl = dlgOf(data, npc);
   if (!dl) return null;
+  for (const r of dl.startBy || []) if ((!r.if || !r.if.flag || state.flags[r.if.flag]) && (!r.if || !r.if.noflag || !state.flags[r.if.noflag])) return r.node; // 0.32.0: Startknoten nach Marken (Murmel)
   return state.flags['d:' + npc.id] && dl.again ? dl.again : dl.start;
 }
 export function dialogView(state, data, npc, nodeId) {
@@ -747,11 +757,81 @@ export function dialogView(state, data, npc, nodeId) {
   });
   return { name: npc.name || dl.name, text: nd.text, choices };
 }
+// ---------- Würfelspiel mit Murmel (0.32.0) ----------
+// data.dicegame = { stakes, rules, amulet, devilKind, devilGame, intro:{...}, hint, amuletLine, devilLine, murmelLoses[], murmelWins[], roundWin[], roundLose[] }
+// Ablauf: Jede Runde würfeln beide drei Würfel (Murmels liegen offen). Die Gruppe darf einen eigenen Würfel einmal neu werfen, danach wirft Murmel seinen niedrigsten
+// Würfel neu, wenn er unter 3 zeigt. Höhere Summe gewinnt die Runde, Gleichstand = Runde wird wiederholt. Wer zuerst 2 Runden hat, gewinnt das Spiel.
+// Marken: gnom:g1/g2 = 1./2. Spiel gespielt · gnom:w1/w2 = 1./2. Sieg (2. Sieg = Glücksamulett) · gnom:teufel = Verwandlung (Niederlage im 2. Spiel).
+export const DICE_WIN_ROUNDS = 2;
+const dsum = (a) => a.reduce((x, y) => x + y, 0);
+const d6 = (state) => randInt(state, 1, 6);
+function normalizeMurmel(state) { const f = state.flags; if (f['gnom:gewonnen']) { f['gnom:w1'] = true; f['gnom:w2'] = true; f['gnom:g1'] = true; } } // Altstände: Amulett wurde nach den alten Regeln gewonnen
+export function diceGameNumber(state) { normalizeMurmel(state); const f = state.flags; return f['gnom:g2'] ? 3 : f['gnom:g1'] ? 2 : 1; }
+export function diceNew(state, data, stake) {
+  const cfg = data.dicegame;
+  if (!cfg || !cfg.stakes.includes(stake)) return { error: 'bad-stake' };
+  if (state.gold < stake) return { error: 'gold' };
+  state.gold -= stake; // Einsatz sofort; Gewinn zahlt das Doppelte aus
+  return { g: { stake, round: 1, pw: 0, mw: 0, phase: 'roll', p: [], m: [], res: null, rerolled: null, mrerolled: null, history: [], won: null } };
+}
+export function diceRoll(state, g) {
+  if (g.phase !== 'roll') return g;
+  g.p = [d6(state), d6(state), d6(state)]; g.m = [d6(state), d6(state), d6(state)];
+  g.res = null; g.rerolled = null; g.mrerolled = null; g.phase = 'keep';
+  return g;
+}
+// idx = Würfel der Gruppe, der neu geworfen wird (0..2) oder null = behalten
+export function diceKeep(state, g, idx) {
+  if (g.phase !== 'keep') return g;
+  if (idx !== null && idx !== undefined) { if (!(idx >= 0 && idx < 3)) return g; g.p[idx] = d6(state); g.rerolled = idx; }
+  const lo = Math.min(...g.m), mi = g.m.indexOf(lo);
+  if (lo < 3) { g.m[mi] = d6(state); g.mrerolled = mi; }
+  const ps = dsum(g.p), ms = dsum(g.m);
+  g.res = ps > ms ? 'p' : ps < ms ? 'm' : 'tie';
+  if (g.res === 'p') g.pw++; else if (g.res === 'm') g.mw++;
+  g.history.push({ p: g.p.slice(), m: g.m.slice(), res: g.res });
+  g.phase = 'show';
+  return g;
+}
+export function diceNext(g) {
+  if (g.phase !== 'show') return g;
+  if (g.pw >= DICE_WIN_ROUNDS || g.mw >= DICE_WIN_ROUNDS) { g.won = g.pw >= DICE_WIN_ROUNDS; g.phase = 'end'; return g; }
+  if (g.res !== 'tie') g.round++;
+  g.phase = 'roll';
+  return g;
+}
+const pick = (state, arr) => arr[randInt(state, 0, arr.length - 1)];
+export const diceRoundLine = (state, data, g) => { const c = data.dicegame; return g.res === 'tie' ? 'Gleichstand – die Runde wird wiederholt.' : g.res === 'p' ? pick(state, c.roundWin) : pick(state, c.roundLose); };
+// Abschluss: Auszahlung, Marken, Amulett, Verwandlung. npc = Murmel (Objekt). Aufgeben (g.won === false) zählt als Niederlage.
+export function diceFinish(state, data, npc, g) {
+  const cfg = data.dicegame, f = state.flags, msgs = [], n = diceGameNumber(state);
+  if (n === 1) f['gnom:g1'] = true; else if (n === 2) f['gnom:g2'] = true;
+  if (g.won) {
+    if (g.stake) { state.gold += g.stake * 2; msgs.push(`Gewinn: +${g.stake} Gold.`); }
+    msgs.push(pick(state, cfg.murmelLoses));
+    if (!f['gnom:w1']) { f['gnom:w1'] = true; msgs.push(cfg.hint); }
+    else if (!f['gnom:w2']) { f['gnom:w2'] = true; f['gnom:gewonnen'] = true; msgs.push(cfg.amuletLine, `Erhalten: ${addLoot(state, data, [{ item: cfg.amulet, n: 1 }])}.`); }
+    return { won: true, msg: msgs.join(' '), changed: true };
+  }
+  if (g.stake) msgs.push(`Einsatz verloren: −${g.stake} Gold.`);
+  if (n === cfg.devilGame && npc && npc.type === 'npc') { // Verwandlung: Murmel wird zum Teufel, die Hütte zum Spielsalon
+    f['gnom:teufel'] = true;
+    const en = data.enemies[cfg.devilKind];
+    Object.assign(npc, { type: 'enemy', kind: cfg.devilKind, hp: en.hp, dead: false });
+    syncStatic(state, data); // Raum umbauen (lvl.alt)
+    msgs.push(cfg.devilLine);
+    return { won: false, devil: true, encounter: npc, msg: msgs.join(' '), changed: true };
+  }
+  msgs.push(pick(state, cfg.murmelWins));
+  return { won: false, msg: msgs.join(' '), changed: true };
+}
+
 export function dialogChoose(state, data, npc, nodeId, idx) {
   const dl = dlgOf(data, npc), nd = dl && dl.nodes[nodeId], c = nd && nd.choices[idx];
   if (!c) return { error: 'bad-choice' };
   const view = dialogView(state, data, npc, nodeId), ch = view && view.choices.find((x) => x.i === idx);
   if (!ch || !ch.ok) return { error: 'not-possible' };
+  if (c.game) return { end: true, game: c.game, npc, changed: false }; // 0.32.0: öffnet das Würfelspiel (Oberfläche)
   const msgs = [];
   if (c.cost && c.cost.gold) state.gold -= c.cost.gold;
   if (c.take) state.inv[c.take.item] = (state.inv[c.take.item] || 0) - (c.take.n || 1);
@@ -1903,7 +1983,7 @@ export function syncStatic(state, data) {
   const areas = [{ id: state.levelId, objs: state.objs }, ...Object.entries(state.areas || {}).map(([id, a]) => ({ id, objs: a.objs }))];
   let n = 0;
   for (const a of areas) {
-    const lvl = data.levels[a.id];
+    const lvl = levelFor(data, a.id, state.flags);
     if (!lvl || !Array.isArray(a.objs)) continue;
     const ids = new Set(lvl.objects.map((o) => o.id));
     for (let k = a.objs.length - 1; k >= 0; k--) if (a.objs[k] && STATIC_TYPES.has(a.objs[k].type) && !ids.has(a.objs[k].id)) { a.objs.splice(k, 1); n++; } // veraltete feste Objekte (z. B. ersetzter Ausgang)
@@ -1916,7 +1996,7 @@ export function syncStatic(state, data) {
       else if (!STATIC_TYPES.has(o.type)) for (const k of o.type === 'chest' ? ['title', 'style', 'torch', 'msg', 'look', 'mat', 'x', 'y'] : o.type === 'npc' || o.type === 'door' || (o.type === 'buried' && !a.objs[i].dug) ? ['title', 'style', 'torch', 'msg', 'x', 'y'] : ['title', 'style', 'torch', 'msg']) if (o[k] !== undefined && a.objs[i][k] !== o[k]) { a.objs[i][k] = o[k]; n++; } // 0.31.9: Truhenstufe (look) nachziehen // 0.16.14: Beschriftung/Stil von Türen u. a. nachziehen (alte Stände ohne `style` zeigten einen Zufallsstil)
     }
   }
-  const cur = data.levels[state.levelId], pc = cur && state.player ? cellChar(cur, state.player.x, state.player.y) : '.';
+  const cur = getLevel(data, state), pc = cur && state.player ? cellChar(cur, state.player.x, state.player.y) : '.';
   if (cur && (isWallChar(pc) || pc === '~' || blockerAt(state, state.player.x, state.player.y)) && cur.start) { state.player = { x: cur.start.x, y: cur.start.y, dir: cur.start.dir }; n++; } // 0.31.11: Gebiet wurde umgebaut, Gruppe steckt in Wand oder Wasser
   return n;
 }
