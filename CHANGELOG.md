@@ -8,7 +8,8 @@ Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ 
 - Hängematte tiefer; Blockhüttenwand heller (innen nicht mehr schwarz).
 - Murmel: Hinweistext nach dem ersten Sieg nennt das Glücksamulett und weckt Neugier.
 - Hütte kleiner (3×4) und wohnlich: Küchenecke, Vase, Teppich, drei Wandbilder.
-- Glücksamulett ausrüstbar (Amulett-Platz); Goldfund seltener.
+- Glücksamulett ausrüstbar: Krit +4 %, Fallen erkennen +10, spürt Truhen und Vergrabenes (3 Felder, Karte). Kein Gold mehr.
+- Haustür schließt sich hinter der Gruppe, Würfelsymbol auf der Tür. Boot neu gezeichnet. Wege hinter der Hütte breiter.
 
 ## 0.32.0 (20.11.2026, headless)
 - Würfelspiel mit Murmel (Einsatz, drei Würfel, einen neu werfen, Best of 3); Glücksamulett erst nach dem 2. Sieg; Niederlage im 2. Spiel verwandelt Murmel in einen Teufel und die Hütte in einen Spielsalon. Insel mit Kakteen und Hängematte zwischen zwei Palmen.

@@ -293,6 +293,7 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 | Moorpanzer | Rüstung | Vert. +3 | Dornen 2 | Moorwächter |
 | Nebelstab | Waffe | Angriff +3 | Fähigkeiten % 10 | Nebelweber |
 | Nebelrobe | Rüstung | Vert. +2 | Ressource + 1 | Nebelweber |
+| Glücksamulett | Amulett |  | Krit % 4, Fallen erkennen 10 | – |
 | Siegelring des Hauptmanns | Ring | Angriff +1 | Krit % 6 | – |
 | Ring der Last | Ring | Vert. +1 | Schaden − 1 | – |
 | Ring der Blutgräfin | Ring | Init +1 | Lebensraub % 12 | – |

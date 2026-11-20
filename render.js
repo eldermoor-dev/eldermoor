@@ -944,8 +944,8 @@ export function buildDecals(lvl, objs, tex) {
     if (o.type === 'sign' && o.face != null && (o.title || o.sym) && !(o.textless && !o.sym)) {
       const wx = o.x + DX[o.face], wy = o.y + DY[o.face];
       if (wallAt(wx, wy)) out.set((wy * w + wx) * 4 + (o.face + 2) % 4, cachedTex(tex, 'plaques', 'w:' + styleFor(o) + (o.sym || '') + (o.textless ? '#' : o.title), () => genPlaque(o.textless ? '' : o.title, 'wall', styleFor(o), 131, PLQ, o.sym)));
-    } else if (o.type === 'door' && !o.open && o.title) {
-      const t = cachedTex(tex, 'plaques', 'd:' + styleFor(o) + (o.sym || '') + o.title, () => genPlaque(o.title, 'door', styleFor(o), 133, PLQ, o.sym));
+    } else if (o.type === 'door' && !o.open && (o.title || o.sym)) {
+      const t = cachedTex(tex, 'plaques', 'd:' + styleFor(o) + (o.sym || '') + (o.textless ? '#' : o.title), () => genPlaque(o.textless ? '' : o.title, 'door', styleFor(o), 133, PLQ, o.sym)); // 0.32.1: Tür nur mit Symbol (Würfeltür)
       const ns = wallAt(o.x - 1, o.y) && wallAt(o.x + 1, o.y); // Durchgang Nord–Süd
       for (const f of ns ? [0, 2] : [1, 3]) out.set((o.y * w + o.x) * 4 + f, t);
     }
@@ -1803,22 +1803,22 @@ function genRug(seed, n) { // 0.32.1: Wohnteppich (warmes Rot, helle Streifen, R
   return t;
 }
 
-function genBoat(seed) { // Ruderboot von der Seite, zwei Ruder, Sitzbrett, aufgerollte Leine
+function genBoat(seed) { // 0.32.1: Ruderboot von der Seite: geschwungener Rumpf mit spitzem Bug und Heck, hochgezogene Steven, Sitzbank, Ruder
   return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y }) => {
-    const l = lit(px, py), n = nz(x >> 1, y >> 1), dx = px - 32, ax = Math.abs(dx);
-    const top = 38 + ax * ax * 0.0042 * 4;                // Dollbord: steigt zu Bug und Heck
-    const bot = 48 + 9 * (1 - Math.min(1, (ax / 27) ** 2));  // Kielbogen
-    if (ax < 27.5) {
-      if (py >= top - 0.6 && py < top + 1.2) return ['wood', 4.6 - l * 0.8];                      // Dollbord
-      if (py >= top + 1.2 && py < top + 4.4 && ax < 24) return ['ceil', 0.6 + n * 0.5];              // Innenraum
-      if (cap(px, py, 24, top + 3, 40, top + 9, 0.7, 0.7) || cap(px, py, 40, top + 3, 22, top + 10, 0.7, 0.7)) return ['wood', 3.6 - l * 0.6]; // Ruder liegen kreuzweise
-      if (ax < 4.6 && py > top + 1 && py < top + 5) return ['wood', 3.1 - l * 0.6];                 // Sitzbrett
-      if (ell(px, py, 40, top + 3, 3.2, 2.1) <= 1 && py < top + 5) return ['wood', 2 + n * 0.6];       // Leine
-      if (py >= top + 4.4 && py < bot) {
-        const lap = Math.floor((py - top) / 3.3);
-        return ['wood', (((py - top) % 3.3) < 0.8 ? 1.1 : 2.3 + hash(lap, 5, seed) * 0.8) - l * 0.7 + n * 0.3]; // Klinkerplanken
+    const l = lit(px, py), n = nz(x >> 1, y >> 1), dx = px - 32, ax = Math.abs(dx), q = Math.min(1, ax / 28);
+    const top = 46 - 11 * q * q;                                  // Dollbord: steigt zu Bug und Heck
+    const bot = top + 13 * Math.sqrt(Math.max(0, 1 - q * q));       // Kiel: Rumpf läuft an den Enden spitz zusammen
+    if (ax < 28.5) {
+      if (py >= top - 0.4 && py < top + 1.6 && py < bot) return ['wood', 5 - l * 0.8];                        // Dollbord (hell)
+      if (py >= top + 1.6 && py < bot) {
+        const lap = Math.floor((py - top) / 3.2);
+        return ['wood', (((py - top) % 3.2) < 0.8 ? 0.9 : 2.5 + hash(lap, 5, seed) * 0.8) - l * 0.7 + n * 0.3]; // Klinkerplanken
       }
+      if (ax > 25 && py < top && py > top - 6 + (ax - 25) * 1.2) return ['wood', 3.4 - l * 0.6];              // Steven (hochgezogene Enden)
     }
+    if (ax < 5 && py >= top - 2 && py < top + 0.6) return ['wood', 4.2 - l * 0.6];                              // Sitzbank ragt über den Rand
+    if (cap(px, py, 17, top - 4, 46, top + 2, 0.9, 0.9)) return ['wood', 3.6 - l * 0.6];                         // Ruder quer über dem Boot
+    if (ell(px, py, 48.5, top + 2.6, 4.4, 1.8) <= 1) return ['wood', 4.4 - l * 0.6];                              // Ruderblatt
     return null;
   }, 128, true);
 }

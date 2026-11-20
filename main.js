@@ -1339,6 +1339,7 @@ function mapSymKind(o) {
   if (o.type === 'boulder') return 'boulder';
   if (o.type === 'teleport') return o.look === 'hidden' && !o.used ? null : o.open ? 'teleOff' : 'tele';
   if (o.type === 'trap') return o.disarmed || !o.spotted ? null : o.sprung ? 'trapUsed' : 'trap'; // nur entdeckte Fallen
+  if (o.type === 'buried') return o.sensed && !o.dug ? 'chest' : null; // 0.32.1: gespürter Schatz
   return ['stairs', 'exit', 'sign', 'merchant', 'runestone'].includes(o.type) ? o.type : null;
 }
 const MAP_LEGEND = [

@@ -1222,3 +1222,10 @@ Nutzerwünsche: Würfelspiel Variante B mit Murmel; Glücksamulett erst nach wie
 - Glücksamulett (Nutzer: „lässt sich nicht ausrüsten“): war `kind: quest`. Jetzt `equip`, Platz Amulett, `passive: true`; Goldeffekt gilt im Beutel und angelegt. Zwischenlösung (Nutzer: „generiert viel zu oft Gold“): Wahrscheinlichkeit je Schritt 0,6 % → 0,12 %. OFFEN: Nutzer will andere Fähigkeiten für das Amulett (Vorschläge im Chat, Entscheidung steht aus).
 - Offen: Dialogtitel „Gnom“ statt „Murmel“; Screenshot Insel-Südrand (Backsteinwand hinter dem Wasser, Boot halb im Wasser) ohne Text, Anliegen unklar.
 - Tests 136 grün.
+
+### 0.32.1 – Nachtrag (20.11.2026, 21:50; headless, nicht auf Gerät getestet)
+- Boot (Nutzer: „sieht nicht aus wie ein Boot“): Sprite `boot` neu: geschwungener Rumpf mit spitzem Bug/Heck, hochgezogenen Steven, Klinkerplanken, Sitzbank, Ruder. Bildprüfung headless.
+- Glücksamulett (Nutzer: Variante A + D): Krit +4 %, Fallen erkennen +10 (`fx.trap`, jetzt auch Ausrüstung in `trapSkill`; Interpretation von „Ausweichen bei Fallen“: Erkennungschance, nicht Ausweichwurf). Schatzspürer: wer es trägt, spürt Truhen (nicht Mimiken) und vergrabene Schätze bis 3 Felder Manhattan-Abstand; Meldung einmal je Objekt, Feld erscheint auf der Karte, Vergrabenes wird sichtbar (Symbol Truhe). Goldfund entfernt. Wirkt nur getragen.
+- Haustür der Schatzinsel (Nutzer: „vor und nach Betreten geschlossen, Würfel auf die Tür“): `autoClose`: fällt beim Verlassen des Türfelds zu (Meldung), sonst ab 3 Feldern Abstand. Würfelsymbol jetzt auf der Tür (Tür mit `sym` + `textless`), Schild `sign_i_haus` entfernt.
+- Insel (Nutzer: „komme beidseitig nicht hinter die Hütte“): Nachstellung per Karte: West-Durchgang nur 1 Feld breit (zwischen Palme 5/9 und Hüttenwand), Osten durch Kakteen 13/8 und 14/5 zweigeteilt. Hängematte samt Palmen auf Reihe 10, Kakteen an den Rand/Süden. Westen 3 Felder, Osten 3 Felder breit. Nicht auf Gerät geprüft.
+- BALANCE.md neu erzeugt (Amulettdaten). Tests 137 grün.

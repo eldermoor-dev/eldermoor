@@ -326,8 +326,11 @@
       "kind": "equip",
       "slot": "amulet",
       "q": "unique",
-      "passive": true,
-      "desc": "Amulett aus rotem Glas an einem Lederband. Wer es trägt (oder bei sich hat), stolpert sehr selten über verlorene Münzen."
+      "fx": {
+        "crit": 4,
+        "trap": 10
+      },
+      "desc": "Amulett aus rotem Glas an einem Lederband. Krit +4 %, Fallen erkennen +10. Es kribbelt, wenn Truhen oder vergrabene Schätze höchstens 3 Felder entfernt sind, und zeigt sie auf der Karte."
     },
     "ring_siegel": {
       "name": "Siegelring des Hauptmanns",
@@ -5614,19 +5617,11 @@
           "type": "door",
           "x": 9,
           "y": 9,
-          "title": ""
-        },
-        {
-          "id": "sign_i_haus",
-          "type": "sign",
-          "x": 8,
-          "y": 10,
-          "face": 0,
-          "title": "WÜRFEL|HAUS",
-          "text": "Auf dem Schild sind zwei Würfel gemalt. Darunter steht: „Gerade gewinnt der Gast.“",
-          "style": "small",
+          "title": "WÜRFELHAUS",
           "sym": "wuerfel",
-          "textless": true
+          "textless": true,
+          "style": "small",
+          "autoClose": true
         },
         {
           "id": "chest_i1",
@@ -5821,7 +5816,7 @@
           "id": "palme_i3_9",
           "type": "decor",
           "x": 3,
-          "y": 9,
+          "y": 10,
           "look": "palme",
           "scale": 1.45
         },
@@ -5829,7 +5824,7 @@
           "id": "palme_i5_9",
           "type": "decor",
           "x": 5,
-          "y": 9,
+          "y": 10,
           "look": "palme",
           "scale": 1.45
         },
@@ -5837,15 +5832,15 @@
           "id": "haengematte_i",
           "type": "decor",
           "x": 4,
-          "y": 9,
+          "y": 10,
           "look": "haengematte",
           "scale": 2.0
         },
         {
           "id": "kaktus_i1",
           "type": "decor",
-          "x": 4,
-          "y": 11,
+          "x": 7,
+          "y": 12,
           "look": "kaktus",
           "scale": 0.9
         },
@@ -5860,7 +5855,7 @@
         {
           "id": "kaktus_i3",
           "type": "decor",
-          "x": 13,
+          "x": 15,
           "y": 8,
           "look": "kaktus",
           "scale": 0.85
@@ -5868,7 +5863,7 @@
         {
           "id": "kaktus_i4",
           "type": "decor",
-          "x": 14,
+          "x": 15,
           "y": 5,
           "look": "kaktus",
           "scale": 1.0

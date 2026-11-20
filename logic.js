@@ -260,6 +260,16 @@ export function chestGuarded(state, data, o) {
   const g = chestGuards(state, data, o);
   return g.some((id) => { const e = state.objs.find((q) => q.id === id); return e && e.type === 'enemy' && !e.dead; });
 }
+// 0.32.1: Türen mit `autoClose` (Haustür der Schatzinsel) fallen hinter der Gruppe zu: beim Verlassen des Türfelds, sonst ab 3 Feldern Abstand.
+function autoCloseDoors(state, ox, oy) {
+  const msgs = [], p = state.player;
+  for (const o of state.objs) {
+    if (o.type !== 'door' || !o.autoClose || !o.open) continue;
+    const left = o.x === ox && o.y === oy && !(p.x === o.x && p.y === o.y), far = Math.abs(o.x - p.x) + Math.abs(o.y - p.y) >= 3;
+    if (left || far) { o.open = false; if (left) msgs.push('Die Tür fällt hinter euch ins Schloss.'); }
+  }
+  return msgs;
+}
 export function blockerAt(state, x, y) {
   for (const o of state.objs) {
     if (o.x !== x || o.y !== y) continue;
@@ -376,7 +386,9 @@ export function tryMove(state, data, rel) {
   const tr0 = trapAt(state, nx, ny);
   if (tr0 && tr0.spotted && state.trapAsk !== tr0.id) { state.trapAsk = tr0.id; return { moved: false, msg: `Vor dir liegt eine Falle (${data.traps.kinds[tr0.kind].name}). ◉ entschärfen – oder noch einmal gehen, um hineinzutreten.`, trapWarn: true }; }
   state.trapAsk = null;
+  const ox = p.x, oy = p.y;
   p.x = nx; p.y = ny;
+  const closeMsgs = autoCloseDoors(state, ox, oy);
   state.steps++;
   const ill = illusionAt(state, nx, ny);
   if (ill) ill.found = true;
@@ -391,7 +403,7 @@ export function tryMove(state, data, rel) {
     res.events.push({ type: 'teleport', id: tp.id, hidden: tp.look === 'hidden', msg: tp.look === 'hidden' ? '' : tp.msg || 'Ein Sog erfasst euch – plötzlich steht ihr woanders!' });
   }
   if (tr0) res.events.push({ type: 'trap', id: tr0.id, msgs: springTrap(state, data, tr0) });
-  const pm = [...pushNotes, ...updatePlates(state, data)];
+  const pm = [...pushNotes, ...updatePlates(state, data), ...closeMsgs];
   if (pushNotes.length || pm.length) res.events.push({ type: 'mech', msgs: pm, push: true });
   const ex = state.objs.find((o) => o.type === 'exit' && o.x === nx && o.y === ny);
   if (ex && !state.flags[ex.id]) {
@@ -400,14 +412,9 @@ export function tryMove(state, data, rel) {
   } else if (ex) res.events.push({ type: 'exitAgain', id: ex.id }); // 0.16.4: erneutes Betreten zeigt einen kurzen Hinweis
   const stairs = state.objs.find((o) => o.type === 'stairs' && o.x === nx && o.y === ny);
   if (stairs) { res.events.push({ type: 'stairs', id: stairs.id }); return res; }
-  if (((state.inv.gluecksamulett || 0) > 0 || state.heroes.some((h) => h.equip && h.equip.amulet === 'gluecksamulett')) && rand(state) < 0.0012) { // 0.32.1: auch angelegt wirksam; Häufigkeit gesenkt (Nutzer: zu oft), Zwischenlösung bis zur Entscheidung über neue Fähigkeit // 0.28.0: Glücksamulett – sehr selten Gold am Boden (ca. alle 170 Schritte)
-    const g = randInt(state, 3, 14);
-    state.gold += g;
-    res.luck = `Das Amulett wärmt sich kurz auf: Im Staub liegen ${g} Gold!`;
-  }
   res.encounter = enemyInFront(state);
   if (!res.encounter) { const sp = spottedEnemy(state, data); if (sp) { res.encounter = sp.enemy; res.ambush = sp.ambush; } }
-  if (!res.encounter) { const notes = [...scanTraps(state, data), ...scanSecrets(state, data), ...scanBuried(state, data)]; if (notes.length) res.notes = notes; }
+  if (!res.encounter) { const notes = [...scanTraps(state, data), ...scanSecrets(state, data), ...scanBuried(state, data), ...scanLuck(state, data)]; if (notes.length) res.notes = notes; }
   return res;
 }
 
@@ -457,7 +464,7 @@ export function pullBoulder(state, data, b) {
 // data.traps = { spot: Grundchance %, disarm: Grundchance %, kinds: { <art>: { name, pct (Schaden in % der Max-LP), rows: 'front'|'all', mp?, text } } }
 // Entdecken: (1) automatisch mit Wurf, wenn die Falle geradeaus liegt: je ein Wurf bei 2 Feldern und bei 1 Feld Abstand; (2) immer durch ◉ auf das Feld davor (Boden untersuchen);
 // (3) der Spieler sieht die feine Spur am Boden oder liest einen Hinweis. Talent „trap“ (Prozent, bester lebender Held) erhöht Entdecken und Entschärfen.
-export const trapSkill = (state, data) => Math.max(0, ...state.heroes.map((h) => (h.hp > 0 ? talentSum(data, h, 'trap') : 0)));
+export const trapSkill = (state, data) => Math.max(0, ...state.heroes.map((h) => (h.hp > 0 ? fxSum(data, h, 'trap') : 0))); // 0.32.1: auch Ausrüstung (Glücksamulett)
 const trapLive = (o) => o && o.type === 'trap' && !o.sprung && !o.disarmed;
 export const trapAt = (state, x, y) => state.objs.find((o) => trapLive(o) && o.x === x && o.y === y) || null;
 export function scanTraps(state, data) {
@@ -508,7 +515,7 @@ export function turn(state, data, delta) {
   if (front) return { encounter: front };
   const sp = spottedEnemy(state, data);
   if (sp) return { encounter: sp.enemy, ambush: sp.ambush };
-  const notes = [...scanTraps(state, data), ...scanSecrets(state, data), ...scanBuried(state, data)];
+  const notes = [...scanTraps(state, data), ...scanSecrets(state, data), ...scanBuried(state, data), ...scanLuck(state, data)];
   return notes.length ? { encounter: null, notes } : { encounter: null };
 }
 
@@ -622,10 +629,24 @@ export function scanBuried(state, data) {
   const out = [], p = state.player;
   for (const o of state.objs) {
     if (o.type !== 'buried' || o.dug || o.sensed || Math.abs(o.x - p.x) + Math.abs(o.y - p.y) > 3) continue;
-    const who = state.heroes.find((h) => h.hp > 0 && (o.spotBy || ['rogue', 'alchemist']).includes(h.cls));
-    if (!who) continue;
-    o.sensed = true;
-    out.push(`${who.name} bemerkt im Sand eine Stelle, die jemand aufgewühlt hat. ◉ zum Graben.`);
+    const lucky = luckWearer(state), who = state.heroes.find((h) => h.hp > 0 && (o.spotBy || ['rogue', 'alchemist']).includes(h.cls));
+    if (!who && !lucky) continue;
+    o.sensed = true; luckMark(state, data, o);
+    out.push(who ? `${who.name} bemerkt im Sand eine Stelle, die jemand aufgewühlt hat. ◉ zum Graben.` : `Das Glücksamulett von ${lucky.name} kribbelt: Im Sand liegt etwas vergraben. ◉ zum Graben.`);
+  }
+  return out;
+}
+// 0.32.1: Glücksamulett = „Schatzspürer“. Wer es trägt, spürt Truhen und vergrabene Schätze im Umkreis von 3 Feldern; sie erscheinen auf der Karte, Vergrabenes wird sichtbar.
+export const luckWearer = (state) => state.heroes.find((h) => h.hp > 0 && h.equip && h.equip.amulet === 'gluecksamulett') || null;
+function luckMark(state, data, o) { const w = getLevel(data, state).map[0].length; state.seen[o.y * w + o.x] = 1; }
+export function scanLuck(state, data) {
+  const out = [], p = state.player, lucky = luckWearer(state);
+  if (!lucky) return out;
+  for (const o of state.objs) {
+    if (o.type !== 'chest' || o.open || o.felt || Math.abs(o.x - p.x) + Math.abs(o.y - p.y) > 3) continue;
+    if (chestCfg(state, data, o).mimic) continue; // falsche Truhen bleiben ein Rätsel
+    o.felt = true; luckMark(state, data, o);
+    out.push(`Das Glücksamulett von ${lucky.name} kribbelt: Eine Truhe ist ganz in der Nähe.`);
   }
   return out;
 }
@@ -1993,7 +2014,7 @@ export function syncStatic(state, data) {
       else if (STATIC_TYPES.has(o.type) && a.objs[i].type === o.type && JSON.stringify(a.objs[i]) !== JSON.stringify(o)) { a.objs[i] = clone(o); n++; }
       else if (o.type === 'chest' && o.lootV && a.objs[i].type === 'chest' && !a.objs[i].open && a.objs[i].lootV !== o.lootV) { a.objs[i].loot = clone(o.loot); a.objs[i].lootV = o.lootV; n++; } // 0.21.0: neue Beute (z. B. Set-Teile) auch in ungeöffneten Truhen alter Stände
       else if (o.type === 'enemy' && a.objs[i].type === 'enemy' && !a.objs[i].dead && (a.objs[i].x !== o.x || a.objs[i].y !== o.y) && !(a.id === state.levelId && state.player.x === o.x && state.player.y === o.y)) { a.objs[i].x = o.x; a.objs[i].y = o.y; n++; } // 0.23.12: Gegnerplatz (z. B. Hüter am Thron) auch in alten Ständen nachziehen
-      else if (!STATIC_TYPES.has(o.type)) for (const k of o.type === 'chest' ? ['title', 'style', 'torch', 'msg', 'look', 'mat', 'x', 'y'] : o.type === 'npc' || o.type === 'door' || (o.type === 'buried' && !a.objs[i].dug) ? ['title', 'style', 'torch', 'msg', 'x', 'y'] : ['title', 'style', 'torch', 'msg']) if (o[k] !== undefined && a.objs[i][k] !== o[k]) { a.objs[i][k] = o[k]; n++; } // 0.31.9: Truhenstufe (look) nachziehen // 0.16.14: Beschriftung/Stil von Türen u. a. nachziehen (alte Stände ohne `style` zeigten einen Zufallsstil)
+      else if (!STATIC_TYPES.has(o.type)) for (const k of o.type === 'chest' ? ['title', 'style', 'torch', 'msg', 'look', 'mat', 'x', 'y'] : o.type === 'npc' || o.type === 'door' || (o.type === 'buried' && !a.objs[i].dug) ? ['title', 'style', 'torch', 'msg', 'x', 'y', 'sym', 'textless', 'autoClose'] : ['title', 'style', 'torch', 'msg']) if (o[k] !== undefined && a.objs[i][k] !== o[k]) { a.objs[i][k] = o[k]; n++; } // 0.31.9: Truhenstufe (look) nachziehen // 0.16.14: Beschriftung/Stil von Türen u. a. nachziehen (alte Stände ohne `style` zeigten einen Zufallsstil)
     }
   }
   const cur = getLevel(data, state), pc = cur && state.player ? cellChar(cur, state.player.x, state.player.y) : '.';
@@ -2065,7 +2086,7 @@ export function balanceMarkdown(data) {
     for (const e of Object.values(data.enemies)) if (e.gearDrop || e.drops) L.push(`| ${e.name} | ${e.gearDrop ? `${e.gearDrop.chance} %${e.gearDrop.boost ? `, Boost ${e.gearDrop.boost}` : ''}` : '–'} | ${(e.drops || []).map((d) => `${(d.pick || [d.item]).map((id) => data.items[id].name).join(' oder ')} (${d.chance ?? 100} %, nur einmal)`).join('; ') || '–'} |`);
     L.push('');
   }
-  const fxName = { lifesteal: 'Lebensraub %', thorns: 'Dornen', crit: 'Krit %', dodge: 'Ausweichen %', resist: 'Statusabwehr %', soak: 'Schaden −', regen: 'Ressource +', heal: 'Heilung +', abil: 'Fähigkeiten %' };
+  const fxName = { lifesteal: 'Lebensraub %', thorns: 'Dornen', crit: 'Krit %', trap: 'Fallen erkennen', dodge: 'Ausweichen %', resist: 'Statusabwehr %', soak: 'Schaden −', regen: 'Ressource +', heal: 'Heilung +', abil: 'Fähigkeiten %' };
   const fxTxt = (fx) => Object.entries(fx || {}).map(([k, v]) => `${fxName[k] || k} ${v}`).join(', ') || '–';
   const fxItems = Object.values(data.items).filter((it) => it.fx);
   if (fxItems.length) {

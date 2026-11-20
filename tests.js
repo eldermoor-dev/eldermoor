@@ -573,9 +573,7 @@ export async function runTests(data, env = {}) {
     // Glücksamulett: ohne Amulett kein Zufall verbraucht, mit Amulett irgendwann Gold
     const a = fresh(77); L.jumpToLevel(a, data, 'moorsee'); a.player = { x: 5, y: 2, dir: 1 };
     const rng0 = JSON.stringify(a.rng); L.tryMove(a, data, 'f'); assert(JSON.stringify(a.rng) !== rng0 || true, 'Bewegung ok');
-    a.inv.gluecksamulett = 1; let found = 0, gold0 = a.gold;
-    for (let i = 0; i < 4000; i++) { a.player = { x: 5, y: 2, dir: 1 }; const m = L.tryMove(a, data, 'f'); if (m.luck) found++; }
-    assert(found > 5 && found < 80 && a.gold > gold0, 'Amulett findet sehr selten Gold: ' + found + ' von 4000 Schritten');
+    // 0.32.1: Das Glücksamulett findet kein Gold mehr (jetzt Schatzspürer, siehe eigener Test)
     // Insel: jede Truhe erreichbar (Softlock-Prüfung ist oben bereits grün) + Haus-Tür
     assert(si.objects.some((o) => o.id === 'door_i_haus') && si.objects.some((o) => o.id === 'npc_gnom'), 'Haus mit Gnom');
   });
@@ -942,7 +940,7 @@ export async function runTests(data, env = {}) {
     assert(threw, 'falscher Slot im Spielstand wird abgelehnt');
     const q2 = fresh(8); q2.inv.iron_sword = 1; L.startCombat(q2, data, q2.objs.find((o) => o.type === 'enemy'));
     assert(L.equipItem(q2, data, 'iron_sword', 0).error === 'in-combat', 'im Kampf nicht wechseln');
-    for (const [k, it] of Object.entries(data.items)) if (it.kind === 'equip') assert(it.slot && (it.atk || it.def || it.init || it.fx || it.passive) && it.desc, `Item ${k} vollständig`);
+    for (const [k, it] of Object.entries(data.items)) if (it.kind === 'equip') assert(it.slot && (it.atk || it.def || it.init || it.fx) && it.desc, `Item ${k} vollständig`);
   });
   await test('Mehrere Gegner (3c): Gruppen, Zielwahl, Alle angreifen, Schwerer Schlag, KI, Aufstehen, Rechenweg', () => {
     const enemyObj = (id) => { const s = L.newGame(data, 31); return [s, s.objs.find((o) => o.id === id)]; };
@@ -2189,6 +2187,19 @@ export async function runTests(data, env = {}) {
       const r = L.equipItem(s, data, 'gluecksamulett', 0); assert(!r.error && s.heroes[0].equip.amulet === 'gluecksamulett' && !s.inv.gluecksamulett, 'Anlegen schlägt fehl: ' + JSON.stringify(r));
       assert(/'gluecksamulett'/.test(texts['logic.js'] || ''), 'Logik');
       L.unequipItem(s, data, 0, 'amulet'); assert(s.inv.gluecksamulett === 1, 'Ablegen');
+    });
+    await test('Glücksamulett (0.32.1): Krit +4, Fallen +10, spürt Truhen und Vergrabenes (nur getragen)', () => {
+      const s = fresh(1); L.jumpToLevel(s, data, 'schatzinsel'); s.inv.gluecksamulett = 1;
+      const b = s.objs.find((o) => o.id === 'buried_i1'), c = s.objs.find((o) => o.id === 'chest_i1');
+      s.heroes.forEach((h) => { h.cls = 'warrior'; }); L.put ? 0 : 0;
+      s.player.x = b.x + 1; s.player.y = b.y;
+      assert(L.scanBuried(s, data).length === 0 && !b.sensed, 'ohne Amulett kein Spüren (Gruppe ohne Schurke)');
+      L.equipItem(s, data, 'gluecksamulett', 0);
+      assert(L.fxSum(data, s.heroes[0], 'crit') >= 4 && L.trapSkill(s, data) >= 10, 'Krit/Fallen-Wirkung');
+      assert(L.scanBuried(s, data).length === 1 && b.sensed, 'Vergrabenes wird gespürt');
+      s.player.x = c.x; s.player.y = c.y + 1; const w = data.levels.schatzinsel.map[0].length;
+      assert(L.scanLuck(s, data).length === 1 && c.felt && s.seen[c.y * w + c.x] === 1, 'Truhe wird gespürt und erscheint auf der Karte');
+      assert(L.scanLuck(s, data).length === 0, 'nur einmal je Truhe');
     });
     await test('Version: sw.js und main.js stimmen überein', () => {
       const re = /VERSION\s*=\s*'([^']+)'/;
