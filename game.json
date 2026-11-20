@@ -2430,7 +2430,9 @@
           "locked": true,
           "key": "gruft_key",
           "title": "KULT-|GRUFT",
-          "style": "dark"
+          "style": "dark",
+          "look": "stein",
+          "font": "wide"
         },
         {
           "id": "chest_p4",
@@ -2603,7 +2605,9 @@
           "y": 3,
           "locked": false,
           "title": "KAPELLE",
-          "style": "stone"
+          "style": "stone",
+          "look": "bogen",
+          "font": "wide"
         },
         {
           "id": "en_g3",
@@ -2646,7 +2650,9 @@
           "y": 9,
           "locked": false,
           "title": "ZELLEN",
-          "style": "iron"
+          "style": "iron",
+          "look": "gitter",
+          "font": "wide"
         },
         {
           "id": "en_g4",
@@ -2703,7 +2709,9 @@
           "locked": true,
           "key": "gruft_siegel",
           "title": "HALLE",
-          "style": "dark"
+          "style": "dark",
+          "look": "gold",
+          "font": "bold"
         },
         {
           "id": "en_boss",
@@ -2827,7 +2835,9 @@
           "y": 9,
           "locked": false,
           "title": "SCHATZ-|KAMMER",
-          "style": "dark"
+          "style": "dark",
+          "look": "gold",
+          "font": "wide"
         },
         {
           "id": "chest_mimic_g",
@@ -3158,7 +3168,9 @@
           "locked": true,
           "key": "gruben_schluessel",
           "title": "LAGER",
-          "style": "wood"
+          "style": "wood",
+          "look": "morsch",
+          "font": "thin"
         },
         {
           "id": "sign_s4",
@@ -3513,7 +3525,9 @@
           "x": 14,
           "y": 7,
           "title": "SCHREIB-|SAAL",
-          "style": "moss"
+          "style": "moss",
+          "look": "bogen",
+          "font": "slant"
         },
         {
           "id": "en_t3",
@@ -3543,7 +3557,9 @@
           "x": 10,
           "y": 3,
           "title": "ARCHIV",
-          "style": "stone"
+          "style": "stone",
+          "look": "stein",
+          "font": "slant"
         },
         {
           "id": "en_t4",
@@ -3629,7 +3645,9 @@
           "locked": true,
           "key": "turm_schluessel",
           "title": "THRON-|SAAL",
-          "style": "dark"
+          "style": "dark",
+          "look": "gold",
+          "font": "bold"
         },
         {
           "id": "en_tboss",
@@ -3826,7 +3844,9 @@
           "y": 18,
           "locked": false,
           "title": "HOF",
-          "style": "dark"
+          "style": "dark",
+          "look": "eisen",
+          "font": "bold"
         },
         {
           "id": "door_f_kaserne",
@@ -3835,7 +3855,9 @@
           "y": 10,
           "locked": false,
           "title": "KASERNE",
-          "style": "dark"
+          "style": "dark",
+          "look": "eisen",
+          "font": "bold"
         },
         {
           "id": "door_f_riegel1",
@@ -3845,7 +3867,9 @@
           "locked": true,
           "bolt": 0,
           "title": "RIEGEL",
-          "style": "iron"
+          "style": "iron",
+          "look": "eisen",
+          "font": "bold"
         },
         {
           "id": "door_f_riegel2",
@@ -3853,7 +3877,8 @@
           "x": 25,
           "y": 18,
           "locked": true,
-          "bolt": 1
+          "bolt": 1,
+          "look": "eisen"
         },
         {
           "id": "door_f_keller",
@@ -3863,7 +3888,9 @@
           "locked": true,
           "key": "festung_schluessel",
           "title": "KELLER",
-          "style": "iron"
+          "style": "iron",
+          "look": "eisen",
+          "font": "bold"
         },
         {
           "id": "tp_f1",
@@ -4233,7 +4260,9 @@
           "y": 5,
           "locked": false,
           "title": "KNOCHEN-|GÄNGE",
-          "style": "dark"
+          "style": "dark",
+          "look": "morsch",
+          "font": "thin"
         },
         {
           "id": "en_k_m1",
@@ -4323,7 +4352,9 @@
           "y": 9,
           "locked": false,
           "title": "SÄULEN-|HALLE",
-          "style": "stone"
+          "style": "stone",
+          "look": "stein",
+          "font": "wavy"
         },
         {
           "id": "en_k_h1",
@@ -4389,7 +4420,9 @@
           "y": 16,
           "locked": false,
           "title": "OSSU-|ARIUM",
-          "style": "dark"
+          "style": "dark",
+          "look": "gitter",
+          "font": "thin"
         },
         {
           "id": "sign_k_o",
@@ -4435,7 +4468,9 @@
           "y": 21,
           "locked": false,
           "title": "KAMMER|1",
-          "style": "dark"
+          "style": "dark",
+          "look": "bogen",
+          "font": "wavy"
         },
         {
           "id": "door_k_c2",
@@ -4444,7 +4479,9 @@
           "y": 21,
           "locked": false,
           "title": "KAMMER|2",
-          "style": "moss"
+          "style": "moss",
+          "look": "morsch",
+          "font": "wavy"
         },
         {
           "id": "door_k_c3",
@@ -4453,7 +4490,8 @@
           "y": 21,
           "locked": false,
           "title": "KAMMER|3",
-          "style": "stone"
+          "style": "stone",
+          "font": "wavy"
         },
         {
           "id": "door_k_c4",
@@ -4462,7 +4500,9 @@
           "y": 21,
           "locked": false,
           "title": "KAMMER|4",
-          "style": "dark"
+          "style": "dark",
+          "look": "gitter",
+          "font": "wavy"
         },
         {
           "id": "door_k_c6",
@@ -4471,7 +4511,9 @@
           "y": 21,
           "locked": false,
           "title": "KAMMER|6",
-          "style": "iron"
+          "style": "iron",
+          "look": "eisen",
+          "font": "wavy"
         },
         {
           "id": "secret_k1",
@@ -4695,7 +4737,9 @@
           "locked": true,
           "key": "keller_schluessel",
           "title": "TIEFE",
-          "style": "iron"
+          "style": "iron",
+          "look": "stein",
+          "font": "wavy"
         },
         {
           "id": "en_k_e",
@@ -4902,7 +4946,9 @@
           "x": 11,
           "y": 22,
           "title": "BLUT-|PFORTE",
-          "style": "dark"
+          "style": "dark",
+          "look": "gold",
+          "font": "bold"
         },
         {
           "id": "sign_b_n",
@@ -4973,7 +5019,9 @@
           "x": 17,
           "y": 11,
           "title": "GRUFT|I",
-          "style": "dark"
+          "style": "dark",
+          "look": "stein",
+          "font": "tall"
         },
         {
           "id": "door_b_g2",
@@ -4981,7 +5029,9 @@
           "x": 23,
           "y": 11,
           "title": "GRUFT|II",
-          "style": "moss"
+          "style": "moss",
+          "look": "morsch",
+          "font": "tall"
         },
         {
           "id": "door_b_g3",
@@ -4989,7 +5039,9 @@
           "x": 29,
           "y": 11,
           "title": "GRUFT|III",
-          "style": "stone"
+          "style": "stone",
+          "look": "stein",
+          "font": "tall"
         },
         {
           "id": "door_b_g4",
@@ -4997,7 +5049,9 @@
           "x": 35,
           "y": 11,
           "title": "GRUFT|IV",
-          "style": "iron"
+          "style": "iron",
+          "look": "gitter",
+          "font": "tall"
         },
         {
           "id": "door_b_g5",
@@ -5005,7 +5059,9 @@
           "x": 41,
           "y": 11,
           "title": "GRUFT|V",
-          "style": "dark"
+          "style": "dark",
+          "look": "bogen",
+          "font": "tall"
         },
         {
           "id": "en_b_g1",
@@ -5268,7 +5324,9 @@
           "locked": true,
           "key": "blut_schluessel",
           "title": "BLUT-|THRON",
-          "style": "iron"
+          "style": "iron",
+          "look": "gold",
+          "font": "bold"
         },
         {
           "id": "sign_b_t",
@@ -5333,7 +5391,9 @@
           "y": 3,
           "locked": true,
           "key": "zellenschluessel",
-          "title": "ZELLE"
+          "title": "ZELLE",
+          "look": "gitter",
+          "font": "tall"
         },
         {
           "id": "npc_gefangener",

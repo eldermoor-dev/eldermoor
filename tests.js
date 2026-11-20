@@ -4,7 +4,7 @@
 // Handy:   Einstellungen → Selbsttest (läuft dieselbe Testsuite im Browser)
 
 import * as L from './logic.js';
-import { makeTextures, Raycaster, buildGrid, buildFloorGrid, buildSprites, setResolution, drawPortrait, PLAQUE_STYLES, plaqueMetrics, W, H } from './render.js';
+import { makeTextures, Raycaster, buildGrid, buildFloorGrid, buildSprites, setResolution, drawPortrait, PLAQUE_STYLES, plaqueMetrics, DOOR_LOOKS, doorWall, FONTMODES, W, H } from './render.js';
 
 const FILES = ['index.html', 'main.js', 'render.js', 'logic.js', 'audio.js', 'store.js', 'tests.js', 'game.json', 'sw.js', 'manifest.webmanifest'];
 
@@ -1753,6 +1753,17 @@ export async function runTests(data, env = {}) {
     }
     assert(rec('Waldläufer') !== rec('Magier'), 'Waldläufer darf nicht wie Magier aussehen');
     assert(new Set(roles.map((r) => rec(r))).size === roles.length, 'jeder Beruf hat ein eigenes Porträt');
+  });
+
+  await test('Türvarianten und Schriftarten (0.32.1): Textur je Look, gültige Felder, Karte/Grid, alte Spielstände', () => {
+    const tex = makeTextures();
+    for (const l of DOOR_LOOKS) for (const locked of [false, true]) { const id = doorWall({ look: l, locked }); const w = tex.wall[id]; assert(w && w.data.length === w.w * w.h, `Tür ${l}${locked ? ' (zu)' : ''}: Textur ${id}`); for (const v of w.data) assert(v < 80, 'Palettenindex Tür ' + l); }
+    assert(new Set(DOOR_LOOKS.flatMap((l) => [doorWall({ look: l }), doorWall({ look: l, locked: true })])).size === DOOR_LOOKS.length * 2, 'Wand-IDs der Türen eindeutig');
+    const used = new Set(); let fonts = 0;
+    for (const lv of Object.values(data.levels)) for (const o of lv.objects) if (o.type === 'door') { if (o.look) { assert(DOOR_LOOKS.includes(o.look), 'Türlook ' + o.id); used.add(o.look); } if (o.font) { assert(FONTMODES[o.font], 'Schriftart ' + o.id); fonts++; } }
+    assert(used.size >= 5 && fonts >= 10, 'Varianten im Spiel verteilt (' + used.size + ' Looks, ' + fonts + ' Schriften)');
+    for (const st of Object.values(PLAQUE_STYLES)) assert(FONTMODES[st.font], 'Schildstil-Schrift ' + st.font);
+    const s = fresh(1); L.jumpToLevel(s, data, 'kultgruft'); const d = s.objs.find((o) => o.id === 'door_cells'); delete d.look; L.syncStatic(s, data); assert(s.objs.find((o) => o.id === 'door_cells').look === 'gitter', 'alter Spielstand bekommt den Türlook');
   });
 
   await test('Grafik: Texturen gültig, Renderer füllt jedes Pixel (3 Qualitätsstufen)', () => {

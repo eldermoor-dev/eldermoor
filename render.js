@@ -14,6 +14,8 @@ const P = (mat, shade) => M[mat] * 8 + Math.max(0, Math.min(7, Math.round(shade)
 
 // Wandtextur-IDs im Raster: 0 = frei, 1 Stein, 2 Moos, 3 Tür, 4 verschlossene Tür
 export const WALL_STONE = 1, WALL_MOSS = 2, WALL_DOOR = 3, WALL_DOOR_LOCKED = 4, WALL_TORCH = 5, WALL_ROCK = 6, WALL_LICHEN = 7, WALL_GATE = 8, WALL_SECRET = 9, WALL_SWITCH = 10, WALL_SWITCH_ON = 11, WALL_HOUSE = 12, WALL_VEGAS = 13;
+export const DOOR_LOOKS = ['plank', 'eisen', 'stein', 'bogen', 'gold', 'gitter', 'morsch']; // 0.32.1 (Nutzer: „mehr Türvarianten“): Aussehen der Tür (Objektfeld look); plank = klassische Holztür mit Eisenbändern (ID 3/4), übrige IDs 20 + 2·Index (+1 verschlossen)
+export const doorWall = (o) => { const i = DOOR_LOOKS.indexOf(o.look); return i <= 0 ? (o.locked ? WALL_DOOR_LOCKED : WALL_DOOR) : 20 + i * 2 + (o.locked ? 1 : 0); };
 
 // ---------- Palette: 8 Materialien × 8 Helligkeitsstufen = 64 feste Farben ----------
 export function buildPalette(def, lift = 1) {
@@ -242,6 +244,58 @@ function genDoor(seed, locked) {
       t.data[ry * TEX + rx] = P('iron', 6);
     }
   }
+  return t;
+}
+function genDoorV(look, locked, seed) { // 0.32.1: Türvarianten (eisen, stein, bogen, gold, gitter, morsch)
+  const t = mk(), D = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
+  const ring = (cx, cy, rad, v) => { for (let a = 0; a < 48; a++) { const ang = (a / 48) * Math.PI * 2; D(Math.round(cx + Math.cos(ang) * rad), Math.round(cy + Math.sin(ang) * rad), v); } };
+  const lockPlate = (mat, sh) => { for (let y = 26; y <= 40; y++) for (let x = 27; x <= 36; x++) D(x, y, P(mat, sh + (y < 30 ? 1 : 0))); for (let y = 31; y <= 36; y++) { D(31, y, P('iron', 0)); D(32, y, P('iron', 0)); } D(31, 30, P('iron', 0)); D(32, 30, P('iron', 0)); };
+  for (let y = 0; y < TEX; y++) for (let x = 0; x < TEX; x++) {
+    let v;
+    if (look === 'eisen') {
+      v = P('iron', 2.3 + hash(x >> 1, y >> 1, seed) * 0.7);
+      if (y % 16 === 0 || x === 31 || x === 32) v = P('iron', 0.8);
+      else if (y % 16 === 1) v = P('iron', 4.2);
+      else if (x % 8 === 4 && (y % 16 === 4 || y % 16 === 5)) v = P('iron', 5.6);
+    } else if (look === 'stein') {
+      v = P('stone', 3.2 + hash(x >> 1, y >> 1, seed) * 0.9 + (hash(x, y, seed + 5) - 0.5) * 0.4);
+      const e = Math.min(x, y, 63 - x, 63 - y);
+      if (e >= 5 && e <= 6) v = P('stone', 5.0); else if (e === 7) v = P('stone', 1.2);
+      if (e > 7 && (x === 31 || x === 32 || y === 30 || y === 31)) v = P('stone', 1.4);
+    } else if (look === 'bogen') {
+      v = P('wood', 3 + hash(x, y >> 3, seed) * 1.6 - 0.8 + ((x & 15) === 0 ? -1.4 : 0));
+      if (x === 31 || x === 32) v = P('wood', 0.8);
+      const dx = (x - 32) / 29, dy = (y - 29) / 29;
+      if (y < 29 && Math.hypot(dx, dy) > 1) v = P('stone', 2.1 + hash(x, y, seed + 2) * 0.8);
+      else if (y < 29 && Math.hypot(dx, dy) > 0.93) v = P('iron', 3.4);
+      if (((y >= 38 && y <= 40) || (y >= 52 && y <= 54)) && (x < 21 || x > 42)) v = P('iron', 3.2 + hash(x, y, seed + 3));
+    } else if (look === 'gold') {
+      v = P('wood', 1.9 + hash(x >> 1, y >> 3, seed) * 0.9);
+      const e = Math.min(x, y, 63 - x, 63 - y);
+      if (e >= 4 && e <= 6) v = P('glow', 4.6 + hash(x, y, seed + 1) * 0.8);
+      else if (e > 7 && (((x + y) % 12 === 0) || ((x - y + 64) % 12 === 0))) v = P('glow', 3.4);
+      else if (e > 7 && x % 12 === 6 && y % 12 === 6) v = P('glow', 6.2);
+    } else if (look === 'gitter') {
+      v = P('ceil', 0);
+      const bar = x >= 4 && x <= 59 && ((x % 9) >= 3 && (x % 9) <= 5);
+      const cross = x >= 4 && x <= 59 && ((y >= 6 && y <= 9) || (y >= 30 && y <= 32) || (y >= 54 && y <= 57));
+      if (bar || cross) v = P('iron', 3.0 + hash(x, y, seed) * 0.8 + ((x % 9) === 3 || y === 6 ? 0.9 : 0));
+    } else { // morsch
+      v = P('wood', 1.7 + hash(x >> 1, y >> 4, seed) * 1.0 + ((x % 13) === 0 ? -1.0 : 0));
+      const nz = hash(x >> 2, y >> 2, seed + 9);
+      if (nz > 0.72) v = P('moss', 2.0 + hash(x, y, seed + 4) * 1.2);
+      if (hash(x >> 0, y >> 4, seed + 6) > 0.97 && (y & 7) > 1) v = P('wood', 0.4);
+      if ((y >= 10 && y <= 13) || (y >= 50 && y <= 53)) v = P('iron', 1.8 + hash(x, y, seed + 2) * 0.8);
+    }
+    if (x < 2 || x > 61) v = P('stone', 2 + hash(x, y, seed + 3));
+    D(x, y, v);
+  }
+  if (locked) {
+    if (look === 'gitter') lockPlate('iron', 4.5); else if (look === 'gold') lockPlate('glow', 5.0); else if (look === 'stein') lockPlate('stone', 5.2); else lockPlate('iron', look === 'morsch' ? 2.8 : 4.5);
+  } else if (look === 'bogen') { ring(26, 40, 4, P('iron', 6)); ring(38, 40, 4, P('iron', 6)); }
+  else if (look === 'eisen') { for (let y = 33; y <= 35; y++) for (let x = 40; x <= 55; x++) D(x, y, P('iron', 6.2 - (y - 33) * 0.7)); for (let y = 30; y <= 38; y++) { D(40, y, P('iron', 4)); D(55, y, P('iron', 4)); } }
+  else if (look === 'gitter') { for (let y = 36; y <= 42; y++) for (let x = 42; x <= 48; x++) D(x, y, P('iron', 5.2)); }
+  else ring(46, 34, 4, look === 'gold' ? P('glow', 6.4) : look === 'morsch' ? P('iron', 3.0) : P('iron', 6));
   return t;
 }
 function genFloor(seed, n = TEX) {
@@ -751,13 +805,16 @@ const SYMS = {
   wuerfel: ['111111101111111', '101110101111111', '111111101111111', '111011101110111', '111111101111111', '101110101111101', '111111101111111'], // zwei weiße Würfel, Augen = Löcher (dunkel durch Kontur)
   schluessel: ['0111000000', '1000100000', '1000100000', '0111011111', '0000010101', '0000010101']
 };
-function genPlaque(title, kind, styleName, seed, clipY = PLQ, sym = null) { // clipY (0.22.1): nichts unterhalb zeichnen (Türsturz: Schrift läuft nicht ins Leere)
+// 0.32.1 (Nutzer: „unterschiedliche Schriftarten im Spiel“): Schriftarten der Wand- und Türtitel (FONTMODES): rad = Strichdicke, xs/ys = Breite/Höhe der Buchstaben, shear = Schräge, wave = Wackeln der Zeile; Objektfeld font überschreibt die Schrift des Schildstils
+export const FONTMODES = { block: { rad: 0.52 }, bold: { rad: 0.82 }, thin: { rad: 0.4 }, slant: { rad: 0.55, shear: -0.3 }, wide: { rad: 0.55, xs: 1.3 }, tall: { rad: 0.52, ys: 1.3 }, wavy: { rad: 0.55, wave: 0.9 }, shadow: { rad: 0.62 } };
+function genPlaque(title, kind, styleName, seed, clipY = PLQ, sym = null, fontName = null) { // clipY (0.22.1): nichts unterhalb zeichnen (Türsturz: Schrift läuft nicht ins Leere)
   const N = PLQ, buf = new Uint8Array(N * N).fill(255);
   const lines = String(title || '').toUpperCase().split('|').slice(0, 2).filter(Boolean);
-  const maxC = Math.max(1, ...lines.map((l) => [...l].slice(0, 8).length)), cw = 6;
+  const fm = FONTMODES[fontName] || FONTMODES[(PLAQUE_STYLES[styleName] || {}).font] || FONTMODES.block, fxs = fm.xs || 1, fys = fm.ys || 1;
+  const maxC = Math.max(1, ...lines.map((l) => [...l].slice(0, 8).length)), cw = 6 * fxs;
   // 0.23.4 (Nutzer: aus der Nähe zu groß, unlesbar): Textblock höchstens ca. die halbe Wandbreite (vorher bis 75 %); Stil (Blutschmiere) bleibt
   const s = kind === 'door' ? Math.max(1.5, Math.min(2, 80 / (cw * maxC))) : Math.max(1.7, Math.min(2.9, 112 / (cw * maxC))); // 0.32.1: kurze Wandtitel (BRÜCKE) größer, Nutzer: kaum lesbar // Türsturz (0.23.6): Schrift liegt innerhalb des Türschilds
-  const lh = Math.round(9 * s), th = lines.length ? Math.round(lines.length * lh - 2 * s) : 0;
+  const lh = Math.round(9 * s * fys), th = lines.length ? Math.round(lines.length * lh - 2 * s) : 0;
   const SG = sym && SYMS[sym] ? SYMS[sym] : null, ss = lines.length ? s * 1.3 : s * 2.2, symH = SG ? Math.round(SG.length * ss + (lines.length ? 5 * s : 0)) : 0; // ohne Text: Symbol allein, größer und mittig
   const ty0 = kind === 'door' ? 14 + symH : Math.round(N / 2 - th / 2 + symH / 2);
   // 0.19.11 (Nutzer: „gruseliger, nicht aus Druckschrift“): von Hand geschmiert – jeder Buchstabe leicht schief und versetzt, Striche aus runden Pinselflecken mit schwankender Dicke,
@@ -775,16 +832,16 @@ function genPlaque(title, kind, styleName, seed, clipY = PLQ, sym = null) { // c
     const chars = [...ln].slice(0, 8), w = chars.length * cw * s - s, lx = Math.round(N / 2 - w / 2), ly = ty0 + li * lh;
     chars.forEach((ch, ci) => {
       const g = (FONT[ch] || FONT[' ']).split('/');
-      const gcx = lx + ci * cw * s + 2.5 * s, gcy = ly + 3.5 * s;
-      const rot = 0, shear = 0, dy0 = 0, sc = 1; // 0.31.5 (Nutzer: schwarz, nicht verlaufend, Druckbuchstaben): keine Schmiere mehr // 0.22.1: ruhiger (Nutzer: aus der Nähe zu undeutlich)
+      const gcx = lx + ci * cw * s + 2.5 * s * fxs, gcy = ly + 3.5 * s;
+      const rot = 0, shear = fm.shear || 0, dy0 = fm.wave ? Math.sin(ci * 1.9 + seed) * s * fm.wave : 0, sc = 1; // 0.31.5 (Nutzer: schwarz, nicht verlaufend, Druckbuchstaben): keine Schmiere mehr // 0.22.1: ruhiger (Nutzer: aus der Nähe zu undeutlich)
       const cr = Math.cos(rot), sr = Math.sin(rot);
       for (let rw = 0; rw < 7; rw++) for (let c = 0; c < 5; c++) {
         if (g[rw][c] !== '1') continue;
-        let ox = (c - 2) * s * sc, oy = (rw - 3) * s * sc;
+        let ox = (c - 2) * s * sc * fxs, oy = (rw - 3) * s * sc * fys;
         ox += shear * oy;
         const jx = 0, jy = 0;
         const cx = gcx + ox * cr - oy * sr + jx, cy = gcy + ox * sr + oy * cr + dy0 + jy;
-        stamp(cx, cy, s * 0.52);
+        stamp(cx, cy, s * fm.rad);
       }
     });
   });
@@ -948,9 +1005,9 @@ export function buildDecals(lvl, objs, tex) {
     }
     if (o.type === 'sign' && o.face != null && (o.title || o.sym) && !(o.textless && !o.sym)) {
       const wx = o.x + DX[o.face], wy = o.y + DY[o.face];
-      if (wallAt(wx, wy)) out.set((wy * w + wx) * 4 + (o.face + 2) % 4, cachedTex(tex, 'plaques', 'w:' + styleFor(o) + (o.sym || '') + (o.textless ? '#' : o.title), () => genPlaque(o.textless ? '' : o.title, 'wall', styleFor(o), 131, PLQ, o.sym)));
+      if (wallAt(wx, wy)) out.set((wy * w + wx) * 4 + (o.face + 2) % 4, cachedTex(tex, 'plaques', 'w:' + styleFor(o) + (o.font || '') + (o.sym || '') + (o.textless ? '#' : o.title), () => genPlaque(o.textless ? '' : o.title, 'wall', styleFor(o), 131, PLQ, o.sym, o.font)));
     } else if (o.type === 'door' && !o.open && (o.title || o.sym)) {
-      const t = cachedTex(tex, 'plaques', 'd:' + styleFor(o) + (o.sym || '') + (o.textless ? '#' : o.title), () => genPlaque(o.textless ? '' : o.title, 'door', styleFor(o), 133, PLQ, o.sym)); // 0.32.1: Tür nur mit Symbol (Würfeltür)
+      const t = cachedTex(tex, 'plaques', 'd:' + styleFor(o) + (o.font || '') + (o.sym || '') + (o.textless ? '#' : o.title), () => genPlaque(o.textless ? '' : o.title, 'door', styleFor(o), 133, PLQ, o.sym, o.font)); // 0.32.1: Tür nur mit Symbol (Würfeltür)
       const ns = wallAt(o.x - 1, o.y) && wallAt(o.x + 1, o.y); // Durchgang Nord–Süd
       for (const f of ns ? [0, 2] : [1, 3]) out.set((o.y * w + o.x) * 4 + f, t);
     }
@@ -2420,7 +2477,7 @@ export function makeTextures(detail = 1) {
   const n = TEX * (detail > 1 ? 4 : 1), nf = TEX * (detail > 1 ? 2 : 1); // Wände 256, Boden/Decke 128: Eigenauflösung statt hochskaliert (Potenzen von 2 wegen Maskierung)
   const stoneW = genStone(11, n);
   return {
-    wall: { [WALL_STONE]: stoneW, [WALL_HOUSE]: genHouseWall(37, n), [WALL_VEGAS]: genVegasWall(38, n), [WALL_SECRET]: genSecretWall(stoneW, 301), [WALL_SWITCH]: genSwitchWall(stoneW, false), [WALL_SWITCH_ON]: genSwitchWall(stoneW, true), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
+    wall: { [WALL_STONE]: stoneW, [WALL_HOUSE]: genHouseWall(37, n), [WALL_VEGAS]: genVegasWall(38, n), [WALL_SECRET]: genSecretWall(stoneW, 301), [WALL_SWITCH]: genSwitchWall(stoneW, false), [WALL_SWITCH_ON]: genSwitchWall(stoneW, true), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [22]: up(genDoorV('eisen', false, 502), 602), [23]: up(genDoorV('eisen', true, 503), 603), [24]: up(genDoorV('stein', false, 504), 604), [25]: up(genDoorV('stein', true, 505), 605), [26]: up(genDoorV('bogen', false, 506), 606), [27]: up(genDoorV('bogen', true, 507), 607), [28]: up(genDoorV('gold', false, 508), 608), [29]: up(genDoorV('gold', true, 509), 609), [30]: up(genDoorV('gitter', false, 510), 610), [31]: up(genDoorV('gitter', true, 511), 611), [32]: up(genDoorV('morsch', false, 512), 612), [33]: up(genDoorV('morsch', true, 513), 613), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
     sand: genSand(47, nf),
     sm2,
@@ -2690,7 +2747,7 @@ export function buildGrid(lvl, objs) {
     const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => grid[(o.y + dy) * w + o.x + dx]).find((v) => v === WALL_STONE || v === WALL_MOSS || v === WALL_ROCK || v === WALL_LICHEN);
     grid[o.y * w + o.x] = nb || WALL_STONE;
   }
-  for (const o of objs) if (o.type === 'door' && !o.open) grid[o.y * w + o.x] = o.locked ? WALL_DOOR_LOCKED : WALL_DOOR;
+  for (const o of objs) if (o.type === 'door' && !o.open) grid[o.y * w + o.x] = doorWall(o);
   for (const o of objs) if (o.type === 'gate' && !o.open) grid[o.y * w + o.x] = WALL_GATE;
   for (const o of objs) { if (o.type === 'secret' && !o.open) grid[o.y * w + o.x] = WALL_SECRET; else if (o.type === 'lever' && o.wall) grid[o.y * w + o.x] = o.torch ? WALL_TORCH : o.used ? WALL_SWITCH_ON : WALL_SWITCH; } // torch (0.23.7): Schalter sieht aus wie eine gewöhnliche Wandfackel
   return { grid, gw: w, gh: h };

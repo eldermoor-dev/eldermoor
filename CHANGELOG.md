@@ -4,6 +4,7 @@ Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführli
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
 ## 0.32.1 (20.11.2026, headless)
+- Sechs neue Türvarianten (Eisen, Stein, Bogen, Gold, Gitter, morsch) und acht Schriftarten für Schilder und Türtitel, auf die Gebiete verteilt.
 - Hütte: Satteldach mit Giebeldreieck statt flachem Dachstreifen.
 - Moorsee: Steg zwei Felder breit (in Flucht mit der Brücke); Wasser-Hinweis auf den Fuhrmann.
 - Brücke: Steinboden, steinerne Brüstung, Fackeln an den Eckpfosten; drei Hinweisschilder zur Schatzinsel.
