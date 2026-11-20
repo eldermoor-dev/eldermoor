@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.31.5 (20.11.2026, headless)
+- Schild „HOLZTOR“ entfernt; alle Wand-/Türschriften schwarz, eckige Druckbuchstaben, ohne Tropfen.
+
 ## 0.31.4 (20.11.2026, headless)
 - Tipp auf „Inventar“ löst keine Rast mehr aus (Schutzzeit 350 ms gegen durchgereichte Tipps in neuen Fenstern).
 

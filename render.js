@@ -685,28 +685,29 @@ function genPlaque(title, kind, styleName, seed, clipY = PLQ) { // clipY (0.22.1
   const mask = new Uint8Array(N * N);
   const stamp = (cx, cy, rad) => {
     const x0 = Math.floor(cx - rad - 1), x1 = Math.ceil(cx + rad + 1), y0 = Math.floor(cy - rad - 1), y1 = Math.ceil(cy + rad + 1);
-    for (let Y = y0; Y <= y1; Y++) for (let X = x0; X <= x1; X++) if (X >= 0 && Y >= 0 && X < N && Y < N && (X + 0.5 - cx) ** 2 + (Y + 0.5 - cy) ** 2 <= rad * rad) mask[Y * N + X] = 1;
+    for (let Y = y0; Y <= y1; Y++) for (let X = x0; X <= x1; X++) if (X >= 0 && Y >= 0 && X < N && Y < N && Math.abs(X + 0.5 - cx) <= rad && Math.abs(Y + 0.5 - cy) <= rad) mask[Y * N + X] = 1; // 0.31.5: eckige Druckbuchstaben
   };
   lines.forEach((ln, li) => {
     const chars = [...ln].slice(0, 8), w = chars.length * cw * s - s, lx = Math.round(N / 2 - w / 2), ly = ty0 + li * lh;
     chars.forEach((ch, ci) => {
       const g = (FONT[ch] || FONT[' ']).split('/');
       const gcx = lx + ci * cw * s + 2.5 * s, gcy = ly + 3.5 * s;
-      const rot = (hash(ci, li, seed + 50) - 0.5) * 0.12, shear = (hash(ci, li, seed + 51) - 0.5) * 0.1, dy0 = (hash(ci, li, seed + 52) - 0.5) * s * 0.6, sc = 0.96 + hash(ci, li, seed + 53) * 0.12; // 0.22.1: ruhiger (Nutzer: aus der Nähe zu undeutlich)
+      const rot = 0, shear = 0, dy0 = 0, sc = 1; // 0.31.5 (Nutzer: schwarz, nicht verlaufend, Druckbuchstaben): keine Schmiere mehr // 0.22.1: ruhiger (Nutzer: aus der Nähe zu undeutlich)
       const cr = Math.cos(rot), sr = Math.sin(rot);
       for (let rw = 0; rw < 7; rw++) for (let c = 0; c < 5; c++) {
         if (g[rw][c] !== '1') continue;
         let ox = (c - 2) * s * sc, oy = (rw - 3) * s * sc;
         ox += shear * oy;
-        const jx = (hash(c + ci * 7, rw, seed + 54) - 0.5) * s * 0.12, jy = (hash(c, rw + li * 9 + ci * 3, seed + 55) - 0.5) * s * 0.12;
-        const cx = gcx + ox * cr - oy * sr + jx, cy = gcy + ox * sr + oy * cr + dy0 + jy + Math.sin(gcx * 0.3 + seed) * s * 0.15;
-        stamp(cx, cy, s * (0.56 + hash(c + 3, rw + 5, seed + 56) * 0.1));
+        const jx = 0, jy = 0;
+        const cx = gcx + ox * cr - oy * sr + jx, cy = gcy + ox * sr + oy * cr + dy0 + jy;
+        stamp(cx, cy, s * 0.52);
       }
     });
   });
   // Tropfen: dicke Streifen nach unten mit Kuppe am Ende
   const drip = new Uint8Array(N * N);
   for (let y = 0; y < N - 2; y++) for (let x = 0; x < N; x++) {
+    if (true) continue; // 0.31.5: keine Tropfen
     if (!mask[y * N + x] || mask[(y + 1) * N + x] || hash(x, y, seed + 11) < 0.955) continue;
     const lastLine = y >= ty0 + lh * (lines.length - 1), lmax = lastLine ? 10 : Math.max(2, 2 * s - 1); // 0.22.1: Tropfen kürzer, nie in die nächste Zeile
     const len = 2 + Math.floor(hash(x, y, seed + 12) * lmax), wd = hash(x, y, seed + 13) > 0.6 ? 1 : 0;
@@ -720,15 +721,11 @@ function genPlaque(title, kind, styleName, seed, clipY = PLQ) { // clipY (0.22.1
     if (mask[y * N + x]) continue;
     let near = false;
     for (let dy = -ol; dy <= ol && !near; dy++) for (let dx = -ol; dx <= ol; dx++) { const X = x + dx, Y = y + dy; if (X >= 0 && Y >= 0 && X < N && Y < N && mask[Y * N + X]) { near = true; break; } }
-    if (near) buf[y * N + x] = P('stone', 0);
+    if (near) buf[y * N + x] = P('stone', 6); // helle Kontur, damit Schwarz auf Holz und Stein lesbar bleibt
   }
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     if (!mask[y * N + x]) continue;
-    const dv = drip[y * N + x], hh = hash(x, y, seed + 3);
-    if (dv) { buf[y * N + x] = P('blood', dv === 3 ? 5.2 : 3.6 + dv * 0.5 + hh * 0.6); continue; }
-    if (hh < 0.012) { buf[y * N + x] = P('stone', 1); continue; } // Abplatzer
-    const up = y > 0 && x > 0 && !mask[(y - 1) * N + x - 1], clot = hash(x >> 1, y >> 1, seed + 20) > 0.93;
-    buf[y * N + x] = P('blood', up ? 7 : clot ? 3.4 : 4.8 + hash(x >> 1, y >> 1, seed) * 1.8);
+    buf[y * N + x] = P('ceil', 0); // schwarz
   }
   return { w: N, h: N, data: buf, noWrap: true };
 }

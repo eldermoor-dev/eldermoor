@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.31.4 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.31.5 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1125,3 +1125,9 @@ Nutzer (Screenshot Moorpfad, 19:19): „Sobald ich auf Inventar drücke, rastet 
 - Ursache (Mechanismus im Testbrowser belegt): Die Steuerknöpfe lösen schon bei `pointerdown` aus. Das Inventar öffnet sich, das Finger-Loslassen erzeugt danach einen Klick auf das Element, das jetzt unter dem Finger liegt, also im neuen Fenster. Liegt dort der Knopf „Rasten“ (Proviant-Zeile) oder ein anderer Knopf, wird er ausgelöst. Im Test traf der Klick auf dem 780×360-Schirm das Fenster (DIV); welcher Knopf auf deinem S25 getroffen wurde, ist nicht gemessen (hängt von der Inventarlänge ab).
 - Fix (main.js): `openModal` merkt die Öffnungszeit (nur wenn vorher kein Fenster offen war), `onModalClick` ignoriert Klicks in den ersten 350 ms. Gilt für alle Fenster. Zwischen Fenstern (z. B. Charakter → Talente) greift sie nicht.
 - Headless: Klick 100 ms nach Öffnen wird ignoriert (kein Toast), Klick nach 0,8 s funktioniert. Tests 131 grün. Nicht auf Gerät getestet.
+
+## 0.31.5 (20.11.2026) – Schrift schwarz, Druckbuchstaben (nicht auf Gerät getestet)
+Nutzer (Screenshot Kultgruft-Tür): „Schriftzug Holztür weg. Andere Schrift schwarz, nicht verlaufend, Druckbuchstaben.“
+- Wandschild `sign_pfad3` („HOLZTOR“) entfernt (game.json). Der Schlüsseltext nennt weiter das Holztor am Ende des Moorpfads.
+- `genPlaque` (render.js): Schrift jetzt schwarz (`ceil` 0), eckige Pixel statt Pinselflecken, kein Schiefstand, keine Tropfen/Gerinnsel; helle Kontur (`stone` 6), damit Schwarz auf Holz/Stein lesbar bleibt. Gilt für ALLE Schriftzüge auf Wänden und Türen (Annahme: „andere Schrift“ = alle übrigen). Falls nur die Tür gemeint war, ist das ein kleiner Rückbau.
+- Headless-Screenshot geprüft (Tür Moorpfad), 131 Tests grün. Nicht auf Gerät getestet.

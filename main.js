@@ -10,7 +10,7 @@ import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, build
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.31.4';
+const VERSION = '0.31.5';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -958,7 +958,7 @@ function openModal(html, kind = 'generic') {
   $('#modal-box').innerHTML = html;
   $('#modal-box').dataset.kind = kind; // z. B. breiteres Kartenfenster (CSS)
   $('#modal').hidden = false;
-  if (!S.modal) S.modalAt = performance.now(); // 0.31.4: Schutzzeit gegen durchgereichte Tipps (Tipp auf „Inventar“ traf im neuen Fenster z. B. „Rasten“)
+  if (!S.modal) S.modalAt = performance.now(); // 0.31.5: Schutzzeit gegen durchgereichte Tipps (Tipp auf „Inventar“ traf im neuen Fenster z. B. „Rasten“)
   S.modal = kind;
   S.held = [];
   $('#modal-box').scrollTop = 0;
@@ -1495,7 +1495,7 @@ async function openSelfTest() {
 async function onModalClick(e) {
   const b = e.target.closest('[data-m]');
   if (!b || b.disabled) return;
-  if (performance.now() - (S.modalAt || 0) < 350) return; // 0.31.4: Klick unmittelbar nach dem Öffnen = durchgereichter Tipp, ignorieren
+  if (performance.now() - (S.modalAt || 0) < 350) return; // 0.31.5: Klick unmittelbar nach dem Öffnen = durchgereichter Tipp, ignorieren
   S.sfx.unlock();
   S.sfx.play('ui');
   const m = b.dataset.m;

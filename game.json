@@ -2350,16 +2350,6 @@
           ]
         },
         {
-          "id": "sign_pfad3",
-          "type": "sign",
-          "x": 19,
-          "y": 5,
-          "text": "Das Holztor der Kultgruft. Das Schloss ist neu, das Holz drumherum alt.",
-          "title": "HOLZTOR",
-          "style": "iron",
-          "face": 1
-        },
-        {
           "id": "door_gruft",
           "type": "door",
           "x": 20,
