@@ -1014,13 +1014,13 @@ function openMenu() {
     <button class="mb primary" data-m="close">Weiterspielen</button>
     <button class="mb" data-m="map">Karte</button>
     <button class="mb" data-m="rest">Rasten (Proviant: ${S.game ? (S.game.inv.ration || 0) : 0})</button>
-    <button class="mb" data-m="bestiary">Bestiarium</button>
+    <button class="mb" data-m="settings">Einstellungen</button>
     <button class="mb" data-m="errlog">Fehlerlog (${ERR.list.length})</button>
     <button class="mb" data-m="save">Speichern</button>
     <button class="mb" data-m="load">Laden</button>
     <button class="mb" data-m="export">Spielstand exportieren (Datei)</button>
     <button class="mb" data-m="import">Spielstand importieren (Datei)</button>
-    <button class="mb" data-m="settings">Einstellungen</button>
+    <button class="mb" data-m="bestiary">Bestiarium</button>
     <button class="mb" data-m="help">Steuerung &amp; Info</button>
     <button class="mb" data-m="title">Zum Titelbild</button>
     <button class="mb" data-m="quit">Spiel beenden</button>${S.settings.debug ? '<button class="mb" data-m="debug">Debug</button>' : ''}</div>`, 'menu');

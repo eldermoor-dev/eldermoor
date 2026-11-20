@@ -9,6 +9,7 @@ Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ 
 - Murmel: Hinweistext nach dem ersten Sieg nennt das Glücksamulett und weckt Neugier.
 - Hütte kleiner (3×4) und wohnlich: Küchenecke, Vase, Teppich, drei Wandbilder.
 - Glücksamulett ausrüstbar: Krit +4 %, Fallen erkennen +10, spürt Truhen und Vergrabenes (3 Felder, Karte). Kein Gold mehr.
+- Menü: Einstellungen und Bestiarium getauscht.
 - Haustür schließt sich hinter der Gruppe, Würfelsymbol auf der Tür. Boot neu gezeichnet. Wege hinter der Hütte breiter.
 
 ## 0.32.0 (20.11.2026, headless)
