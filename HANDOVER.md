@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.31.11 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.31.12 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1177,3 +1177,10 @@ Nutzer: „Der Boden der Insel ist aus Sand. Vereinzelt Palmen. An einer Stelle 
 - Brückengeländer (Fehler aus 0.31.6): `axis` des Sprites ist die Flächennormale, nicht die Laufrichtung; die Geländer standen deshalb beim Blick entlang der Brücke wie große Torrahmen quer. Jetzt Normale quer zur Bahn: längs der Brücke schmale Pfosten, von der Seite durchgehendes Geländer. Ob der Nutzer genau das meinte, ist nicht gesichert (Screenshot zeigte die Insel).
 - Alte Spielstände: `syncStatic` zieht jetzt auch Position (x, y) von Truhen, NPCs und Türen nach (Insel wurde umgebaut) und setzt die Gruppe auf den Gebietsstart, wenn sie in Wand oder Wasser steht.
 - Neuer Test (132 grün): Schatz, Berufe, einmaliges Graben, Entfernung, Umbau-Schutz. Headless-Screenshots (Sand, Palmen, Geländer). Nicht auf Gerät getestet.
+
+## 0.31.12 (20.11.2026) – Laden eines Stands nach Umbau der Insel (nicht auf Gerät getestet)
+Nutzer (Screenshot 19:51): „Laden fehlgeschlagen: Spielstand ungültig: Spieler steht in einer Wand.“ Folge meines Inselumbaus (0.31.10/0.31.11): Die Prüfung lief vor dem Nachziehen der Daten, mein Schutz in `syncStatic` kam zu spät.
+- `deserialize` (logic.js): vor `validateState` wird die Gruppe auf den Gebietsstart gesetzt, wenn ihre Zelle Wand/Wasser ist. Am Ende von `syncStatic` zusätzlich, wenn ein Hindernis (NPC, Palme) auf ihrer Zelle steht.
+- Tests: Altstand mit dem Insel-Layout von 0.31.9 (Gruppe im alten Haus) lädt jetzt; der alte Test „Spieler in Wand wird abgelehnt“ gilt nur noch für ungültige Koordinaten. 132 grün.
+- Lehre für künftige Gebietsumbauten: Altstände prüfen (Datei mit altem `game.json` erzeugen, mit neuem laden).
+- Nicht auf Gerät getestet.

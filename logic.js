@@ -1917,7 +1917,7 @@ export function syncStatic(state, data) {
     }
   }
   const cur = data.levels[state.levelId], pc = cur && state.player ? cellChar(cur, state.player.x, state.player.y) : '.';
-  if (cur && (isWallChar(pc) || pc === '~') && cur.start) { state.player = { x: cur.start.x, y: cur.start.y, dir: cur.start.dir }; n++; } // 0.31.11: Gebiet wurde umgebaut, Gruppe steckt in Wand oder Wasser
+  if (cur && (isWallChar(pc) || pc === '~' || blockerAt(state, state.player.x, state.player.y)) && cur.start) { state.player = { x: cur.start.x, y: cur.start.y, dir: cur.start.dir }; n++; } // 0.31.11: Gebiet wurde umgebaut, Gruppe steckt in Wand oder Wasser
   return n;
 }
 
@@ -1929,6 +1929,10 @@ export function deserialize(input, data, migrations = MIGRATIONS) {
   if (!save || save.format !== SAVE_FORMAT || !Number.isInteger(save.v) || save.v < 1) throw new Error('Keine Eldermoor-Spielstanddatei');
   if (save.v > SAVE_VERSION) throw new Error('Spielstand stammt aus einer neueren Version – bitte Spiel aktualisieren');
   const m = migrate(save, migrations, SAVE_VERSION, data);
+  { // 0.31.11: Gebiet wurde seit dem Speichern umgebaut (z. B. Schatzinsel): Gruppe steht jetzt in Wand oder Wasser → zurück zum Gebietsstart, statt den Stand abzulehnen
+    const st = m.state, cur = st && data.levels[st.levelId], p = st && st.player;
+    if (cur && cur.start && p && Number.isInteger(p.x) && Number.isInteger(p.y) && isWallChar(cellChar(cur, p.x, p.y))) st.player = { x: cur.start.x, y: cur.start.y, dir: cur.start.dir };
+  }
   const errors = validateState(m.state, data);
   if (errors.length) throw new Error('Spielstand ungültig: ' + errors.join('; '));
   syncStatic(m.state, data);

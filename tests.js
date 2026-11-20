@@ -208,8 +208,11 @@ export async function runTests(data, env = {}) {
     threw = false; try { L.deserialize(newer, data); } catch (e) { threw = /neueren/.test(e.message); }
     assert(threw, 'neuere Version');
     const wall = L.serialize(s); wall.state.player.x = 0;
-    threw = false; try { L.deserialize(wall, data); } catch { threw = true; }
-    assert(threw, 'Spieler in Wand');
+    const fixed = L.deserialize(wall, data); // 0.31.11: Wandposition (Gebiet umgebaut) wird zum Gebietsstart repariert
+    assert(fixed.player.x === data.levels[fixed.levelId].start.x, 'Spieler in Wand: zurück zum Start');
+    const bad = L.serialize(s); bad.state.player.x = 'x';
+    threw = false; try { L.deserialize(bad, data); } catch { threw = true; }
+    assert(threw, 'Spielerposition ungültig bleibt abgelehnt');
   });
 
   await test('Migration: Kette, fehlende Migration und fehlender Versionssprung werden gemeldet', () => {
@@ -603,6 +606,12 @@ export async function runTests(data, env = {}) {
     const far = run(['rogue']); far.s.player = { x: bu.x + 3, y: bu.y + 3, dir: 0 }; far.o.sensed = false;
     assert(!L.scanBuried(far.s, data).length, 'zu weit entfernt: nichts bemerkt');
     // Umbau-Schutz: Spieler in Wand/Wasser wird beim Laden auf den Start gesetzt
+    { // echter Altstand: Insel-Layout von 0.31.9 (Gruppe im alten Haus) muss mit dem neuen Layout laden
+      const o = JSON.parse(JSON.stringify(data)); o.levels.schatzinsel.map = ['mmmmmmmmmmmmmmm', 'm~~~~~~~~~~~~~m', 'm~~~.......~~~m', 'm~~.........~~m', 'm~...hhThh...~m', 'm~...h...h...~m', 'm~...h...h...~m', 'm~...h...h...~m', 'm~...hh.hh...~m', 'm~...........~m', 'm~~.........~~m', 'm~~~.......~~~m', 'm~~~~~~~~~~~~~m', 'mmmmmmmmmmmmmmm'];
+      const old = L.newGame(o, 5); L.jumpToLevel(old, o, 'schatzinsel'); old.player = { x: 6, y: 6, dir: 1 };
+      const back = L.deserialize(L.serialize(old), data);
+      assert(back.levelId === 'schatzinsel' && back.player.x === si.start.x && back.player.y === si.start.y, 'Altstand mit Gruppe im alten Haus lädt, Gruppe am Start');
+    }
     const w = fresh(6); L.jumpToLevel(w, data, 'schatzinsel'); w.player = { x: 1, y: 1, dir: 0 }; L.syncStatic(w, data);
     assert(w.player.x === si.start.x && w.player.y === si.start.y, 'Spieler im Wasser kommt zum Start');
   });
