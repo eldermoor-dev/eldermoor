@@ -636,14 +636,14 @@ export function scanBuried(state, data) {
   }
   return out;
 }
-// 0.32.1: Glücksamulett = „Schatzspürer“. Wer es trägt, spürt Truhen und vergrabene Schätze im Umkreis von 3 Feldern; sie erscheinen auf der Karte, Vergrabenes wird sichtbar.
+// 0.32.1: Glücksamulett = „Schatzspürer“. Wer es trägt, spürt VERSTECKTE Truhen (o.hidden; 0.32.2: normale Truhen nicht) und vergrabene Schätze im Umkreis von 3 Feldern; sie erscheinen auf der Karte, Vergrabenes wird sichtbar.
 export const luckWearer = (state) => state.heroes.find((h) => h.hp > 0 && h.equip && h.equip.amulet === 'gluecksamulett') || null;
 function luckMark(state, data, o) { const w = getLevel(data, state).map[0].length; state.seen[o.y * w + o.x] = 1; }
 export function scanLuck(state, data) {
   const out = [], p = state.player, lucky = luckWearer(state);
   if (!lucky) return out;
   for (const o of state.objs) {
-    if (o.type !== 'chest' || o.open || o.felt || Math.abs(o.x - p.x) + Math.abs(o.y - p.y) > 3) continue;
+    if (o.type !== 'chest' || !o.hidden || o.open || o.felt || Math.abs(o.x - p.x) + Math.abs(o.y - p.y) > 3) continue;
     if (chestCfg(state, data, o).mimic) continue; // falsche Truhen bleiben ein Rätsel
     o.felt = true; luckMark(state, data, o);
     out.push(`Das Glücksamulett von ${lucky.name} kribbelt: Eine Truhe ist ganz in der Nähe.`);

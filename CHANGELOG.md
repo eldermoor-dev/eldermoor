@@ -5,6 +5,7 @@ Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ 
 
 ## 0.32.2 (20.11.2026, headless)
 - Entdeckte Falle: Warnzeichen kleiner (ca. 55 %), rot statt gelb, Warnstreifen darunter entfernt.
+- Glücksamulett spürt nur noch versteckte Truhen (hinter Geheim- oder Trugwand, Flag `hidden`) und vergrabene Schätze; normale Truhen lösen nichts aus.
 - Inventar: Nach „Ausrüsten“ scrollt das Fenster automatisch zur Heldenauswahl.
 
 ## 0.32.1 (20.11.2026, headless)

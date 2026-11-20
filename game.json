@@ -330,7 +330,7 @@
         "crit": 4,
         "trap": 10
       },
-      "desc": "Amulett aus rotem Glas an einem Lederband. Krit +4 %, Fallen erkennen +10. Es kribbelt, wenn Truhen oder vergrabene Schätze höchstens 3 Felder entfernt sind, und zeigt sie auf der Karte."
+      "desc": "Amulett aus rotem Glas an einem Lederband. Krit +4 %, Fallen erkennen +10. Es kribbelt, wenn versteckte Truhen (hinter Geheimwand oder Trugwand) oder vergrabene Schätze höchstens 3 Felder entfernt sind, und zeigt sie auf der Karte. Offene, normale Truhen löst es nicht aus."
     },
     "ring_siegel": {
       "name": "Siegelring des Hauptmanns",
@@ -2826,7 +2826,8 @@
           ],
           "lootV": 2,
           "look": "edel",
-          "mat": "stein"
+          "mat": "stein",
+          "hidden": true
         },
         {
           "id": "door_schatz",
@@ -2898,7 +2899,8 @@
           ],
           "lootV": 3,
           "look": "edel",
-          "mat": "stein"
+          "mat": "stein",
+          "hidden": true
         },
         {
           "id": "ill_g1",
@@ -2925,7 +2927,8 @@
             }
           ],
           "look": "eisen",
-          "mat": "stein"
+          "mat": "stein",
+          "hidden": true
         },
         {
           "id": "sign_g_ill",
@@ -3374,7 +3377,8 @@
             }
           ],
           "look": "eisen",
-          "mat": "erz"
+          "mat": "erz",
+          "hidden": true
         },
         {
           "id": "sign_s_ill",
@@ -3410,7 +3414,8 @@
               "n": 1
             }
           ],
-          "mat": "erz"
+          "mat": "erz",
+          "hidden": true
         },
         {
           "id": "sign_s_ill2",
@@ -3736,7 +3741,8 @@
           ],
           "lootV": 2,
           "look": "edel",
-          "mat": "nebel"
+          "mat": "nebel",
+          "hidden": true
         },
         {
           "id": "sign_t4",

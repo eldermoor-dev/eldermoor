@@ -2209,7 +2209,12 @@ export async function runTests(data, env = {}) {
       assert(L.fxSum(data, s.heroes[0], 'crit') >= 4 && L.trapSkill(s, data) >= 10, 'Krit/Fallen-Wirkung');
       assert(L.scanBuried(s, data).length === 1 && b.sensed, 'Vergrabenes wird gespürt');
       s.player.x = c.x; s.player.y = c.y + 1; const w = data.levels.schatzinsel.map[0].length;
-      assert(L.scanLuck(s, data).length === 1 && c.felt && s.seen[c.y * w + c.x] === 1, 'Truhe wird gespürt und erscheint auf der Karte');
+      assert(L.scanLuck(s, data).length === 0 && !c.felt, 'normale Truhe: keine Reaktion (0.32.2)');
+      L.jumpToLevel(s, data, 'kultgruft'); const hc = s.objs.find((o) => o.id === 'chest_g_secret'), nc = s.objs.find((o) => o.id === 'chest_g1');
+      assert(hc.hidden && !nc.hidden, 'Flag hidden nur an versteckter Truhe');
+      s.heroes.forEach((h) => { h.cls = 'warrior'; }); L.equipItem(s, data, 'gluecksamulett', 0);
+      s.player.x = hc.x + 1; s.player.y = hc.y; const w2 = data.levels.kultgruft.map[0].length;
+      assert(L.scanLuck(s, data).length === 1 && hc.felt && s.seen[hc.y * w2 + hc.x] === 1, 'versteckte Truhe wird gespürt und erscheint auf der Karte');
       assert(L.scanLuck(s, data).length === 0, 'nur einmal je Truhe');
     });
     await test('Version: sw.js und main.js stimmen überein', () => {
