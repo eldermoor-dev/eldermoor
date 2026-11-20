@@ -806,14 +806,14 @@ const SYMS = {
   schluessel: ['0111000000', '1000100000', '1000100000', '0111011111', '0000010101', '0000010101']
 };
 // 0.32.1 (Nutzer: „unterschiedliche Schriftarten im Spiel“): Schriftarten der Wand- und Türtitel (FONTMODES): rad = Strichdicke, xs/ys = Breite/Höhe der Buchstaben, shear = Schräge, wave = Wackeln der Zeile; Objektfeld font überschreibt die Schrift des Schildstils
-export const FONTMODES = { block: { rad: 0.52 }, bold: { rad: 0.82 }, thin: { rad: 0.4 }, slant: { rad: 0.55, shear: -0.3 }, wide: { rad: 0.55, xs: 1.3 }, tall: { rad: 0.52, ys: 1.3 }, wavy: { rad: 0.55, wave: 0.9 }, shadow: { rad: 0.62 } };
+export const FONTMODES = { block: { rad: 0.6 }, bold: { rad: 0.85 }, thin: { rad: 0.5 }, slant: { rad: 0.62, shear: -0.3 }, wide: { rad: 0.62, xs: 1.3 }, tall: { rad: 0.6, ys: 1.3 }, wavy: { rad: 0.62, wave: 0.5 }, shadow: { rad: 0.62 } };
 function genPlaque(title, kind, styleName, seed, clipY = PLQ, sym = null, fontName = null) { // clipY (0.22.1): nichts unterhalb zeichnen (Türsturz: Schrift läuft nicht ins Leere)
   const N = PLQ, buf = new Uint8Array(N * N).fill(255);
   const lines = String(title || '').toUpperCase().split('|').slice(0, 2).filter(Boolean);
   const fm = FONTMODES[fontName] || FONTMODES[(PLAQUE_STYLES[styleName] || {}).font] || FONTMODES.block, fxs = fm.xs || 1, fys = fm.ys || 1;
   const maxC = Math.max(1, ...lines.map((l) => [...l].slice(0, 8).length)), cw = 6 * fxs;
   // 0.23.4 (Nutzer: aus der Nähe zu groß, unlesbar): Textblock höchstens ca. die halbe Wandbreite (vorher bis 75 %); Stil (Blutschmiere) bleibt
-  const s = kind === 'door' ? Math.max(1.5, Math.min(2, 80 / (cw * maxC))) : Math.max(1.7, Math.min(2.9, 112 / (cw * maxC))); // 0.32.1: kurze Wandtitel (BRÜCKE) größer, Nutzer: kaum lesbar // Türsturz (0.23.6): Schrift liegt innerhalb des Türschilds
+  const s = kind === 'door' ? Math.max(1.8, Math.min(2.6, 100 / (cw * maxC))) : Math.max(1.7, Math.min(2.9, 112 / (cw * maxC))); // 0.32.1: kurze Wandtitel (BRÜCKE) größer, Nutzer: kaum lesbar // Türsturz (0.23.6): Schrift liegt innerhalb des Türschilds
   const lh = Math.round(9 * s * fys), th = lines.length ? Math.round(lines.length * lh - 2 * s) : 0;
   const SG = sym && SYMS[sym] ? SYMS[sym] : null, ss = lines.length ? s * 1.3 : s * 2.2, symH = SG ? Math.round(SG.length * ss + (lines.length ? 5 * s : 0)) : 0; // ohne Text: Symbol allein, größer und mittig
   const ty0 = kind === 'door' ? 14 + symH : Math.round(N / 2 - th / 2 + symH / 2);
@@ -872,8 +872,9 @@ function genPlaque(title, kind, styleName, seed, clipY = PLQ, sym = null, fontNa
   return { w: N, h: N, data: buf, noWrap: true };
 }
 // Rahmen einer offenen Tür (Sprite, 1×1 Feld): Pfosten, Sturz (mit Raumname), Türblatt nach innen aufgeklappt an der linken Seite.
-function genDoorFrame(title, styleName, seed) {
+function genDoorFrame(title, styleName, seed, look) { // 0.32.2 (Nutzer: Archivtür zu grau, offen braun): Rahmen/Blatt im Material der geschlossenen Tür
   const t = mk(255);
+  const FM = { stein: 'stone', eisen: 'iron', gitter: 'iron' }[look] || 'wood';
   const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
   const st = PLAQUE_STYLES[styleName] || PLAQUE_STYLES.wood;
   const lh = title ? Math.ceil((plaqueMetrics(title, 'door', st).h + 12) / 3) : 7; // Höhe des Sturzes
@@ -881,16 +882,16 @@ function genDoorFrame(title, styleName, seed) {
     const post = x <= 4 || x >= 59, lintel = y < lh;
     if (!post && !lintel) continue;
     const edge = (post && (x === 4 || x === 59)) || (lintel && y === lh - 1);
-    set(x, y, P('wood', edge ? 1.2 : 2.8 + hash(x >> 1, y >> 3, seed) * 1.2));
+    set(x, y, P(FM, edge ? 1.2 : 2.8 + hash(x >> 1, y >> 3, seed) * 1.2));
   }
   for (let x = 5; x <= 17; x++) { // Türblatt: an der Angel (x=5) volle Höhe, zur freien Kante hin perspektivisch kürzer
     const k = (x - 5) / 12, top = Math.round(lh + k * 7), bot = Math.round(63 - k * 6);
     for (let y = top; y <= bot; y++) {
       const v01 = (y - top) / (bot - top);
-      let v = P('wood', 3.6 - k * 1.4 + hash(x, y >> 3, seed + 2) * 0.9);
+      let v = P(FM, 3.6 - k * 1.4 + hash(x, y >> 3, seed + 2) * 0.9);
       if ((v01 > 0.12 && v01 < 0.2) || (v01 > 0.8 && v01 < 0.88)) v = P('iron', 3.4 - k);
-      if (x === 17) v = P('wood', 5.2); // helle Vorderkante des Blatts
-      if (y === top || y === bot) v = P('wood', 1.2);
+      if (x === 17) v = P(FM, 5.2); // helle Vorderkante des Blatts
+      if (y === top || y === bot) v = P(FM, 1.2);
       set(x, y, v);
     }
   }
@@ -2849,7 +2850,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
     else if (o.type === 'door' && o.open && grid) { // offene Tür: Rahmen + aufgeklapptes Blatt, nur beim Blick längs des Durchgangs (sonst stünde der Rahmen quer)
       const wl = (x, y) => x < 0 || y < 0 || x >= grid.gw || y >= grid.gh || grid.grid[y * grid.gw + x] !== 0;
       const ns = wl(o.x - 1, o.y) && wl(o.x + 1, o.y);
-      out.push({ x: o.x, y: o.y, tex: cachedTex(tex, 'frames', styleFor(o) + (o.title || ''), () => genDoorFrame(o.title, styleFor(o), 137)), scale: 1, axis: ns ? [0, 1] : [1, 0] });
+      out.push({ x: o.x, y: o.y, tex: cachedTex(tex, 'frames', styleFor(o) + (o.look || '') + (o.title || ''), () => genDoorFrame(o.title, styleFor(o), 137, o.look)), scale: 1, axis: ns ? [0, 1] : [1, 0] });
     }
     else if (o.type === 'gate' && o.open && grid) { // offenes Gitter: hochgezogene Stäbe im Durchgang (nur beim Blick längs, wie offene Tür)
       const wl = (x, y) => x < 0 || y < 0 || x >= grid.gw || y >= grid.gh || grid.grid[y * grid.gw + x] !== 0;

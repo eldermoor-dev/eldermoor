@@ -600,7 +600,7 @@ function tapUseByTap(e) {
   let best = null, bt = 1e9;
   for (const o of g.objs) {
     const big = o.type === 'door' || o.type === 'gate' || o.type === 'secret' || (o.type === 'lever' && o.wall);
-    if (!(big ? !o.open : o.type === 'chest' ? !o.open : o.type === 'lever' || o.type === 'merchant' || (o.type === 'npc' && !o.gone))) continue; // 0.16.5: Händlerin antippen = ansprechen
+    if (!(big ? (!o.open || (o.type === 'door' && o.x === f.x && o.y === f.y)) : o.type === 'chest' ? !o.open : o.type === 'lever' || o.type === 'merchant' || (o.type === 'npc' && !o.gone))) continue; // 0.16.5: Händlerin antippen = ansprechen
     const sx = o.x + 0.5 - S.cam.x, sy = o.y + 0.5 - S.cam.y;
     const tX = inv * (dirY * sx - dirX * sy), tY = inv * (-plY * sx + plX * sy);
     if (tY <= 0.3 || tY > 2.6 || tY >= bt) continue;
