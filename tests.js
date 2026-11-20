@@ -554,7 +554,7 @@ export async function runTests(data, env = {}) {
     const fg = buildFloorGrid(ms); assert(fg.fg[1 * fg.gw + 12] === 1, 'Fluss ist Wasser'); assert(fg.fg[8 * fg.gw + 11] !== 1 && fg.fg[8 * fg.gw + 11] > 1, 'Brücke ist Bohle');
     // Wasser sperrt mit Hinweis
     const s = fresh(31); L.jumpToLevel(s, data, 'moorsee'); s.player = { x: 12, y: 3, dir: 1 };
-    const r0 = L.tryMove(s, data, 'f'); assert(!r0.moved && /Wasser/.test(r0.msg || ''), 'Wasser sperrt: ' + JSON.stringify(r0));
+    const r0 = L.tryMove(s, data, 'f'); assert(!r0.moved && /Wasser/.test(r0.msg || ''), 'Wasser sperrt: ' + JSON.stringify(r0)); assert(/Fuhrmann/.test(r0.msg), 'Wasser im Moorsee: Hinweis auf den Fuhrmann');
     // Über die Brücke (y = 8) hinweg
     s.player = { x: 10, y: 8, dir: 1 }; for (let i = 0; i < 4; i++) assert(L.tryMove(s, data, 'f').moved, 'Brücke begehbar ' + i);
     // Fährmann: ohne Gold gesperrt, mit Gold hin (−20) und zurück (gratis)

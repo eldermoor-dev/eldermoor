@@ -368,7 +368,7 @@ export function tryMove(state, data, rel) {
   const p = state.player;
   const d = rel === 'f' ? p.dir : rel === 'b' ? (p.dir + 2) % 4 : rel === 'l' ? (p.dir + 3) % 4 : (p.dir + 1) % 4;
   const nx = p.x + DIRS[d].dx, ny = p.y + DIRS[d].dy;
-  { const cc = cellChar(lvl, nx, ny); if (cc === '~') return { moved: false, wall: true, msg: 'Das Wasser ist tief und kalt. Hier kommt ihr nicht durch.' }; if (isWallChar(cc)) return { moved: false, wall: true }; }
+  { const cc = cellChar(lvl, nx, ny); if (cc === '~') return { moved: false, wall: true, msg: lvl.waterMsg || 'Das Wasser ist tief und kalt. Hier kommt ihr nicht durch.' }; if (isWallChar(cc)) return { moved: false, wall: true }; }
   let b = blockerAt(state, nx, ny);
   const pushNotes = [];
   if (b && b.type === 'boulder') {
