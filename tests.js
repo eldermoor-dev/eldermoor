@@ -626,7 +626,7 @@ export async function runTests(data, env = {}) {
     // Sieg im 1. Spiel: nur Hinweis, kein Amulett; Sieg im 2. Spiel: Amulett; weiteres Spiel nur Gold
     const w2 = find([true, true]); assert(w2, 'Seed für zwei gewonnene Spiele');
     { const s = fresh(w2); L.jumpToLevel(s, data, 'schatzinsel'); s.gold = 500; const npc = s.objs.find((o) => o.id === 'npc_gnom');
-      const r1 = L.diceFinish(s, data, npc, play(s, npc, 10, true)); assert(s.gold === 510 && !s.inv.gluecksamulett && s.flags['gnom:w1'] && /zweites Mal/.test(r1.msg), '1. Sieg: +Einsatz, Hinweis, kein Amulett');
+      const r1 = L.diceFinish(s, data, npc, play(s, npc, 10, true)); assert(s.gold === 510 && !s.inv.gluecksamulett && s.flags['gnom:w1'] && /ZWEITES Mal.*Glücksamulett/.test(r1.msg), '1. Sieg: +Einsatz, Hinweis, kein Amulett');
       const r2 = L.diceFinish(s, data, npc, play(s, npc, 10, true)); assert(s.inv.gluecksamulett === 1 && s.flags['gnom:w2'] && /Glücksamulett/.test(r2.msg), '2. Sieg: Amulett');
       assert(L.dialogStartNode(s, data, npc) === 'c', 'danach anderer Gesprächsanfang');
       L.diceFinish(s, data, npc, play(s, npc, 10, true)); assert(s.inv.gluecksamulett === 1, 'Amulett nur einmal'); }
@@ -2171,6 +2171,17 @@ export async function runTests(data, env = {}) {
       r = L.dialogChoose(s3, data, gw, 'd', 0); assert(gw.gone && s3.flags['gerwin:bedroht'] && s3.gold === 118, 'Gerwin flieht, 18 Gold');
       for (const id of Object.keys(data.dialogs)) { const dl = data.dialogs[id]; assert(dl.nodes[dl.start] && (!dl.again || dl.nodes[dl.again]), id + ': Knoten'); for (const nd of Object.values(dl.nodes)) for (const c of nd.choices) assert(!c.to || dl.nodes[c.to], id + ': Ziel ' + c.to); }
       for (const lvId of ['moorpfad', 'kultgruft', 'festung1']) assert(L.analyzeLevel(data, lvId).ok, 'Ebene weiter vollständig erreichbar: ' + lvId);
+    });
+    await test('Schatzinsel (0.32.1): alle begehbaren Felder vom Anlegeplatz aus erreichbar (keine Palme/Kaktus-Sperre)', () => {
+      const s = fresh(1); L.jumpToLevel(s, data, 'schatzinsel');
+      const lvl = data.levels.schatzinsel, w = lvl.map[0].length, seen = new Set([`${lvl.start.x},${lvl.start.y}`]), q = [[lvl.start.x, lvl.start.y]];
+      while (q.length) { const [x, y] = q.shift(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy, k = `${nx},${ny}`; if (nx < 0 || ny < 0 || nx >= w || ny >= lvl.map.length || seen.has(k)) continue; if (L.cellChar(lvl, nx, ny) !== '.' || (L.blockerAt(s, nx, ny) && L.blockerAt(s, nx, ny).type !== 'door')) continue; seen.add(k); q.push([nx, ny]); } }
+      const lost = [];
+      for (let y = 0; y < lvl.map.length; y++) for (let x = 0; x < w; x++) if (L.cellChar(lvl, x, y) === '.' && !L.blockerAt(s, x, y) && !seen.has(`${x},${y}`)) lost.push(`${x}/${y}`);
+      assert(!lost.length, `unerreichbar: ${lost.join(' ')}`);
+    });
+    await test('Hängematte (0.32.1): hängt tief (Sprite)', () => {
+      assert(/sag = 46 \+ 8/.test(texts['render.js'] || ''), 'Hängematte nicht gesenkt');
     });
     await test('Version: sw.js und main.js stimmen überein', () => {
       const re = /VERSION\s*=\s*'([^']+)'/;

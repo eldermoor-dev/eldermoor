@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.32.0 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.32.1 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1210,3 +1210,11 @@ Nutzerwünsche: Würfelspiel Variante B mit Murmel; Glücksamulett erst nach wie
 - Dialog Murmel: `startBy` (Gesprächsanfang nach Marken), Knoten a/e/b/c/r; die alte Zufallszahl-Regel (gerade/ungerade, Riesenspinne) ist entfernt. `riesenspinne` bleibt als ungenutzter Gegner in den Daten.
 - Tests: 133 grün (neu: Würfelspiel komplett inkl. Teufel, Amulett, Altstand, Speichern). BALANCE.md neu. SIM.md unverändert (Teufel nicht in der Kampagne). Nicht auf Gerät getestet.
 - Offen: Gerätetest, Teufel-Balance (Schätzung des Assistenten, nicht simuliert), weitere Ideen (Murmels Gerüchte, Würfelrangliste, Buch im Regal, zweiter Schatz) nicht gebaut.
+
+## 0.32.1 (20.11.2026) – Insel begehbar, Hängematte tiefer, Hüttenwand heller, Murmels Hinweis (headless, nicht auf Gerät getestet)
+- Meldung 1 („Zwischen Kaktus und Palme kann man nicht durchgehen“): Nachgestellt per Kartenprüfung. Kaktus (6,11)/Palme (5,12) und Kaktus (12,11)/Palme (13,12) standen diagonal; optisch Luft, im Raster zu. Vom Anlegeplatz aus waren nur Hütte und Südstrand erreichbar, Westen, Norden, Osten und alle drei Truhen nicht. Fix: Kaktus 1 → (4,11), Kaktus 2 → (14,11). Neuer Test: alle begehbaren Inselfelder vom Start erreichbar (Türen gelten als passierbar); der Test schlägt mit dem alten game.json fehl. Stuhl der Hütte (8,7) → (8,8), weil er mit Bett, Tisch und Murmel eine unerreichbare Ecke bildete.
+- Meldung 2 („Matratze zu hoch“): Gedeutet als Hängematte (Liegefläche hing auf Kopfhöhe). Sprite `haengematte`: Durchhang jetzt bei Zeile 46–54 statt 31–45, Seile angepasst. Vermutung: gemeint war die Hängematte, nicht das Bett in der Hütte.
+- Meldung 3 („Hintergrund sieht komisch aus“, Screenshot Murmel in der Hütte): Nachgestellt. Die Blockhüttenwand nutzte nur Helligkeitsstufen 0–3 und erschien innen wie außen fast schwarz (Steinwände: 3–5). `genHouseWall`: Stufe +2,8 (max 6,2). Ob das genau der Eindruck war, ist nicht gesichert.
+- Meldung 4 (Amulett): Frischer Spielstand im Code geprüft (headless): 1. Sieg gibt nur Gold und Hinweis, Amulett erst beim 2. Sieg. Das Amulett nach dem ersten Spiel ließ sich nicht nachstellen. Vermutung: Spielstand mit `gnom:gewonnen` aus der alten Regel (Amulett vor 0.32.0); dann sagt Murmel „Das Amulett habt ihr“. Nicht belegt. Hinweistext nach dem 1. Sieg neu: nennt das Glücksamulett ausdrücklich, macht neugierig (Gold-Anziehung), Amulett erst nach dem 2. Sieg.
+- Offen: Dialogtitel zeigt „Gnom“ statt „Murmel“ (Screenshot 21:39); noch nicht geändert.
+- Tests 135 grün.

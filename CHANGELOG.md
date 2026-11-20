@@ -3,6 +3,11 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.32.1 (20.11.2026, headless)
+- Schatzinsel: Kakteen versetzt, alle Inselfelder erreichbar (Test neu); Stuhl der Hütte versetzt.
+- Hängematte tiefer; Blockhüttenwand heller (innen nicht mehr schwarz).
+- Murmel: Hinweistext nach dem ersten Sieg nennt das Glücksamulett und weckt Neugier.
+
 ## 0.32.0 (20.11.2026, headless)
 - Würfelspiel mit Murmel (Einsatz, drei Würfel, einen neu werfen, Best of 3); Glücksamulett erst nach dem 2. Sieg; Niederlage im 2. Spiel verwandelt Murmel in einen Teufel und die Hütte in einen Spielsalon. Insel mit Kakteen und Hängematte zwischen zwei Palmen.
 

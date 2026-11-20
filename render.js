@@ -1655,11 +1655,11 @@ function genFurn(kind, seed) {
         return col(3.2);
       }
     } else if (kind === 'haengematte') { // 0.32.0: Hängematte zwischen zwei Palmen (Sprite zweifach breit: Enden liegen an den Stämmen der Nachbarfelder)
-      const u = (px - 32) / 27, sag = 31 + 14 * (1 - u * u);
+      const u = (px - 32) / 27, sag = 46 + 8 * (1 - u * u); // 0.32.1: tiefer gehängt (Liegefläche knapp über dem Boden, vorher auf Kopfhöhe)
       const band = Math.floor((px + 40) / 3) % 2;
       if (Math.abs(u) <= 1 && py >= sag && py < sag + 4) return band ? ['blood', 4.4 - l * 0.7 + n * 0.3] : ['glow', 5.6 - l * 0.7 + n * 0.3];
       if (ell(px, py, 22, sag - 0.9, 5, 1.8) <= 1 && Math.abs(u) <= 1) return ['ice', 6.4 - l * 0.4]; // Kissen
-      if (cap(px, py, 0, 27.5, 5, 31.5, 0.9, 0.9) || cap(px, py, 64, 27.5, 59, 31.5, 0.9, 0.9)) return ['wood', 2.4]; // Seile
+      if (cap(px, py, 0, 41.5, 5, 45.5, 0.9, 0.9) || cap(px, py, 64, 41.5, 59, 45.5, 0.9, 0.9)) return ['wood', 2.4]; // Seile
     } else if (kind === 'spielautomat') { // 0.32.0: einarmiger Bandit
       if (py >= 6 && py <= 61 && ax < 15) {
         if (py < 17 && ax < 13) return (Math.abs(px - 32) < 8 && py > 9 && py < 14) ? ['glow', 7.2] : ['blood', 3.6 - l * 0.7];                 // Leuchtschild
@@ -2328,7 +2328,7 @@ function genHouseWall(seed, n = TEX) {
     shade += grain(Math.floor((u + off) / 3), y >> 1, rowSeed, 0.5) + (hash(Math.floor((u + off) * 0.7), li, seed + 5) > 0.92 ? -0.5 : 0);
     const kx = 14 + hash(li, 11, seed) * 36;
     if (f > 0.25 && f < 0.75 && Math.hypot((u - kx) / 2.6, (v - (li + 0.5) * LOG) / 1.6) < 1) shade = 0.5; // Astloch
-    t.data[y * n + x] = P('wood', Math.max(0.2, shade));
+    t.data[y * n + x] = P('wood', Math.min(6.2, Math.max(1, shade + 2.8))); // 0.32.1: heller (Stufen 0–3 wirkten im Nachtlicht schwarz, Steinwände liegen bei 3–5; innen dunkelt der Nebel zusätzlich ab)
   }
   return t;
 }

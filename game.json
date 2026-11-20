@@ -5802,7 +5802,7 @@
           "id": "m_stuhl",
           "type": "decor",
           "x": 8,
-          "y": 7,
+          "y": 8,
           "look": "stuhl",
           "scale": 0.55
         },
@@ -5849,7 +5849,7 @@
         {
           "id": "kaktus_i1",
           "type": "decor",
-          "x": 6,
+          "x": 4,
           "y": 11,
           "look": "kaktus",
           "scale": 0.9
@@ -5857,7 +5857,7 @@
         {
           "id": "kaktus_i2",
           "type": "decor",
-          "x": 12,
+          "x": 14,
           "y": 11,
           "look": "kaktus",
           "scale": 1.0
@@ -8155,7 +8155,7 @@
     "devilKind": "teufel",
     "devilGame": 2,
     "rules": "Jeder wirft drei Würfel. Ihr dürft einen eurer Würfel einmal neu werfen, danach wirft Murmel seinen niedrigsten neu, wenn er unter 3 liegt. Die höhere Summe gewinnt die Runde. Wer zuerst zwei Runden hat, gewinnt das Spiel.",
-    "hint": "Murmel knirscht mit den Zähnen. „Wer mich ein zweites Mal schlägt, bekommt etwas Glänzendes von mir. Aber nicht heute, hihi.“",
+    "hint": "Murmel knirscht mit den Zähnen, dann blitzen seine Augen. „Beim ersten Mal ist Anfängerglück. Aber wer mich ein ZWEITES Mal schlägt, bekommt mein Glücksamulett. Es zieht das Gold an wie der Kamin die Funken. Mehr verrate ich nicht. Hihi.“",
     "amuletLine": "Murmel wirft euch zähneknirschend das Glücksamulett zu. „Zweimal! Das ist Betrug mit Charme.“",
     "devilLine": "Murmel kichert. Das Kichern wird tiefer, die Hütte flackert in Rot und Gold, aus dem Kamin riecht es nach Schwefel, und seine Mütze wächst zu zwei Hörnern. „Das Haus gewinnt immer. Hihi.“",
     "murmelLoses": [
