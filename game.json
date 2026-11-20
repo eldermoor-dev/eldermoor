@@ -2011,7 +2011,8 @@
               "item": "leather_armor",
               "n": 1
             }
-          ]
+          ],
+          "mat": "moder"
         },
         {
           "id": "door_b",
@@ -2141,7 +2142,8 @@
                 "boost": 0
               }
             }
-          ]
+          ],
+          "mat": "moder"
         },
         {
           "id": "en21",
@@ -2304,7 +2306,8 @@
             {
               "gold": 6
             }
-          ]
+          ],
+          "mat": "moder"
         },
         {
           "id": "en_p3",
@@ -2335,7 +2338,8 @@
             {
               "gold": 6
             }
-          ]
+          ],
+          "mat": "moder"
         },
         {
           "id": "en_p4",
@@ -2374,7 +2378,8 @@
               }
             }
           ],
-          "trap": "spikes"
+          "trap": "spikes",
+          "mat": "moder"
         },
         {
           "id": "stairs_gruft",
@@ -2562,7 +2567,8 @@
               "item": "potion",
               "n": 1
             }
-          ]
+          ],
+          "mat": "stein"
         },
         {
           "id": "door_cells",
@@ -2606,7 +2612,8 @@
               "gold": 12
             }
           ],
-          "lock": 15
+          "lock": 15,
+          "mat": "stein"
         },
         {
           "id": "en_g5",
@@ -2657,7 +2664,9 @@
                 "boost": 1
               }
             }
-          ]
+          ],
+          "look": "eisen",
+          "mat": "stein"
         },
         {
           "id": "stairs_gruft_down",
@@ -2738,7 +2747,9 @@
               "n": 1
             }
           ],
-          "lootV": 2
+          "lootV": 2,
+          "look": "edel",
+          "mat": "stein"
         },
         {
           "id": "door_schatz",
@@ -2806,7 +2817,9 @@
               "n": 1
             }
           ],
-          "lootV": 3
+          "lootV": 3,
+          "look": "edel",
+          "mat": "stein"
         },
         {
           "id": "ill_g1",
@@ -2831,7 +2844,9 @@
               "item": "ration",
               "n": 1
             }
-          ]
+          ],
+          "look": "eisen",
+          "mat": "stein"
         },
         {
           "id": "sign_g_ill",
@@ -2964,7 +2979,8 @@
               "item": "gegengift",
               "n": 1
             }
-          ]
+          ],
+          "mat": "erz"
         },
         {
           "id": "en_s5",
@@ -3026,7 +3042,8 @@
             {
               "gold": 8
             }
-          ]
+          ],
+          "mat": "erz"
         },
         {
           "id": "en_s4",
@@ -3061,7 +3078,8 @@
               "n": 1
             }
           ],
-          "trap": "gas"
+          "trap": "gas",
+          "mat": "erz"
         },
         {
           "id": "door_grube",
@@ -3115,7 +3133,9 @@
               "item": "zaubertrank_m",
               "n": 1
             }
-          ]
+          ],
+          "look": "eisen",
+          "mat": "erz"
         },
         {
           "id": "gate_s1",
@@ -3243,7 +3263,9 @@
               "n": 1
             }
           ],
-          "lootV": 3
+          "lootV": 3,
+          "look": "edel",
+          "mat": "erz"
         },
         {
           "id": "ill_s1",
@@ -3269,7 +3291,9 @@
                 "boost": 1
               }
             }
-          ]
+          ],
+          "look": "eisen",
+          "mat": "erz"
         },
         {
           "id": "sign_s_ill",
@@ -3304,7 +3328,8 @@
               "item": "gegengift",
               "n": 1
             }
-          ]
+          ],
+          "mat": "erz"
         },
         {
           "id": "sign_s_ill2",
@@ -3483,7 +3508,8 @@
               "item": "potion",
               "n": 1
             }
-          ]
+          ],
+          "mat": "nebel"
         },
         {
           "id": "lever_t1",
@@ -3523,7 +3549,8 @@
               "n": 1
             }
           ],
-          "lock": 35
+          "lock": 35,
+          "mat": "nebel"
         },
         {
           "id": "door_turm",
@@ -3567,7 +3594,9 @@
                 "boost": 1
               }
             }
-          ]
+          ],
+          "look": "edel",
+          "mat": "nebel"
         },
         {
           "id": "stairs_turm_festung",
@@ -3618,7 +3647,9 @@
               "n": 1
             }
           ],
-          "lootV": 2
+          "lootV": 2,
+          "look": "edel",
+          "mat": "nebel"
         },
         {
           "id": "sign_t4",
@@ -3842,7 +3873,9 @@
             {
               "gold": 25
             }
-          ]
+          ],
+          "look": "eisen",
+          "mat": "eiche"
         },
         {
           "id": "chest_f_key",
@@ -3860,7 +3893,8 @@
             {
               "gold": 20
             }
-          ]
+          ],
+          "mat": "eiche"
         },
         {
           "id": "chest_f2",
@@ -3880,7 +3914,9 @@
               "item": "ration",
               "n": 1
             }
-          ]
+          ],
+          "look": "eisen",
+          "mat": "eiche"
         },
         {
           "id": "chest_f3",
@@ -3899,7 +3935,8 @@
               "item": "zaubertrank",
               "n": 1
             }
-          ]
+          ],
+          "mat": "eiche"
         },
         {
           "id": "trap_f1",
@@ -4172,7 +4209,9 @@
               "item": "zaubertrank_m",
               "n": 1
             }
-          ]
+          ],
+          "look": "eisen",
+          "mat": "eiche"
         },
         {
           "id": "niche_k_m",
@@ -4261,7 +4300,9 @@
               "item": "potion_m",
               "n": 1
             }
-          ]
+          ],
+          "look": "eisen",
+          "mat": "eiche"
         },
         {
           "id": "sign_k_h",
@@ -4490,7 +4531,9 @@
             {
               "gold": 30
             }
-          ]
+          ],
+          "look": "eisen",
+          "mat": "eiche"
         },
         {
           "id": "en_k_c6",
@@ -4525,7 +4568,9 @@
               "item": "zaubertrank_m",
               "n": 1
             }
-          ]
+          ],
+          "look": "edel",
+          "mat": "eiche"
         },
         {
           "id": "trap_k_c6",
@@ -4760,7 +4805,9 @@
               "n": 1
             }
           ],
-          "lootV": 2
+          "lootV": 2,
+          "look": "eisen",
+          "mat": "blut"
         },
         {
           "id": "niche_b_a",
@@ -4919,7 +4966,9 @@
               "item": "potion_m",
               "n": 1
             }
-          ]
+          ],
+          "look": "eisen",
+          "mat": "blut"
         },
         {
           "id": "sign_b_g1",
@@ -5059,7 +5108,9 @@
               "n": 1
             }
           ],
-          "lootV": 2
+          "lootV": 2,
+          "look": "edel",
+          "mat": "blut"
         },
         {
           "id": "gate_b1",
@@ -5094,7 +5145,9 @@
             {
               "gold": 40
             }
-          ]
+          ],
+          "look": "eisen",
+          "mat": "blut"
         },
         {
           "id": "en_b_m3",
@@ -5190,7 +5243,9 @@
               "item": "zaubertrank_m",
               "n": 1
             }
-          ]
+          ],
+          "look": "edel",
+          "mat": "blut"
         },
         {
           "id": "exit_b_tiefe",
@@ -5355,7 +5410,9 @@
               "item": "potion",
               "n": 1
             }
-          ]
+          ],
+          "look": "eisen",
+          "mat": "moder"
         },
         {
           "id": "en_see2",
@@ -5382,7 +5439,8 @@
               "item": "ration",
               "n": 1
             }
-          ]
+          ],
+          "mat": "moder"
         },
         {
           "id": "npc_fuhrmann",
@@ -5528,7 +5586,9 @@
               "item": "potion",
               "n": 1
             }
-          ]
+          ],
+          "look": "eisen",
+          "mat": "moder"
         },
         {
           "id": "chest_i2",
@@ -5547,7 +5607,9 @@
               "item": "gegengift",
               "n": 1
             }
-          ]
+          ],
+          "look": "eisen",
+          "mat": "moder"
         },
         {
           "id": "chest_i3",
@@ -5562,7 +5624,9 @@
               "item": "potion_m",
               "n": 1
             }
-          ]
+          ],
+          "look": "edel",
+          "mat": "moder"
         },
         {
           "id": "npc_fuhrmann_i",

@@ -286,13 +286,23 @@ function genChest(open, seed) {
   return t;
 }
 // 0.19.18 (Nutzer: Truhen „optisch ansprechender, schärfer“): neue Truhe mit gewölbtem Deckel, Eisenbändern mit Nieten, Goldschloss, Eckbeschlägen und Holzmaserung; 128 px, im Modus Scharf 2× geglättet (vorher 64 px hochskaliert)
-function genChest2(open, seed, prunk = false) { // prunk (0.20.0): Goldbeschläge, Edelsteine – Lockvogel im falschen Schatzraum
+function chestTex(tex, o) { // 0.31.9: Truhe nach Gebiet (o.mat) und Wertstufe (o.look: eisen | edel | prunk), erst bei Bedarf gezeichnet
+  const mat = o.mat || 'eiche', look = o.look === 'eisen' || o.look === 'edel' ? o.look : o.look === 'prunk' ? 'prunk' : '';
+  if (!o.mat && !look) return o.open ? tex.sprites.chestOpen : tex.sprites.chest;
+  if (!o.mat && look === 'prunk') return o.open ? tex.sprites.chestOpen : tex.sprites.chestPrunk;
+  const key = mat + ':' + look + (o.open ? ':o' : '');
+  return cachedTex(tex, 'chests', key, () => tex.sm2(genChest2(!!o.open, 61 + ((mat.length * 7 + look.length) % 9), look || false, mat)));
+}
+function genChest2(open, seed, style = false, mat = 'eiche') { // style: true/'prunk' = Gold (Lockvogel), 'eisen' = gute Truhe, 'edel' = seltene Truhe (0.31.9, Wertstufen)
+  const prunk = style === true || style === 'prunk', ed = style === 'edel', ei = style === 'eisen'; // prunk (0.20.0): Goldbeschläge, Edelsteine – Lockvogel im falschen Schatzraum
   return paintFigure(seed, ({ ell, cap, nz, px, py: py0, x, y, vn }) => {
     const py = 61.5 - (61.5 - py0) * 1.35; // 0.19.25: Truhe niedriger und breiter (Nutzer: „sieht komisch aus“), Boden bleibt unten
     const ax = Math.abs(px - 32), l = (px - 32) / 22 * 0.9, n = nz(x, y);
-    const wood = (b) => ['wood', b - l * 1.1 + (vn(px * 2.2, py * 0.35, 6) - 0.5) * 1.5 + (n - 0.5) * 0.5 - (Math.abs(((py - 36) % 6.2)) < 0.35 ? 1.1 : 0)];
-    const band = (b) => [prunk ? 'glow' : 'iron', (prunk ? b + 0.6 : b) - l * 0.9 + (n - 0.5) * 0.5];
-    const bandX = (ax > 13.2 && ax < 17.4);
+    // 0.31.9 (A): Körper je Gebiet – moder (Moor: vermoost), stein (Kultgruft), erz (Schratgruben: dunkles Eisen), nebel (Nebelturm: blassblaue Bohlen), eiche (Festung), blut (Blutgruft: dunkelrot)
+    const BODY = { moder: ['wood', 0.92], stein: ['stone', 0.95], erz: ['iron', 0.68], nebel: ['ceil', 1.12], eiche: ['wood', 1], blut: ['blood', 0.5] }[mat] || ['wood', 1];
+    const wood = (b) => (mat === 'moder' && vn(px * 0.9, py * 0.9, 9) > 0.64) ? ['moss', b * 0.85 + 0.4] : [BODY[0], b * BODY[1] - l * 1.1 + (vn(px * 2.2, py * 0.35, 6) - 0.5) * 1.5 + (n - 0.5) * 0.5 - (Math.abs(((py - 36) % 6.2)) < 0.35 ? 1.1 : 0)];
+    const band = (b) => [prunk ? 'glow' : ed ? 'ice' : ei ? 'stone' : mat === 'erz' ? 'wood' : 'iron', (prunk ? b + 0.6 : ed ? b + 0.5 : ei ? b + 1.2 : b) - l * 0.9 + (n - 0.5) * 0.5];
+    const bandX = (ax > 13.2 && ax < 17.4) || (ei && ax > 5 && ax < 8.6 && !(py >= 30.5 && py <= 43)); // Eisentruhe: zusätzliche Mittelbänder
     const lidTop = (hw) => ell(px, py, 32, 37, hw, 17); // gewölbter Deckel
     if (open) {
       const inside = ell(px, py, 32, 36.6, 19.4, 3.9) <= 1;
@@ -315,11 +325,13 @@ function genChest2(open, seed, prunk = false) { // prunk (0.20.0): Goldbeschläg
       return null;
     }
     // geschlossen: Gold-Schloss zuerst (liegt vorn)
-    if (prunk && (ell(px, py, 32, 27, 2.2, 2.2) <= 1 || ell(px, py, 22.5, 48, 1.7, 1.7) <= 1 || ell(px, py, 41.5, 48, 1.7, 1.7) <= 1)) return ['blood', 6.2 - (py - 26) * 0.02 + (ell(px, py, 31.3, 26.3, 0.8, 0.8) <= 1 ? 1.5 : 0)]; // Rubine
+    if ((prunk || ed) && (ell(px, py, 32, 27, 2.2, 2.2) <= 1 || ell(px, py, 22.5, 48, 1.7, 1.7) <= 1 || ell(px, py, 41.5, 48, 1.7, 1.7) <= 1)) return ['blood', 6.2 - (py - 26) * 0.02 + (ell(px, py, 31.3, 26.3, 0.8, 0.8) <= 1 ? 1.5 : 0)]; // Rubine
     if (ax <= 4.3 && py >= 31.6 && py <= 42.4) {
       if (ell(px, py, 32, 36.4, 1.15, 1.15) <= 1 || (ax < 0.55 && py > 36.4 && py < 39.6)) return ['ceil', 0];
       const edge = ax > 3.4 || py < 32.5 || py > 41.4;
       if (prunk) return edge ? ['glow', 4] : ['glow', 6.8 - l * 0.6 - (py - 31) * 0.08];
+      if (ed) return edge ? ['ice', 3] : ['ice', 6.4 - l * 0.6 - (py - 31) * 0.08];
+      if (ei) return edge ? ['stone', 3.4] : ['stone', 6.6 - l * 0.6 - (py - 31) * 0.08];
       return edge ? ['wood', 3.4] : ['wood', 6.6 - l * 0.6 - (py - 31) * 0.08]; // 0.19.25: Messing aus hellem Holzton statt Palette-Glühen (im Nebelturm war das Schloss eisblau)
     }
     if (py >= 36.4 && py <= 61.5 && ax <= 22) { // Korpus
@@ -334,7 +346,7 @@ function genChest2(open, seed, prunk = false) { // prunk (0.20.0): Goldbeschläg
       if (py > 34.6 && py < 37) return band(4.2); // Querband an der Fuge
       if (bandX) return (Math.round(px * 2) % 7 === 0 && py < 34) ? ['iron', 6.8] : band(3.7 + (36 - py) * 0.05);
       const rim = lidTop(22) > 0.9; // Kante
-      return rim ? wood(1.6) : ['wood', 3.1 + (36 - py) * 0.11 - l * 1.0 + (vn(px * 2.2, py * 0.35, 6) - 0.5) * 1.3 + (n - 0.5) * 0.5];
+      return rim ? wood(1.6) : (mat === 'moder' && vn(px * 0.9, py * 0.9, 9) > 0.64) ? ['moss', 2.8 + (36 - py) * 0.08] : [BODY[0], (3.1 + (36 - py) * 0.11) * BODY[1] - l * 1.0 + (vn(px * 2.2, py * 0.35, 6) - 0.5) * 1.3 + (n - 0.5) * 0.5];
     }
     return null;
   }, 128);
@@ -2139,10 +2151,11 @@ export function makeTextures(detail = 1) {
   return {
     wall: { [WALL_STONE]: stoneW, [WALL_HOUSE]: genHouseWall(37, n), [WALL_SECRET]: genSecretWall(stoneW, 301), [WALL_SWITCH]: genSwitchWall(stoneW, false), [WALL_SWITCH_ON]: genSwitchWall(stoneW, true), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
+    sm2,
     water: genWater(61, nf),
     plank: genPlanks(62, nf),
     ceil: genCeil(53, nf),
-    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), rail: genRail(441), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)), chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), fuhrmann: sm2(genFerryman(771)), boot: sm2(genBoat(772)), gnom: sm2(genGnome(773)), spinne: sm2(genSpider(774)), diener: sm2(genVampire(741, 'diener')), brut: sm2(genVampire(742, 'brut')), graefin: sm2(genVampire(743, 'graefin')), wache: sm2(genPerson(721, 'wache')), haendler2: sm2(genVendor2(751)), gefangener: sm2(genPrisoner(761)), wund: sm2(genPerson(731, 'wund')), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), rail: genRail(441), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)),  chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), fuhrmann: sm2(genFerryman(771)), boot: sm2(genBoat(772)), gnom: sm2(genGnome(773)), spinne: sm2(genSpider(774)), diener: sm2(genVampire(741, 'diener')), brut: sm2(genVampire(742, 'brut')), graefin: sm2(genVampire(743, 'graefin')), wache: sm2(genPerson(721, 'wache')), haendler2: sm2(genVendor2(751)), gefangener: sm2(genPrisoner(761)), wund: sm2(genPerson(731, 'wund')), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
@@ -2441,7 +2454,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
     else if (o.type === 'teleport') { if (o.look !== 'hidden') out.push({ x: o.x, y: o.y, tex: o.open ? tex.sprites.teleOff : tex.sprites.teleOn, scale: 1 }); }
     else if (o.type === 'boulder') out.push({ x: o.x, y: o.y, tex: tex.sprites.boulder, scale: 0.78 });
     else if (o.type === 'trap') { if (!o.disarmed) out.push({ x: o.x, y: o.y, tex: o.sprung ? tex.sprites['trapSprung_' + o.kind] || tex.sprites.trapSprung : o.spotted ? tex.sprites.trapSeen : tex.sprites.trapFaint, scale: 1 }); }
-    else if (o.type === 'chest') out.push({ x: o.x, y: o.y, tex: o.open ? tex.sprites.chestOpen : o.look === 'prunk' ? tex.sprites.chestPrunk : tex.sprites.chest, scale: CHEST_SCALE });
+    else if (o.type === 'chest') out.push({ x: o.x, y: o.y, tex: chestTex(tex, o), scale: CHEST_SCALE });
     else if (o.type === 'enemy' && !o.dead) {
       const tot = Array.isArray(o.kinds) ? Math.min(3, o.kinds.length) : 1;
       const av = alive && alive[o.id] != null ? alive[o.id] : null, kindList = Array.isArray(av) ? av : null;

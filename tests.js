@@ -354,9 +354,10 @@ export async function runTests(data, env = {}) {
     eq(st.heroes[0].hp, 30, 'LP erhalten');
     const both = (id) => v1.state.objs.some((q) => q.id === id) && st.objs.some((q) => q.id === id); // exit1 ist seit 0.16.5 ein Runenstein (rune_t1) und fällt weg
     eq(v1.state.objs.filter((q) => !st.objs.some((o) => o.id === q.id)).map((q) => q.id), ['exit1'], 'nur der alte Runenstein-Ausgang entfällt');
-    const rest = (x) => { const y = { ...x, heroes: 0, combat: 0, areas: 0, gear: 0, uid: 0, objs: x.objs.filter((o) => both(o.id)) }; return JSON.stringify(Object.keys(y).sort().map((k) => [k, y[k]])); }; // v5 ergänzt fehlende feste Objekte (Treppen, später eingebaute Gegner) und Gebiete
+    const rest = (x) => { const y = { ...x, heroes: 0, combat: 0, areas: 0, gear: 0, uid: 0, objs: x.objs.filter((o) => both(o.id)).map(({ look, mat, ...r }) => r) }; return JSON.stringify(Object.keys(y).sort().map((k) => [k, y[k]])); }; // v5 ergänzt fehlende feste Objekte (Treppen, später eingebaute Gegner) und Gebiete
     assert(st.objs.some((o) => o.id === 'stairs_down') && JSON.stringify(st.areas) === '{}', 'v5: neue Treppe ergänzt, Gebiete leer');
-    assert(st.objs.filter((o) => v1.state.objs.some((q) => q.id === o.id)).every((o) => JSON.stringify(o) === JSON.stringify(v1.state.objs.find((q) => q.id === o.id))), 'vorhandene Objekte unverändert');
+    const nolook = (o) => { const { look, mat, ...r } = o; return JSON.stringify(r); }; // 0.31.9: Truhenstufe/-material (look, mat) werden nachgezogen
+    assert(st.objs.filter((o) => v1.state.objs.some((q) => q.id === o.id)).every((o) => nolook(o) === nolook(v1.state.objs.find((q) => q.id === o.id))), 'vorhandene Objekte unverändert');
     assert(rest(st) === rest(v1.state), 'übriger Zustand (Position, Gold, Inventar, Objekte, Karte, Notizen, Zufall) unverändert');
     const obj = JSON.parse(V1_SAVE); L.deserialize(obj, data);
     assert(obj.v === 1 && !('race' in obj.state.heroes[0]), 'Eingabe wird nicht verändert');

@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.31.8 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.31.9 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1152,3 +1152,12 @@ Nutzer: „Es soll ein Türschild neben dem Eingangstor sein, darauf der Name de
 - Name (Entscheidung des Assistenten, delegiert): **Murmel**. Passt zum Gnomenstil, kurz genug fürs Schild.
 - Neues Schild `sign_i_name` (Schatzinsel, 8/9, Wand rechts neben der Haustür, Titel „MURMEL“, Holzstil); das Würfel-Schild links bleibt. Name im NPC (`npc_gnom.name`), im Dialog (`dialogs.gnom.name`) und in den Erzähltexten (Dialog, Kampfeinleitung, Gerüchtetext) von „Der Gnom“ auf „Murmel“ umgestellt. Rasse „Gnom“ (Heldenrasse) unberührt.
 - Headless-Screenshot: Schrift liegt teils über einem Holzbalken (lesbar, aber nicht ideal); 131 Tests grün. Nicht auf Gerät getestet.
+
+## 0.31.9 (20.11.2026) – Truhen: Material je Gebiet (A) und Wertstufen (B) (nicht auf Gerät getestet)
+Nutzer: „Truhen sollen unterschiedlich aussehen“ → Vorschläge A (Material je Gebiet), B (Wertstufen), C (Sondertruhen); gewählt: A und B jetzt, **C später** (Erinnerung nötig, siehe unten).
+- A, Körper je Gebiet (`mat` am Truhenobjekt): moder (Moor, Moorsee, Schatzinsel, Test: vermoost), stein (Kultgruft), erz (Schratgruben: dunkles Eisen, Holzbänder), nebel (Nebelturm: blassblaue Bohlen), eiche (Festung 1/2), blut (Blutgruft: dunkelrot).
+- B, Stufe (`look`): ohne = einfach (Eisenbänder), `eisen` = gut (breitere helle Bänder, Mittelbänder), `edel` = selten (blaue Silberbänder, rote Edelsteine, blaues Schloss). Gold (`prunk`) bleibt dem Truhenmaul (Lockvogel) vorbehalten, damit „golden = Falle“ nicht verraten wird.
+- Zuordnung der Stufen (Regel, Assistent entschieden): selten, wenn Gegenstand mit Aufwertung ≥ 2, Gold ≥ 50 oder ein benannter Einzelfund (Waffe/Rüstung/Ring/Amulett/Stab); gut, wenn Gold ≥ 30, Aufwertung 1 oder Mana-/Großtrank; Schlüsseltruhen höchstens „gut“. Ergebnis: 9 selten, 15 gut, 16 einfach (Liste in dieser Datei nicht geführt; im game.json am Feld `look`).
+- Technik: `chestTex` (render.js) zeichnet je Material/Stufe/offen erst bei Bedarf und legt es im Cache ab; `genChest2(open, seed, style, mat)`. Alte Spielstände bekommen `look`/`mat` über `syncStatic` (Truhen ziehen jetzt auch `look` und `mat` nach). Test „Migration“ ignoriert diese beiden Felder.
+- Headless-Screenshots aller Materialien; 131 Tests grün. Nicht auf Gerät getestet.
+- **Später (vom Nutzer zurückgestellt): C Sondertruhen** (falscher Schatzraum mit Merkmalen wie schiefer Deckel/Zähne am Schloss, verfluchte Truhe mit Schimmer, Rätseltruhe mit Runen). Beim Abschluss der Gerätetests erinnern, gemeinsam mit den Talent-Alternativen B–F.
