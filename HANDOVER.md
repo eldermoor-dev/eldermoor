@@ -1229,3 +1229,8 @@ Nutzerwünsche: Würfelspiel Variante B mit Murmel; Glücksamulett erst nach wie
 - Haustür der Schatzinsel (Nutzer: „vor und nach Betreten geschlossen, Würfel auf die Tür“): `autoClose`: fällt beim Verlassen des Türfelds zu (Meldung), sonst ab 3 Feldern Abstand. Würfelsymbol jetzt auf der Tür (Tür mit `sym` + `textless`), Schild `sign_i_haus` entfernt.
 - Insel (Nutzer: „komme beidseitig nicht hinter die Hütte“): Nachstellung per Karte: West-Durchgang nur 1 Feld breit (zwischen Palme 5/9 und Hüttenwand), Osten durch Kakteen 13/8 und 14/5 zweigeteilt. Hängematte samt Palmen auf Reihe 10, Kakteen an den Rand/Süden. Westen 3 Felder, Osten 3 Felder breit. Nicht auf Gerät geprüft.
 - BALANCE.md neu erzeugt (Amulettdaten). Tests 137 grün.
+
+### 0.32.1 – Nachtrag 2 (20.11.2026, 22:00; headless, nicht auf Gerät getestet)
+- Nutzer: „Hängematte in der Luft“. Ursache (Vermutung, per Render bestätigt): Billboard-Sprite hing auf Kopfhöhe und drehte sich mit der Kamera, Enden trafen die Palmenstämme nicht.
+- Fix: Hängematte hat feste Ebene (`axis [0,1]` im Decor-Push, nur für `look: haengematte`), Aufhängung/Durchhang tiefer (`sag = 53 + 6 * (1 - u*u)`, Seile bei y≈48–52). Aus Ost/West (Kantenansicht) wird sie schmal/unsichtbar – bewusst, da Ebene zwischen den Palmen.
+- Screenshot 21:57 (Würfelhaus mit Schrift „WÜRFELHA“, offene Tür) entspricht dem Stand vor dem Tür-Fix; vermutlich alte gecachte Version – bei Nutzer nachfragen, ob Titelbild 0.32.1 zeigt.

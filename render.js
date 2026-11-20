@@ -1682,11 +1682,11 @@ function genFurn(kind, seed) {
         return col(3.2);
       }
     } else if (kind === 'haengematte') { // 0.32.0: Hängematte zwischen zwei Palmen (Sprite zweifach breit: Enden liegen an den Stämmen der Nachbarfelder)
-      const u = (px - 32) / 27, sag = 46 + 8 * (1 - u * u); // 0.32.1: tiefer gehängt (Liegefläche knapp über dem Boden, vorher auf Kopfhöhe)
+      const u = (px - 32) / 27, sag = 53 + 6 * (1 - u * u); // 0.32.1: tief gehängt (Liegefläche knapp über dem Boden, vorher auf Kopfhöhe)
       const band = Math.floor((px + 40) / 3) % 2;
       if (Math.abs(u) <= 1 && py >= sag && py < sag + 4) return band ? ['blood', 4.4 - l * 0.7 + n * 0.3] : ['glow', 5.6 - l * 0.7 + n * 0.3];
       if (ell(px, py, 22, sag - 0.9, 5, 1.8) <= 1 && Math.abs(u) <= 1) return ['ice', 6.4 - l * 0.4]; // Kissen
-      if (cap(px, py, 0, 41.5, 5, 45.5, 0.9, 0.9) || cap(px, py, 64, 41.5, 59, 45.5, 0.9, 0.9)) return ['wood', 2.4]; // Seile
+      if (cap(px, py, 0, 48.5, 5, 52.5, 0.9, 0.9) || cap(px, py, 64, 48.5, 59, 52.5, 0.9, 0.9)) return ['wood', 2.4]; // Seile
     } else if (kind === 'vase') { // 0.32.1: Blumenvase (Keramik, drei Blüten)
       const body = ell(px, py, 32, 49, 9, 12) <= 1 || (py >= 30 && py < 40 && ax < 3.6 + (py - 30) * 0.2) || (py >= 28.5 && py < 31 && ax < 5.4);
       if (body) { if (py > 44 && py < 47 && ax < 10) return ['glow', 4.6 - l * 0.6]; return ['ice', 4.2 - l * 1.0 + n * 0.3]; }
@@ -2731,7 +2731,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
       }
     }
     else if (o.type === 'buried') { if (o.sensed && !o.dug) out.push({ x: o.x, y: o.y, tex: tex.sprites.mound, scale: 0.55 }); }
-    else if (o.type === 'decor') out.push({ x: o.x, y: o.y, tex: tex.sprites[o.look] || tex.sprites.boot, scale: o.scale || 0.95 }); // 0.28.0: feste Dekoration (Boot)
+    else if (o.type === 'decor') out.push({ x: o.x, y: o.y, tex: tex.sprites[o.look] || tex.sprites.boot, scale: o.scale || 0.95, axis: o.look === 'haengematte' ? [0, 1] : undefined }); // 0.32.1: Hängematte steht fest als Ebene zwischen den Palmen (Normale nord–süd) // 0.28.0: feste Dekoration (Boot)
     else if (o.type === 'lever' && !o.wall) out.push({ x: o.x, y: o.y, tex: o.used ? tex.sprites.leverDown : tex.sprites.leverUp, scale: 0.75 });
     else if (o.type === 'sign' && o.face == null) out.push({ x: o.x, y: o.y, tex: signTex(tex, o), scale: 0.7 }); // mit face: Tafel hängt an der Wand (buildDecals)
     else if (o.type === 'door' && o.open && grid) { // offene Tür: Rahmen + aufgeklapptes Blatt, nur beim Blick längs des Durchgangs (sonst stünde der Rahmen quer)

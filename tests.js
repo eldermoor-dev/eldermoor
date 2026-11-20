@@ -2179,7 +2179,7 @@ export async function runTests(data, env = {}) {
       assert(!lost.length, `unerreichbar: ${lost.join(' ')}`);
     });
     await test('Hängematte (0.32.1): hängt tief (Sprite)', () => {
-      assert(/sag = 46 \+ 8/.test(texts['render.js'] || ''), 'Hängematte nicht gesenkt');
+      assert(/sag = 53 \+ 6/.test(texts['render.js'] || ''), 'Hängematte nicht gesenkt');
     });
     await test('Glücksamulett (0.32.1): ausrüstbar im Amulett-Platz, Gold-Effekt bleibt angelegt', () => {
       const s = fresh(1); s.inv.gluecksamulett = 1;
