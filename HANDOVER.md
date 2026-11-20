@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.31.9 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.31.10 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1161,3 +1161,10 @@ Nutzer: „Truhen sollen unterschiedlich aussehen“ → Vorschläge A (Material
 - Technik: `chestTex` (render.js) zeichnet je Material/Stufe/offen erst bei Bedarf und legt es im Cache ab; `genChest2(open, seed, style, mat)`. Alte Spielstände bekommen `look`/`mat` über `syncStatic` (Truhen ziehen jetzt auch `look` und `mat` nach). Test „Migration“ ignoriert diese beiden Felder.
 - Headless-Screenshots aller Materialien; 131 Tests grün. Nicht auf Gerät getestet.
 - **Später (vom Nutzer zurückgestellt): C Sondertruhen** (falscher Schatzraum mit Merkmalen wie schiefer Deckel/Zähne am Schloss, verfluchte Truhe mit Schimmer, Rätseltruhe mit Runen). Beim Abschluss der Gerätetests erinnern, gemeinsam mit den Talent-Alternativen B–F.
+
+## 0.31.10 (20.11.2026) – Blockhütte 1×1, Insel angepasst (nicht auf Gerät getestet)
+Nutzer (Screenshot Insel): „Hauswand anders. Aus dunkelbraunen Holzbalken, Holzhütte. Größe der Hütte nur 1×1, Rest der Insel entsprechend anpassen.“
+- Wand `h` (`genHouseWall`): jetzt waagerechte dunkelbraune Rundstämme mit Fugen, Maserung, Astlöchern (vorher Fachwerk, zu hell/orange).
+- Auslegung (Annahme: „1×1“ = Innenraum, Wände zusätzlich): Hütte 3×3 Felder (x 6–8, y 4–6), Innenraum 1 Feld (7,5) mit Murmel, Tür unten (7,6), Fackel oben. `hall.low = [6,4,8,6]`. Falls die ganze Hütte nur ein Feld groß sein sollte, bitte melden.
+- Insel verkleinert (Land x 3–11 in Hüttenhöhe, Steg-Streifen x 5–9, y 8–10). Truhen jetzt (4,3), (10,3), (11,5); Fuhrmann (8,10), Boot (7,11); Ankunft (7,10) unverändert; Schilder (6,7) „WÜRFEL HAUS“ und (8,7) „MURMEL“ jetzt in Kreideschrift (`small`), da schwarz auf Dunkelbraun unleserlich.
+- Headless-Screenshots, 131 Tests grün. Nicht auf Gerät getestet.

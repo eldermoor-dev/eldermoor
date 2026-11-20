@@ -2122,14 +2122,17 @@ function genSecretWall(base, seed) {
   }
   return t;
 }
-// 0.31.7: Fachwerkwand des Häuschens (Lehmputz mit dunklem Holzrahmen und Streben)
+// 0.31.7/0.31.10: Blockhüttenwand (Nutzer: „aus dunkelbraunen Holzbalken“): waagerechte, runde Stämme mit Fugen, Maserung und vereinzelten Astlöchern
 function genHouseWall(seed, n = TEX) {
-  const t = { w: n, h: n, data: new Uint8Array(n * n) }, k = n / TEX;
+  const t = { w: n, h: n, data: new Uint8Array(n * n) }, k = n / TEX, LOG = 8; // 8 Stämme je Wand
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-    const u = x / k, v = y / k, pu = u % 32;
-    const beam = v < 5 || v >= 59 || pu < 4;
-    const brace = v >= 5 && v < 59 && pu >= 4 && Math.abs((pu - 4) - (58 - v) * (27 / 53)) < 2.1;
-    t.data[y * n + x] = beam || brace ? P('wood', 1.7 + grain(x, y >> 1, seed, 0.9) + (pu < 1.2 || v < 1.2 ? -0.6 : 0)) : P('glow', 4.3 + grain(x, y, seed + 1, 0.8) + (hash(x >> 2, y >> 2, seed + 2) > 0.9 ? -0.5 : 0));
+    const u = x / k, v = y / k, li = Math.floor(v / LOG), f = (v % LOG) / LOG;
+    const rowSeed = seed + li * 13, off = hash(li, 7, seed) * 20;
+    let shade = f < 0.1 ? 0.2 : 1.0 + 1.5 * Math.sin(Math.PI * Math.min(1, (f - 0.1) / 0.9)) * (0.85 + 0.15 * hash(li, 3, seed));
+    shade += grain(Math.floor((u + off) / 3), y >> 1, rowSeed, 0.5) + (hash(Math.floor((u + off) * 0.7), li, seed + 5) > 0.92 ? -0.5 : 0);
+    const kx = 14 + hash(li, 11, seed) * 36;
+    if (f > 0.25 && f < 0.75 && Math.hypot((u - kx) / 2.6, (v - (li + 0.5) * LOG) / 1.6) < 1) shade = 0.5; // Astloch
+    t.data[y * n + x] = P('wood', Math.max(0.2, shade));
   }
   return t;
 }

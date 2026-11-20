@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.31.10 (20.11.2026, headless)
+- Schatzinsel: dunkelbraune Blockhütte (Innenraum 1 Feld), Insel entsprechend kleiner, Schilder in Kreideschrift.
+
 ## 0.31.9 (20.11.2026, headless)
 - Truhen sehen je Gebiet verschieden aus (Material) und zeigen drei Wertstufen (einfach, gut, selten).
 
