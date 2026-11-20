@@ -4,6 +4,7 @@ Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführli
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
 ## 0.32.1 (20.11.2026, headless)
+- Hütte von außen mit rotem Schindeldach.
 - Brücke: dichteres, helleres Geländer, hellere Bohlen, Schild „BRÜCKE“ hell und größer, Ü-Punkte lesbar.
 - Moorsee-Karte zeigt die besuchte Schatzinsel als Ausschnitt im See.
 - Hängematte als echte Strecke zwischen den Palmen gezeichnet (perspektivisch pro Spalte), von jeder Seite an den Stämmen befestigt.

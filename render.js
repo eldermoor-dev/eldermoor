@@ -2517,6 +2517,7 @@ export class Raycaster {
     // Wände
     const grid = view.grid, gw = view.gw, gh = view.gh, decals = view.decals || null;
     const step = q === 'low' ? 2 : 1;
+    const viewIn = !!hall && Math.floor(px) >= hall.low[0] && Math.floor(px) <= hall.low[2] && Math.floor(py) >= hall.low[1] && Math.floor(py) <= hall.low[3]; // Blick von innen: kein Dach zeichnen
     const isLow = (mx, my) => !hall || (mx >= hall.low[0] && mx <= hall.low[2] && my >= hall.low[1] && my <= hall.low[3]);
     const drawWall = (x, hit, mapX, mapY, side, stepX, rdx, rdy, dist, hf) => {
       const lineH = Math.floor(focal / dist);
@@ -2540,6 +2541,20 @@ export class Raycaster {
         const o = y * W + x;
         buf[o] = c;
         if (step === 2) buf[o + 1] = c;
+      }
+      if (hf === 1 && hall && !viewIn && topRaw > 0) { // 0.32.1 (Nutzer: „Hütte hat kein Dach“): von außen ein Schindeldach über der Wandkante (Dachhöhe ≈ halbe Wandhöhe, Dachkante leicht vorstehend)
+        const RH = Math.max(3, Math.floor(lineH * 0.5)), rTop = Math.max(0, topRaw - RH), rows = 6, u = texX / WN;
+        for (let y = rTop; y < topRaw; y++) {
+          const v = (y - (topRaw - RH)) / RH, ri = Math.min(rows - 1, Math.floor(v * rows)), rf = v * rows - ri; // v 0 = First, 1 = Traufe
+          const stag = ((u * 8 + (ri & 1) * 0.5) % 1), join = stag < 0.06 ? 1 : 0;
+          let sh = 3.0 + (1 - v) * 1.0 + hash(Math.floor(u * 8 + (ri & 1) * 0.5), ri, 91) * 0.7; // First heller, Schindeln leicht gesprenkelt
+          if (rf > 0.82) sh -= 0.9; else if (rf < 0.12) sh += 0.5; // Schindelunterkante dunkel, Oberkante hell
+          if (join) sh -= 0.8;
+          if (y >= topRaw - Math.max(1, Math.floor(RH * 0.1))) sh = 1.0; // Traufenschatten über der Wand
+          if (y <= rTop + 1 && rTop === topRaw - RH) sh = 5.4; // First
+          const c = tbl[P('blood', Math.max(0.6, sh))], o = y * W + x;
+          buf[o] = c; if (step === 2) buf[o + 1] = c;
+        }
       }
     };
     const hits = [];
