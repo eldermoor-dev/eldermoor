@@ -2404,7 +2404,8 @@
           "y": 7,
           "text": "In den Stein geritzt: „Vorsicht. Der Boden beißt.“",
           "title": "VORSICHT",
-          "face": 0
+          "face": 0,
+          "style": "dark"
         },
         {
           "id": "npc_bram",
@@ -2686,7 +2687,8 @@
           "y": 6,
           "text": "Mit Kreide an die Wand geschrieben: „Achte auf den Boden. Die Zeichen schlafen nur.“",
           "title": "ACHTE|BODEN",
-          "face": 2
+          "face": 2,
+          "style": "dark"
         },
         {
           "id": "secret_g1",
@@ -2711,7 +2713,8 @@
           "y": 4,
           "text": "Jemand hat ein Auge in den Stein geritzt. Es blickt nach Osten, auf die Mauer am Ende des Raums.",
           "title": "AUGE",
-          "face": 0
+          "face": 0,
+          "style": "dark"
         },
         {
           "id": "chest_g_secret",
@@ -2837,7 +2840,8 @@
           "y": 1,
           "face": 0,
           "title": "NICHT|ALLES",
-          "text": "Eingeritzt, kaum lesbar: „Nicht alles hier ist so fest, wie es aussieht.“"
+          "text": "Eingeritzt, kaum lesbar: „Nicht alles hier ist so fest, wie es aussieht.“",
+          "style": "dark"
         },
         {
           "id": "deco_g1",
@@ -3166,7 +3170,8 @@
           "y": 7,
           "text": "Eine Warnung der Bergleute: „Tritt leise. Die Schrate haben den Stollen gesichert.“",
           "title": "TRITT|LEISE",
-          "face": 0
+          "face": 0,
+          "style": "dark"
         },
         {
           "id": "trap_s2",
@@ -3182,7 +3187,8 @@
           "y": 4,
           "text": "Ein eingeritzter Totenschädel und ein Wort: „Gift“.",
           "title": "GIFT",
-          "face": 3
+          "face": 3,
+          "style": "dark"
         },
         {
           "id": "gate_s2",
@@ -3212,7 +3218,8 @@
           "y": 11,
           "text": "Zwergenrunen, tief gemeißelt: „Was schwer ist, hält die Tür.“",
           "title": "LAST|HALT",
-          "face": 0
+          "face": 0,
+          "style": "dark"
         },
         {
           "id": "chest_s_plate",
@@ -3271,7 +3278,8 @@
           "y": 10,
           "face": 2,
           "title": "FELS|LÜGT",
-          "text": "Ein Bergmann hat gekritzelt: „Der Fels hier unten lügt. Manchmal ist er gar nicht da.“"
+          "text": "Ein Bergmann hat gekritzelt: „Der Fels hier unten lügt. Manchmal ist er gar nicht da.“",
+          "style": "dark"
         },
         {
           "id": "ill_s2",
@@ -3305,7 +3313,8 @@
           "y": 2,
           "face": 3,
           "title": "HOHL",
-          "text": "Jemand hat einen Pfeil in den Fels geritzt, darunter: „Klopf nicht. Geh.“"
+          "text": "Jemand hat einen Pfeil in den Fels geritzt, darunter: „Klopf nicht. Geh.“",
+          "style": "dark"
         }
       ],
       "intro": {
@@ -3635,7 +3644,8 @@
           "y": 12,
           "text": "Über dem Durchgang glimmen feine Zeichen. Jemand hat darunter geschrieben: „Nicht blind hindurch.“",
           "title": "RUNEN",
-          "face": 0
+          "face": 0,
+          "style": "dark"
         },
         {
           "id": "deco_t1",
@@ -3905,7 +3915,8 @@
           "y": 13,
           "face": 1,
           "title": "ATEM|ANHALTEN",
-          "text": "Mit Ruß an die Wand geschmiert: „Atem anhalten.“"
+          "text": "Mit Ruß an die Wand geschmiert: „Atem anhalten.“",
+          "style": "dark"
         },
         {
           "id": "en_f1",
@@ -4917,7 +4928,8 @@
           "y": 8,
           "face": 3,
           "title": "SARG|I",
-          "text": "Ein offener Sarg. Das Polster ist eingedrückt, die Form ist noch warm."
+          "text": "Ein offener Sarg. Das Polster ist eingedrückt, die Form ist noch warm.",
+          "sym": "schaedel"
         },
         {
           "id": "lever_b1",
@@ -4945,7 +4957,8 @@
           "y": 8,
           "face": 3,
           "title": "SARG|II",
-          "text": "Der Sarg ist leer. Am Fußende ragt ein Hebel aus Knochen aus dem Boden."
+          "text": "Der Sarg ist leer. Am Fußende ragt ein Hebel aus Knochen aus dem Boden.",
+          "sym": "schaedel"
         },
         {
           "id": "chest_b_mimic",
@@ -4972,7 +4985,8 @@
           "y": 8,
           "face": 3,
           "title": "SARG|III",
-          "text": "Ein Prunksarg aus dunklem Holz, zu schön für diese Gruft."
+          "text": "Ein Prunksarg aus dunklem Holz, zu schön für diese Gruft.",
+          "sym": "schaedel"
         },
         {
           "id": "niche_b_g4",
@@ -5061,7 +5075,8 @@
           "y": 33,
           "face": 3,
           "title": "KERKER",
-          "text": "Unter der Gruft liegt der Kerker. Die Gänge sind enger als die Gerüchte."
+          "text": "Unter der Gruft liegt der Kerker. Die Gänge sind enger als die Gerüchte.",
+          "sym": "schluessel"
         },
         {
           "id": "chest_b_key",
@@ -5300,7 +5315,8 @@
           "y": 8,
           "face": 0,
           "title": "BRÜCKE",
-          "text": "Die Bohlen sind nass, halten aber. Der Fluss darunter ist kälter, als er aussieht."
+          "text": "Die Bohlen sind nass, halten aber. Der Fluss darunter ist kälter, als er aussieht.",
+          "sym": "bruecke"
         },
         {
           "id": "sign_s_faehre",
@@ -5309,7 +5325,8 @@
           "y": 8,
           "face": 0,
           "title": "FÄHRE",
-          "text": "Wer zur Insel will, redet mit dem Fuhrmann am Steg. Umsonst fährt hier niemand."
+          "text": "Wer zur Insel will, redet mit dem Fuhrmann am Steg. Umsonst fährt hier niemand.",
+          "sym": "faehre"
         },
         {
           "id": "en_see1",
@@ -5382,6 +5399,60 @@
           "x": 23,
           "y": 9,
           "look": "boot"
+        },
+        {
+          "id": "rail_n11",
+          "type": "rail",
+          "x": 11,
+          "y": 8,
+          "dx": 0,
+          "dy": -0.44,
+          "ax": "x"
+        },
+        {
+          "id": "rail_s11",
+          "type": "rail",
+          "x": 11,
+          "y": 9,
+          "dx": 0,
+          "dy": 0.44,
+          "ax": "x"
+        },
+        {
+          "id": "rail_n12",
+          "type": "rail",
+          "x": 12,
+          "y": 8,
+          "dx": 0,
+          "dy": -0.44,
+          "ax": "x"
+        },
+        {
+          "id": "rail_s12",
+          "type": "rail",
+          "x": 12,
+          "y": 9,
+          "dx": 0,
+          "dy": 0.44,
+          "ax": "x"
+        },
+        {
+          "id": "rail_n13",
+          "type": "rail",
+          "x": 13,
+          "y": 8,
+          "dx": 0,
+          "dy": -0.44,
+          "ax": "x"
+        },
+        {
+          "id": "rail_s13",
+          "type": "rail",
+          "x": 13,
+          "y": 9,
+          "dx": 0,
+          "dy": 0.44,
+          "ax": "x"
         }
       ]
     },

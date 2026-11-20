@@ -1882,7 +1882,7 @@ export function validateState(state, data) {
 
 // Gleicht feste Objekte (Treppen, Tafeln, Händler, Ausgänge) und neu hinzugekommene Objekte aller bekannten Gebiete mit game.json ab.
 // So bekommen alte Spielstände Neuerungen (z. B. eine neue Treppe) ohne neue Speicherversion. Truhen, Türen und Gegner behalten ihren Zustand (nur `title` und `style` werden aus game.json nachgezogen).
-const STATIC_TYPES = new Set(['stairs', 'sign', 'merchant', 'exit', 'runestone', 'decor']);
+const STATIC_TYPES = new Set(['stairs', 'sign', 'merchant', 'exit', 'runestone', 'decor', 'rail']);
 export function syncStatic(state, data) {
   for (const h of state.heroes || []) if (h && data.classes[h.cls] && h.role !== data.classes[h.cls].name) h.role = data.classes[h.cls].name; // umbenannte Berufe (Priester → Kleriker)
   const areas = [{ id: state.levelId, objs: state.objs }, ...Object.entries(state.areas || {}).map(([id, a]) => ({ id, objs: a.objs }))];

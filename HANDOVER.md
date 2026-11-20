@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.31.5 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.31.6 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1131,3 +1131,10 @@ Nutzer (Screenshot Kultgruft-Tür): „Schriftzug Holztür weg. Andere Schrift s
 - Wandschild `sign_pfad3` („HOLZTOR“) entfernt (game.json). Der Schlüsseltext nennt weiter das Holztor am Ende des Moorpfads.
 - `genPlaque` (render.js): Schrift jetzt schwarz (`ceil` 0), eckige Pixel statt Pinselflecken, kein Schiefstand, keine Tropfen/Gerinnsel; helle Kontur (`stone` 6), damit Schwarz auf Holz/Stein lesbar bleibt. Gilt für ALLE Schriftzüge auf Wänden und Türen (Annahme: „andere Schrift“ = alle übrigen). Falls nur die Tür gemeint war, ist das ein kleiner Rückbau.
 - Headless-Screenshot geprüft (Tür Moorpfad), 131 Tests grün. Nicht auf Gerät getestet.
+
+## 0.31.6 (20.11.2026) – Schriften unterschiedlich, Symbole, Brückengeländer (nicht auf Gerät getestet)
+Nutzer: „Schriftzüge unterschiedlich. Bei Brücke z. B. mit Symbol“ und „Brücke ist noch gar keine Brücke, sondern flach“.
+- Schrift (render.js `INKS`, `INK_OF`): Farbe je Schildstil, weiter eckige Druckbuchstaben ohne Tropfen: wood/arrow schwarz, dark dunkelrot, stone/arch gemeißelt (dunkelgrau), iron/small Kreide (hell), moss dunkelgrün, banner Gold. Schilder ohne Stil bekamen den Stil bisher per Hash der ID; Warn-/Rätsel-/Fallenschilder (ID enthält trap, _ill, secret, plate) sind jetzt `style: dark` (rot). Annahme: „unterschiedlich“ = Farbe/Art je Ort; falls gemeint war, dass jedes Schild individuell aussieht, bitte melden.
+- Symbole: Objektfeld `sym` (render.js `SYMS`): bruecke (BRÜCKE), faehre (FÄHRE), schaedel (SARG I–III), schluessel (KERKER). Weitere Symbole = Eintrag in `SYMS` plus `sym` am Schild.
+- Brücke (Moorsee, x 11–13, y 8–9): neuer Objekttyp `rail` (Sprite-Ebene längs der Bahn an den Kanten, Felder `dx`,`dy`,`ax`), nicht blockierend, in `STATIC_TYPES` (alte Spielstände bekommen es). Sechs Stück: rail_n11–13 und rail_s11–13. Echte Erhöhung/Bogen gibt der Raycaster nicht her; nur Pfosten und Holme. Der Steg bei der Fähre (x 20–23) hat noch kein Geländer.
+- Headless-Screenshots (Schilder, Brücke), 131 Tests grün. Nicht auf Gerät getestet.

@@ -140,6 +140,19 @@ function genGate(seed, n = TEX) {
   return t;
 }
 // Geöffnetes Fallgitter (0.23.9, Nutzer: „soll offen zu sehen sein“): Pfosten und Querbalken, daran hochgezogen die Stäbe mit Spitzen; Durchgang frei
+// 0.31.6 (Nutzer: „Brücke ist flach“): Geländer der Brücke – Pfosten und zwei Holme, steht als Ebene längs der Bahn an der Kante (Typ 'rail')
+function genRail(seed) {
+  const t = { w: TEX, h: TEX, data: new Uint8Array(TEX * TEX).fill(255) };
+  for (let y = 0; y < TEX; y++) for (let x = 0; x < TEX; x++) {
+    const post = (x % 30) < 5 && y >= 6, topRail = y >= 8 && y <= 14, lowRail = y >= 34 && y <= 39;
+    if (!(post || topRail || lowRail)) continue;
+    const edge = (topRail && (y === 8 || y === 14)) || (lowRail && (y === 34 || y === 39)) || (post && (x % 30 === 0 || x % 30 === 4));
+    t.data[y * TEX + x] = P('wood', (edge ? 1.6 : 3.2) + hash(x >> 1, y >> 2, seed) * 0.7);
+  }
+  for (let x = 0; x < TEX; x += 30) for (let y = 6; y <= 9; y++) for (let dx = 0; dx < 5; dx++) if (x + dx < TEX) t.data[y * TEX + x + dx] = P('wood', 4.2 + hash(x + dx, y, seed + 2) * 0.5); // Pfostenkappen
+  t.noWrap = true;
+  return t;
+}
 function genGateOpen(seed) {
   const t = { w: TEX, h: TEX, data: new Uint8Array(TEX * TEX).fill(255) };
   const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
@@ -672,14 +685,27 @@ function paintPlaque(buf, N, title, kind, styleName, seed) {
 }
 // 0.16.17 (Nutzer: „Undeutlich, besser wieder nur Schriftzug, Schilder unnötig“): nur Schrift direkt auf Wand/Tür, ohne Tafel.
 // Helle Buchstaben mit dunkler Kontur, damit sie auf Holz und Stein lesbar bleiben.
-function genPlaque(title, kind, styleName, seed, clipY = PLQ) { // clipY (0.22.1): nichts unterhalb zeichnen (Türsturz: Schrift läuft nicht ins Leere)
+// 0.31.6 (Nutzer: „Schriftzüge unterschiedlich, bei Brücke z. B. mit Symbol“): Farbe/Art der Schrift je nach Schildstil (INKS), optionales Symbol über dem Text (o.sym)
+const INKS = { // fill: [Material, Stufe], edge: [Material, Stufe] (Kontur)
+  kohle: { fill: ['ceil', 0], edge: ['stone', 6] }, rot: { fill: ['blood', 3.2], edge: ['stone', 6.5] }, kreide: { fill: ['stone', 7], edge: ['ceil', 0] },
+  gold: { fill: ['glow', 6.2], edge: ['ceil', 0] }, meissel: { fill: ['stone', 1.2], edge: ['stone', 6] }, moos: { fill: ['moss', 1.2], edge: ['stone', 6.5] }
+};
+const INK_OF = { wood: 'kohle', dark: 'rot', stone: 'meissel', iron: 'kreide', moss: 'moos', arrow: 'kohle', arch: 'meissel', banner: 'gold', small: 'kreide' };
+const SYMS = {
+  bruecke: ['11111111111', '11100000111', '11000000011', '10000000001', '10000000001', '01010101010'],
+  faehre: ['00000100000', '00001110000', '00011111000', '00111111100', '00000100000', '11111111111', '01111111110', '00111111100'],
+  schaedel: ['011111110', '111111111', '110111011', '110111011', '011111110', '001111100', '001010100'],
+  schluessel: ['0111000000', '1000100000', '1000100000', '0111011111', '0000010101', '0000010101']
+};
+function genPlaque(title, kind, styleName, seed, clipY = PLQ, sym = null) { // clipY (0.22.1): nichts unterhalb zeichnen (Türsturz: Schrift läuft nicht ins Leere)
   const N = PLQ, buf = new Uint8Array(N * N).fill(255);
   const lines = String(title || '').toUpperCase().split('|').slice(0, 2).filter(Boolean);
   const maxC = Math.max(1, ...lines.map((l) => [...l].slice(0, 8).length)), cw = 6;
   // 0.23.4 (Nutzer: aus der Nähe zu groß, unlesbar): Textblock höchstens ca. die halbe Wandbreite (vorher bis 75 %); Stil (Blutschmiere) bleibt
   const s = kind === 'door' ? Math.max(1.5, Math.min(2, 80 / (cw * maxC))) : Math.max(1.7, Math.min(2.3, 100 / (cw * maxC))); // Türsturz (0.23.6): Schrift liegt innerhalb des Türschilds
   const lh = Math.round(9 * s), th = Math.round(lines.length * lh - 2 * s);
-  const ty0 = kind === 'door' ? 14 : Math.round(N / 2 - th / 2);
+  const SG = sym && SYMS[sym] ? SYMS[sym] : null, ss = s * 1.3, symH = SG ? Math.round(SG.length * ss + 5 * s) : 0;
+  const ty0 = kind === 'door' ? 14 + symH : Math.round(N / 2 - th / 2 + symH / 2);
   // 0.19.11 (Nutzer: „gruseliger, nicht aus Druckschrift“): von Hand geschmiert – jeder Buchstabe leicht schief und versetzt, Striche aus runden Pinselflecken mit schwankender Dicke,
   // dicke Tropfen mit Kuppe, dunkle Gerinnsel und feuchte Lichter. Gleiche Lesbarkeit (gleiche Buchstabenraster), aber keine Blockschrift mehr.
   const mask = new Uint8Array(N * N);
@@ -687,6 +713,10 @@ function genPlaque(title, kind, styleName, seed, clipY = PLQ) { // clipY (0.22.1
     const x0 = Math.floor(cx - rad - 1), x1 = Math.ceil(cx + rad + 1), y0 = Math.floor(cy - rad - 1), y1 = Math.ceil(cy + rad + 1);
     for (let Y = y0; Y <= y1; Y++) for (let X = x0; X <= x1; X++) if (X >= 0 && Y >= 0 && X < N && Y < N && Math.abs(X + 0.5 - cx) <= rad && Math.abs(Y + 0.5 - cy) <= rad) mask[Y * N + X] = 1; // 0.31.5: eckige Druckbuchstaben
   };
+  if (SG) { // Symbol mittig über dem Text
+    const sx0 = Math.round(N / 2 - SG[0].length * ss / 2), sy0 = ty0 - symH + (kind === 'door' ? 0 : 0);
+    SG.forEach((row, r) => [...row].forEach((v, c) => { if (v === '1') stamp(sx0 + (c + 0.5) * ss, sy0 + (r + 0.5) * ss, ss * 0.52); }));
+  }
   lines.forEach((ln, li) => {
     const chars = [...ln].slice(0, 8), w = chars.length * cw * s - s, lx = Math.round(N / 2 - w / 2), ly = ty0 + li * lh;
     chars.forEach((ch, ci) => {
@@ -716,16 +746,17 @@ function genPlaque(title, kind, styleName, seed, clipY = PLQ) { // clipY (0.22.1
   }
   for (let i = 0; i < N * N; i++) if (drip[i]) mask[i] = 1;
   if (clipY < N) for (let i = clipY * N; i < N * N; i++) { mask[i] = 0; drip[i] = 0; }
-  const ol = 1; // dunkle Kontur: hebt die rote Schrift von grauem Stein ab
+  const ink = INKS[INK_OF[styleName]] || INKS.kohle;
+  const ol = 1; // Kontur: hebt die rote Schrift von grauem Stein ab
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     if (mask[y * N + x]) continue;
     let near = false;
     for (let dy = -ol; dy <= ol && !near; dy++) for (let dx = -ol; dx <= ol; dx++) { const X = x + dx, Y = y + dy; if (X >= 0 && Y >= 0 && X < N && Y < N && mask[Y * N + X]) { near = true; break; } }
-    if (near) buf[y * N + x] = P('stone', 6); // helle Kontur, damit Schwarz auf Holz und Stein lesbar bleibt
+    if (near) buf[y * N + x] = P(ink.edge[0], ink.edge[1]); // Kontur, damit die Schrift auf Holz und Stein lesbar bleibt
   }
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     if (!mask[y * N + x]) continue;
-    buf[y * N + x] = P('ceil', 0); // schwarz
+    buf[y * N + x] = P(ink.fill[0], ink.fill[1]);
   }
   return { w: N, h: N, data: buf, noWrap: true };
 }
@@ -836,9 +867,9 @@ export function buildDecals(lvl, objs, tex) {
     }
     if (o.type === 'sign' && o.face != null && o.title) {
       const wx = o.x + DX[o.face], wy = o.y + DY[o.face];
-      if (wallAt(wx, wy)) out.set((wy * w + wx) * 4 + (o.face + 2) % 4, cachedTex(tex, 'plaques', 'w:' + styleFor(o) + o.title, () => genPlaque(o.title, 'wall', styleFor(o), 131)));
+      if (wallAt(wx, wy)) out.set((wy * w + wx) * 4 + (o.face + 2) % 4, cachedTex(tex, 'plaques', 'w:' + styleFor(o) + (o.sym || '') + o.title, () => genPlaque(o.title, 'wall', styleFor(o), 131, PLQ, o.sym)));
     } else if (o.type === 'door' && !o.open && o.title) {
-      const t = cachedTex(tex, 'plaques', 'd:' + styleFor(o) + o.title, () => genPlaque(o.title, 'door', styleFor(o), 133));
+      const t = cachedTex(tex, 'plaques', 'd:' + styleFor(o) + (o.sym || '') + o.title, () => genPlaque(o.title, 'door', styleFor(o), 133, PLQ, o.sym));
       const ns = wallAt(o.x - 1, o.y) && wallAt(o.x + 1, o.y); // Durchgang Nord–Süd
       for (const f of ns ? [0, 2] : [1, 3]) out.set((o.y * w + o.x) * 4 + f, t);
     }
@@ -2100,7 +2131,7 @@ export function makeTextures(detail = 1) {
     water: genWater(61, nf),
     plank: genPlanks(62, nf),
     ceil: genCeil(53, nf),
-    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)), chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), fuhrmann: sm2(genFerryman(771)), boot: sm2(genBoat(772)), gnom: sm2(genGnome(773)), spinne: sm2(genSpider(774)), diener: sm2(genVampire(741, 'diener')), brut: sm2(genVampire(742, 'brut')), graefin: sm2(genVampire(743, 'graefin')), wache: sm2(genPerson(721, 'wache')), haendler2: sm2(genVendor2(751)), gefangener: sm2(genPrisoner(761)), wund: sm2(genPerson(731, 'wund')), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), rail: genRail(441), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)), chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), fuhrmann: sm2(genFerryman(771)), boot: sm2(genBoat(772)), gnom: sm2(genGnome(773)), spinne: sm2(genSpider(774)), diener: sm2(genVampire(741, 'diener')), brut: sm2(genVampire(742, 'brut')), graefin: sm2(genVampire(743, 'graefin')), wache: sm2(genPerson(721, 'wache')), haendler2: sm2(genVendor2(751)), gefangener: sm2(genPrisoner(761)), wund: sm2(genPerson(731, 'wund')), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
@@ -2404,6 +2435,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
       const ns = wl(o.x - 1, o.y) && wl(o.x + 1, o.y), ew = wl(o.x, o.y - 1) && wl(o.x, o.y + 1);
       if (ns || ew) out.push({ x: o.x, y: o.y, tex: tex.sprites.gateOpen, scale: 1, axis: ns ? [0, 1] : [1, 0] });
     }
+    else if (o.type === 'rail') out.push({ x: o.x + (o.dx || 0), y: o.y + (o.dy || 0), tex: tex.sprites.rail, scale: 0.55, axis: o.ax === 'y' ? [0, 1] : [1, 0] }); // Brückengeländer
     else if (o.type === 'runestone') out.push({ x: o.x, y: o.y, tex: tex.sprites.runeStone, scale: 0.9 });
     else if (o.type === 'merchant') out.push({ x: o.x, y: o.y, tex: tex.sprites[o.look] || tex.sprites.merchant, scale: o.look ? 0.95 : 0.8 });
     else if (o.type === 'npc' && !o.gone) out.push({ x: o.x, y: o.y, tex: tex.sprites[o.look] || tex.sprites.merchant, scale: o.look === 'kultist' || o.look === 'guard' ? 0.95 : 0.85 }); // 0.25.0: Begegnungspersonen (look = Spritename)
