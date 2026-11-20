@@ -581,6 +581,34 @@ export async function runTests(data, env = {}) {
     assert(si.objects.some((o) => o.id === 'door_i_haus') && si.objects.some((o) => o.id === 'npc_gnom'), 'Haus mit Gnom');
   });
 
+  await test('Ausrüstungsvergleich (0.30.0): gearCompare, Übersicht, Fluch bleibt bis zum Tragen verborgen', () => {
+    const s = fresh(); s.flags = s.flags || {};
+    const h = s.heroes[0];
+    const weapons = Object.entries(data.items).filter(([id, it]) => it.kind === 'equip' && it.slot === 'weapon' && !it.curse && (!it.classes || it.classes.includes(h.cls)));
+    assert(weapons.length >= 2, 'zwei Waffen für den ersten Helden');
+    weapons.sort((a, b) => (a[1].atk || 0) - (b[1].atk || 0));
+    const [lowId, low] = weapons[0], [hiId, hi] = weapons[weapons.length - 1];
+    assert((hi.atk || 0) > (low.atk || 0), 'Waffen unterscheiden sich');
+    h.equip = h.equip || {}; h.equip.weapon = lowId;
+    const c = L.gearCompare(s, data, h, hiId);
+    assert(c && c.better && c.delta.atk === (hi.atk || 0) - (low.atk || 0), 'bessere Waffe erkannt');
+    h.equip.weapon = hiId;
+    const c2 = L.gearCompare(s, data, h, lowId); assert(c2 && c2.worse, 'schlechtere Waffe erkannt');
+    h.equip.weapon = null;
+    const c3 = L.gearCompare(s, data, h, hiId); assert(c3.cur === null && c3.delta.atk === (hi.atk || 0), 'leerer Platz: voller Wert');
+    assert(L.gearCompare(s, data, h, 'gibt_es_nicht') === null, 'unbekannter Gegenstand → null');
+    const ov = L.wornOverview(s, data); assert(ov.length === s.heroes.length && 'ring' in ov[0].slots && 'amulet' in ov[0].slots, 'Übersicht mit allen Plätzen');
+    h.equip.weapon = hiId; assert(L.wornOverview(s, data)[0].slots.weapon === hiId, 'Träger sichtbar');
+    // Fluch: unerkannt zählt nicht, erkannt zählt
+    const cu = Object.entries(data.items).find(([id, it]) => it.curse && it.kind === 'equip' && L.canEquip(data, h, id, s));
+    if (cu) {
+      const [cid, cit] = cu; h.equip[cit.slot] = null; delete s.flags['id:' + cid];
+      const hid = L.gearCompare(s, data, h, cid), shown = (cit.atk || 0) + (cit.def || 0) + (cit.init || 0);
+      if (L.partySkill(s, data, 'secret') < L.CURSE_SENSE) assert(hid.total === shown, 'unerkannter Fluch fließt nicht ein');
+      s.flags['id:' + cid] = true;
+      const kn = L.gearCompare(s, data, h, cid); assert(kn.total === shown + Object.entries(cit.curse).filter(([k]) => k !== 'fx').reduce((a, [, v]) => a + v, 0), 'erkannter Fluch zählt');
+    }
+  });
   await test('Ringe und Amulette (0.29.0): je Held ein Ring + ein Amulett, Werte, Fluch versteckt/erkannt, selten (nur Boss/Rätsel), Gefangener, Händler Valdis', () => {
     const s = fresh(41); const h0 = s.heroes[0];
     for (const id of ['ring_siegel', 'ring_last', 'amulett_moor']) s.inv[id] = 1;

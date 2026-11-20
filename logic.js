@@ -971,6 +971,21 @@ export function canEquip(data, h, itemId, state) {
   const it = itemDef(state, data, itemId);
   return !!it && it.kind === 'equip' && SLOTS.includes(it.slot) && (!it.classes || it.classes.includes(h.cls));
 }
+// 0.30.0: Vergleich „Was brächte dieser Gegenstand diesem Helden?“ gegenüber dem aktuell getragenen Stück im selben Platz.
+// Ein unerkannter Fluch fließt NICHT ein (sonst würde er verraten); erkannte Flüche zählen mit ihrem Malus.
+export function gearCompare(state, data, h, itemId) {
+  const it = itemDef(state, data, itemId);
+  if (!it || it.kind !== 'equip' || !canEquip(data, h, itemId, state)) return null;
+  const curId = h.equip && h.equip[it.slot] || null, cur = curId ? itemDef(state, data, curId) : null;
+  const val = (x, id, k) => !x ? 0 : (x[k] || 0) + (x.curse && curseKnown(state, data, id) ? (x.curse[k] || 0) : 0);
+  const d = {}; let total = 0;
+  for (const k of ['atk', 'def', 'init']) { d[k] = val(it, itemId, k) - val(cur, curId, k); total += d[k]; }
+  return { slot: it.slot, cur: curId, delta: d, total, better: total > 0, worse: total < 0 };
+}
+// Wer trägt gerade welchen Gegenstand? [{hero, idx, slots:{weapon:id|null,...}}]
+export function wornOverview(state, data) {
+  return state.heroes.map((h, idx) => ({ hero: h, idx, slots: Object.fromEntries(SLOTS.map((s) => [s, h.equip && h.equip[s] || null])) }));
+}
 export function equipItem(state, data, itemId, heroIdx) {
   if (state.combat) return { error: 'in-combat' };
   const h = state.heroes[heroIdx];

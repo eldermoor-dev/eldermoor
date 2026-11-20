@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.24.3 (18.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.30.0 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1079,3 +1079,12 @@ Nutzer: Ringe/Amulette gibt es von Anfang an, extrem selten (nur nach schweren R
 - **Händler Valdis** (`merchant_valdis`, 7/24, Vorhalle der Blutgruft, Shop `blutgruft`): Stahlschwert (+4), Runenstab (+4), Schuppenpanzer (+3), Plattenpanzer (+4), große Tränke; Hedda hat höchstens +2. Bild `genVendor2` (kahl, Augenklappe, Narbe, Eisenschultern, Zweihänder). Händler können jetzt `look` haben (Standard weiter Hedda-Bild).
 - Tests 129 grün (neu: Ringe/Amulette, Fluch, Seltenheit, Gefangener (alle vier Wünsche), Valdis, Speichern). BALANCE.md neu. Simulation nutzt Ringe nicht (Boss Gräfin weiter ca. 61 %). Nicht auf Gerät getestet.
 - Offen: Gerätetest, Gefühl für Stärke der Ringe, ob ein Fluch fester wirken soll.
+
+## 0.30.0 (20.11.2026) – Ausrüstungsübersicht „Wer trägt was“ (nicht auf Gerät getestet)
+Nutzer: „Es wäre auch noch gut, wenn bei dem Spiel man sehen könnte, wer was trägt oder was welches schon verbessern würde.“ (Deutung von mir: Übersicht der getragenen Stücke + Vergleich je Held; nicht vom Nutzer bestätigt.)
+- **logic.js:** `gearCompare(state,data,h,itemId)` → {slot, cur, delta{atk,def,init}, total, better, worse} oder null (nicht tragbar). Unerkannte Flüche fließen NICHT ein (kein Verrat), erkannte zählen mit Malus. `wornOverview(state,data)` → je Held die Plätze (weapon/armor/ring/amulet).
+- **main.js:** `gearDelta` nutzt gearCompare (▲ besser / ▼ schlechter, „trägt X“ oder „Platz frei“ im Heldenknopf beim Ausrüsten). Inventarzeilen von Ausrüstung zeigen „▲ Besser für: Name (Werte)“ bzw. „Verbessert niemanden“ (`betterFor`). Neues Fenster `openGearOverview` (Knopf „Ausrüstung“ im Inventar, „Wer trägt was?“ bei den Charakteren): je Held alle Plätze mit Werten, darunter Ausrüstung im Inventar mit „Besser für“.
+- „Besser“ = Summe aus Angriff+Verteidigung+Initiative steigt. Effekte (fx, Sets) fließen nicht in den Vergleich ein (Entscheidung: einfach und nachvollziehbar; Effekte stehen weiter in der Beschreibung).
+- Keine neue Datei, kein Speicherstand-Wechsel, keine Wertänderung (BALANCE/SIM unverändert). Tests 130 grün (neu: Ausrüstungsvergleich).
+- Entscheidung Nutzer (20.11.2026): Vergleich zählt nur Werte (Angriff/Verteidigung/Initiative), Effekte und Set-Boni NICHT. Deutung des Wunsches vom Nutzer nicht ausdrücklich bestätigt, nicht widersprochen.
+- Offen: Gerätetest (Layout auf dem S25, Lesbarkeit der Zeilen).

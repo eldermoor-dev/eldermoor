@@ -4,13 +4,13 @@ import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
   buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, pushError, formatErrorLog, itemDef, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
-  activeSets, coveredBy, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogChoose,
+  activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogChoose,
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.29.0';
+const VERSION = '0.30.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -1076,9 +1076,26 @@ function qTag(id, it) {
 }
 // Änderung der Werte gegenüber der aktuell getragenen Ausrüstung im selben Platz, z. B. „ · Angriff +1“
 function gearDelta(h, id) {
-  const g = S.game, it = itemDef(g, S.data, id), cur = h.equip && h.equip[it.slot] ? itemDef(g, S.data, h.equip[it.slot]) : null;
-  const d = [['atk', 'Angriff'], ['def', 'Verteidigung'], ['init', 'Init.']].map(([k, n]) => [(it[k] || 0) - (cur ? (cur[k] || 0) : 0), n]).filter(([v]) => v !== 0);
-  return d.length ? ' · ' + d.map(([v, n]) => `${n} ${v > 0 ? '+' : '−'}${Math.abs(v)}`).join(', ') : ' · gleich';
+  const c = gearCompare(S.game, S.data, h, id);
+  if (!c) return '';
+  const d = [['atk', 'Angriff'], ['def', 'Verteidigung'], ['init', 'Init.']].filter(([k]) => c.delta[k] !== 0).map(([k, n]) => `${n} ${c.delta[k] > 0 ? '+' : '−'}${Math.abs(c.delta[k])}`);
+  return (d.length ? ' · ' + d.join(', ') : ' · gleich') + (c.better ? ' ▲' : c.worse ? ' ▼' : '');
+}
+// 0.30.0: Zeile „Besser für: …“ unter einem Ausrüstungsstück im Inventar; nur Helden, bei denen die Summe der Werte steigt
+function betterFor(id) {
+  const g = S.game, it = itemDef(g, S.data, id);
+  if (!it || it.kind !== 'equip') return '';
+  const ok = g.heroes.map((h) => ({ h, c: gearCompare(g, S.data, h, id) })).filter((x) => x.c && x.c.better);
+  const who = ok.map((x) => `${esc(x.h.name)}${esc(gearDelta(x.h, id).replace(/ ▲$/, ''))}`).join(' · ');
+  return `<div style="font-size:.8em;color:#6fdc8c">${ok.length ? '▲ Besser für: ' + who : '<span class="muted">Verbessert niemanden</span>'}</div>`;
+}
+// 0.30.0: Übersicht „Wer trägt was“ (Helden × Plätze)
+function openGearOverview() {
+  const g = S.game, d = S.data, slots = Object.keys(d.slots);
+  const rows = wornOverview(g, d).map(({ hero: h, slots: sl }) => `<div class="row nw"><div><b>${esc(h.name)}</b> <span class="muted">(${esc(h.role)})</span>${slots.map((s) => { const id = sl[s], it = id && itemDef(g, d, id); return `<div style="font-size:.85em"><span class="muted">${esc(d.slots[s])}:</span> ${it ? qTag(id, it) + `<span class="muted"> · ${[['atk', 'Ang'], ['def', 'Verteid'], ['init', 'Init']].filter(([k]) => it[k]).map(([k, n]) => `${n} ${it[k] > 0 ? '+' : '−'}${Math.abs(it[k])}`).join(', ') || 'keine Werte'}</span>` : '<span class="muted">–</span>'}</div>`; }).join('')}</div></div>`).join('');
+  const spare = stackedInv(g, d, (id) => itemDef(g, d, id).kind === 'equip');
+  const rest = spare.length ? `<h3>Im Inventar</h3>` + spare.map((gr) => { const it = itemDef(g, d, gr.id); return `<div class="row nw"><div><b>${qTag(gr.id, it)}</b> × ${gr.n}${betterFor(gr.id)}</div></div>`; }).join('') : '<p class="muted">Keine Ausrüstung im Inventar.</p>';
+  openModal(`<h2>Ausrüstung</h2>${rows}${rest}<div class="acts"><button class="mb" data-m="char">Charaktere</button><button class="mb" data-m="inv">Inventar</button>${closeBtn}</div>`, 'gear');
 }
 // 0.22.2 (Nutzer: „Stapeln“): gleiche erzeugte Stücke (gleicher Name, Qualität, Werte) als eine Zeile „× n“; Knöpfe wirken auf das erste Stück.
 function stackedInv(g, d, filter = () => true) {
@@ -1101,11 +1118,11 @@ function openInventory() {
   html += items.length ? items.map(([id, n, nw]) => {
     const it = itemDef(g, d, id);
     const use = it.kind === 'consumable' && (it.heal || it.mana) && !g.combat ? `<button class="mb" data-m="use:${id}">Benutzen</button>` : it.kind === 'supply' && !g.combat ? '<button class="mb" data-m="rest">Rasten</button>' : it.kind === 'equip' && !g.combat ? `<button class="mb" data-m="eqsel:${id}">Ausrüsten</button>` : '';
-    return `<div class="row nw${S.invEquip === id ? ' sel' : ''}"><div><b>${itemIcon(id, it)}${qTag(id, it)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}${nw ? ' <span class="newtag">● neu</span>' : ''}<div class="muted">${esc(it.desc)}</div>${isCursed(it) && curseKnown(g, d, id) ? `<div style="font-size:.8em;color:#e86060">⚠ Verflucht: ${esc(curseText(it))}</div>` : ''}</div>${use}</div>`;
+    return `<div class="row nw${S.invEquip === id ? ' sel' : ''}"><div><b>${itemIcon(id, it)}${qTag(id, it)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}${nw ? ' <span class="newtag">● neu</span>' : ''}<div class="muted">${esc(it.desc)}</div>${it.kind === 'equip' ? betterFor(id) : ''}${isCursed(it) && curseKnown(g, d, id) ? `<div style="font-size:.8em;color:#e86060">⚠ Verflucht: ${esc(curseText(it))}</div>` : ''}</div>${use}</div>`;
   }).join('') : '<p class="muted">Nichts dabei.</p>';
   if (S.invEquip && itemDef(g, d, S.invEquip) && (g.inv[S.invEquip] || 0) > 0) {
     html += `<h3>${qTag(S.invEquip, itemDef(g, d, S.invEquip))} an wen?</h3><div class="acts">` + g.heroes.map((h, i) =>
-      `<button class="mb" data-m="eq:${i}" ${canEquip(d, h, S.invEquip, g) ? '' : 'disabled'}>${esc(h.name)} (${esc(h.role)})${canEquip(d, h, S.invEquip, g) ? esc(gearDelta(h, S.invEquip)) : ''}</button>`).join('') + '</div>';
+      `<button class="mb" data-m="eq:${i}" ${canEquip(d, h, S.invEquip, g) ? '' : 'disabled'}>${esc(h.name)} (${esc(h.role)})${canEquip(d, h, S.invEquip, g) ? esc(gearDelta(h, S.invEquip)) + (h.equip && h.equip[itemDef(g, d, S.invEquip).slot] ? ' · trägt ' + esc(itemDef(g, d, h.equip[itemDef(g, d, S.invEquip).slot]).name) : ' · Platz frei') : ''}</button>`).join('') + '</div>';
   }
   if (S.invUse) {
     html += `<h3>${esc(itemDef(g, d, S.invUse).name)} an wem anwenden?</h3><div class="acts">` + g.heroes.map((h, i) =>
@@ -1113,7 +1130,7 @@ function openInventory() {
   }
   if (g.combat) html += '<p class="muted">Im Kampf: Gegenstände über den Knopf „Gegenstand“ benutzen.</p>';
   else if (items.some(([id]) => sellPrice(g, d, id) != null)) html += '<p class="muted">Verkaufen kannst du bei einer Händlerin.</p>';
-  html += `<div class="acts">${closeBtn}</div>`;
+  html += `<div class="acts"><button class="mb" data-m="gear">Ausrüstung</button>${closeBtn}</div>`;
   openModal(html, 'inventory');
 }
 function xpLine(h) {
@@ -1150,7 +1167,7 @@ function openCharacter() {
     `<div class="hc"><b>${esc(h.name)}</b><div class="muted">${esc(raceName(h.race))} · ${esc(h.role)}</div><div class="muted">${h.row === 'front' ? 'Vorderreihe' : 'Hinterreihe'}</div>
     <div>Stufe ${h.level}</div><div class="muted">${xpLine(h)}</div>
     <div>LP ${h.hp}/${h.maxHp}</div><div>Angriff ${h.atk}${bonusTxt(gearBonus(S.data, h, S.game).atk + talentSum(S.data, h, 'atk'))}</div><div>Verteidigung ${h.def}${bonusTxt(gearBonus(S.data, h, S.game).def + talentSum(S.data, h, 'def'))}</div><div>Initiative ${h.init}${bonusTxt(gearBonus(S.data, h, S.game).init + talentSum(S.data, h, 'init'))}</div><div>${h.ranged ? 'Fernkampf' : 'Nahkampf'}</div>${gearLines(h, i)}${charAbility(h)}<button class="mb" data-m="tal:${i}" style="margin-top:4px">Talente${talentPoints(S.data, h) > 0 ? ` <span class="taldot">●</span> ${talentPoints(S.data, h)} frei` : ''}</button></div>`).join('') +
-    `</div><p class="muted">Ausrüstung anlegen: Inventar → Gegenstand → „Ausrüsten“. Ablegen hier.</p><div class="acts">${closeBtn}</div>`, 'character');
+    `</div><p class="muted">Ausrüstung anlegen: Inventar → Gegenstand → „Ausrüsten“. Ablegen hier.</p><div class="acts"><button class="mb" data-m="gear">Wer trägt was?</button>${closeBtn}</div>`, 'character');
 }
 
 
@@ -1563,6 +1580,8 @@ async function onModalClick(e) {
   }
   else if (m.startsWith('tal:')) { if (g.combat) toast('Nicht im Kampf.'); else openTalents(+m.slice(4)); }
   else if (m === 'char') openCharacter();
+  else if (m === 'gear') openGearOverview();
+  else if (m === 'inv') openInventory();
   else if (m.startsWith('tl:')) {
     const [, i, id] = m.split(':');
     const r = learnTalent(g, S.data, +i, id);
