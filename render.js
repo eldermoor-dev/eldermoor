@@ -2557,18 +2557,28 @@ export class Raycaster {
         buf[o] = c;
         if (step === 2) buf[o + 1] = c;
       }
-      if (hf === 1 && hall && !viewIn && topRaw > 0) { // 0.32.1 (Nutzer: „Hütte hat kein Dach“): von außen ein Schindeldach über der Wandkante (Dachhöhe ≈ halbe Wandhöhe, Dachkante leicht vorstehend)
-        const RH = Math.max(3, Math.floor(lineH * 0.5)), rTop = Math.max(0, topRaw - RH), rows = 6, u = texX / WN;
+      if (hf === 1 && hall && !viewIn && topRaw > 0) { // 0.32.1 (Nutzer: „Haus sieht aus wie ein Bungalow, soll Spitzdach haben“): Satteldach. Giebelwände (längs x) tragen ein Dreieck mit Holzverschalung, Seitenwände zeigen die Dachfläche (rote Schindeln) bis zum First
+        const lw = hall.low, full = lineH * 1.25;
+        let rh;
+        if (side === 1) { const wx = px + dist * rdx, cxm = (lw[0] + lw[2] + 1) / 2, hw = (lw[2] - lw[0] + 1) / 2; rh = Math.floor(full * Math.max(0, 1 - Math.abs(wx - cxm) / hw)); } else rh = Math.floor(full * 0.9 * Math.abs(rdx) / Math.hypot(rdx, rdy)); // Dachfläche steigt je nach Blickwinkel: von der Seite bis zum First, in Längsrichtung kaum sichtbar
+        const rTop = Math.max(0, topRaw - rh), rowH = Math.max(2, lineH * 0.1), u = texX / WN;
         for (let y = rTop; y < topRaw; y++) {
-          const v = (y - (topRaw - RH)) / RH, ri = Math.min(rows - 1, Math.floor(v * rows)), rf = v * rows - ri; // v 0 = First, 1 = Traufe
-          const stag = ((u * 8 + (ri & 1) * 0.5) % 1), join = stag < 0.06 ? 1 : 0;
-          let sh = 3.0 + (1 - v) * 1.0 + hash(Math.floor(u * 8 + (ri & 1) * 0.5), ri, 91) * 0.7; // First heller, Schindeln leicht gesprenkelt
-          if (rf > 0.82) sh -= 0.9; else if (rf < 0.12) sh += 0.5; // Schindelunterkante dunkel, Oberkante hell
-          if (join) sh -= 0.8;
-          if (y >= topRaw - Math.max(1, Math.floor(RH * 0.1))) sh = 1.0; // Traufenschatten über der Wand
-          if (y <= rTop + 1 && rTop === topRaw - RH) sh = 5.4; // First
-          const c = tbl[P('blood', Math.max(0.6, sh))], o = y * W + x;
-          buf[o] = c; if (step === 2) buf[o + 1] = c;
+          const dyE = topRaw - 1 - y, ri = Math.floor(dyE / rowH), rf = 1 - (dyE / rowH - ri), v = Math.min(1, dyE / full); // v 0 = Traufe, 1 = First
+          let c;
+          if (side === 1) { // Giebel: senkrechte Bretter, Randbrett rot entlang der Schräge
+            const edge = y <= rTop + Math.max(1, Math.floor(lineH * 0.035));
+            const plank = Math.floor(u * 10), pj = (u * 10 - plank) < 0.08;
+            c = edge ? tbl[P('blood', 2.6 + v * 1.2)] : tbl[P('wood', Math.max(0.8, (pj ? 1.6 : 4.2 + hash(plank, 0, 77) * 0.8) - v * 0.3))];
+          } else { // Dachfläche: Schindelreihen, versetzt, First hell
+            const stag = ((u * 8 + (ri & 1) * 0.5) % 1), join = stag < 0.06;
+            let sh = 3.0 + v * 1.0 + hash(Math.floor(u * 8 + (ri & 1) * 0.5), ri, 91) * 0.7;
+            if (rf > 0.82) sh -= 0.9; else if (rf < 0.12) sh += 0.5;
+            if (join) sh -= 0.8;
+            if (dyE < Math.max(1, Math.floor(lineH * 0.04))) sh = 1.0; // Traufenschatten
+            if (y <= rTop + 1) sh = 5.4; // First
+            c = tbl[P('blood', Math.max(0.6, sh))];
+          }
+          const o = y * W + x; buf[o] = c; if (step === 2) buf[o + 1] = c;
         }
       }
     };
