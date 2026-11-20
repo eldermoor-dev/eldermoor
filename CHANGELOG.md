@@ -11,6 +11,7 @@ Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ 
 - Geöffnete Türen lassen sich per ◉/Antippen wieder schließen (nicht, wenn ein Gegner oder eine Person im Türfeld steht).
 - Türen: offene Tür im Material der geschlossenen (Steintür bleibt grau, Eisentür eisern; vorher immer braunes Holz). Tippen auf die offene Tür davor schließt sie wie das Öffnen. Türtitel größer, Schriften kräftiger, wackelige Schrift ruhiger.
 - Offener Türrahmen zeigt bei `textless`-Türen (Thronsaal) keine rote Schrift mehr.
+- Festung 2: Tür „Knochengänge“ zeigt einen Totenkopf statt kaum lesbarer Schrift.
 - Inventar: Nach „Ausrüsten“ scrollt das Fenster automatisch zur Heldenauswahl.
 
 ## 0.32.1 (20.11.2026, headless)

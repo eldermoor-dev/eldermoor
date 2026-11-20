@@ -4267,6 +4267,8 @@
           "y": 5,
           "locked": false,
           "title": "KNOCHEN-|GÄNGE",
+          "sym": "schaedel",
+          "textless": true,
           "style": "dark",
           "look": "morsch",
           "font": "thin"
