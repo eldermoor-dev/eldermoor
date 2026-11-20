@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.31.0 (20.11.2026, headless)
+- Talentwahl: jedes ★-Talent hat zwei Wege (18 Alternativen), nur einer lernbar. Autospeichern alle 10 Minuten (nicht im Kampf).
+
 ## 0.16.x (Inhaltsphase, Nebelturm und Nacharbeiten)
 | Version | Änderungen | Status |
 |---|---|---|

@@ -6060,7 +6060,18 @@
                 "hp": 10,
                 "taunt": 50
               },
-              "sig": true
+              "sig": true,
+              "alt": {
+                "id": "w_wall_b",
+                "name": "Schutzwall",
+                "desc": "+2 Verteidigung, +10 LP. ★ Schutzwall: Schaden gegen die ganze Gruppe −1.",
+                "fx": {
+                  "def": 2,
+                  "hp": 10,
+                  "aura_soak": 1
+                },
+                "sig": true
+              }
             },
             {
               "id": "w_stoss",
@@ -6099,7 +6110,17 @@
                 "abil": 20,
                 "lifesteal": 10
               },
-              "sig": true
+              "sig": true,
+              "alt": {
+                "id": "w_wucht_b",
+                "name": "Raserei",
+                "desc": "Fähigkeiten +20 % Schaden. ★ Vorstoß: der erste Angriff in jedem Kampf ist kritisch.",
+                "fx": {
+                  "abil": 20,
+                  "firstcrit": 1
+                },
+                "sig": true
+              }
             },
             {
               "id": "w_hieb",
@@ -6140,7 +6161,18 @@
                 "atk": 1,
                 "aura_atk": 1
               },
-              "sig": true
+              "sig": true,
+              "alt": {
+                "id": "w_kraft_b",
+                "name": "Schlachtplan",
+                "desc": "+14 LP, +1 Angriff. ★ Schlachtplan: zu Kampfbeginn wird ein Gegner verlangsamt.",
+                "fx": {
+                  "hp": 14,
+                  "atk": 1,
+                  "opener": 1
+                },
+                "sig": true
+              }
             },
             {
               "id": "w_ruf",
@@ -6181,7 +6213,17 @@
                 "abil": 20,
                 "firstcrit": 1
               },
-              "sig": true
+              "sig": true,
+              "alt": {
+                "id": "r_gift_b",
+                "name": "Meuchler",
+                "desc": "Fähigkeiten +20 % Schaden. ★ Schwachstelle: Angriffe ignorieren die Hälfte der Rüstung.",
+                "fx": {
+                  "abil": 20,
+                  "pierce": 50
+                },
+                "sig": true
+              }
             },
             {
               "id": "r_meuch",
@@ -6221,7 +6263,18 @@
                 "hp": 6,
                 "noambush": 1
               },
-              "sig": true
+              "sig": true,
+              "alt": {
+                "id": "r_geist_b",
+                "name": "Rauchbombe",
+                "desc": "+8 % Ausweichen, +6 LP. ★ Rauchbombe: zu Kampfbeginn wird ein Gegner verlangsamt.",
+                "fx": {
+                  "dodge": 8,
+                  "hp": 6,
+                  "opener": 1
+                },
+                "sig": true
+              }
             },
             {
               "id": "r_wolke",
@@ -6267,7 +6320,20 @@
                 "lock": 25,
                 "loot_potion": 25
               },
-              "sig": true
+              "sig": true,
+              "alt": {
+                "id": "r_glueck_b",
+                "name": "Giftklinge",
+                "desc": "+20 % Gold, +1 Verteidigung. Fallen: weitere +25 %. Schlösser +25 %. ★ Giftklinge: Gift, Brand und Blutung dieses Helden +2 Schaden je Runde.",
+                "fx": {
+                  "gold": 20,
+                  "def": 1,
+                  "trap": 25,
+                  "lock": 25,
+                  "dotplus": 2
+                },
+                "sig": true
+              }
             },
             {
               "id": "r_hagel",
@@ -6308,7 +6374,17 @@
                 "heal": 6,
                 "postheal": 10
               },
-              "sig": true
+              "sig": true,
+              "alt": {
+                "id": "p_gnade_b",
+                "name": "Heilkunde",
+                "desc": "Heilzauber +6 LP. ★ Heilkunde: Heiltränke heilen 50 % mehr.",
+                "fx": {
+                  "heal": 6,
+                  "potionplus": 50
+                },
+                "sig": true
+              }
             },
             {
               "id": "p_gross",
@@ -6349,7 +6425,18 @@
                 "def": 1,
                 "aura_soak": 1
               },
-              "sig": true
+              "sig": true,
+              "alt": {
+                "id": "p_glaube_b",
+                "name": "Fürsprecher",
+                "desc": "+12 LP, +1 Verteidigung. ★ Fürsprecher: Gegner greifen zu 40 % diesen Helden an.",
+                "fx": {
+                  "hp": 12,
+                  "def": 1,
+                  "taunt": 40
+                },
+                "sig": true
+              }
             },
             {
               "id": "p_rein",
@@ -6389,7 +6476,18 @@
                 "atk": 1,
                 "burnhit": 25
               },
-              "sig": true
+              "sig": true,
+              "alt": {
+                "id": "p_eifer_b",
+                "name": "Strafgericht",
+                "desc": "Fähigkeiten +15 % Schaden, +1 Angriff. ★ Strafgericht: Lebensraub 10 %.",
+                "fx": {
+                  "abil": 15,
+                  "atk": 1,
+                  "lifesteal": 10
+                },
+                "sig": true
+              }
             },
             {
               "id": "p_feuer",
@@ -6431,7 +6529,18 @@
                 "abil": 10,
                 "fireburn": 1
               },
-              "sig": true
+              "sig": true,
+              "alt": {
+                "id": "m_krit_b",
+                "name": "Glutatem",
+                "desc": "+8 % kritische Treffer, Fähigkeiten +10 % Schaden. ★ Glutatem: Angriffe setzen zu 25 % in Brand.",
+                "fx": {
+                  "crit": 8,
+                  "abil": 10,
+                  "burnhit": 25
+                },
+                "sig": true
+              }
             },
             {
               "id": "m_sturm",
@@ -6474,7 +6583,18 @@
                 "hp": 8,
                 "frostbite": 30
               },
-              "sig": true
+              "sig": true,
+              "alt": {
+                "id": "m_panzer_b",
+                "name": "Eiswall",
+                "desc": "+1 Verteidigung, +8 LP. ★ Eiswall: Schaden gegen die ganze Gruppe −1.",
+                "fx": {
+                  "def": 1,
+                  "hp": 8,
+                  "aura_soak": 1
+                },
+                "sig": true
+              }
             },
             {
               "id": "m_nova",
@@ -6515,7 +6635,19 @@
                 "abil": 10,
                 "manashield": 30
               },
-              "sig": true
+              "sig": true,
+              "alt": {
+                "id": "m_tief_b",
+                "name": "Zeitriss",
+                "desc": "+10 Mana, +1 Angriff, Zauber +10 % Schaden. ★ Zeitriss: zu Kampfbeginn wird ein Gegner verlangsamt.",
+                "fx": {
+                  "mp": 10,
+                  "atk": 1,
+                  "abil": 10,
+                  "opener": 1
+                },
+                "sig": true
+              }
             },
             {
               "id": "m_geschoss",
@@ -6557,7 +6689,17 @@
                 "abil": 20,
                 "pierce": 50
               },
-              "sig": true
+              "sig": true,
+              "alt": {
+                "id": "g_kraft_b",
+                "name": "Erster Schuss",
+                "desc": "Fähigkeiten +20 % Schaden. ★ Erster Schuss: der erste Angriff in jedem Kampf ist kritisch.",
+                "fx": {
+                  "abil": 20,
+                  "firstcrit": 1
+                },
+                "sig": true
+              }
             },
             {
               "id": "g_durch",
@@ -6600,7 +6742,19 @@
                 "trap": 25,
                 "opener": 1
               },
-              "sig": true
+              "sig": true,
+              "alt": {
+                "id": "g_netz_b",
+                "name": "Spurenleser",
+                "desc": "+10 % Ausweichen, +1 Initiative. Fallen: weitere +25 %. ★ Spurenleser: die Gruppe wird nie überfallen.",
+                "fx": {
+                  "dodge": 10,
+                  "init": 1,
+                  "trap": 25,
+                  "noambush": 1
+                },
+                "sig": true
+              }
             },
             {
               "id": "g_regen",
@@ -6641,7 +6795,18 @@
                 "def": 1,
                 "immune_poison": 1
               },
-              "sig": true
+              "sig": true,
+              "alt": {
+                "id": "g_kraeut_b",
+                "name": "Heilkräuter",
+                "desc": "+14 LP, +1 Verteidigung. ★ Heilkräuter: nach jedem Sieg alle wachen Helden +10 % LP.",
+                "fx": {
+                  "hp": 14,
+                  "def": 1,
+                  "postheal": 10
+                },
+                "sig": true
+              }
             },
             {
               "id": "g_gift",
@@ -6684,7 +6849,18 @@
                 "atk": 1,
                 "dotplus": 2
               },
-              "sig": true
+              "sig": true,
+              "alt": {
+                "id": "a_dosis_b",
+                "name": "Säurewurf",
+                "desc": "Fähigkeiten +20 % Schaden, +1 Angriff. ★ Säurewurf: Angriffe ignorieren die Hälfte der Rüstung.",
+                "fx": {
+                  "abil": 20,
+                  "atk": 1,
+                  "pierce": 50
+                },
+                "sig": true
+              }
             },
             {
               "id": "a_gas",
@@ -6725,7 +6901,18 @@
                 "def": 1,
                 "potionplus": 50
               },
-              "sig": true
+              "sig": true,
+              "alt": {
+                "id": "a_fest_b",
+                "name": "Schutztrank",
+                "desc": "+10 LP, +1 Verteidigung. ★ Schutztrank: Schaden gegen die ganze Gruppe −1.",
+                "fx": {
+                  "hp": 10,
+                  "def": 1,
+                  "aura_soak": 1
+                },
+                "sig": true
+              }
             },
             {
               "id": "a_elix",
@@ -6768,7 +6955,20 @@
                 "trap": 20,
                 "chain": 6
               },
-              "sig": true
+              "sig": true,
+              "alt": {
+                "id": "a_kuehl_b",
+                "name": "Blendpulver",
+                "desc": "+4 % Ausweichen, +8 LP, +4 Mana. Fallen: +20 % entdecken und entschärfen. ★ Blendpulver: zu Kampfbeginn wird ein Gegner verlangsamt.",
+                "fx": {
+                  "dodge": 4,
+                  "hp": 8,
+                  "mp": 4,
+                  "trap": 20,
+                  "opener": 1
+                },
+                "sig": true
+              }
             },
             {
               "id": "a_bombe",

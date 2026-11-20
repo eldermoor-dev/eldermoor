@@ -832,7 +832,9 @@ export function knownSpells(data, h) {
 // Wirkungen (fx): hp, mp, atk, def, init (Werte), crit/dodge/resist/gold/abil/trap/lock/secret/haggle (Prozent; trap = Fallen entdecken und entschärfen, lock = Schlösser, secret = Geheimwände spüren, haggle = Preise), soak (Schaden gegen dich −x), heal (Heilzauber +x), regen (Ressource extra), backfull (Nahkampf aus der Hinterreihe ohne Abzug).
 // Zweige sind der Reihe nach zu lernen; der vierte Eintrag braucht Stufe gateLevel.
 export const talentBranches = (data, cls) => (data.talents && data.talents.classes && data.talents.classes[cls]) || [];
-export const talentNodes = (data, cls) => { const out = [], cost = (data.talents && data.talents.cost) || [1, 1, 2, 2]; talentBranches(data, cls).forEach((b, bi) => b.nodes.forEach((n, ni) => out.push({ ...n, branch: b.id, bi, ni, cost: cost[ni] || 1 }))); return out; };
+// 0.31.0: Ein ★-Talent kann eine Alternative haben (`alt` = { id, name, desc, fx }). Beide Wege stehen als eigene Einträge in der Liste (`altOf` = ID des Haupteintrags); gelernt wird einer von beiden, der Nachfolger im Zweig akzeptiert beide.
+export const talentNodes = (data, cls) => { const out = [], cost = (data.talents && data.talents.cost) || [1, 1, 2, 2]; talentBranches(data, cls).forEach((b, bi) => b.nodes.forEach((n, ni) => { const { alt, ...main } = n; out.push({ ...main, branch: b.id, bi, ni, cost: cost[ni] || 1, altId: alt ? alt.id : null }); if (alt) out.push({ ...alt, branch: b.id, bi, ni, cost: cost[ni] || 1, altOf: n.id, altId: n.id }); })); return out; };
+const nodeHeld = (h, n) => !!(h.tal && (h.tal[n.id] || (n.alt && h.tal[n.alt.id])));
 export const learnedTalents = (data, h) => (h.tal ? talentNodes(data, h.cls).filter((n) => h.tal[n.id]) : []);
 export const talentSpent = (data, h) => learnedTalents(data, h).reduce((a, n) => a + n.cost, 0);
 export const talentPoints = (data, h) => Math.max(0, h.level - 1 - talentSpent(data, h));
@@ -841,7 +843,8 @@ export function canLearnTalent(data, h, nodeId) {
   const n = talentNodes(data, h.cls).find((x) => x.id === nodeId);
   if (!n) return { ok: false, why: 'unbekannt' };
   if (h.tal && h.tal[nodeId]) return { ok: false, why: 'gelernt' };
-  if (n.ni > 0 && !(h.tal && h.tal[talentBranches(data, h.cls)[n.bi].nodes[n.ni - 1].id])) return { ok: false, why: 'vorher', node: n };
+  if (n.altId && h.tal && h.tal[n.altId]) return { ok: false, why: 'andere', node: n }; // 0.31.0: die andere Wahl dieses Platzes ist schon gelernt
+  if (n.ni > 0 && !nodeHeld(h, talentBranches(data, h.cls)[n.bi].nodes[n.ni - 1])) return { ok: false, why: 'vorher', node: n };
   const gate = data.talents.gateLevel || 8;
   if (n.ni + 1 >= (data.talents.gateNode || 4) && h.level < gate) return { ok: false, why: 'stufe', node: n, need: gate };
   if (talentPoints(data, h) < n.cost) return { ok: false, why: 'punkte', node: n };

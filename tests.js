@@ -581,6 +581,28 @@ export async function runTests(data, env = {}) {
     assert(si.objects.some((o) => o.id === 'door_i_haus') && si.objects.some((o) => o.id === 'npc_gnom'), 'Haus mit Gnom');
   });
 
+  await test('Talent-Wahl (0.31.0): jedes ★-Talent hat eine Alternative, nur eine Wahl, Nachfolger akzeptiert beide, Zurücksetzen, Speichern', () => {
+    const FX = new Set(['hp', 'mp', 'atk', 'def', 'init', 'crit', 'dodge', 'resist', 'gold', 'abil', 'soak', 'heal', 'regen', 'backfull', 'trap', 'lock', 'secret', 'haggle', 'lifesteal', 'taunt', 'aura_atk', 'firstcrit', 'noambush', 'loot_potion', 'postheal', 'aura_soak', 'burnhit', 'fireburn', 'frostbite', 'manashield', 'pierce', 'opener', 'immune_poison', 'dotplus', 'potionplus', 'chain']);
+    const ids = new Set(); let n = 0;
+    for (const c of Object.keys(data.classes)) for (const b of L.talentBranches(data, c)) b.nodes.forEach((x, i) => {
+      if (i === 2) { assert(x.alt && x.alt.name && /★/.test(x.alt.desc), `${x.id}: Alternative fehlt`); assert(!ids.has(x.alt.id) && x.alt.id !== x.id, `${x.alt.id}: doppelt`); ids.add(x.alt.id); n++; for (const k of Object.keys(x.alt.fx)) assert(FX.has(k), `${x.alt.id}: Wirkung ${k}`); assert(JSON.stringify(x.alt.fx) !== JSON.stringify(x.fx), `${x.id}: Alternative gleich`); }
+      else assert(!x.alt, `${x.id}: nur das 3. Talent hat eine Alternative`);
+    });
+    eq(n, 18, '18 Alternativen');
+    const s = fresh(); const h = s.heroes[0]; h.level = 15;
+    for (const id of ['w_haut', 'w_wille']) L.learnTalent(s, data, 0, id);
+    assert(L.learnTalent(s, data, 0, 'w_wall_b').msg, 'Alternative lernbar');
+    eq(L.learnTalent(s, data, 0, 'w_wall').error, 'andere', 'Haupteintrag danach gesperrt');
+    eq(L.learnTalent(s, data, 0, 'w_wall_b').error, 'gelernt', 'nicht doppelt');
+    assert(L.talentSum(data, h, 'aura_soak') === 1 && !L.talentSum(data, h, 'taunt'), 'Wirkung der Alternative, nicht des Haupteintrags');
+    assert(L.learnTalent(s, data, 0, 'w_stoss').msg, 'viertes Talent nach der Alternative lernbar');
+    eq(L.talentPoints(data, h), 14 - 1 - 1 - 2 - 2, 'Kosten der Alternative = Kosten des Platzes');
+    assert(L.validateState(s, data).length === 0, 'Zustand gültig: ' + L.validateState(s, data).join(';'));
+    const r = L.deserialize(L.serialize(s), data); assert(r.heroes[0].tal.w_wall_b === true, 'Wahl überlebt Speichern');
+    L.respecTalents(s, data, 0); s.gold = 99999; L.respecTalents(s, data, 0);
+    assert(L.learnTalent(s, data, 0, 'w_haut').msg && L.learnTalent(s, data, 0, 'w_wille').msg && L.learnTalent(s, data, 0, 'w_wall').msg, 'nach Zurücksetzen wieder frei wählbar');
+    eq(L.learnTalent(s, data, 0, 'w_wall_b').error, 'andere', 'jetzt die andere Seite gesperrt');
+  });
   await test('Ausrüstungsvergleich (0.30.0): gearCompare, Übersicht, Fluch bleibt bis zum Tragen verborgen', () => {
     const s = fresh(); s.flags = s.flags || {};
     const h = s.heroes[0];

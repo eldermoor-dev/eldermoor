@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.30.0 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.31.0 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1095,3 +1095,12 @@ Nutzer (Screenshot Moorpfad/Gang, 16:01): Im Inventar erscheint die Rastmeldung 
 - Änderung (main.js, `m === 'rest'`): Bei Fehler (Gegner nah/in Sicht, Kampf, nichts zu tun) bleibt das Inventar offen, Meldung nur als Hinweis (3,2 s) und im Protokoll. Erfolgreiche Rast schließt das Fenster wie bisher.
 - Headless nachgestellt (Gegner 3 Schritte entfernt, Inventar → Rasten): Inventar bleibt offen, Meldung sichtbar. Nicht auf Gerät getestet.
 - Missverständnis-Risiko: Satz „dass man auf 5 Schritten nicht in sein Inventar gehen kann“ deute ich als „auch bei 5 Schritten Abstand soll man ins Inventar kommen“. Rastregel (10 Pfadfelder, Sichtlinie) unverändert.
+
+## 0.31.0 (20.11.2026) – Talentwahl bei den ★-Talenten, Autospeichern (nicht auf Gerät getestet)
+Nutzer: „Alternativen für Talent“ → aus meiner Liste (A–F) wählte er **A** („Ok A“); „den Rest später, erinnere mich zu gegebener Zeit“. Dazu: „Autospeichern alle 10 min“.
+- **Talentwahl (A):** Das 3. Talent jedes Zweigs (★) hat jetzt zwei Wege: `nodes[2].alt = {id, name, desc, fx, sig}` in game.json (18 Alternativen, IDs `<id>_b`). Beide Wege haben dieselben Grundwerte, nur der ★-Effekt unterscheidet sich (nur bereits gebaute fx-Schlüssel, keine neue Kampflogik). Gelernt wird einer von beiden (`canLearnTalent` → `andere`), Kosten wie der Platz (2), der 4. Platz akzeptiert beide (`nodeHeld`). Zurücksetzen gibt die Wahl frei. `talentNodes` liefert beide Wege als eigene Einträge (`altOf`/`altId`). Speicherstand v6 unverändert (`hero.tal[<id>] = true`, validateState prüft über talentNodes); alte Stände behalten ihre Haupt-Talente.
+- Oberfläche: im Talentfenster zwei Knöpfe in einem gestrichelten Rahmen „Wahl: ein Weg“.
+- Balance: sim.js lernt immer den ersten lernbaren Eintrag (Haupteintrag), SIM.md bleibt gültig; die Alternativen sind nicht simuliert. BALANCE.md unverändert.
+- **Autospeichern:** alle 10 Minuten in Slot „auto“ (nicht im Kampf, nur wenn ein Spiel läuft), kurze Meldung „Automatisch gespeichert.“ (1,4 s).
+- Tests 131 grün (neu: Talent-Wahl). Headless-Screenshot des Talentfensters gesehen.
+- **Später (vom Nutzer zurückgestellt, bei passender Gelegenheit erinnern, z. B. beim Taverne-Bau bzw. nach den Gerätetests):** B weniger, stärkere Talente (kleine Zahlentalente zusammenlegen); C Haltungen im Kampf; D Lehrer in der Taverne; E Gruppentalente; F günstigeres Umlernen. Empfehlung des Assistenten: B als Nächstes, D mit der Taverne, C erst nach gemessener Balance.

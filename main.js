@@ -10,7 +10,7 @@ import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, build
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.30.1';
+const VERSION = '0.31.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -749,7 +749,10 @@ function autoFullscreen() {
   document.documentElement.requestFullscreen({ navigationUI: 'hide' }).then(() => { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); }).catch(() => {});
 }
 document.addEventListener('pointerdown', () => { if (S.game) autoFullscreen(); }, { capture: true });
-setInterval(() => { if (S.game) { updateInvBadge(); updateTalBadge(); } }, 700); // Punkte an Inventar/Charakter auch ohne neues Bild aktuell halten
+setInterval(() => { if (S.game) { updateInvBadge(); updateTalBadge(); } }, 700);
+// 0.31.0: Autospeichern alle 10 Minuten (nicht im Kampf, nicht vor Spielstart); Slot „auto“ wie bei Gebietswechseln
+const AUTOSAVE_MS = 10 * 60 * 1000;
+setInterval(async () => { try { if (S.started && S.game && !S.game.combat && await saveSlot('auto', true)) toast('Automatisch gespeichert.', 1400); } catch { /* egal */ } }, AUTOSAVE_MS); // Punkte an Inventar/Charakter auch ohne neues Bild aktuell halten
 // 0.23.1 (Nutzer: nach dem Wechsel ins Vollbild verdecken Informationen das Bild zu lange): Meldungen und Hinweise sofort ausblenden.
 function calmScreen() { S.logTs = (S.logTs || []).map(() => 0); const t = $('#toast'); if (t) t.hidden = true; const ev = $('#event'); if (ev) ev.hidden = true; renderLog(); }
 document.addEventListener('fullscreenchange', () => { if (document.fullscreenElement) S.fsLeft = false; else if (S.game) S.fsLeft = true; if (S.game) calmScreen(); });
@@ -1177,12 +1180,14 @@ function openTalents(i) {
   S.talHero = i;
   const free = talentPoints(d, h);
   const tabs = g.heroes.map((x, k) => `<button class="mb${k === i ? ' sel' : ''}" data-m="tal:${k}" style="padding:2px 8px;min-height:0">${esc(x.name)}${talentPoints(d, x) > 0 ? ' ●' : ''}</button>`).join('');
-  const why = { vorher: 'erst das Talent davor', stufe: `ab Stufe ${d.talents.gateLevel}`, punkte: 'zu wenige Punkte' };
-  const cols = talentBranches(d, h.cls).map((b) => `<div class="tcol"><b>${esc(b.name)}</b><div class="muted" style="font-size:.72em">${esc(b.desc)}</div>` + talentNodesOf(d, h, b).map((n) => {
+  const why = { vorher: 'erst das Talent davor', stufe: `ab Stufe ${d.talents.gateLevel}`, punkte: 'zu wenige Punkte', andere: 'andere Wahl gelernt' };
+  const nodeBtn = (n) => {
     const r = canLearnTalent(d, h, n.id), has = h.tal && h.tal[n.id];
     const st = has ? '✓ gelernt' : r.ok ? `Lernen (${n.cost} ${n.cost === 1 ? 'Punkt' : 'Punkte'})` : `${n.cost} P · ${why[r.why] || ''}`;
     return `<button class="tnode${has ? ' got' : r.ok ? ' can' : ''}" data-m="tl:${i}:${n.id}" ${has || !r.ok ? 'disabled' : ''}><b>${esc(n.name)}</b><span>${esc(n.desc)}</span><em>${esc(st)}</em></button>`;
-  }).join('') + '</div>').join('');
+  };
+  const cols = talentBranches(d, h.cls).map((b) => `<div class="tcol"><b>${esc(b.name)}</b><div class="muted" style="font-size:.72em">${esc(b.desc)}</div>` + talentNodesOf(d, h, b).map((n) => n.alt
+    ? `<div class="talt"><div class="muted" style="font-size:.7em">Wahl: ein Weg</div>${nodeBtn(n)}${nodeBtn({ ...n.alt, cost: n.cost })}</div>` : nodeBtn(n)).join('') + '</div>').join('');
   openModal(`<h2 style="margin:0 0 4px">Talente – ${esc(h.name)} (${esc(h.role)}, Stufe ${h.level})</h2><div class="acts" style="justify-content:flex-start;flex-wrap:wrap">${tabs}<span style="flex:1"></span><button class="mb" data-m="trs:${i}" style="padding:2px 8px;min-height:0" ${h.tal && Object.keys(h.tal).length ? '' : 'disabled'}>Zurücksetzen (${respecCost(d, h)} Gold)</button><button class="mb" data-m="char" style="padding:2px 8px;min-height:0">Zurück</button><button class="mb" data-m="close" style="padding:2px 8px;min-height:0">Schließen</button></div>
     <p style="margin:4px 0">Freie Talentpunkte: <b>${free}</b> · 1 Punkt je Stufe, Kosten 1 / 1 / 2 / 2, das 4. Talent ab Stufe ${d.talents.gateLevel}.</p><div class="tgrid">${cols}</div>`, 'talents');
 }
