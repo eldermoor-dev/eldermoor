@@ -551,9 +551,9 @@ export async function runTests(data, env = {}) {
     assert(ms && si && ms.palette && si.palette, 'Level da');
     assert(mp.objects.some((o) => o.type === 'stairs' && o.to.level === 'moorsee') && ms.objects.some((o) => o.type === 'stairs' && o.to.level === 'moorpfad'), 'Treppen Moorpfad ↔ Moorsee');
     // Bodenraster: Wasser animiert, Bohlen quer
-    const fg = buildFloorGrid(ms); assert(fg.fg[1 * fg.gw + 11] === 1, 'Fluss ist Wasser'); assert(fg.fg[8 * fg.gw + 11] !== 1 && fg.fg[8 * fg.gw + 11] > 1, 'Brücke ist Bohle');
+    const fg = buildFloorGrid(ms); assert(fg.fg[1 * fg.gw + 12] === 1, 'Fluss ist Wasser'); assert(fg.fg[8 * fg.gw + 11] !== 1 && fg.fg[8 * fg.gw + 11] > 1, 'Brücke ist Bohle');
     // Wasser sperrt mit Hinweis
-    const s = fresh(31); L.jumpToLevel(s, data, 'moorsee'); s.player = { x: 10, y: 3, dir: 1 };
+    const s = fresh(31); L.jumpToLevel(s, data, 'moorsee'); s.player = { x: 12, y: 3, dir: 1 };
     const r0 = L.tryMove(s, data, 'f'); assert(!r0.moved && /Wasser/.test(r0.msg || ''), 'Wasser sperrt: ' + JSON.stringify(r0));
     // Über die Brücke (y = 8) hinweg
     s.player = { x: 10, y: 8, dir: 1 }; for (let i = 0; i < 4; i++) assert(L.tryMove(s, data, 'f').moved, 'Brücke begehbar ' + i);
