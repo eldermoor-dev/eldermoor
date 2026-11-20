@@ -5519,8 +5519,8 @@
       "name": "Schatzinsel",
       "palette": "moor",
       "start": {
-        "x": 7,
-        "y": 10,
+        "x": 9,
+        "y": 14,
         "dir": 0
       },
       "foe": {
@@ -5529,50 +5529,48 @@
       },
       "intro": {
         "title": "Schatzinsel",
-        "text": "Eine kleine Blockhütte unter hoher Decke, drei Kisten, ein Steg. Das Wasser ringsum ist so still, dass man den eigenen Atem hört."
+        "text": "Eine Blockhütte unter hoher Decke, Sand, Palmen, drei Kisten und ein Steg. Das Wasser ringsum ist so still, dass man den eigenen Atem hört."
       },
       "map": [
-        "mmmmmmmmmmmmmmm",
-        "m~~~~~~~~~~~~~m",
-        "m~~~~.....~~~~m",
-        "m~~~.......~~~m",
-        "m~~...hTh...~~m",
-        "m~~...h.h...~~m",
-        "m~~...h.h...~~m",
-        "m~~~.......~~~m",
-        "m~~~~.....~~~~m",
-        "m~~~~.....~~~~m",
-        "m~~~~.....~~~~m",
-        "m~~~~~~~~~~~~~m",
-        "m~~~~~~~~~~~~~m",
-        "mmmmmmmmmmmmmmm"
+        "mmmmmmmmmmmmmmmmmmm",
+        "m~~~~~~~~~~~~~~~~~m",
+        "m~~~~~.......~~~~~m",
+        "m~~~...........~~~m",
+        "m~~...hhhThhh...~~m",
+        "m~~...h.....h...~~m",
+        "m~~...h.....h...~~m",
+        "m~~...h.....h...~~m",
+        "m~~...h.....h...~~m",
+        "m~~...h.....h...~~m",
+        "m~~...hhh.hhh...~~m",
+        "m~~~...........~~~m",
+        "m~~~~.........~~~~m",
+        "m~~~~~.......~~~~~m",
+        "m~~~~~~.....~~~~~~m",
+        "m~~~~~~.....~~~~~~m",
+        "m~~~~~~~~~~~~~~~~~m",
+        "m~~~~~~~~~~~~~~~~~m",
+        "mmmmmmmmmmmmmmmmmmm"
       ],
       "objects": [
         {
           "id": "door_i_haus",
           "type": "door",
-          "x": 7,
-          "y": 6,
+          "x": 9,
+          "y": 10,
           "title": ""
         },
         {
           "id": "sign_i_haus",
           "type": "sign",
-          "x": 6,
-          "y": 7,
+          "x": 8,
+          "y": 11,
           "face": 0,
           "title": "WÜRFEL|HAUS",
           "text": "Auf dem Schild sind zwei Würfel gemalt. Darunter steht: „Gerade gewinnt der Gast.“",
-          "style": "small"
-        },
-        {
-          "id": "npc_gnom",
-          "type": "npc",
-          "x": 7,
-          "y": 5,
-          "name": "Murmel",
-          "look": "gnom",
-          "dialog": "gnom"
+          "style": "small",
+          "sym": "wuerfel",
+          "textless": true
         },
         {
           "id": "chest_i1",
@@ -5594,7 +5592,7 @@
         {
           "id": "chest_i2",
           "type": "chest",
-          "x": 10,
+          "x": 14,
           "y": 3,
           "loot": [
             {
@@ -5615,8 +5613,8 @@
         {
           "id": "chest_i3",
           "type": "chest",
-          "x": 11,
-          "y": 5,
+          "x": 15,
+          "y": 6,
           "loot": [
             {
               "gold": 60
@@ -5632,74 +5630,17 @@
         {
           "id": "npc_fuhrmann_i",
           "type": "npc",
-          "x": 8,
-          "y": 10,
+          "x": 10,
+          "y": 14,
           "name": "Fuhrmann",
           "look": "fuhrmann",
           "dialog": "fuhrmann_insel"
         },
         {
-          "id": "decor_boot_i",
-          "type": "decor",
-          "x": 7,
-          "y": 11,
-          "look": "boot"
-        },
-        {
-          "id": "sign_i_name",
-          "type": "sign",
-          "x": 8,
-          "y": 7,
-          "face": 0,
-          "title": "MURMEL",
-          "style": "small",
-          "text": "Am Türpfosten hängt ein kleines Schild: „Hier wohnt Murmel. Klopfen ist zwecklos, würfeln lohnt sich.“"
-        },
-        {
-          "id": "palme_i52",
-          "type": "decor",
-          "x": 5,
-          "y": 2,
-          "look": "palme",
-          "scale": 1.45
-        },
-        {
-          "id": "palme_i36",
-          "type": "decor",
-          "x": 3,
-          "y": 6,
-          "look": "palme",
-          "scale": 1.45
-        },
-        {
-          "id": "palme_i114",
-          "type": "decor",
-          "x": 11,
-          "y": 4,
-          "look": "palme",
-          "scale": 1.45
-        },
-        {
-          "id": "palme_i99",
-          "type": "decor",
-          "x": 9,
-          "y": 9,
-          "look": "palme",
-          "scale": 1.45
-        },
-        {
-          "id": "palme_i107",
-          "type": "decor",
-          "x": 10,
-          "y": 7,
-          "look": "palme",
-          "scale": 1.45
-        },
-        {
           "id": "buried_i1",
           "type": "buried",
           "x": 4,
-          "y": 5,
+          "y": 7,
           "spotBy": [
             "rogue",
             "alchemist"
@@ -5715,6 +5656,118 @@
               }
             }
           ]
+        },
+        {
+          "id": "npc_gnom",
+          "type": "npc",
+          "x": 9,
+          "y": 6,
+          "name": "Murmel",
+          "look": "gnom",
+          "dialog": "gnom"
+        },
+        {
+          "id": "decor_boot_i",
+          "type": "decor",
+          "x": 9,
+          "y": 16,
+          "look": "boot"
+        },
+        {
+          "id": "palme_i6_2",
+          "type": "decor",
+          "x": 6,
+          "y": 2,
+          "look": "palme",
+          "scale": 1.45
+        },
+        {
+          "id": "palme_i3_5",
+          "type": "decor",
+          "x": 3,
+          "y": 5,
+          "look": "palme",
+          "scale": 1.45
+        },
+        {
+          "id": "palme_i15_9",
+          "type": "decor",
+          "x": 15,
+          "y": 9,
+          "look": "palme",
+          "scale": 1.45
+        },
+        {
+          "id": "palme_i5_12",
+          "type": "decor",
+          "x": 5,
+          "y": 12,
+          "look": "palme",
+          "scale": 1.45
+        },
+        {
+          "id": "palme_i13_12",
+          "type": "decor",
+          "x": 13,
+          "y": 12,
+          "look": "palme",
+          "scale": 1.45
+        },
+        {
+          "id": "m_bett",
+          "type": "decor",
+          "x": 7,
+          "y": 5,
+          "look": "bett",
+          "scale": 0.85
+        },
+        {
+          "id": "m_kamin",
+          "type": "decor",
+          "x": 9,
+          "y": 5,
+          "look": "kamin",
+          "scale": 1.0
+        },
+        {
+          "id": "m_regal",
+          "type": "decor",
+          "x": 11,
+          "y": 5,
+          "look": "regal",
+          "scale": 1.0
+        },
+        {
+          "id": "m_tisch",
+          "type": "decor",
+          "x": 7,
+          "y": 7,
+          "look": "tisch",
+          "scale": 0.75
+        },
+        {
+          "id": "m_stuhl",
+          "type": "decor",
+          "x": 8,
+          "y": 7,
+          "look": "stuhl",
+          "scale": 0.55
+        },
+        {
+          "id": "m_fass1",
+          "type": "decor",
+          "x": 11,
+          "y": 8,
+          "look": "fass",
+          "scale": 0.6
+        },
+        {
+          "id": "m_fass2",
+          "type": "decor",
+          "x": 11,
+          "y": 9,
+          "look": "fass",
+          "scale": 0.6
         }
       ],
       "hall": {
@@ -5722,11 +5775,32 @@
         "low": [
           6,
           4,
-          8,
-          6
+          12,
+          10
         ]
       },
-      "floorTex": "sand"
+      "floorTex": "sand",
+      "floor": [
+        "...................",
+        "...................",
+        "...................",
+        "...................",
+        "...................",
+        ".......=====.......",
+        ".......=====.......",
+        ".......=====.......",
+        ".......=====.......",
+        ".......=====.......",
+        ".........=.........",
+        "...................",
+        "...................",
+        "...................",
+        "...................",
+        "...................",
+        "...................",
+        "...................",
+        "..................."
+      ]
     }
   },
   "spot": {
@@ -7547,8 +7621,8 @@
               },
               "goto": {
                 "level": "schatzinsel",
-                "x": 7,
-                "y": 10,
+                "x": 9,
+                "y": 14,
                 "dir": 0
               },
               "msg": "Der Fuhrmann stößt vom Steg ab. Das Wasser ist erstaunlich still."
@@ -7572,8 +7646,8 @@
               },
               "goto": {
                 "level": "schatzinsel",
-                "x": 7,
-                "y": 10,
+                "x": 9,
+                "y": 14,
                 "dir": 0
               },
               "msg": "Der Fuhrmann stößt vom Steg ab. Das Wasser ist erstaunlich still."

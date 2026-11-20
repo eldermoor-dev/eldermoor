@@ -1128,8 +1128,8 @@ export async function runTests(data, env = {}) {
     assert(threw, 'unbekanntes Gebiet nicht abgelehnt');
     const bad2 = JSON.parse(JSON.stringify(L.serialize(s)));
     bad2.state.areas = { test2: { objs: [], seen: [1, 2], notes: [] } };
-    threw = false; try { L.deserialize(bad2, data); } catch (e) { threw = /Karte ungültig/.test(e.message); }
-    assert(threw, 'falsche Kartengröße nicht abgelehnt');
+    const rep = L.deserialize(bad2, data); // 0.31.12: Karte mit falscher Größe (Gebiet umgebaut) wird neu begonnen statt den Stand abzulehnen
+    assert(rep.areas.test2.seen.length === data.levels.test2.map[0].length * data.levels.test2.map.length && rep.areas.test2.seen.every((v) => v === 0), 'falsche Kartengröße wird neu begonnen');
   });
 
   await test('Gebiete (Phase 3): Softlock-Prüfung gilt auch für Untere Gruft (Treppe zählt als Ausgang)', () => {

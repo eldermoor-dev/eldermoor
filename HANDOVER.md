@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.31.12 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.31.13 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1184,3 +1184,12 @@ Nutzer (Screenshot 19:51): „Laden fehlgeschlagen: Spielstand ungültig: Spiele
 - Tests: Altstand mit dem Insel-Layout von 0.31.9 (Gruppe im alten Haus) lädt jetzt; der alte Test „Spieler in Wand wird abgelehnt“ gilt nur noch für ungültige Koordinaten. 132 grün.
 - Lehre für künftige Gebietsumbauten: Altstände prüfen (Datei mit altem `game.json` erzeugen, mit neuem laden).
 - Nicht auf Gerät getestet.
+
+## Änderungen 0.31.13 (20.11.2026, headless, nicht auf Gerät getestet)
+- Würfelhaus-Schild: abgeschnittener Text entfernt; Schild ohne Text zeigt zwei elfenbeinfarbene Würfel (Symbol `wuerfel`, Feld `textless`). Namensschild „Murmel“ entfernt (sign_i_name gelöscht); Name nur noch im NPC/Dialog – Auslegung der Nutzerbitte „Namen weglassen“, bei Bedarf zurücknehmen.
+- Insel 19×19, Hütte 7×7 mit 5×5-Innenraum (x7–11, y5–9), Holzdielenboden, Halle h=2 über Hütte (`low:[6,4,12,10]`).
+- Möbel (Typ `decor`, neue Sprites via genFurn): m_bett, m_kamin, m_regal, m_tisch, m_stuhl, m_fass1, m_fass2. Gnom bei (9,6).
+- Alt-Spielstände: `seen`-Größe wird bei Kartenwechsel repariert, vergrabene Schätze übernehmen x/y.
+- Tests angepasst (Kartengröße-Reparatur); `node tests.js`: 132 bestanden, 0 fehlgeschlagen.
+- OFFEN (Nutzerwunsch): Gnom-Spiel zu einem richtigen Würfelspiel mit Würfeln beider Seiten (ca. 1 min) ausbauen; Vorschläge im Chat, Entscheidung des Nutzers ausstehend. Außerdem Vorschläge Insel/Gnom-Interaktion.
+- Spätere Erinnerungen: Talent-Alternativen B–F; Truhen-Option C (Sondertruhen).

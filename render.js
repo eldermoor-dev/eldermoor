@@ -743,6 +743,7 @@ const SYMS = {
   bruecke: ['11111111111', '11100000111', '11000000011', '10000000001', '10000000001', '01010101010'],
   faehre: ['00000100000', '00001110000', '00011111000', '00111111100', '00000100000', '11111111111', '01111111110', '00111111100'],
   schaedel: ['011111110', '111111111', '110111011', '110111011', '011111110', '001111100', '001010100'],
+  wuerfel: ['111111101111111', '101110101111111', '111111101111111', '111011101110111', '111111101111111', '101110101111101', '111111101111111'], // zwei weiße Würfel, Augen = Löcher (dunkel durch Kontur)
   schluessel: ['0111000000', '1000100000', '1000100000', '0111011111', '0000010101', '0000010101']
 };
 function genPlaque(title, kind, styleName, seed, clipY = PLQ, sym = null) { // clipY (0.22.1): nichts unterhalb zeichnen (Türsturz: Schrift läuft nicht ins Leere)
@@ -751,8 +752,8 @@ function genPlaque(title, kind, styleName, seed, clipY = PLQ, sym = null) { // c
   const maxC = Math.max(1, ...lines.map((l) => [...l].slice(0, 8).length)), cw = 6;
   // 0.23.4 (Nutzer: aus der Nähe zu groß, unlesbar): Textblock höchstens ca. die halbe Wandbreite (vorher bis 75 %); Stil (Blutschmiere) bleibt
   const s = kind === 'door' ? Math.max(1.5, Math.min(2, 80 / (cw * maxC))) : Math.max(1.7, Math.min(2.3, 100 / (cw * maxC))); // Türsturz (0.23.6): Schrift liegt innerhalb des Türschilds
-  const lh = Math.round(9 * s), th = Math.round(lines.length * lh - 2 * s);
-  const SG = sym && SYMS[sym] ? SYMS[sym] : null, ss = s * 1.3, symH = SG ? Math.round(SG.length * ss + 5 * s) : 0;
+  const lh = Math.round(9 * s), th = lines.length ? Math.round(lines.length * lh - 2 * s) : 0;
+  const SG = sym && SYMS[sym] ? SYMS[sym] : null, ss = lines.length ? s * 1.3 : s * 2.2, symH = SG ? Math.round(SG.length * ss + (lines.length ? 5 * s : 0)) : 0; // ohne Text: Symbol allein, größer und mittig
   const ty0 = kind === 'door' ? 14 + symH : Math.round(N / 2 - th / 2 + symH / 2);
   // 0.19.11 (Nutzer: „gruseliger, nicht aus Druckschrift“): von Hand geschmiert – jeder Buchstabe leicht schief und versetzt, Striche aus runden Pinselflecken mit schwankender Dicke,
   // dicke Tropfen mit Kuppe, dunkle Gerinnsel und feuchte Lichter. Gleiche Lesbarkeit (gleiche Buchstabenraster), aber keine Blockschrift mehr.
@@ -794,7 +795,7 @@ function genPlaque(title, kind, styleName, seed, clipY = PLQ, sym = null) { // c
   }
   for (let i = 0; i < N * N; i++) if (drip[i]) mask[i] = 1;
   if (clipY < N) for (let i = clipY * N; i < N * N; i++) { mask[i] = 0; drip[i] = 0; }
-  const ink = INKS[INK_OF[styleName]] || INKS.kohle;
+  const ink = sym === 'wuerfel' && !lines.length ? { fill: ['glow', 6.3], edge: ['ceil', 0] } : INKS[INK_OF[styleName]] || INKS.kohle; // Würfel: Elfenbein
   const ol = 1; // Kontur: hebt die rote Schrift von grauem Stein ab
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     if (mask[y * N + x]) continue;
@@ -913,9 +914,9 @@ export function buildDecals(lvl, objs, tex) {
       if (wallAt(wx, wy)) out.set((wy * w + wx) * 4 + (o.face + 2) % 4, cachedTex(tex, 'deco', k + (full ? 1 : 0), () => genDeco(k, 171, full)));
       continue;
     }
-    if (o.type === 'sign' && o.face != null && o.title) {
+    if (o.type === 'sign' && o.face != null && (o.title || o.sym) && !(o.textless && !o.sym)) {
       const wx = o.x + DX[o.face], wy = o.y + DY[o.face];
-      if (wallAt(wx, wy)) out.set((wy * w + wx) * 4 + (o.face + 2) % 4, cachedTex(tex, 'plaques', 'w:' + styleFor(o) + (o.sym || '') + o.title, () => genPlaque(o.title, 'wall', styleFor(o), 131, PLQ, o.sym)));
+      if (wallAt(wx, wy)) out.set((wy * w + wx) * 4 + (o.face + 2) % 4, cachedTex(tex, 'plaques', 'w:' + styleFor(o) + (o.sym || '') + (o.textless ? '#' : o.title), () => genPlaque(o.textless ? '' : o.title, 'wall', styleFor(o), 131, PLQ, o.sym)));
     } else if (o.type === 'door' && !o.open && o.title) {
       const t = cachedTex(tex, 'plaques', 'd:' + styleFor(o) + (o.sym || '') + o.title, () => genPlaque(o.title, 'door', styleFor(o), 133, PLQ, o.sym));
       const ns = wallAt(o.x - 1, o.y) && wallAt(o.x + 1, o.y); // Durchgang Nord–Süd
@@ -1604,6 +1605,52 @@ function genFerryman(seed) { // Fuhrmann: Strohhut, wetterbraunes Gesicht, Ölma
     return null;
   }, 128, true);
 }
+// 0.31.13: Möbel für das Innere der Blockhütte (Typ decor, look = Name)
+function genFurn(kind, seed) {
+  return paintFigure(seed, ({ ell, lit, nz, px, py, x, y, vn }) => {
+    const l = lit(px, py), n = nz(x >> 1, y >> 1), ax = Math.abs(px - 32), wd = (b) => ['wood', b - l * 0.9 + n * 0.45];
+    if (kind === 'fass') {
+      const rx = 14 + (1 - Math.pow((py - 40) / 20, 2)) * 3;
+      if (py >= 20 && py <= 60 && ax < rx) return (Math.abs(py - 27) < 1.3 || Math.abs(py - 52) < 1.3) ? ['iron', 3.6 - l * 0.6] : ['wood', 3.2 - l * 1.2 + ((px * 0.7) % 4 < 0.7 ? -0.8 : 0) + n * 0.4];
+      if (py >= 17.5 && py < 20 && ax < 12) return wd(4.4);
+    } else if (kind === 'tisch') {
+      if (py >= 34 && py < 39 && ax < 27) return wd(4.2);
+      if (py >= 39 && py < 42 && ax < 27) return wd(2.2);
+      if (py >= 42 && py <= 61 && Math.abs(ax - 23) < 2.3) return wd(2.6);
+      if (px > 28 && px < 33 && py > 25 && py < 34) return ['glow', 5.8 + n]; // Kerze
+      if (ell(px, py, 30.5, 22.5, 1.8, 2.8) <= 1) return ['glow', 7];
+    } else if (kind === 'stuhl') {
+      if (py >= 40 && py < 45 && ax < 11) return wd(3.8);
+      if (py >= 15 && py < 40 && ax >= 8 && ax < 11.5) return wd(2.8);
+      if (py >= 15 && py < 24 && ax < 11.5) return wd(3.3);
+      if (py >= 45 && py <= 61 && Math.abs(ax - 8.6) < 1.7) return wd(2.4);
+    } else if (kind === 'bett') {
+      if (py >= 26 && py <= 60 && px >= 6 && px < 12) return wd(3);       // Kopfbrett
+      if (py >= 38 && py <= 60 && px >= 52 && px < 57) return wd(2.8);   // Fußbrett
+      if (py >= 42 && py < 56 && px >= 12 && px < 52) { if (ell(px, py, 21, 43, 6.5, 3.4) <= 1) return ['glow', 6.2 - l * 0.4]; return ['blood', 3.4 - l * 0.7 + n * 0.5 + (Math.abs(((px - 12) % 9)) < 0.5 ? -0.7 : 0)]; }
+      if (py >= 56 && py <= 61 && px >= 6 && px < 57) return wd(2.2);
+    } else if (kind === 'regal') {
+      if (py >= 6 && py <= 62 && ax < 19) {
+        if (ax >= 17 || (py >= 5 && py < 8) || [20, 34, 48, 61].some((q) => Math.abs(py - q) < 1.4)) return wd(3.2);
+        const bk = Math.floor((px + 40) / 3), cols = ['blood', 'ice', 'moss', 'glow', 'wood'], bh = [20, 34, 48].find((q) => py < q) || 48;
+        if (py > bh - 11 - (hash(bk, bh, seed) * 3) && ax < 16) return [cols[Math.floor(hash(bk, bh + 1, seed) * 5)], 3.4 + hash(bk, bh + 2, seed) * 1.4 - l * 0.5];
+        return ['ceil', 0.4];
+      }
+    } else if (kind === 'kamin') {
+      if (py >= 18 && py <= 62 && ax < 21) {
+        if (ax < 10 && py >= 38) { // Feuerstelle
+          if (ell(px, py, 32, 52, 6, 9) <= 1) return ['glow', 6.4 - Math.abs(px - 32) * 0.15];
+          if (ell(px, py, 32, 54, 9, 11) <= 1) return ['blood', 4.2];
+          return ['ceil', 0.2];
+        }
+        return ['stone', 3.8 - l * 0.8 + n * 0.5 - ((py % 9) < 0.9 || ((px + (Math.floor(py / 9) % 2) * 5) % 10) < 0.9 ? 1 : 0)];
+      }
+      if (py >= 14 && py < 18 && ax < 24) return ['stone', 4.8 - l * 0.6];
+      if (py >= 2 && py < 14 && ax < 9) return ['stone', 3.2 - l * 0.6 + n * 0.4];
+    }
+    return null;
+  }, 128, true);
+}
 function genBoat(seed) { // Ruderboot von der Seite, zwei Ruder, Sitzbrett, aufgerollte Leine
   return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y }) => {
     const l = lit(px, py), n = nz(x >> 1, y >> 1), dx = px - 32, ax = Math.abs(dx);
@@ -2195,7 +2242,7 @@ export function makeTextures(detail = 1) {
     water: genWater(61, nf),
     plank: genPlanks(62, nf),
     ceil: genCeil(53, nf),
-    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), rail: genRail(441), palme: sm2(genPalm(461)), mound: sm2(genMound(463)), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)),  chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), fuhrmann: sm2(genFerryman(771)), boot: sm2(genBoat(772)), gnom: sm2(genGnome(773)), spinne: sm2(genSpider(774)), diener: sm2(genVampire(741, 'diener')), brut: sm2(genVampire(742, 'brut')), graefin: sm2(genVampire(743, 'graefin')), wache: sm2(genPerson(721, 'wache')), haendler2: sm2(genVendor2(751)), gefangener: sm2(genPrisoner(761)), wund: sm2(genPerson(731, 'wund')), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), rail: genRail(441), palme: sm2(genPalm(461)), fass: sm2(genFurn('fass', 471)), tisch: sm2(genFurn('tisch', 472)), stuhl: sm2(genFurn('stuhl', 473)), bett: sm2(genFurn('bett', 474)), regal: sm2(genFurn('regal', 475)), kamin: sm2(genFurn('kamin', 476)), mound: sm2(genMound(463)), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)),  chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), fuhrmann: sm2(genFerryman(771)), boot: sm2(genBoat(772)), gnom: sm2(genGnome(773)), spinne: sm2(genSpider(774)), diener: sm2(genVampire(741, 'diener')), brut: sm2(genVampire(742, 'brut')), graefin: sm2(genVampire(743, 'graefin')), wache: sm2(genPerson(721, 'wache')), haendler2: sm2(genVendor2(751)), gefangener: sm2(genPrisoner(761)), wund: sm2(genPerson(731, 'wund')), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
