@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.31.2 (20.11.2026, headless)
+- Wandschrift „EISENTOR“ am Moorpfad-Tor zu „HOLZTOR“ (es ist eine Holztür).
+
 ## 0.31.1 (20.11.2026, headless)
 - Tränke im Kampf auch über Inventar → „Benutzen“ (Held am Zug).
 

@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.31.1 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.31.2 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1110,3 +1110,6 @@ Nutzer: „Tränke sollen während des Kampfes nutzbar sein“; Rückfrage per A
 - Vorher ging es nur über den Kampfknopf „Gegenstand“; im Inventar fehlte „Benutzen“ im Kampf (main.js `openInventory`, `!g.combat`).
 - Jetzt: Inventar zeigt im Kampf „Benutzen“ bei Heil- und Zaubertränken. Held am Zug trinkt für sich (`heroAct({type:'item'})`, Fenster schließt, Zug läuft normal); Alchemist wählt den Helden; nicht am Zug: Meldung „Gerade ist kein Held am Zug.“. Fehlermeldungen (volle LP/Mana) kommen als Kampfmeldung. Kein Spielstand-/Wertwechsel.
 - Headless geprüft (Kampf, Inventar → Benutzen: Trank −1, LP des Helden am Zug +), Tests 131 grün.
+
+## 0.31.2 (20.11.2026) – Wandschrift „Eisentor“ → „Holztor“ (nicht auf Gerät getestet)
+Nutzer (Screenshot Moorpfad, Holztür „KULT-GRUFT“, daneben Schrift „EISENTOR“): „Es handelt sich um eine Holztür.“ Befund: Wandtafel `sign_pfad3` (Moorpfad 19/5) trug Titel „EISENTOR“ und Text „Das Eisentor …“; die Tür `door_gruft` ist Holz. Geändert: Titel „HOLZTOR“, Text „Das Holztor der Kultgruft. Das Schloss ist neu, das Holz drumherum alt.“, Schlüsselbeschreibung `gruft_key` „… Holztor am Ende des Moorpfads“. Nur Texte, Tests 131 grün. In anderen Texten kommt „Eisentor“ nicht mehr vor (game.json durchsucht).

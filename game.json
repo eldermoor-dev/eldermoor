@@ -149,7 +149,7 @@
     "gruft_key": {
       "name": "Gruftschlüssel",
       "kind": "quest",
-      "desc": "Ein neuer Schlüssel an einem alten Ring. Passt in das Eisentor am Ende des Moorpfads.",
+      "desc": "Ein neuer Schlüssel an einem alten Ring. Passt in das Holztor am Ende des Moorpfads.",
       "noSell": true
     },
     "gruft_siegel": {
@@ -2354,8 +2354,8 @@
           "type": "sign",
           "x": 19,
           "y": 5,
-          "text": "Das Eisentor der Kultgruft. Das Schloss ist neu, der Rost drumherum alt.",
-          "title": "EISENTOR",
+          "text": "Das Holztor der Kultgruft. Das Schloss ist neu, das Holz drumherum alt.",
+          "title": "HOLZTOR",
           "style": "iron",
           "face": 1
         },
