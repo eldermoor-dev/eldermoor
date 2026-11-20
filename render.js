@@ -165,18 +165,23 @@ function genGate(seed, n = TEX) {
 }
 // Geöffnetes Fallgitter (0.23.9, Nutzer: „soll offen zu sehen sein“): Pfosten und Querbalken, daran hochgezogen die Stäbe mit Spitzen; Durchgang frei
 // 0.31.6 (Nutzer: „Brücke ist flach“): Geländer der Brücke – Pfosten und zwei Holme, steht als Ebene längs der Bahn an der Kante (Typ 'rail')
-function genRail(seed) { // 0.32.1 (Nutzer: „Brückengelände verbessern“): dichtere Pfosten, dicke Handleiste, Mittel- und Fußleiste, heller
-  const t = { w: TEX, h: TEX, data: new Uint8Array(TEX * TEX).fill(255) };
-  for (let y = 0; y < TEX; y++) for (let x = 0; x < TEX; x++) {
-    const post = (x % 16) >= 6 && (x % 16) < 10 && y >= 4, topRail = y >= 6 && y <= 13, midRail = y >= 24 && y <= 27, lowRail = y >= 40 && y <= 44;
-    if (!(post || topRail || midRail || lowRail)) continue;
-    const edge = (topRail && (y === 6 || y === 13)) || (midRail && (y === 24 || y === 27)) || (lowRail && (y === 40 || y === 44)) || (post && !topRail && !midRail && !lowRail && ((x % 16) === 6 || (x % 16) === 9));
-    t.data[y * TEX + x] = P('wood', (edge ? 2.4 : topRail ? 4.6 : 3.9) + hash(x >> 1, y >> 2, seed) * 0.6);
+function railBlock(t, seed, top, flameTorch) { // 0.32.1 (Nutzer: „Geländer sieht schlecht aus“): steinerne Brüstung (Quader mit Fugen, Deckplatte); optional hoher Pfosten mit Fackel in der Mitte
+  const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
+  for (let y = top; y < TEX; y++) for (let x = 0; x < TEX; x++) {
+    const cop = y < top + 4, row = Math.floor((y - top - 4) / 9), off = (row & 1) * 8, joint = !cop && (((y - top - 4) % 9) === 0 || ((x + off) % 16) === 0);
+    set(x, y, cop ? P('stone', (y === top ? 6.3 : y === top + 3 ? 2.6 : 5.2) + hash(x >> 2, 0, seed) * 0.4) : P('stone', (joint ? 1.4 : 3.5) + hash((x + off) >> 4, row, seed) * 0.9 + (hash(x, y, seed + 3) - 0.5) * 0.4));
   }
-  for (let x = 0; x < TEX; x += 16) for (let y = 3; y <= 5; y++) for (let dx = 5; dx < 11; dx++) if (x + dx < TEX) t.data[y * TEX + x + dx] = P('wood', 5.0 + hash(x + dx, y, seed + 2) * 0.4); // Pfostenkappen
-  t.noWrap = true;
-  return t;
+  if (flameTorch) {
+    const pt = 18, px0 = 26, px1 = 37;
+    for (let y = pt; y < TEX; y++) for (let x = px0; x <= px1; x++) { const edge = x === px0 || x === px1; set(x, y, P('stone', (edge ? 1.8 : 4.2) + hash(x >> 1, y >> 3, seed + 7) * 0.8 - ((y - pt) % 9 === 0 ? 1.4 : 0))); }
+    for (let y = pt - 3; y < pt; y++) for (let x = px0 - 2; x <= px1 + 2; x++) set(x, y, P('stone', y === pt - 3 ? 6.4 : 5.0)); // Pfostenkappe
+    for (let y = 9; y <= pt - 4; y++) for (let x = 30; x <= 33; x++) set(x, y, P('iron', 3.2 + (x === 30 ? 0.8 : 0))); // Halterung
+    for (let x = 27; x <= 36; x++) for (let y = 9; y <= 11; y++) set(x, y, P('iron', 4.0 - (y - 9) * 0.5)); // Schale
+    for (let y = 0; y <= 9; y++) { const t0 = (9 - y) / 9, w = Math.sin(Math.min(1, t0 * 1.1) * Math.PI) * 4.2 * (1 - t0 * 0.35); for (let x = 32 - Math.ceil(w); x <= 32 + Math.ceil(w); x++) { const dd = Math.abs(x - 32) / Math.max(0.5, w); set(x, y, P('glow', dd < 0.4 && t0 < 0.8 ? 7 : dd < 0.75 ? 6 : 5)); } } // Flamme
+  }
 }
+function genRail(seed) { const t = { w: TEX, h: TEX, data: new Uint8Array(TEX * TEX).fill(255), noWrap: true }; railBlock(t, seed, 22, false); return t; }
+function genRailTorch(seed) { const t = { w: TEX, h: TEX, data: new Uint8Array(TEX * TEX).fill(255), noWrap: true }; railBlock(t, seed, 41, true); return t; }
 function genGateOpen(seed) {
   const t = { w: TEX, h: TEX, data: new Uint8Array(TEX * TEX).fill(255) };
   const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
@@ -1791,6 +1796,14 @@ function genCarpet(seed, n) {
   return t;
 }
 
+function genPaving(seed, n) { // 0.32.1: Steinplatten (Brücke): 2×2 Platten je Feld, dunkle Fugen, leicht versetzt und gesprenkelt
+  const t = { w: n, h: n, data: new Uint8Array(n * n) }, q = n / 2, jw = Math.max(1, Math.round(n / 48));
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const row = Math.floor(y / q), xs = (x + (row & 1) * (q / 2)) % n, col = Math.floor(xs / q), joint = (y % q) < jw || (xs % q) < jw;
+    t.data[y * n + x] = P('stone', (joint ? 1.2 : 3.4 + (hash(col, row, seed) - 0.5) * 1.2 + (hash(x >> 1, y >> 1, seed + 2) - 0.5) * 0.7));
+  }
+  return t;
+}
 function genRug(seed, n) { // 0.32.1: Wohnteppich (warmes Rot, helle Streifen, Rautenmuster; nahtlos je Feld)
   const t = { w: n, h: n, data: new Uint8Array(n * n) }, q = n / 4;
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
@@ -2415,8 +2428,9 @@ export function makeTextures(detail = 1) {
     plank: genPlanks(62, nf),
     carpet: genCarpet(63, nf),
     rug: genRug(64, nf),
+    paving: genPaving(66, nf),
     ceil: genCeil(53, nf),
-    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), rail: genRail(441), palme: sm2(genPalm(461)), fass: sm2(genFurn('fass', 471)), tisch: sm2(genFurn('tisch', 472)), stuhl: sm2(genFurn('stuhl', 473)), bett: sm2(genFurn('bett', 474)), regal: sm2(genFurn('regal', 475)), kamin: sm2(genFurn('kamin', 476)), kaktus: sm2(genFurn('kaktus', 477)), haengematte: sm2(genFurn('haengematte', 478)), spielautomat: sm2(genFurn('spielautomat', 479)), roulette: sm2(genFurn('roulette', 480)), vase: sm2(genFurn('vase', 483)), kueche: sm2(genFurn('kueche', 484)), kartentisch: sm2(genFurn('kartentisch', 481)), teufel: sm2(genDevil(482)), mound: sm2(genMound(463)), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)),  chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), fuhrmann: sm2(genFerryman(771)), boot: sm2(genBoat(772)), gnom: sm2(genGnome(773)), spinne: sm2(genSpider(774)), diener: sm2(genVampire(741, 'diener')), brut: sm2(genVampire(742, 'brut')), graefin: sm2(genVampire(743, 'graefin')), wache: sm2(genPerson(721, 'wache')), haendler2: sm2(genVendor2(751)), gefangener: sm2(genPrisoner(761)), wund: sm2(genPerson(731, 'wund')), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), rail: genRail(441), railTorch: genRailTorch(442), palme: sm2(genPalm(461)), fass: sm2(genFurn('fass', 471)), tisch: sm2(genFurn('tisch', 472)), stuhl: sm2(genFurn('stuhl', 473)), bett: sm2(genFurn('bett', 474)), regal: sm2(genFurn('regal', 475)), kamin: sm2(genFurn('kamin', 476)), kaktus: sm2(genFurn('kaktus', 477)), haengematte: sm2(genFurn('haengematte', 478)), spielautomat: sm2(genFurn('spielautomat', 479)), roulette: sm2(genFurn('roulette', 480)), vase: sm2(genFurn('vase', 483)), kueche: sm2(genFurn('kueche', 484)), kartentisch: sm2(genFurn('kartentisch', 481)), teufel: sm2(genDevil(482)), mound: sm2(genMound(463)), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)),  chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), fuhrmann: sm2(genFerryman(771)), boot: sm2(genBoat(772)), gnom: sm2(genGnome(773)), spinne: sm2(genSpider(774)), diener: sm2(genVampire(741, 'diener')), brut: sm2(genVampire(742, 'brut')), graefin: sm2(genVampire(743, 'graefin')), wache: sm2(genPerson(721, 'wache')), haendler2: sm2(genVendor2(751)), gefangener: sm2(genPrisoner(761)), wund: sm2(genPerson(731, 'wund')), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
@@ -2492,11 +2506,12 @@ export class Raycaster {
           continue;
         }
         if (fl0 && view.floorGrid && tex.water) { // 0.28.0: Wasser (1) und Bohlen (2 = quer zur x-Achse, 3 = quer zur y-Achse) je Feld
-          const fg = view.floorGrid.fg, fw = view.floorGrid.gw, fh = view.floorGrid.gh, wd = tex.water.data, pd = tex.plank.data, cd = tex.carpet ? tex.carpet.data : pd, rd = tex.rug ? tex.rug.data : pd, wob = t * 7;
+          const fg = view.floorGrid.fg, fw = view.floorGrid.gw, fh = view.floorGrid.gh, wd = tex.water.data, pd = tex.plank.data, cd = tex.carpet ? tex.carpet.data : pd, rd = tex.rug ? tex.rug.data : pd, sd = tex.paving ? tex.paving.data : pd, wob = t * 7;
           for (let x = 0; x < W; x++) {
             const cx = Math.floor(fx), cy = Math.floor(fy), k = cx >= 0 && cy >= 0 && cx < fw && cy < fh ? fg[cy * fw + cx] : 0;
             let c;
             if (k === 1) c = wd[((((fy * FN + Math.sin(fx * 2.3 + t) * 2) | 0) & FM) * FN) + (((fx * FN + wob) | 0) & FM)];
+            else if (k === 6) { c = sd[((((fy * FN) | 0) & FM) * FN) + (((fx * FN) | 0) & FM)]; }
             else if (k === 5) { c = rd[((((fy * FN) | 0) & FM) * FN) + (((fx * FN) | 0) & FM)]; }
             else if (k === 4) { c = cd[((((fy * FN) | 0) & FM) * FN) + (((fx * FN) | 0) & FM)]; }
             else if (k >= 2) { const tx = ((fx * FN) | 0) & FM, ty = ((fy * FN) | 0) & FM; c = k === 2 ? pd[ty * FN + tx] : pd[tx * FN + ty]; }
@@ -2647,7 +2662,7 @@ export function buildFloorGrid(lvl) {
   let any = false;
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const f = lvl.floor && lvl.floor[y] ? lvl.floor[y][x] : '.';
-    const v = lvl.map[y][x] === '~' ? 1 : f === '=' ? 2 : f === '|' ? 3 : f === '+' ? 4 : f === 'r' ? 5 : 0;
+    const v = lvl.map[y][x] === '~' ? 1 : f === '=' ? 2 : f === '|' ? 3 : f === '+' ? 4 : f === 'r' ? 5 : f === 's' ? 6 : 0;
     if (v) { fg[y * w + x] = v; any = true; }
   }
   const r = any ? { fg, gw: w, gh: h } : null;
@@ -2774,7 +2789,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
       const ns = wl(o.x - 1, o.y) && wl(o.x + 1, o.y), ew = wl(o.x, o.y - 1) && wl(o.x, o.y + 1);
       if (ns || ew) out.push({ x: o.x, y: o.y, tex: tex.sprites.gateOpen, scale: 1, axis: ns ? [0, 1] : [1, 0] });
     }
-    else if (o.type === 'rail') out.push({ x: o.x + (o.dx || 0), y: o.y + (o.dy || 0), tex: tex.sprites.rail, scale: 0.55, axis: o.ax === 'y' ? [1, 0] : [0, 1] }); // Brückengeländer: axis = Flächennormale; Ebene längs der Bahn steht beim Blick entlang der Bahn kantig (schmal)
+    else if (o.type === 'rail') out.push({ x: o.x + (o.dx || 0), y: o.y + (o.dy || 0), tex: o.torch ? tex.sprites.railTorch : tex.sprites.rail, scale: o.torch ? 1.0 : 0.55, axis: o.ax === 'y' ? [1, 0] : [0, 1] }); // Brückengeländer: axis = Flächennormale; Ebene längs der Bahn steht beim Blick entlang der Bahn kantig (schmal)
     else if (o.type === 'runestone') out.push({ x: o.x, y: o.y, tex: tex.sprites.runeStone, scale: 0.9 });
     else if (o.type === 'merchant') out.push({ x: o.x, y: o.y, tex: tex.sprites[o.look] || tex.sprites.merchant, scale: o.look ? 0.95 : 0.8 });
     else if (o.type === 'npc' && !o.gone) out.push({ x: o.x, y: o.y, tex: tex.sprites[o.look] || tex.sprites.merchant, scale: o.look === 'kultist' || o.look === 'guard' ? 0.95 : 0.85 }); // 0.25.0: Begegnungspersonen (look = Spritename)

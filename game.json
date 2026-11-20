@@ -2350,6 +2350,16 @@
           "face": 3
         },
         {
+          "id": "sign_pfad_insel",
+          "type": "sign",
+          "x": 21,
+          "y": 6,
+          "face": 3,
+          "title": "SEE →|INSEL",
+          "text": "Die Treppe führt hinunter zum Moorsee. Von dort über die Brücke nach Osten, dahinter liegt der Steg mit der Fähre zur Schatzinsel.",
+          "style": "iron"
+        },
+        {
           "id": "chest_p2",
           "type": "chest",
           "x": 14,
@@ -5395,8 +5405,8 @@
         "..................................",
         "..................................",
         "..................................",
-        "...........===......====..........",
-        "...........===....................",
+        "...........sss......====..........",
+        "...........sss....................",
         "..................................",
         "..................................",
         "..................................",
@@ -5431,6 +5441,26 @@
           "title": "BRÜCKE",
           "text": "Die Bohlen sind nass, halten aber. Der Fluss darunter ist kälter, als er aussieht.",
           "sym": "bruecke",
+          "style": "iron"
+        },
+        {
+          "id": "sign_s_insel1",
+          "type": "sign",
+          "x": 4,
+          "y": 7,
+          "face": 0,
+          "title": "INSEL →",
+          "text": "Zur Schatzinsel: nach Osten über die Brücke, dahinter weiter zum Steg. Der Fuhrmann bringt euch hinüber.",
+          "style": "iron"
+        },
+        {
+          "id": "sign_s_insel2",
+          "type": "sign",
+          "x": 15,
+          "y": 8,
+          "face": 2,
+          "title": "INSEL →",
+          "text": "Der Steg mit der Fähre zur Schatzinsel liegt weiter im Osten.",
           "style": "iron"
         },
         {
@@ -5525,7 +5555,8 @@
           "y": 8,
           "dx": 0,
           "dy": -0.44,
-          "ax": "x"
+          "ax": "x",
+          "torch": true
         },
         {
           "id": "rail_s11",
@@ -5534,7 +5565,8 @@
           "y": 9,
           "dx": 0,
           "dy": 0.44,
-          "ax": "x"
+          "ax": "x",
+          "torch": true
         },
         {
           "id": "rail_n12",
@@ -5561,7 +5593,8 @@
           "y": 8,
           "dx": 0,
           "dy": -0.44,
-          "ax": "x"
+          "ax": "x",
+          "torch": true
         },
         {
           "id": "rail_s13",
@@ -5570,7 +5603,8 @@
           "y": 9,
           "dx": 0,
           "dy": 0.44,
-          "ax": "x"
+          "ax": "x",
+          "torch": true
         }
       ]
     },

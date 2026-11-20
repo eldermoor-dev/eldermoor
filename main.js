@@ -1310,7 +1310,7 @@ function drawMap() {
   const wallObj = new Set(g.objs.filter((o) => (o.type === 'secret' && !o.open) || (o.type === 'lever' && o.wall) || (o.type === 'illusion' && !o.found)).map((o) => o.x + ',' + o.y)); // Geheimwand und Schalterstein zählen auf der Karte als Mauer
   const cellChar = (l, x, y) => (wallObj.has(x + ',' + y) ? '#' : cellCharRaw(l, x, y));
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    if (cellChar(lvl, x, y) === '.') { if (seen(x, y)) { c.fillStyle = lvl.floor && '=|'.includes(lvl.floor[y][x]) ? '#7a5a34' : '#4a4034'; c.fillRect(x * cs, y * cs, cs, cs); } } // Bohlen (Brücke, Steg) braun (0.28.0)
+    if (cellChar(lvl, x, y) === '.') { if (seen(x, y)) { c.fillStyle = lvl.floor && lvl.floor[y][x] === 's' ? '#77705f' : lvl.floor && '=|'.includes(lvl.floor[y][x]) ? '#7a5a34' : '#4a4034'; c.fillRect(x * cs, y * cs, cs, cs); } } // Bohlen (Brücke, Steg) braun (0.28.0)
     else {
       let near = false;
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (cellChar(lvl, x + dx, y + dy) === '.' && seen(x + dx, y + dy)) near = true;
