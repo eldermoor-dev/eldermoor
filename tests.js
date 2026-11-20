@@ -210,8 +210,8 @@ export async function runTests(data, env = {}) {
     const wall = L.serialize(s); wall.state.player.x = 0;
     const fixed = L.deserialize(wall, data); // 0.31.11: Wandposition (Gebiet umgebaut) wird zum Gebietsstart repariert
     assert(fixed.player.x === data.levels[fixed.levelId].start.x, 'Spieler in Wand: zurück zum Start');
-    const bad = L.serialize(s); bad.state.player.x = 'x';
-    threw = false; try { L.deserialize(bad, data); } catch { threw = true; }
+    const badPos = L.serialize(s); badPos.state.player.x = 'x';
+    threw = false; try { L.deserialize(badPos, data); } catch { threw = true; }
     assert(threw, 'Spielerposition ungültig bleibt abgelehnt');
   });
 
