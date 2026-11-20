@@ -5471,18 +5471,18 @@
       },
       "intro": {
         "title": "Schatzinsel",
-        "text": "Ein Häuschen, drei Kisten, ein Steg. Das Wasser ringsum ist so still, dass man den eigenen Atem hört."
+        "text": "Ein Häuschen unter hoher Decke, drei Kisten, ein Steg. Das Wasser ringsum ist so still, dass man den eigenen Atem hört."
       },
       "map": [
         "mmmmmmmmmmmmmmm",
         "m~~~~~~~~~~~~~m",
         "m~~~.......~~~m",
         "m~~.........~~m",
-        "m~..mmmTmmm..~m",
-        "m~..m.....m..~m",
-        "m~..m.....m..~m",
-        "m~..m.....m..~m",
-        "m~..mmm.mmm..~m",
+        "m~...hhThh...~m",
+        "m~...h...h...~m",
+        "m~...h...h...~m",
+        "m~...h...h...~m",
+        "m~...hh.hh...~m",
         "m~...........~m",
         "m~~.........~~m",
         "m~~~.......~~~m",
@@ -5495,8 +5495,7 @@
           "type": "door",
           "x": 7,
           "y": 8,
-          "title": "HÄUS-|CHEN",
-          "style": "stone"
+          "title": ""
         },
         {
           "id": "sign_i_haus",
@@ -5581,7 +5580,16 @@
           "y": 12,
           "look": "boot"
         }
-      ]
+      ],
+      "hall": {
+        "h": 2,
+        "low": [
+          5,
+          4,
+          9,
+          8
+        ]
+      }
     }
   },
   "spot": {

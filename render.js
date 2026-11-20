@@ -13,7 +13,7 @@ const PAL_N = MATS.length * 8, BLOOD_DEFAULT = [206, 38, 32], ICE_DEFAULT = [96,
 const P = (mat, shade) => M[mat] * 8 + Math.max(0, Math.min(7, Math.round(shade)));
 
 // Wandtextur-IDs im Raster: 0 = frei, 1 Stein, 2 Moos, 3 Tür, 4 verschlossene Tür
-export const WALL_STONE = 1, WALL_MOSS = 2, WALL_DOOR = 3, WALL_DOOR_LOCKED = 4, WALL_TORCH = 5, WALL_ROCK = 6, WALL_LICHEN = 7, WALL_GATE = 8, WALL_SECRET = 9, WALL_SWITCH = 10, WALL_SWITCH_ON = 11;
+export const WALL_STONE = 1, WALL_MOSS = 2, WALL_DOOR = 3, WALL_DOOR_LOCKED = 4, WALL_TORCH = 5, WALL_ROCK = 6, WALL_LICHEN = 7, WALL_GATE = 8, WALL_SECRET = 9, WALL_SWITCH = 10, WALL_SWITCH_ON = 11, WALL_HOUSE = 12;
 
 // ---------- Palette: 8 Materialien × 8 Helligkeitsstufen = 64 feste Farben ----------
 export function buildPalette(def, lift = 1) {
@@ -2110,6 +2110,17 @@ function genSecretWall(base, seed) {
   }
   return t;
 }
+// 0.31.7: Fachwerkwand des Häuschens (Lehmputz mit dunklem Holzrahmen und Streben)
+function genHouseWall(seed, n = TEX) {
+  const t = { w: n, h: n, data: new Uint8Array(n * n) }, k = n / TEX;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const u = x / k, v = y / k, pu = u % 32;
+    const beam = v < 5 || v >= 59 || pu < 4;
+    const brace = v >= 5 && v < 59 && pu >= 4 && Math.abs((pu - 4) - (58 - v) * (27 / 53)) < 2.1;
+    t.data[y * n + x] = beam || brace ? P('wood', 1.7 + grain(x, y >> 1, seed, 0.9) + (pu < 1.2 || v < 1.2 ? -0.6 : 0)) : P('glow', 4.3 + grain(x, y, seed + 1, 0.8) + (hash(x >> 2, y >> 2, seed + 2) > 0.9 ? -0.5 : 0));
+  }
+  return t;
+}
 function genSwitchWall(base, pressed) {
   const t = { w: base.w, h: base.h, data: base.data.slice() }, n = t.w, x0 = Math.round(n * 0.4), x1 = Math.round(n * 0.62), y0 = Math.round(n * 0.56), y1 = Math.round(n * 0.7), b = Math.max(1, n >> 6);
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
@@ -2126,7 +2137,7 @@ export function makeTextures(detail = 1) {
   const n = TEX * (detail > 1 ? 4 : 1), nf = TEX * (detail > 1 ? 2 : 1); // Wände 256, Boden/Decke 128: Eigenauflösung statt hochskaliert (Potenzen von 2 wegen Maskierung)
   const stoneW = genStone(11, n);
   return {
-    wall: { [WALL_STONE]: stoneW, [WALL_SECRET]: genSecretWall(stoneW, 301), [WALL_SWITCH]: genSwitchWall(stoneW, false), [WALL_SWITCH_ON]: genSwitchWall(stoneW, true), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
+    wall: { [WALL_STONE]: stoneW, [WALL_HOUSE]: genHouseWall(37, n), [WALL_SECRET]: genSecretWall(stoneW, 301), [WALL_SWITCH]: genSwitchWall(stoneW, false), [WALL_SWITCH_ON]: genSwitchWall(stoneW, true), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
     water: genWater(61, nf),
     plank: genPlanks(62, nf),
@@ -2175,6 +2186,7 @@ export class Raycaster {
 
     // Decke und Boden. Horizont verschiebbar (view.horizon in Pixeln; Standard H/2): kleiner = Blick nach unten, größer = Blick nach oben
     const half = Math.max(1, Math.min(H - 1, Math.round(view.horizon == null ? H / 2 : view.horizon)));
+    const hall = view.hall || null; // { h: Deckenhöhe in Wandhöhen, low: [x0, y0, x1, y1] Felder mit normaler Höhe }
     if (q === 'low') {
       for (let y = 0; y < H; y++) {
         const fl0 = y >= half, p = fl0 ? y + 0.5 - half : half - y - 0.5;
@@ -2194,6 +2206,17 @@ export class Raycaster {
         let fx = px + rowDist * rdx0, fy = py + rowDist * rdy0;
         const sx = rowDist * (rdx1 - rdx0) / W, sy = rowDist * (rdy1 - rdy0) / W;
         const row = y * W;
+        if (!fl0 && hall) { // 0.31.7: hohe Decke (hall.h Wandhöhen); über dem Häuschen (hall.low) liegt die normale Decke
+          const d2 = rowDist * (hall.h - 0.5) / 0.5, tb1 = tbl, tb2 = this.shadeTbl[dropFor(d2)], row0 = y * W, lw = hall.low;
+          for (let x = 0; x < W; x++) {
+            const kx = x / W, rx = rdx0 + (rdx1 - rdx0) * kx, ry = rdy0 + (rdy1 - rdy0) * kx;
+            let cxp = px + rowDist * rx, cyp = py + rowDist * ry, tb = tb1;
+            const ccx = Math.floor(cxp), ccy = Math.floor(cyp);
+            if (ccx < lw[0] || ccx > lw[2] || ccy < lw[1] || ccy > lw[3]) { cxp = px + d2 * rx; cyp = py + d2 * ry; tb = tb2; }
+            buf[row0 + x] = tb[ctex[(((cyp * FN) | 0) & FM) * FN + (((cxp * FN) | 0) & FM)]];
+          }
+          continue;
+        }
         if (fl0 && view.floorGrid && tex.water) { // 0.28.0: Wasser (1) und Bohlen (2 = quer zur x-Achse, 3 = quer zur y-Achse) je Feld
           const fg = view.floorGrid.fg, fw = view.floorGrid.gw, fh = view.floorGrid.gh, wd = tex.water.data, pd = tex.plank.data, wob = t * 7;
           for (let x = 0; x < W; x++) {
@@ -2218,26 +2241,11 @@ export class Raycaster {
     // Wände
     const grid = view.grid, gw = view.gw, gh = view.gh, decals = view.decals || null;
     const step = q === 'low' ? 2 : 1;
-    for (let x = 0; x < W; x += step) {
-      const camX = 2 * (x + step * 0.5) / W - 1;
-      const rdx = dirX + planeX * camX, rdy = dirY + planeY * camX;
-      let mapX = Math.floor(px), mapY = Math.floor(py);
-      const ddx = rdx === 0 ? 1e30 : Math.abs(1 / rdx), ddy = rdy === 0 ? 1e30 : Math.abs(1 / rdy);
-      let stepX, stepY, sdx, sdy;
-      if (rdx < 0) { stepX = -1; sdx = (px - mapX) * ddx; } else { stepX = 1; sdx = (mapX + 1 - px) * ddx; }
-      if (rdy < 0) { stepY = -1; sdy = (py - mapY) * ddy; } else { stepY = 1; sdy = (mapY + 1 - py) * ddy; }
-      let side = 0, hit = 0;
-      for (let i = 0; i < 48 && !hit; i++) {
-        if (sdx < sdy) { sdx += ddx; mapX += stepX; side = 0; } else { sdy += ddy; mapY += stepY; side = 1; }
-        if (mapX < 0 || mapY < 0 || mapX >= gw || mapY >= gh) hit = WALL_STONE;
-        else hit = grid[mapY * gw + mapX];
-      }
-      if (!hit) { for (let i = 0; i < step; i++) zbuf[x + i] = 1e9; continue; }
-      let dist = side === 0 ? sdx - ddx : sdy - ddy;
-      if (dist < 0.0001) dist = 0.0001;
+    const isLow = (mx, my) => !hall || (mx >= hall.low[0] && mx <= hall.low[2] && my >= hall.low[1] && my <= hall.low[3]);
+    const drawWall = (x, hit, mapX, mapY, side, stepX, rdx, rdy, dist, hf) => {
       const lineH = Math.floor(focal / dist);
-      const startRaw = Math.floor(half - lineH / 2);
-      const y0 = Math.max(0, startRaw), y1 = Math.min(H - 1, startRaw + lineH - 1);
+      const startRaw = Math.floor(half - lineH / 2), topRaw = startRaw + lineH - lineH * hf;
+      const y0 = Math.max(0, topRaw), y1 = Math.min(H - 1, startRaw + lineH - 1);
       let wallX = side === 0 ? py + dist * rdy : px + dist * rdx;
       wallX -= Math.floor(wallX);
       const wt = tex.wall[hit], WN = wt.w, WM = WN - 1;
@@ -2246,8 +2254,8 @@ export class Raycaster {
       const td = wt.data;
       const tbl = this.shadeTbl[Math.min(7, dropFor(dist) + side)];
       const texStep = WN / lineH;
-      let texPos = (y0 - startRaw) * texStep;
-      const dec = decals ? decals.get((mapY * gw + mapX) * 4 + (side === 0 ? (stepX > 0 ? 3 : 1) : (stepY > 0 ? 0 : 2))) : null;
+      let texPos = (y0 - topRaw) * texStep;
+      const dec = decals && hf === 1 ? decals.get((mapY * gw + mapX) * 4 + (side === 0 ? (stepX > 0 ? 3 : 1) : (rdy > 0 ? 0 : 2))) : null;
       const dN = dec ? dec.w : 0, dX = dec ? Math.max(0, dN - 1 - Math.min(dN - 1, Math.floor(texX * dN / WN))) : 0 /* gespiegelt: die Wandtextur-Spiegelung gilt für Beschriftung nicht */, dStep = dec ? dN / lineH : 0;
       for (let y = y0; y <= y1; y++) {
         let c = tbl[td[((texPos | 0) & WM) * WN + texX]];
@@ -2257,7 +2265,31 @@ export class Raycaster {
         buf[o] = c;
         if (step === 2) buf[o + 1] = c;
       }
-      for (let i = 0; i < step; i++) zbuf[x + i] = dist;
+    };
+    const hits = [];
+    for (let x = 0; x < W; x += step) {
+      const camX = 2 * (x + step * 0.5) / W - 1;
+      const rdx = dirX + planeX * camX, rdy = dirY + planeY * camX;
+      let mapX = Math.floor(px), mapY = Math.floor(py);
+      const ddx = rdx === 0 ? 1e30 : Math.abs(1 / rdx), ddy = rdy === 0 ? 1e30 : Math.abs(1 / rdy);
+      let stepX, stepY, sdx, sdy;
+      if (rdx < 0) { stepX = -1; sdx = (px - mapX) * ddx; } else { stepX = 1; sdx = (mapX + 1 - px) * ddx; }
+      if (rdy < 0) { stepY = -1; sdy = (py - mapY) * ddy; } else { stepY = 1; sdy = (mapY + 1 - py) * ddy; }
+      let side = 0, hit = 0, n = 0;
+      hits.length = 0;
+      for (let i = 0; i < 48; i++) {
+        if (sdx < sdy) { sdx += ddx; mapX += stepX; side = 0; } else { sdy += ddy; mapY += stepY; side = 1; }
+        if (mapX < 0 || mapY < 0 || mapX >= gw || mapY >= gh) hit = WALL_STONE;
+        else hit = grid[mapY * gw + mapX];
+        if (!hit) continue;
+        let dist = side === 0 ? sdx - ddx : sdy - ddy;
+        if (dist < 0.0001) dist = 0.0001;
+        hits.push({ hit, mapX, mapY, side, stepX, dist, hf: isLow(mapX, mapY) && mapX >= 0 && mapY >= 0 && mapX < gw && mapY < gh ? 1 : hall ? hall.h : 1 });
+        if (!hall || hits[hits.length - 1].hf > 1) break; // niedrige Wand: dahinter weitersuchen (die hohe Wand dahinter ragt darüber)
+      }
+      if (!hits.length) { for (let i = 0; i < step; i++) zbuf[x + i] = 1e9; continue; }
+      for (let i = hits.length - 1; i >= 0; i--) { const h = hits[i]; drawWall(x, h.hit, h.mapX, h.mapY, h.side, h.stepX, rdx, rdy, h.dist, h.hf); }
+      for (let i = 0; i < step; i++) zbuf[x + i] = hits[0].dist;
     }
 
     // Sprites (von hinten nach vorn)
@@ -2321,7 +2353,7 @@ export function buildGrid(lvl, objs) {
   const grid = new Uint8Array(w * h);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const c = lvl.map[y][x];
-    grid[y * w + x] = c === '#' ? WALL_STONE : c === 'm' ? WALL_MOSS : c === 'T' ? WALL_TORCH : c === 'r' ? WALL_ROCK : c === 'o' ? WALL_LICHEN : 0;
+    grid[y * w + x] = c === '#' ? WALL_STONE : c === 'm' ? WALL_MOSS : c === 'T' ? WALL_TORCH : c === 'r' ? WALL_ROCK : c === 'o' ? WALL_LICHEN : c === 'h' ? WALL_HOUSE : 0;
   }
   for (const o of objs) if (o.type === 'illusion' && !o.found) { // 0.22.0: Illusionswand = Mauer wie die Nachbarn
     const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => grid[(o.y + dy) * w + o.x + dx]).find((v) => v === WALL_STONE || v === WALL_MOSS || v === WALL_ROCK || v === WALL_LICHEN);

@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.31.7 (20.11.2026, headless)
+- Schatzinsel: doppelt hohe Decke, Häuschen in normaler Höhe als Fachwerkhaus (5 × 5); Türschriftzug entfernt.
+
 ## 0.31.6 (20.11.2026, headless)
 - Schriftfarbe je Schildstil, Symbole (Brücke, Fähre, Sarg, Kerker), Geländer an der Moorsee-Brücke.
 
