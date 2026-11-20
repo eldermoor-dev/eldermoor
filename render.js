@@ -2582,6 +2582,21 @@ export class Raycaster {
     for (const { s, tX, tY } of list) {
       const td = s.tex.data, TN = s.tex.w;
       const screenX = Math.floor(W / 2 * (1 + tX / tY));
+      if (s.span) { // 0.32.1: Strecke zwischen zwei Punkten im Raum (Hängematte): jede Texturspalte perspektivisch einzeln projiziert, Enden bleiben an den Stämmen
+        const cx = s.x + 0.5, cy = s.y + 0.5, proj = (tx) => { const o = (tx * 64 / TN - 32) / 27, wx = cx + s.span[0] * o - px, wy = cy + s.span[1] * o - py; return { X: invDet * (dirY * wx - dirX * wy), Y: invDet * (-planeY * wx + planeX * wy) }; };
+        const tbl2 = this.shadeTbl[dropFor(tY)];
+        for (let tx = 0; tx < TN; tx++) {
+          const c0 = proj(tx - 0.5), c1 = proj(tx + 0.5), cm = proj(tx);
+          if (cm.Y <= 0.15 || c0.Y <= 0.1 || c1.Y <= 0.1) continue;
+          const xa = Math.floor(W / 2 * (1 + c0.X / c0.Y)), xb = Math.floor(W / 2 * (1 + c1.X / c1.Y));
+          const hh = Math.floor(focal / cm.Y * s.scale), bt = Math.floor(half + 0.5 * focal / cm.Y), tp = bt - hh;
+          for (let x = Math.max(0, Math.min(xa, xb)); x <= Math.min(W - 1, Math.max(xa, xb)); x++) {
+            if (cm.Y >= zbuf[x]) continue;
+            for (let y = Math.max(0, tp); y <= Math.min(H - 1, bt - 1); y++) { const idx = td[Math.floor((y - tp) * TN / hh) * TN + tx]; if (idx !== 255) buf[y * W + x] = tbl2[idx]; }
+          }
+        }
+        continue;
+      }
       let wf = 1; // Durchgänge stehen fest im Raum: Breite nach Blickwinkel zur Durchgangsachse
       if (s.axis) { const len = Math.hypot(s.x + 0.5 - px, s.y + 0.5 - py) || 1; wf = Math.max(0.12, Math.min(1, Math.abs(((s.x + 0.5 - px) * s.axis[0] + (s.y + 0.5 - py) * s.axis[1]) / len))); }
       const sprH = Math.floor(focal / tY * s.scale), sprW = Math.max(1, Math.floor(sprH * wf));
@@ -2731,7 +2746,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
       }
     }
     else if (o.type === 'buried') { if (o.sensed && !o.dug) out.push({ x: o.x, y: o.y, tex: tex.sprites.mound, scale: 0.55 }); }
-    else if (o.type === 'decor') out.push({ x: o.x, y: o.y, tex: tex.sprites[o.look] || tex.sprites.boot, scale: o.scale || 0.95, axis: o.look === 'haengematte' ? [0, 1] : undefined }); // 0.32.1: Hängematte steht fest als Ebene zwischen den Palmen (Normale nord–süd) // 0.28.0: feste Dekoration (Boot)
+    else if (o.type === 'decor') out.push({ x: o.x, y: o.y, tex: tex.sprites[o.look] || tex.sprites.boot, scale: o.scale || 0.95, span: o.look === 'haengematte' ? [1, 0] : undefined }); // 0.32.1: Hängematte als Strecke zwischen den Palmen (Palmen liegen links/rechts, x-Richtung): Hängematte steht fest als Ebene zwischen den Palmen (Normale nord–süd) // 0.28.0: feste Dekoration (Boot)
     else if (o.type === 'lever' && !o.wall) out.push({ x: o.x, y: o.y, tex: o.used ? tex.sprites.leverDown : tex.sprites.leverUp, scale: 0.75 });
     else if (o.type === 'sign' && o.face == null) out.push({ x: o.x, y: o.y, tex: signTex(tex, o), scale: 0.7 }); // mit face: Tafel hängt an der Wand (buildDecals)
     else if (o.type === 'door' && o.open && grid) { // offene Tür: Rahmen + aufgeklapptes Blatt, nur beim Blick längs des Durchgangs (sonst stünde der Rahmen quer)

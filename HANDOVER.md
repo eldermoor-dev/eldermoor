@@ -1239,3 +1239,8 @@ Nutzerwünsche: Würfelspiel Variante B mit Murmel; Glücksamulett erst nach wie
 - Nutzer: „Trotz absichtlich verlieren kommt es nicht zur Verwandlung von Gnom und Spielumgebung.“ Ursache (aus Code belegt): Teufel kam nur bei einer Niederlage im **genau** 2. Spiel (`n === devilGame`). Wer das 2. Spiel gewonnen oder nach Altstand/Mehrfachspielen schon im 3.+ Spiel verliert, sah ihn nie.
 - Entscheidung (Assistent): Verwandlung bei der **ersten Niederlage ab dem 2. Spiel** (`n >= devilGame`, nur einmal, `gnom:teufel` noch nicht gesetzt). Gilt auch für Aufgeben. Nachteil: Wer im 2. Spiel verliert, bekommt das Amulett nicht mehr (Murmel ist dann Gegner) – wie bisher.
 - Ob beim Nutzer ein Altstand oder ein anderer Fall vorlag, ist nicht gesichert; falls es weiter ausbleibt: Spielnummer/Meldung nennen.
+
+### 0.32.1 – Nachtrag 4 (20.11.2026, 22:20; headless, nicht auf Gerät getestet)
+- Nutzer (2 Screenshots 22:00): „Nur von einer Seite gut.“ Ursache: Auch mit fester Ebene (Nachtrag 2) war die Hängematte ein flaches Rechteck in einer einzigen Tiefe; von schräg oder von der Seite passten Enden und Stämme nicht zusammen (Enden schwebten).
+- Fix: Decor-Sprites mit `span` ([dx,dy]) werden als Strecke im Raum gezeichnet (render.js, Sprite-Schleife): jede Texturspalte wird einzeln perspektivisch projiziert (eigene Tiefe, eigene Höhe, Zbuffer-Test). Hängematte: `span [1,0]`, Enden bei ±1 Feld = Stammmitte der Palmen (3,10)/(5,10). Achtung: Sprite-Texturen sind hochskaliert (TN = 128), Umrechnung `tx * 64 / TN`.
+- Headless aus sechs Blickwinkeln gerendert (Süd, Südost, Ost, Nordost, Südwest, Nord): Enden sitzen überall an den Stämmen. Nicht auf Gerät getestet.

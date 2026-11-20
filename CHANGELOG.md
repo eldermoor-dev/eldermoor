@@ -4,6 +4,7 @@ Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführli
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
 ## 0.32.1 (20.11.2026, headless)
+- Hängematte als echte Strecke zwischen den Palmen gezeichnet (perspektivisch pro Spalte), von jeder Seite an den Stämmen befestigt.
 - Verwandlung in den Teufel/Spielsalon jetzt bei der ersten Niederlage ab dem 2. Spiel (vorher nur genau im 2. Spiel).
 - Hängematte fest zwischen den Palmen verankert und tiefer gehängt (headless geprüft).
 - Schatzinsel: Kakteen versetzt, alle Inselfelder erreichbar (Test neu); Stuhl der Hütte versetzt.
