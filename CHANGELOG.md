@@ -7,6 +7,7 @@ Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ 
 - Entdeckte Falle: Warnzeichen kleiner (ca. 55 %), rot statt gelb, Warnstreifen darunter entfernt.
 - Glücksamulett spürt nur noch versteckte Truhen (hinter Geheim- oder Trugwand, Flag `hidden`) und vergrabene Schätze; normale Truhen lösen nichts aus.
 - Schratgruben verwinkelter: Hallen mit Mauerblöcken zu Knicken umgebaut, Hauptgang mit Umweg (U-Knick bei x15–18), Sackgassen-Nische oben rechts; alle Objekte weiter erreichbar (Test grün).
+- Nebelturm: Tür zum Thronsaal ohne rote Schrift (doppelt zum Wegweiser links).
 - Inventar: Nach „Ausrüsten“ scrollt das Fenster automatisch zur Heldenauswahl.
 
 ## 0.32.1 (20.11.2026, headless)

@@ -3650,6 +3650,7 @@
           "locked": true,
           "key": "turm_schluessel",
           "title": "THRON-|SAAL",
+          "textless": true,
           "style": "dark",
           "look": "gold",
           "font": "bold"
