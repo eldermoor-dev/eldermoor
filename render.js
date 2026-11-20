@@ -124,6 +124,30 @@ function genRock(seed, n = TEX, lichen = false) {
   return t;
 }
 // Fallgitter: Eisenstäbe vor dunklem Schacht, oben und unten Querbalken
+// 0.31.11: Palme (Insel) und aufgewühlter Sandhügel (vergrabener Schatz, nur sichtbar, wenn bemerkt)
+function genPalm(seed) {
+  const crownX = 36, crownY = 17;
+  const pts = [];
+  for (const a of [-2.9, -2.35, -1.85, -1.3, -0.8, -0.25, 0.3]) for (let s = 0; s <= 1.0001; s += 0.025) pts.push([crownX + Math.cos(a) * s * 26, crownY + Math.sin(a) * s * 11 + s * s * 14 - 2]);
+  return paintFigure(seed, ({ ell, lit, nz, px, py, x, y, vn }) => {
+    const l = lit(px, py), n = nz(x >> 1, y >> 1);
+    if (ell(px, py, crownX - 3, crownY + 5, 2.6, 2.6) <= 1 || ell(px, py, crownX + 2, crownY + 6, 2.4, 2.4) <= 1) return ['wood', 1.2 + n * 0.4]; // Kokosnüsse
+    let dmin = 9; for (const [qx, qy] of pts) { const d = Math.hypot(px - qx, (py - qy) * 1.25); if (d < dmin) dmin = d; }
+    if (dmin < 2.5 + ((x + y) % 3 === 0 ? 0.5 : 0)) return ['moss', 4.6 - l * 0.7 - dmin * 0.5 + n * 0.6]; // Wedel
+    const tx = 31 + Math.pow((62 - py) / 44, 2) * 5.5; // Stamm, oben leicht geneigt
+    const w = 4.4 - (62 - py) * 0.04;
+    if (py >= crownY + 2 && py <= 62 && Math.abs(px - tx) < w) return ['wood', 3.1 - (px - tx) * 0.5 - (Math.abs((py % 4.6)) < 0.9 ? 1.1 : 0) + n * 0.4];
+    return null;
+  }, 128, true);
+}
+function genMound(seed) {
+  return paintFigure(seed, ({ ell, lit, nz, px, py, x, y }) => {
+    const n = nz(x, y), e = ell(px, py, 32, 54, 17, 6);
+    if (e <= 1) return ['glow', (e > 0.55 ? 3.3 : 4.6) - (px - 32) * 0.04 + n * 0.6]; // aufgeworfener Sand, dunkler Rand = frisch gegraben
+    if (ell(px, py, 32, 54, 21, 8.5) <= 1 && n > 0.5) return ['glow', 2.6];
+    return null;
+  }, 128, true);
+}
 function genGate(seed, n = TEX) {
   const t = { w: n, h: n, data: new Uint8Array(n * n) };
   const k = n / TEX;
@@ -224,6 +248,18 @@ function genFloor(seed, n = TEX) {
     const fu = u % 32, fv = v % 32;
     if (fu < 0.9 || fv < 0.9) sh = 0.9; else if (fu < 2 || fv < 2) sh += 0.5;
     t.data[y * n + x] = P('floor', sh);
+  }
+  return t;
+}
+// 0.31.11: Sandboden (Gebietsfeld floorTex: 'sand'): warmer Sand mit weichen Windrippeln
+function genSand(seed, n = TEX) {
+  const t = { w: n, h: n, data: new Uint8Array(n * n) };
+  const k = n / TEX;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const u = x / k, v = y / k;
+    let sh = 3.9 + (vnoise(u, v, 16, seed) - 0.5) * 1.1 + Math.sin((v + vnoise(u, v, 8, seed + 3) * 6) * 0.55) * 0.22 + grain(x, y, seed + 1, n > TEX ? 0.45 : 0.8);
+    if (hash(x, y, seed + 9) > 0.992) sh -= 1.2; // vereinzelte dunkle Körner
+    t.data[y * n + x] = P('glow', sh);
   }
   return t;
 }
@@ -2154,11 +2190,12 @@ export function makeTextures(detail = 1) {
   return {
     wall: { [WALL_STONE]: stoneW, [WALL_HOUSE]: genHouseWall(37, n), [WALL_SECRET]: genSecretWall(stoneW, 301), [WALL_SWITCH]: genSwitchWall(stoneW, false), [WALL_SWITCH_ON]: genSwitchWall(stoneW, true), [WALL_MOSS]: genMoss(23, n), [WALL_DOOR]: up(genDoor(31, false), 103), [WALL_DOOR_LOCKED]: up(genDoor(31, true), 104), [WALL_TORCH]: genTorch(11, n), [WALL_ROCK]: genRock(17, n), [WALL_GATE]: genGate(29, n), [WALL_LICHEN]: genRock(19, n, true) },
     floor: genFloor(41, nf),
+    sand: genSand(47, nf),
     sm2,
     water: genWater(61, nf),
     plank: genPlanks(62, nf),
     ceil: genCeil(53, nf),
-    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), rail: genRail(441), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)),  chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), fuhrmann: sm2(genFerryman(771)), boot: sm2(genBoat(772)), gnom: sm2(genGnome(773)), spinne: sm2(genSpider(774)), diener: sm2(genVampire(741, 'diener')), brut: sm2(genVampire(742, 'brut')), graefin: sm2(genVampire(743, 'graefin')), wache: sm2(genPerson(721, 'wache')), haendler2: sm2(genVendor2(751)), gefangener: sm2(genPrisoner(761)), wund: sm2(genPerson(731, 'wund')), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), rail: genRail(441), palme: sm2(genPalm(461)), mound: sm2(genMound(463)), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)),  chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), fuhrmann: sm2(genFerryman(771)), boot: sm2(genBoat(772)), gnom: sm2(genGnome(773)), spinne: sm2(genSpider(774)), diener: sm2(genVampire(741, 'diener')), brut: sm2(genVampire(742, 'brut')), graefin: sm2(genVampire(743, 'graefin')), wache: sm2(genPerson(721, 'wache')), haendler2: sm2(genVendor2(751)), gefangener: sm2(genPrisoner(761)), wund: sm2(genPerson(731, 'wund')), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
@@ -2212,7 +2249,7 @@ export class Raycaster {
         for (let x = 0; x < W; x++) buf[row + x] = c;
       }
     } else {
-      const ftex = tex.floor.data, ctex = tex.ceil.data, FN = tex.floor.w, FM = FN - 1;
+      const ftex = (view.floorTex === 'sand' && tex.sand ? tex.sand : tex.floor).data, ctex = tex.ceil.data, FN = tex.floor.w, FM = FN - 1;
       const rdx0 = dirX - planeX, rdy0 = dirY - planeY, rdx1 = dirX + planeX, rdy1 = dirY + planeY;
       for (let y = 0; y < H; y++) {
         const fl0 = y >= half, p = fl0 ? y + 0.5 - half : half - y - 0.5;
@@ -2470,6 +2507,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
         out.push({ x: o.x + rx * lat + fx * dep, y: o.y + ry * lat + fy * dep, tex: spriteFor(tex, kd), scale: sc * (1 + 0.02 * Math.sin(time * 3 + i)), base: sc, front: inFight, foe: inFight ? { id: o.id, k: i } : null });
       }
     }
+    else if (o.type === 'buried') { if (o.sensed && !o.dug) out.push({ x: o.x, y: o.y, tex: tex.sprites.mound, scale: 0.55 }); }
     else if (o.type === 'decor') out.push({ x: o.x, y: o.y, tex: tex.sprites[o.look] || tex.sprites.boot, scale: o.scale || 0.95 }); // 0.28.0: feste Dekoration (Boot)
     else if (o.type === 'lever' && !o.wall) out.push({ x: o.x, y: o.y, tex: o.used ? tex.sprites.leverDown : tex.sprites.leverUp, scale: 0.75 });
     else if (o.type === 'sign' && o.face == null) out.push({ x: o.x, y: o.y, tex: signTex(tex, o), scale: 0.7 }); // mit face: Tafel hängt an der Wand (buildDecals)
@@ -2483,7 +2521,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
       const ns = wl(o.x - 1, o.y) && wl(o.x + 1, o.y), ew = wl(o.x, o.y - 1) && wl(o.x, o.y + 1);
       if (ns || ew) out.push({ x: o.x, y: o.y, tex: tex.sprites.gateOpen, scale: 1, axis: ns ? [0, 1] : [1, 0] });
     }
-    else if (o.type === 'rail') out.push({ x: o.x + (o.dx || 0), y: o.y + (o.dy || 0), tex: tex.sprites.rail, scale: 0.55, axis: o.ax === 'y' ? [0, 1] : [1, 0] }); // Brückengeländer
+    else if (o.type === 'rail') out.push({ x: o.x + (o.dx || 0), y: o.y + (o.dy || 0), tex: tex.sprites.rail, scale: 0.55, axis: o.ax === 'y' ? [1, 0] : [0, 1] }); // Brückengeländer: axis = Flächennormale; Ebene längs der Bahn steht beim Blick entlang der Bahn kantig (schmal)
     else if (o.type === 'runestone') out.push({ x: o.x, y: o.y, tex: tex.sprites.runeStone, scale: 0.9 });
     else if (o.type === 'merchant') out.push({ x: o.x, y: o.y, tex: tex.sprites[o.look] || tex.sprites.merchant, scale: o.look ? 0.95 : 0.8 });
     else if (o.type === 'npc' && !o.gone) out.push({ x: o.x, y: o.y, tex: tex.sprites[o.look] || tex.sprites.merchant, scale: o.look === 'kultist' || o.look === 'guard' ? 0.95 : 0.85 }); // 0.25.0: Begegnungspersonen (look = Spritename)

@@ -398,7 +398,7 @@ export function tryMove(state, data, rel) {
   }
   res.encounter = enemyInFront(state);
   if (!res.encounter) { const sp = spottedEnemy(state, data); if (sp) { res.encounter = sp.enemy; res.ambush = sp.ambush; } }
-  if (!res.encounter) { const notes = [...scanTraps(state, data), ...scanSecrets(state, data)]; if (notes.length) res.notes = notes; }
+  if (!res.encounter) { const notes = [...scanTraps(state, data), ...scanSecrets(state, data), ...scanBuried(state, data)]; if (notes.length) res.notes = notes; }
   return res;
 }
 
@@ -499,7 +499,7 @@ export function turn(state, data, delta) {
   if (front) return { encounter: front };
   const sp = spottedEnemy(state, data);
   if (sp) return { encounter: sp.enemy, ambush: sp.ambush };
-  const notes = [...scanTraps(state, data), ...scanSecrets(state, data)];
+  const notes = [...scanTraps(state, data), ...scanSecrets(state, data), ...scanBuried(state, data)];
   return notes.length ? { encounter: null, notes } : { encounter: null };
 }
 
@@ -607,6 +607,19 @@ export function secretHint(state, data, o) {
   return { msg: `${base} ${who.name} tastet die Fugen ab: Der Mechanismus muss ${n <= 1 ? 'direkt nebenan' : `etwa ${n} Schritte weiter im ${dir.join('-')}`} liegen${sw.torch ? ', eine Fackel mit lockerer Halterung' : sw.wall ? ', ein lockerer Stein' : ''}.`, sfx: 'ui', long: true };
 }
 // Geheimwände spüren: nach Schritt/Drehung je Geheimwand geradeaus (1–2 Felder) ein Wurf, nur mit Talent „secret“ (Chance 30 + Talent).
+// 0.31.11: Vergrabener Schatz (Objekt { type: 'buried', x, y, loot, text, spotBy? }): nur Schurken und Alchemisten (spotBy, Standard) bemerken die aufgewühlte Stelle,
+// wenn die Gruppe höchstens 3 Felder entfernt ist. Danach ist ein Hügel sichtbar; ◉ auf dem Feld davor gräbt aus. Alle anderen Gruppen sehen nichts.
+export function scanBuried(state, data) {
+  const out = [], p = state.player;
+  for (const o of state.objs) {
+    if (o.type !== 'buried' || o.dug || o.sensed || Math.abs(o.x - p.x) + Math.abs(o.y - p.y) > 3) continue;
+    const who = state.heroes.find((h) => h.hp > 0 && (o.spotBy || ['rogue', 'alchemist']).includes(h.cls));
+    if (!who) continue;
+    o.sensed = true;
+    out.push(`${who.name} bemerkt im Sand eine Stelle, die jemand aufgewühlt hat. ◉ zum Graben.`);
+  }
+  return out;
+}
 export function scanSecrets(state, data) {
   const skill = partySkill(state, data, 'secret');
   if (skill <= 0) return [];
@@ -640,6 +653,8 @@ export function interact(state, data, target = null) { // target (0.26.2): Objek
   const f = frontCell(state);
   const o = target || blockerAt(state, f.x, f.y);
   if (!o) {
+    const bu = state.objs.find((q) => q.type === 'buried' && q.sensed && !q.dug && q.x === f.x && q.y === f.y);
+    if (bu) { bu.dug = true; return { msg: `${bu.text || 'Ihr grabt im Sand.'} Ihr findet: ${addLoot(state, data, bu.loot)}.`, sfx: 'chest', changed: true, long: true }; }
     const il = illusionAt(state, f.x, f.y);
     if (il) { const sk = partySkill(state, data, 'secret'); il.sensed = il.sensed || sk > 0; return { msg: il.hint || (sk > 0 ? `${bestAt(state, data, 'secret').name}: „Das ist keine Mauer. Das Licht bricht sich falsch darin.“` : 'Die Steine wirken seltsam unscharf, als läge ein Schleier darüber.'), sfx: 'ui' }; }
     const tr = trapAt(state, f.x, f.y);
@@ -1898,9 +1913,11 @@ export function syncStatic(state, data) {
       else if (STATIC_TYPES.has(o.type) && a.objs[i].type === o.type && JSON.stringify(a.objs[i]) !== JSON.stringify(o)) { a.objs[i] = clone(o); n++; }
       else if (o.type === 'chest' && o.lootV && a.objs[i].type === 'chest' && !a.objs[i].open && a.objs[i].lootV !== o.lootV) { a.objs[i].loot = clone(o.loot); a.objs[i].lootV = o.lootV; n++; } // 0.21.0: neue Beute (z. B. Set-Teile) auch in ungeöffneten Truhen alter Stände
       else if (o.type === 'enemy' && a.objs[i].type === 'enemy' && !a.objs[i].dead && (a.objs[i].x !== o.x || a.objs[i].y !== o.y) && !(a.id === state.levelId && state.player.x === o.x && state.player.y === o.y)) { a.objs[i].x = o.x; a.objs[i].y = o.y; n++; } // 0.23.12: Gegnerplatz (z. B. Hüter am Thron) auch in alten Ständen nachziehen
-      else if (!STATIC_TYPES.has(o.type)) for (const k of o.type === 'chest' ? ['title', 'style', 'torch', 'msg', 'look', 'mat'] : ['title', 'style', 'torch', 'msg']) if (o[k] !== undefined && a.objs[i][k] !== o[k]) { a.objs[i][k] = o[k]; n++; } // 0.31.9: Truhenstufe (look) nachziehen // 0.16.14: Beschriftung/Stil von Türen u. a. nachziehen (alte Stände ohne `style` zeigten einen Zufallsstil)
+      else if (!STATIC_TYPES.has(o.type)) for (const k of o.type === 'chest' ? ['title', 'style', 'torch', 'msg', 'look', 'mat', 'x', 'y'] : o.type === 'npc' || o.type === 'door' ? ['title', 'style', 'torch', 'msg', 'x', 'y'] : ['title', 'style', 'torch', 'msg']) if (o[k] !== undefined && a.objs[i][k] !== o[k]) { a.objs[i][k] = o[k]; n++; } // 0.31.9: Truhenstufe (look) nachziehen // 0.16.14: Beschriftung/Stil von Türen u. a. nachziehen (alte Stände ohne `style` zeigten einen Zufallsstil)
     }
   }
+  const cur = data.levels[state.levelId], pc = cur && state.player ? cellChar(cur, state.player.x, state.player.y) : '.';
+  if (cur && (isWallChar(pc) || pc === '~') && cur.start) { state.player = { x: cur.start.x, y: cur.start.y, dir: cur.start.dir }; n++; } // 0.31.11: Gebiet wurde umgebaut, Gruppe steckt in Wand oder Wasser
   return n;
 }
 

@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.31.10 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.31.11 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1168,3 +1168,12 @@ Nutzer (Screenshot Insel): „Hauswand anders. Aus dunkelbraunen Holzbalken, Hol
 - Auslegung (Annahme: „1×1“ = Innenraum, Wände zusätzlich): Hütte 3×3 Felder (x 6–8, y 4–6), Innenraum 1 Feld (7,5) mit Murmel, Tür unten (7,6), Fackel oben. `hall.low = [6,4,8,6]`. Falls die ganze Hütte nur ein Feld groß sein sollte, bitte melden.
 - Insel verkleinert (Land x 3–11 in Hüttenhöhe, Steg-Streifen x 5–9, y 8–10). Truhen jetzt (4,3), (10,3), (11,5); Fuhrmann (8,10), Boot (7,11); Ankunft (7,10) unverändert; Schilder (6,7) „WÜRFEL HAUS“ und (8,7) „MURMEL“ jetzt in Kreideschrift (`small`), da schwarz auf Dunkelbraun unleserlich.
 - Headless-Screenshots, 131 Tests grün. Nicht auf Gerät getestet.
+
+## 0.31.11 (20.11.2026) – Insel: Sand, Palmen, vergrabener Schatz; Brückengeländer korrigiert (nicht auf Gerät getestet)
+Nutzer: „Der Boden der Insel ist aus Sand. Vereinzelt Palmen. An einer Stelle ist ein Schatz im Sand vergraben. Schurken und Alchemisten bemerken das.“ Dazu: „Brücke fehlerhaft“ (Screenshot zeigte die Insel-Anlegestelle, keine Brücke; Ursache siehe unten, vermutet).
+- Sandboden: Gebietsfeld `floorTex: 'sand'` (render.js `genSand`, `view.floorTex`). Nur Schatzinsel.
+- Palmen: `decor` mit `look: 'palme'`, `scale: 1.45` (blockieren das Feld), fünf Stück: (5,2), (3,6), (11,4), (9,9), (10,7).
+- Vergrabener Schatz: neuer Objekttyp `buried` (`spotBy` Standard `["rogue","alchemist"]`, `loot`, `text`, Zustand `sensed`, `dug`), Schatzinsel (4,5): 80 Gold + Aufwertungsteil. Ein wacher Schurke oder Alchemist bemerkt die aufgewühlte Stelle automatisch (kein Würfelwurf), sobald die Gruppe höchstens 3 Felder (Manhattan) entfernt ist; dann erscheint ein Sandhügel (Sprite `mound`), ◉ auf dem Feld davor gräbt aus. Gruppen ohne diese Berufe sehen nichts (Absicht laut Nutzer; Entscheidung: kein Notweg). `scanBuried` läuft mit den Fallen-/Geheimtür-Scans.
+- Brückengeländer (Fehler aus 0.31.6): `axis` des Sprites ist die Flächennormale, nicht die Laufrichtung; die Geländer standen deshalb beim Blick entlang der Brücke wie große Torrahmen quer. Jetzt Normale quer zur Bahn: längs der Brücke schmale Pfosten, von der Seite durchgehendes Geländer. Ob der Nutzer genau das meinte, ist nicht gesichert (Screenshot zeigte die Insel).
+- Alte Spielstände: `syncStatic` zieht jetzt auch Position (x, y) von Truhen, NPCs und Türen nach (Insel wurde umgebaut) und setzt die Gruppe auf den Gebietsstart, wenn sie in Wand oder Wasser steht.
+- Neuer Test (132 grün): Schatz, Berufe, einmaliges Graben, Entfernung, Umbau-Schutz. Headless-Screenshots (Sand, Palmen, Geländer). Nicht auf Gerät getestet.

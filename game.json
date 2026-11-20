@@ -5654,6 +5654,67 @@
           "title": "MURMEL",
           "style": "small",
           "text": "Am Türpfosten hängt ein kleines Schild: „Hier wohnt Murmel. Klopfen ist zwecklos, würfeln lohnt sich.“"
+        },
+        {
+          "id": "palme_i52",
+          "type": "decor",
+          "x": 5,
+          "y": 2,
+          "look": "palme",
+          "scale": 1.45
+        },
+        {
+          "id": "palme_i36",
+          "type": "decor",
+          "x": 3,
+          "y": 6,
+          "look": "palme",
+          "scale": 1.45
+        },
+        {
+          "id": "palme_i114",
+          "type": "decor",
+          "x": 11,
+          "y": 4,
+          "look": "palme",
+          "scale": 1.45
+        },
+        {
+          "id": "palme_i99",
+          "type": "decor",
+          "x": 9,
+          "y": 9,
+          "look": "palme",
+          "scale": 1.45
+        },
+        {
+          "id": "palme_i107",
+          "type": "decor",
+          "x": 10,
+          "y": 7,
+          "look": "palme",
+          "scale": 1.45
+        },
+        {
+          "id": "buried_i1",
+          "type": "buried",
+          "x": 4,
+          "y": 5,
+          "spotBy": [
+            "rogue",
+            "alchemist"
+          ],
+          "text": "Ihr grabt im Sand und stoßt auf eine Kiste, vom Salz zerfressen, aber voll.",
+          "loot": [
+            {
+              "gold": 80
+            },
+            {
+              "gear": {
+                "boost": 1
+              }
+            }
+          ]
         }
       ],
       "hall": {
@@ -5664,7 +5725,8 @@
           8,
           6
         ]
-      }
+      },
+      "floorTex": "sand"
     }
   },
   "spot": {

@@ -10,7 +10,7 @@ import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, build
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.31.10';
+const VERSION = '0.31.11';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -277,7 +277,7 @@ function frame(now) {
   updateViewAdjust(now);
   const vc = viewCam();
   const sprites = buildSprites(S.game.objs, S.tex, now / 1000, S.cam.a, aliveMap(), { grid, gw, gh });
-  S.rc.render({ px: vc.x, py: vc.y, angle: vc.a, horizon: S.vh * H, grid, gw, gh, decals: buildDecals(S.lvl, S.game.objs, S.tex), sprites, time: now / 1000, floorGrid: buildFloorGrid(S.lvl), hall: S.lvl.hall || null });
+  S.rc.render({ px: vc.x, py: vc.y, angle: vc.a, horizon: S.vh * H, grid, gw, gh, decals: buildDecals(S.lvl, S.game.objs, S.tex), sprites, time: now / 1000, floorGrid: buildFloorGrid(S.lvl), hall: S.lvl.hall || null, floorTex: S.lvl.floorTex || null });
   S.ctx.putImageData(S.img, 0, 0);
   placeFoeTags(sprites);
   S.frameMs = S.frameMs * 0.9 + (performance.now() - t0) * 0.1;

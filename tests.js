@@ -582,6 +582,31 @@ export async function runTests(data, env = {}) {
     assert(si.objects.some((o) => o.id === 'door_i_haus') && si.objects.some((o) => o.id === 'npc_gnom'), 'Haus mit Gnom');
   });
 
+  await test('Vergrabener Schatz (0.31.11): nur Schurke/Alchemist bemerkt ihn, Graben bringt Beute, Sandboden und Palmen', () => {
+    const si = data.levels.schatzinsel, bu = si.objects.find((o) => o.type === 'buried');
+    assert(si.floorTex === 'sand' && bu && si.objects.filter((o) => o.look === 'palme').length >= 3, 'Sand, Palmen, Schatz vorhanden');
+    const run = (classes) => {
+      const s = fresh(5); L.jumpToLevel(s, data, 'schatzinsel'); s.heroes.forEach((h, i) => { h.cls = classes[i % classes.length]; });
+      s.player = { x: bu.x, y: bu.y + 2, dir: 0 };
+      const notes = L.scanBuried(s, data); return { s, notes, o: s.objs.find((o) => o.id === bu.id) };
+    };
+    const blind = run(['warrior', 'priest', 'mage', 'ranger']);
+    assert(!blind.notes.length && !blind.o.sensed, 'Gruppe ohne Schurke/Alchemist bemerkt nichts');
+    for (const cls of ['rogue', 'alchemist']) {
+      const k = run(['warrior', cls]);
+      assert(k.notes.length === 1 && k.o.sensed, cls + ' bemerkt die Stelle');
+      k.s.player = { x: bu.x, y: bu.y + 1, dir: 0 };
+      const g0 = k.s.gold, r = L.interact(k.s, data);
+      assert(k.o.dug && k.s.gold === g0 + 80 && /findet/.test(r.msg), 'Graben bringt Beute');
+      assert(!L.scanBuried(k.s, data).length && !L.interact(k.s, data).msg.includes('findet'), 'nur einmal');
+    }
+    const far = run(['rogue']); far.s.player = { x: bu.x + 3, y: bu.y + 3, dir: 0 }; far.o.sensed = false;
+    assert(!L.scanBuried(far.s, data).length, 'zu weit entfernt: nichts bemerkt');
+    // Umbau-Schutz: Spieler in Wand/Wasser wird beim Laden auf den Start gesetzt
+    const w = fresh(6); L.jumpToLevel(w, data, 'schatzinsel'); w.player = { x: 1, y: 1, dir: 0 }; L.syncStatic(w, data);
+    assert(w.player.x === si.start.x && w.player.y === si.start.y, 'Spieler im Wasser kommt zum Start');
+  });
+
   await test('Talent-Wahl (0.31.0): jedes ★-Talent hat eine Alternative, nur eine Wahl, Nachfolger akzeptiert beide, Zurücksetzen, Speichern', () => {
     const FX = new Set(['hp', 'mp', 'atk', 'def', 'init', 'crit', 'dodge', 'resist', 'gold', 'abil', 'soak', 'heal', 'regen', 'backfull', 'trap', 'lock', 'secret', 'haggle', 'lifesteal', 'taunt', 'aura_atk', 'firstcrit', 'noambush', 'loot_potion', 'postheal', 'aura_soak', 'burnhit', 'fireburn', 'frostbite', 'manashield', 'pierce', 'opener', 'immune_poison', 'dotplus', 'potionplus', 'chain']);
     const ids = new Set(); let n = 0;
