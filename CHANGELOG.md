@@ -8,6 +8,7 @@ Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ 
 - Glücksamulett spürt nur noch versteckte Truhen (hinter Geheim- oder Trugwand, Flag `hidden`) und vergrabene Schätze; normale Truhen lösen nichts aus.
 - Schratgruben verwinkelter: Hallen mit Mauerblöcken zu Knicken umgebaut, Hauptgang mit Umweg (U-Knick bei x15–18), Sackgassen-Nische oben rechts; alle Objekte weiter erreichbar (Test grün).
 - Nebelturm: Tür zum Thronsaal ohne rote Schrift (doppelt zum Wegweiser links).
+- Geöffnete Türen lassen sich per ◉/Antippen wieder schließen (nicht, wenn ein Gegner oder eine Person im Türfeld steht).
 - Inventar: Nach „Ausrüsten“ scrollt das Fenster automatisch zur Heldenauswahl.
 
 ## 0.32.1 (20.11.2026, headless)

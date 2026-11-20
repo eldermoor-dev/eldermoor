@@ -2217,6 +2217,13 @@ export async function runTests(data, env = {}) {
       assert(L.scanLuck(s, data).length === 1 && hc.felt && s.seen[hc.y * w2 + hc.x] === 1, 'versteckte Truhe wird gespürt und erscheint auf der Karte');
       assert(L.scanLuck(s, data).length === 0, 'nur einmal je Truhe');
     });
+    await test('Türen schließen (0.32.2): geöffnete Tür lässt sich per Interagieren wieder schließen und öffnen', () => {
+      const s = fresh(1); L.jumpToLevel(s, data, 'kultgruft'); const d = s.objs.find((o) => o.type === 'door' && !o.locked);
+      assert(d, 'Tür vorhanden'); const dirs = [[0, -1], [1, 0], [0, 1], [-1, 0]]; d.open = true;
+      let ok = false; for (let k = 0; k < 4 && !ok; k++) { s.player.dir = k; s.player.x = d.x - dirs[k][0]; s.player.y = d.y - dirs[k][1]; ok = L.frontCell(s).x === d.x && L.frontCell(s).y === d.y; }
+      const r = L.interact(s, data); assert(!d.open && /schließt/.test(r.msg), 'Tür geschlossen');
+      L.interact(s, data); assert(d.open, 'wieder offen');
+    });
     await test('Version: sw.js und main.js stimmen überein', () => {
       const re = /VERSION\s*=\s*'([^']+)'/;
       const a = texts['sw.js'] && re.exec(texts['sw.js']), b = texts['main.js'] && re.exec(texts['main.js']);

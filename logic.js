@@ -683,6 +683,9 @@ export function interact(state, data, target = null) { // target (0.26.2): Objek
   const f = frontCell(state);
   const o = target || blockerAt(state, f.x, f.y);
   if (!o) {
+    // 0.32.2: Geöffnete Tür vor der Gruppe per ◉/Antippen wieder schließen (nicht, wenn etwas im Türfeld steht)
+    const od = state.objs.find((q) => q.type === 'door' && q.open && q.x === f.x && q.y === f.y);
+    if (od && !state.objs.some((q) => q !== od && q.x === f.x && q.y === f.y && (q.type === 'enemy' ? !q.dead : q.type === 'npc' && !q.gone))) { od.open = false; return { msg: 'Ihr schließt die Tür.', sfx: 'ui', changed: true }; }
     const bu = state.objs.find((q) => q.type === 'buried' && q.sensed && !q.dug && q.x === f.x && q.y === f.y);
     if (bu) { bu.dug = true; return { msg: `${bu.text || 'Ihr grabt im Sand.'} Ihr findet: ${addLoot(state, data, bu.loot)}.`, sfx: 'chest', changed: true, long: true }; }
     const il = illusionAt(state, f.x, f.y);
