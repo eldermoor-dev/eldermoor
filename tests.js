@@ -666,7 +666,7 @@ export async function runTests(data, env = {}) {
     // Umbau-Schutz: Spieler in Wand/Wasser wird beim Laden auf den Start gesetzt
     { // echter Altstand: Insel-Layout von 0.31.9 (Gruppe im alten Haus) muss mit dem neuen Layout laden
       const o = JSON.parse(JSON.stringify(data)); o.levels.schatzinsel.map = ['mmmmmmmmmmmmmmm', 'm~~~~~~~~~~~~~m', 'm~~~.......~~~m', 'm~~.........~~m', 'm~...hhThh...~m', 'm~...h...h...~m', 'm~...h...h...~m', 'm~...h...h...~m', 'm~...hh.hh...~m', 'm~...........~m', 'm~~.........~~m', 'm~~~.......~~~m', 'm~~~~~~~~~~~~~m', 'mmmmmmmmmmmmmmm'];
-      const old = L.newGame(o, 5); L.jumpToLevel(old, o, 'schatzinsel'); old.player = { x: 6, y: 6, dir: 1 };
+      const old = L.newGame(o, 5); L.jumpToLevel(old, o, 'schatzinsel'); old.player = { x: 7, y: 6, dir: 1 };
       const back = L.deserialize(L.serialize(old), data);
       assert(back.levelId === 'schatzinsel' && back.player.x === si.start.x && back.player.y === si.start.y, 'Altstand mit Gruppe im alten Haus lädt, Gruppe am Start');
     }
@@ -747,7 +747,7 @@ export async function runTests(data, env = {}) {
     const fromBoss = rare.filter((k) => Object.values(data.enemies).some((e) => (e.drops || []).some((dr) => dr.item === k || (dr.pick || []).includes(k))));
     const fromChest = rare.filter((k) => Object.values(data.levels).some((lv) => lv.objects.some((o) => o.type === 'chest' && (o.loot || []).some((l) => l.item === k))));
     const fromTalk = rare.filter((k) => Object.values(data.dialogs).some((dl) => Object.values(dl.nodes).some((n) => n.choices.some((c) => (c.give || []).some((l) => l.item === k)))));
-    for (const k of rare) assert(fromBoss.includes(k) || fromChest.includes(k) || fromTalk.includes(k), `${k} hat keine Fundquelle`);
+    for (const k of rare) assert(fromBoss.includes(k) || fromChest.includes(k) || fromTalk.includes(k) || k === data.dicegame.amulet, `${k} hat keine Fundquelle`);
     assert(rare.every((k) => data.items[k].q === 'unique'), 'alle einzigartig (nicht verkäuflich)');
     // Gefangener: Zelle, Schlüssel in der Galerie-Truhe, Wunsch + Ring
     const f3 = data.levels.festung3, zd = f3.objects.find((o) => o.id === 'door_b_zelle');
@@ -942,7 +942,7 @@ export async function runTests(data, env = {}) {
     assert(threw, 'falscher Slot im Spielstand wird abgelehnt');
     const q2 = fresh(8); q2.inv.iron_sword = 1; L.startCombat(q2, data, q2.objs.find((o) => o.type === 'enemy'));
     assert(L.equipItem(q2, data, 'iron_sword', 0).error === 'in-combat', 'im Kampf nicht wechseln');
-    for (const [k, it] of Object.entries(data.items)) if (it.kind === 'equip') assert(it.slot && (it.atk || it.def || it.init || it.fx) && it.desc, `Item ${k} vollständig`);
+    for (const [k, it] of Object.entries(data.items)) if (it.kind === 'equip') assert(it.slot && (it.atk || it.def || it.init || it.fx || it.passive) && it.desc, `Item ${k} vollständig`);
   });
   await test('Mehrere Gegner (3c): Gruppen, Zielwahl, Alle angreifen, Schwerer Schlag, KI, Aufstehen, Rechenweg', () => {
     const enemyObj = (id) => { const s = L.newGame(data, 31); return [s, s.objs.find((o) => o.id === id)]; };
@@ -2182,6 +2182,13 @@ export async function runTests(data, env = {}) {
     });
     await test('Hängematte (0.32.1): hängt tief (Sprite)', () => {
       assert(/sag = 46 \+ 8/.test(texts['render.js'] || ''), 'Hängematte nicht gesenkt');
+    });
+    await test('Glücksamulett (0.32.1): ausrüstbar im Amulett-Platz, Gold-Effekt bleibt angelegt', () => {
+      const s = fresh(1); s.inv.gluecksamulett = 1;
+      assert(data.items.gluecksamulett.kind === 'equip' && data.items.gluecksamulett.slot === 'amulet', 'Item nicht ausrüstbar');
+      const r = L.equipItem(s, data, 'gluecksamulett', 0); assert(!r.error && s.heroes[0].equip.amulet === 'gluecksamulett' && !s.inv.gluecksamulett, 'Anlegen schlägt fehl: ' + JSON.stringify(r));
+      assert(/'gluecksamulett'/.test(texts['logic.js'] || ''), 'Logik');
+      L.unequipItem(s, data, 0, 'amulet'); assert(s.inv.gluecksamulett === 1, 'Ablegen');
     });
     await test('Version: sw.js und main.js stimmen überein', () => {
       const re = /VERSION\s*=\s*'([^']+)'/;

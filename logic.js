@@ -400,7 +400,7 @@ export function tryMove(state, data, rel) {
   } else if (ex) res.events.push({ type: 'exitAgain', id: ex.id }); // 0.16.4: erneutes Betreten zeigt einen kurzen Hinweis
   const stairs = state.objs.find((o) => o.type === 'stairs' && o.x === nx && o.y === ny);
   if (stairs) { res.events.push({ type: 'stairs', id: stairs.id }); return res; }
-  if ((state.inv.gluecksamulett || 0) > 0 && rand(state) < 0.006) { // 0.28.0: Glücksamulett – sehr selten Gold am Boden (ca. alle 170 Schritte)
+  if (((state.inv.gluecksamulett || 0) > 0 || state.heroes.some((h) => h.equip && h.equip.amulet === 'gluecksamulett')) && rand(state) < 0.0012) { // 0.32.1: auch angelegt wirksam; Häufigkeit gesenkt (Nutzer: zu oft), Zwischenlösung bis zur Entscheidung über neue Fähigkeit // 0.28.0: Glücksamulett – sehr selten Gold am Boden (ca. alle 170 Schritte)
     const g = randInt(state, 3, 14);
     state.gold += g;
     res.luck = `Das Amulett wärmt sich kurz auf: Im Staub liegen ${g} Gold!`;
