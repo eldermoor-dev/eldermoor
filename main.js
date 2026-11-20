@@ -1317,6 +1317,18 @@ function drawMap() {
       if (near) { c.fillStyle = cellChar(lvl, x, y) === '~' ? '#2f5f8f' : '#8a7a5e'; c.fillRect(x * cs, y * cs, cs, cs); } // Wasser blau
     }
   }
+  if (lvl.id === 'moorsee') { // 0.32.1 (Nutzer: „Keine eigene Schatzinselkarte, soll hier zu sehen sein“): besuchte Schatzinsel als verkleinerter Ausschnitt im See
+    const ar = g.areas && g.areas.schatzinsel, il = S.data.levels.schatzinsel;
+    if (ar && ar.seen && il) {
+      const iw = il.map[0].length, ih = il.map.length, ic = cs * 0.5, ox = 24 * cs, oy = 3 * cs, isn = (x, y) => x >= 0 && y >= 0 && x < iw && y < ih && ar.seen[y * iw + x];
+      for (let y = 0; y < ih; y++) for (let x = 0; x < iw; x++) {
+        const ch = cellCharRaw(il, x, y);
+        if (ch === '.') { if (isn(x, y)) { c.fillStyle = il.floor && '=|+r'.includes(il.floor[y][x]) ? '#7a5a34' : '#a08a52'; c.fillRect(ox + x * ic, oy + y * ic, ic + 0.5, ic + 0.5); } } // Sand hell, Bohlen braun
+        else { let near = false; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (cellCharRaw(il, x + dx, y + dy) === '.' && isn(x + dx, y + dy)) near = true; if (near) { c.fillStyle = ch === '~' ? '#2f5f8f' : '#8a7a5e'; c.fillRect(ox + x * ic, oy + y * ic, ic + 0.5, ic + 0.5); } }
+      }
+      c.fillStyle = '#e8d9b0'; c.font = `${Math.round(cs * 0.7)}px serif`; c.textBaseline = 'bottom'; c.fillText('Schatzinsel', ox, oy - cs * 0.15);
+    }
+  }
   for (const o of g.objs) {
     if (!seen(o.x, o.y)) continue;
     const k = mapSymKind(o);

@@ -5430,7 +5430,8 @@
           "face": 0,
           "title": "BRÜCKE",
           "text": "Die Bohlen sind nass, halten aber. Der Fluss darunter ist kälter, als er aussieht.",
-          "sym": "bruecke"
+          "sym": "bruecke",
+          "style": "iron"
         },
         {
           "id": "sign_s_faehre",

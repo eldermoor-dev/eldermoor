@@ -165,15 +165,15 @@ function genGate(seed, n = TEX) {
 }
 // Geöffnetes Fallgitter (0.23.9, Nutzer: „soll offen zu sehen sein“): Pfosten und Querbalken, daran hochgezogen die Stäbe mit Spitzen; Durchgang frei
 // 0.31.6 (Nutzer: „Brücke ist flach“): Geländer der Brücke – Pfosten und zwei Holme, steht als Ebene längs der Bahn an der Kante (Typ 'rail')
-function genRail(seed) {
+function genRail(seed) { // 0.32.1 (Nutzer: „Brückengelände verbessern“): dichtere Pfosten, dicke Handleiste, Mittel- und Fußleiste, heller
   const t = { w: TEX, h: TEX, data: new Uint8Array(TEX * TEX).fill(255) };
   for (let y = 0; y < TEX; y++) for (let x = 0; x < TEX; x++) {
-    const post = (x % 30) < 5 && y >= 6, topRail = y >= 8 && y <= 14, lowRail = y >= 34 && y <= 39;
-    if (!(post || topRail || lowRail)) continue;
-    const edge = (topRail && (y === 8 || y === 14)) || (lowRail && (y === 34 || y === 39)) || (post && (x % 30 === 0 || x % 30 === 4));
-    t.data[y * TEX + x] = P('wood', (edge ? 1.6 : 3.2) + hash(x >> 1, y >> 2, seed) * 0.7);
+    const post = (x % 16) >= 6 && (x % 16) < 10 && y >= 4, topRail = y >= 6 && y <= 13, midRail = y >= 24 && y <= 27, lowRail = y >= 40 && y <= 44;
+    if (!(post || topRail || midRail || lowRail)) continue;
+    const edge = (topRail && (y === 6 || y === 13)) || (midRail && (y === 24 || y === 27)) || (lowRail && (y === 40 || y === 44)) || (post && !topRail && !midRail && !lowRail && ((x % 16) === 6 || (x % 16) === 9));
+    t.data[y * TEX + x] = P('wood', (edge ? 2.4 : topRail ? 4.6 : 3.9) + hash(x >> 1, y >> 2, seed) * 0.6);
   }
-  for (let x = 0; x < TEX; x += 30) for (let y = 6; y <= 9; y++) for (let dx = 0; dx < 5; dx++) if (x + dx < TEX) t.data[y * TEX + x + dx] = P('wood', 4.2 + hash(x + dx, y, seed + 2) * 0.5); // Pfostenkappen
+  for (let x = 0; x < TEX; x += 16) for (let y = 3; y <= 5; y++) for (let dx = 5; dx < 11; dx++) if (x + dx < TEX) t.data[y * TEX + x + dx] = P('wood', 5.0 + hash(x + dx, y, seed + 2) * 0.4); // Pfostenkappen
   t.noWrap = true;
   return t;
 }
@@ -599,7 +599,7 @@ const FONT = {
   S: '01111/10000/10000/01110/00001/00001/11110', T: '11111/00100/00100/00100/00100/00100/00100', U: '10001/10001/10001/10001/10001/10001/01110',
   V: '10001/10001/10001/10001/10001/01010/00100', W: '10001/10001/10001/10101/10101/10101/01010', X: '10001/10001/01010/00100/01010/10001/10001',
   Y: '10001/10001/01010/00100/00100/00100/00100', Z: '11111/00001/00010/00100/01000/10000/11111',
-  'Ä': '01010/01110/10001/11111/10001/10001/10001', 'Ö': '01010/01110/10001/10001/10001/10001/01110', 'Ü': '01010/10001/10001/10001/10001/10001/01110',
+  'Ä': '10001/00000/01110/10001/11111/10001/10001', 'Ö': '10001/00000/01110/10001/10001/10001/01110', 'Ü': '10001/00000/10001/10001/10001/10001/01110',
   0: '01110/10001/10011/10101/11001/10001/01110', 1: '00100/01100/00100/00100/00100/00100/01110', 2: '01110/10001/00001/00010/00100/01000/11111',
   3: '11110/00001/00001/01110/00001/00001/11110', 4: '00010/00110/01010/10010/11111/00010/00010', 5: '11111/10000/11110/00001/00001/10001/01110',
   6: '00110/01000/10000/11110/10001/10001/01110', 7: '11111/00001/00010/00100/01000/01000/01000', 8: '01110/10001/10001/01110/10001/10001/01110',
@@ -751,7 +751,7 @@ function genPlaque(title, kind, styleName, seed, clipY = PLQ, sym = null) { // c
   const lines = String(title || '').toUpperCase().split('|').slice(0, 2).filter(Boolean);
   const maxC = Math.max(1, ...lines.map((l) => [...l].slice(0, 8).length)), cw = 6;
   // 0.23.4 (Nutzer: aus der Nähe zu groß, unlesbar): Textblock höchstens ca. die halbe Wandbreite (vorher bis 75 %); Stil (Blutschmiere) bleibt
-  const s = kind === 'door' ? Math.max(1.5, Math.min(2, 80 / (cw * maxC))) : Math.max(1.7, Math.min(2.3, 100 / (cw * maxC))); // Türsturz (0.23.6): Schrift liegt innerhalb des Türschilds
+  const s = kind === 'door' ? Math.max(1.5, Math.min(2, 80 / (cw * maxC))) : Math.max(1.7, Math.min(2.9, 112 / (cw * maxC))); // 0.32.1: kurze Wandtitel (BRÜCKE) größer, Nutzer: kaum lesbar // Türsturz (0.23.6): Schrift liegt innerhalb des Türschilds
   const lh = Math.round(9 * s), th = lines.length ? Math.round(lines.length * lh - 2 * s) : 0;
   const SG = sym && SYMS[sym] ? SYMS[sym] : null, ss = lines.length ? s * 1.3 : s * 2.2, symH = SG ? Math.round(SG.length * ss + (lines.length ? 5 * s : 0)) : 0; // ohne Text: Symbol allein, größer und mittig
   const ty0 = kind === 'door' ? 14 + symH : Math.round(N / 2 - th / 2 + symH / 2);
@@ -1598,7 +1598,7 @@ function genPlanks(seed, n) { // Bohlen quer zur Laufrichtung (Bretter liegen in
     const gap = y % bh < Math.max(1, bh / 10);
     const joint = ((x + off) % (n / 2)) < Math.max(1, n / 64);
     const nail = ((x + off) % (n / 2)) === 3 && (y % bh) > bh * 0.35 && (y % bh) < bh * 0.55;
-    let c = P('wood', 2.6 + hash(row, 3, seed) * 0.9 + (hash(x >> 2, y, seed + 1) - 0.5) * 0.7);
+    let c = P('wood', 3.2 + hash(row, 3, seed) * 0.9 + (hash(x >> 2, y, seed + 1) - 0.5) * 0.7);
     if (gap || joint) c = P('wood', 0.7);
     else if (nail) c = P('iron', 4);
     t.data[y * n + x] = c;
