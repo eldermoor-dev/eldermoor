@@ -1303,10 +1303,10 @@ function genTrap(mode, seed, kind = 'spikes') { // kind (0.22.1, Nutzer: „Stah
     for (const cx of [26, 38]) { let x = cx + Math.floor(hash(cx, 5, seed) * 3) - 1; for (let y = 58; y <= 63; y++) { set(x, y, P('stone', 1.5)); if (hash(x, y, seed + 2) > 0.55) x += hash(y, x, seed + 3) > 0.5 ? 1 : -1; } }
     for (let x = 12; x <= 52; x++) for (let y = 55; y <= 56; y++) if (hash(x, y, seed + 7) > 0.97) set(x, y, P('stone', 3.8));
   } else if (mode === 'seen') {
-    for (let x = 12; x <= 52; x++) for (let y = 58; y <= 63; y++) { const edge = x === 12 || x === 52 || y === 58 || y === 63; set(x, y, edge ? P('glow', 6.5) : (x + y) % 4 < 2 ? P('glow', 3.2) : P('stone', 0.6)); }
-    for (let y = 30; y <= 50; y++) for (let x = 29; x <= 35; x++) { const w = 3 - Math.floor((y - 30) / 9); if (Math.abs(x - 32) <= Math.max(1, w) && y <= 45) set(x, y, P('glow', 7)); }
-    for (let y = 49; y <= 53; y++) for (let x = 30; x <= 34; x++) set(x, y, P('glow', 7));
-    for (let y = 28; y <= 55; y++) for (let x = 26; x <= 38; x++) if (t.data[y * TEX + x] === 255 && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => { const v = t.data[(y + b) * TEX + x + a]; return v !== 255 && v !== P('stone', 0); })) set(x, y, P('stone', 0));
+    // 0.32.2 (Nutzer: Zeichen zu groß, rot, Querbalken weg): kleineres rotes Ausrufezeichen ohne Warnstreifen
+    for (let y = 42; y <= 53; y++) for (let x = 29; x <= 35; x++) { const w = 2 - Math.floor((y - 42) / 6); if (Math.abs(x - 32) <= Math.max(1, w)) set(x, y, P('blood', 6.5)); }
+    for (let y = 56; y <= 59; y++) for (let x = 30; x <= 34; x++) set(x, y, P('blood', 6.5));
+    for (let y = 40; y <= 61; y++) for (let x = 27; x <= 37; x++) if (t.data[y * TEX + x] === 255 && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => { const v = t.data[(y + b) * TEX + x + a]; return v !== 255 && v !== P('stone', 0); })) set(x, y, P('stone', 0));
   } else if (kind === 'gas') { // Giftnebel: Düsen im Boden, grüne Schwaden
     for (let x = 12; x <= 52; x++) set(x, 63, P('stone', 0.5));
     for (const cx of [20, 32, 44]) for (let x = cx - 2; x <= cx + 2; x++) set(x, 62, P('stone', 0.2));

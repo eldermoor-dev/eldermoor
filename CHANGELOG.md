@@ -4,6 +4,7 @@ Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführli
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
 ## 0.32.2 (20.11.2026, headless)
+- Entdeckte Falle: Warnzeichen kleiner (ca. 55 %), rot statt gelb, Warnstreifen darunter entfernt.
 - Inventar: Nach „Ausrüsten“ scrollt das Fenster automatisch zur Heldenauswahl.
 
 ## 0.32.1 (20.11.2026, headless)

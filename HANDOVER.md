@@ -1276,3 +1276,4 @@ Nutzerwünsche: Würfelspiel Variante B mit Murmel; Glücksamulett erst nach wie
 - Inventar: „Ausrüsten“ öffnet die Heldenauswahl unter der Liste; main.js scrollt jetzt per scrollIntoView dorthin (Handler `eqsel:`). VERSION in main.js und sw.js 0.32.2. Tests 138 grün.
 - Offen auf Gerät: Scrollt das Fenster nach „Ausrüsten“ so, dass die Heldenknöpfe sichtbar sind?
 - Kette der Gier (amulett_gier, Einzigartig): Fluch laut game.json Verteidigung −2, Angriff −1 (wirkt immer, Anzeige erst nach erstem Tragen oder Talent „Geheimes“ ≥ 25); Nutzen Gold +40 % aus Kämpfen.
+- Entdeckte Falle (genTrap 'seen' in render.js): Ausrufezeichen ca. 7×20 statt 13×35 Pixel, Farbe blood (rot), Warnstreifen am Boden entfernt. Deutung von „Querelen ganz weg“ = Querbalken/Streifen: Vermutung. Offen auf Gerät: passt Größe/Farbe?
