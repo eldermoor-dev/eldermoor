@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.31.7 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.31.8 (20.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1146,3 +1146,9 @@ Nutzer: „Schriftzug weg. Der Bereich soll in einem Bereich liegen, in dem die 
 - Neue Wand `h` (Fachwerk, `WALL_HOUSE` = 12). Schatzinsel: Haus jetzt 5 × 5 (x 5–9, y 4–8, Innenraum 3 × 3, Tür unten, Fackel oben), `hall: {h:2, low:[5,4,9,8]}`. Schilder (Abziehbilder) werden nur auf normal hohen Wänden gezeichnet.
 - Grenzen/Vermutungen: Dach von außen nicht sichtbar (Blickhöhe liegt unter der Dachkante); Texturdichte der hohen Wände nicht beurteilt; Leistung auf dem S25 nicht gemessen (Mehrfachtreffer nur auf diesem Gebiet).
 - Headless-Screenshots, 131 Tests grün. Nicht auf Gerät getestet.
+
+## 0.31.8 (20.11.2026) – Namensschild und Name des Gnoms (nicht auf Gerät getestet)
+Nutzer: „Es soll ein Türschild neben dem Eingangstor sein, darauf der Name des Gnoms (denk dir was aus). Der Gnom soll im Verlauf dann auch so heißen.“
+- Name (Entscheidung des Assistenten, delegiert): **Murmel**. Passt zum Gnomenstil, kurz genug fürs Schild.
+- Neues Schild `sign_i_name` (Schatzinsel, 8/9, Wand rechts neben der Haustür, Titel „MURMEL“, Holzstil); das Würfel-Schild links bleibt. Name im NPC (`npc_gnom.name`), im Dialog (`dialogs.gnom.name`) und in den Erzähltexten (Dialog, Kampfeinleitung, Gerüchtetext) von „Der Gnom“ auf „Murmel“ umgestellt. Rasse „Gnom“ (Heldenrasse) unberührt.
+- Headless-Screenshot: Schrift liegt teils über einem Holzbalken (lesbar, aber nicht ideal); 131 Tests grün. Nicht auf Gerät getestet.
