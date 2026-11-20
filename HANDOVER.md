@@ -1088,3 +1088,10 @@ Nutzer: „Es wäre auch noch gut, wenn bei dem Spiel man sehen könnte, wer was
 - Keine neue Datei, kein Speicherstand-Wechsel, keine Wertänderung (BALANCE/SIM unverändert). Tests 130 grün (neu: Ausrüstungsvergleich).
 - Entscheidung Nutzer (20.11.2026): Vergleich zählt nur Werte (Angriff/Verteidigung/Initiative), Effekte und Set-Boni NICHT. Deutung des Wunsches vom Nutzer nicht ausdrücklich bestätigt, nicht widersprochen.
 - Offen: Gerätetest (Layout auf dem S25, Lesbarkeit der Zeilen).
+
+## 0.30.1 (20.11.2026) – Inventar bleibt bei gesperrter Rast offen (nicht auf Gerät getestet)
+Nutzer (Screenshot Moorpfad/Gang, 16:01): Im Inventar erscheint die Rastmeldung („Gegner zu nah“) und man kommt nicht ins Inventar; die Rastmeldung soll nur kommen, wenn man selbst auf „Rasten“ tippt (Proviant essen).
+- Befund (aus dem Code belegt): Das Öffnen des Inventars prüft keine Gegner. Der Knopf „Rasten“ (neben Proviant) rief bei gesperrter Rast `closeModal()` auf, das ganze Inventar schloss sich. Dass der Nutzer genau so in die Lage kam (Tipp auf „Rasten“), ist **Vermutung**; Auslöser per versehentlichem Tipp nicht ausgeschlossen.
+- Änderung (main.js, `m === 'rest'`): Bei Fehler (Gegner nah/in Sicht, Kampf, nichts zu tun) bleibt das Inventar offen, Meldung nur als Hinweis (3,2 s) und im Protokoll. Erfolgreiche Rast schließt das Fenster wie bisher.
+- Headless nachgestellt (Gegner 3 Schritte entfernt, Inventar → Rasten): Inventar bleibt offen, Meldung sichtbar. Nicht auf Gerät getestet.
+- Missverständnis-Risiko: Satz „dass man auf 5 Schritten nicht in sein Inventar gehen kann“ deute ich als „auch bei 5 Schritten Abstand soll man ins Inventar kommen“. Rastregel (10 Pfadfelder, Sichtlinie) unverändert.

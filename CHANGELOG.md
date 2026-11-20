@@ -6,6 +6,7 @@ Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ 
 ## 0.16.x (Inhaltsphase, Nebelturm und Nacharbeiten)
 | Version | Änderungen | Status |
 |---|---|---|
+| 0.30.1 | Inventar bleibt offen, wenn „Rasten“ gesperrt ist (Gegner nah); Meldung nur nach Tipp auf Rasten | headless, Gerät offen |
 | 0.30.0 | Ausrüstungsübersicht „Wer trägt was“, im Inventar „Besser für: …“, ▲/▼ und „trägt X“ beim Ausrüsten (Flüche bleiben verborgen) | headless, Gerät offen |
 | 0.29.0 | Ringe und Amulette (je Held 1+1, einzigartig, nur Boss/Rätsel), verfluchte Stücke mit Talent-Erkennung, Gefangener mit Wunsch + Ring in der Blutgruft, Waffenhändler Valdis | headless, Gerät offen |
 | 0.28.0 | Moorsee: Fluss mit Brücke, See mit Steg, Fuhrmann (20 Gold) zur Schatzinsel, Gnom mit Würfelspiel (gerade Glücksamulett, ungerade Riesenspinne), Wasser/Bohlen im Raycaster und auf der Karte | headless, Gerät offen |

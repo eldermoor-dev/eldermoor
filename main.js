@@ -10,7 +10,7 @@ import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, build
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.30.0';
+const VERSION = '0.30.1';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -1553,7 +1553,7 @@ async function onModalClick(e) {
   else if (m === 'rest') {
     const r = restParty(g, S.data);
     const t = { 'in-combat': 'Im Kampf kann niemand rasten.', 'enemy-near': `Ein Gegner ist zu nah (${r.dist} Schritte, nötig sind ${(S.data.rest || {}).enemyDistance || 10}). So kann die Gruppe nicht rasten.`, 'enemy-seen': 'Ein Gegner ist in Sichtweite. So kann die Gruppe nicht rasten.', 'nothing-to-do': 'Alle sind bereits bei Kräften.' }[r.error];
-    if (t) { say(t); toast(t); closeModal(); }
+    if (t) { say(t); toast(t, 3200); if (S.modal === 'inventory') openInventory(); else closeModal(); } // 0.30.1: Inventar bleibt bei gesperrter Rast offen (Meldung nur beim Tippen auf „Rasten“)
     else { say(r.msg); S.sfx.play(r.sfx); toast(r.msg, 3200); closeModal(); renderAll(); }
   }
   else if (m === 'shopbuy' || m === 'shopsellTab') { S.shopTab = m === 'shopbuy' ? 'buy' : 'sell'; S.shopSure = null; openShop(S.shopId); }
