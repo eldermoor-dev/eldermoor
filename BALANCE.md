@@ -48,6 +48,9 @@ Gegner (EP: jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die vol
 | Blutgräfin | 230 | 16 | 7 | 9 | 420 | 160 | Zaubert: Blutbiss (jeden 2. Zug); Boss, Phasen: Blutrausch ab ≤ 66 % LP (Angriff 17), Fledermausschwarm ab ≤ 33 % LP (Angriff 18) |
 | Riesenspinne | 80 | 14 | 4 | 9 | 160 | 70 | zielt auf den schwächsten Helden; Giftbiss jeden 3. Zug, angekündigt (160 %); Treffer: Gift 60 % |
 | Teufel | 100 | 14 | 5 | 8 | 300 | 150 | zielt auf den schwächsten Helden; Treffer: Verflucht 25 %; Zaubert: Höllenfeuer (jeden 3. Zug, angekündigt); Boss, Phasen: Alles auf Rot ab ≤ 50 % LP (Angriff 17) |
+| Brutspinne | 24 | 9 | 1 | 10 | 22 | 4 | zielt auf den schwächsten Helden; Treffer: Gift 35 % |
+| Netzwächter | 90 | 17 | 5 | 9 | 130 | 26 | zielt auf den schwächsten Helden; Giftbiss jeden 3. Zug, angekündigt (160 %); Treffer: Gift 55 % |
+| Spinnenkönigin | 260 | 17 | 7 | 10 | 520 | 200 | Giftbiss jeden 3. Zug, angekündigt (170 %); Treffer: Gift 60 %; Zaubert: Gifthauch (jeden 4. Zug, angekündigt); Boss, Phasen: Brutwelle ab ≤ 60 % LP (Angriff 18), Raserei ab ≤ 30 % LP (Angriff 20) |
 
 ## Rassen (Modifikatoren)
 
@@ -280,6 +283,8 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 | Blutgräfin | 100 %, Boost 2 | Ring der Blutgräfin (100 %, nur einmal) |
 | Riesenspinne | 100 %, Boost 1 | – |
 | Teufel | 100 %, Boost 2 | – |
+| Netzwächter | 100 %, Boost 1 | – |
+| Spinnenkönigin | 100 %, Boost 2 | – |
 
 ## Ausrüstungseffekte und Sets
 

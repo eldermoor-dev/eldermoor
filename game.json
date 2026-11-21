@@ -959,7 +959,13 @@
         "turns": 2,
         "power": 2
       },
-      "enrage": true
+      "enrage": true,
+      "tactic": {
+        "flee": {
+          "below": 25,
+          "chance": 50
+        }
+      }
     },
     "kultist": {
       "name": "Moorkultist",
@@ -981,6 +987,12 @@
       },
       "gearDrop": {
         "chance": 5
+      },
+      "tactic": {
+        "flee": {
+          "below": 30,
+          "chance": 45
+        }
       }
     },
     "moorlicht": {
@@ -1003,6 +1015,12 @@
       },
       "gearDrop": {
         "chance": 3
+      },
+      "tactic": {
+        "flee": {
+          "below": 30,
+          "chance": 40
+        }
       }
     },
     "skeleton": {
@@ -1043,7 +1061,14 @@
       "gearDrop": {
         "chance": 8
       },
-      "guard": true
+      "guard": true,
+      "tactic": {
+        "call": {
+          "below": 55,
+          "chance": 45,
+          "kind": "skeleton"
+        }
+      }
     },
     "hauptmann": {
       "name": "Kultwächter-Hauptmann",
@@ -1272,6 +1297,13 @@
       },
       "gearDrop": {
         "chance": 8
+      },
+      "tactic": {
+        "call": {
+          "below": 60,
+          "chance": 40,
+          "kind": "moorlicht"
+        }
       }
     },
     "turmwache": {
@@ -1478,6 +1510,12 @@
       ],
       "gearDrop": {
         "chance": 8
+      },
+      "tactic": {
+        "flee": {
+          "below": 25,
+          "chance": 40
+        }
       }
     },
     "blutdiener": {
@@ -1504,6 +1542,12 @@
       "intro": {
         "title": "Blutdiener",
         "text": "Er trägt noch die Livree. Sein Gesicht hat die Farbe von altem Wachs."
+      },
+      "tactic": {
+        "flee": {
+          "below": 25,
+          "chance": 35
+        }
       }
     },
     "vampirbrut": {
@@ -1534,6 +1578,13 @@
       "intro": {
         "title": "Vampirbrut",
         "text": "Sie hängt kopfüber an der Säule und öffnet langsam die Augen."
+      },
+      "tactic": {
+        "call": {
+          "below": 50,
+          "chance": 35,
+          "kind": "blutdiener"
+        }
       }
     },
     "blutgraefin": {
@@ -1656,6 +1707,13 @@
       "intro": {
         "title": "Riesenspinne",
         "text": "Murmel ist verschwunden. An seiner Stelle sitzt etwas Schwarzes, das fast bis zur Decke reicht."
+      },
+      "tactic": {
+        "call": {
+          "below": 60,
+          "chance": 40,
+          "kind": "brutspinne"
+        }
       }
     },
     "teufel": {
@@ -1709,6 +1767,151 @@
       "intro": {
         "title": "Der Teufel",
         "text": "Murmel lacht, und plötzlich riecht es nach Zigarre und Schwefel. Die Hütte ist ein Spielsalon geworden."
+      }
+    },
+    "brutspinne": {
+      "name": "Brutspinne",
+      "hp": 24,
+      "atk": 9,
+      "def": 1,
+      "init": 10,
+      "gold": 4,
+      "xp": 22,
+      "ai": "weakest",
+      "onHit": {
+        "status": "poison",
+        "chance": 35,
+        "turns": 2
+      },
+      "resist": {
+        "fire": -25
+      },
+      "tactic": {
+        "flee": {
+          "below": 30,
+          "chance": 35
+        }
+      }
+    },
+    "netzwaechter": {
+      "name": "Netzwächter",
+      "hp": 90,
+      "atk": 17,
+      "def": 5,
+      "init": 9,
+      "gold": 26,
+      "xp": 130,
+      "ai": "weakest",
+      "onHit": {
+        "status": "poison",
+        "chance": 55,
+        "turns": 3
+      },
+      "heavy": {
+        "name": "Giftbiss",
+        "every": 3,
+        "mult": 160
+      },
+      "resist": {
+        "fire": -30
+      },
+      "tactic": {
+        "call": {
+          "below": 50,
+          "chance": 40,
+          "kind": "brutspinne"
+        }
+      },
+      "gearDrop": {
+        "chance": 100,
+        "boost": 1
+      },
+      "intro": {
+        "title": "Netzwächter",
+        "text": "Er sitzt reglos im Netz und wartet, bis etwas zuckt. Dann ist er plötzlich überall."
+      }
+    },
+    "spinnenkoenigin": {
+      "name": "Spinnenkönigin",
+      "hp": 260,
+      "atk": 17,
+      "def": 7,
+      "init": 10,
+      "gold": 200,
+      "xp": 520,
+      "boss": true,
+      "onHit": {
+        "status": "poison",
+        "chance": 60,
+        "turns": 3
+      },
+      "heavy": {
+        "name": "Giftbiss",
+        "every": 3,
+        "mult": 170
+      },
+      "cast": [
+        {
+          "name": "Gifthauch",
+          "kind": "bolt",
+          "all": true,
+          "every": 4,
+          "mult": 55,
+          "announce": true
+        }
+      ],
+      "resist": {
+        "fire": -40,
+        "ice": 10
+      },
+      "tactic": {
+        "call": {
+          "below": 85,
+          "chance": 40,
+          "kind": "brutspinne",
+          "max": 3
+        }
+      },
+      "phases": [
+        {
+          "below": 60,
+          "name": "Brutwelle",
+          "msg": "Die Königin trommelt mit den Vorderbeinen. Aus allen Ecken raschelt es.",
+          "set": {
+            "atk": 18,
+            "heavy": {
+              "name": "Giftbiss",
+              "every": 2,
+              "mult": 170
+            }
+          }
+        },
+        {
+          "below": 30,
+          "name": "Raserei",
+          "msg": "Ihre Augen leuchten hell. Das Netz an der Decke beginnt zu schwingen.",
+          "set": {
+            "atk": 20,
+            "cast": [
+              {
+                "name": "Gifthauch",
+                "kind": "bolt",
+                "all": true,
+                "every": 3,
+                "mult": 60,
+                "announce": true
+              }
+            ]
+          }
+        }
+      ],
+      "gearDrop": {
+        "chance": 100,
+        "boost": 2
+      },
+      "intro": {
+        "title": "Die Spinnenkönigin",
+        "text": "Sie hängt in der Mitte der Höhle, groß wie eine Kutsche. Rings um sie hängen Kokons, und einer davon bewegt sich noch."
       }
     }
   },
@@ -2005,6 +2208,48 @@
         255,
         172,
         84
+      ]
+    },
+    "spinne": {
+      "stone": [
+        98,
+        92,
+        114
+      ],
+      "moss": [
+        74,
+        84,
+        66
+      ],
+      "wood": [
+        92,
+        68,
+        58
+      ],
+      "iron": [
+        124,
+        126,
+        142
+      ],
+      "floor": [
+        64,
+        58,
+        72
+      ],
+      "ceil": [
+        32,
+        28,
+        42
+      ],
+      "flesh": [
+        192,
+        186,
+        198
+      ],
+      "glow": [
+        204,
+        232,
+        124
       ]
     }
   },
@@ -2505,6 +2750,13 @@
             "y": 8,
             "dir": 1
           }
+        },
+        {
+          "id": "dk_moorpfad_s1",
+          "type": "decor",
+          "x": 8,
+          "y": 1,
+          "look": "schutt"
         }
       ],
       "intro": {
@@ -2958,6 +3210,37 @@
           "name": "Verwundeter Kultist",
           "look": "wund",
           "dialog": "wundkultist"
+        },
+        {
+          "id": "npc_zelle",
+          "type": "npc",
+          "x": 10,
+          "y": 11,
+          "name": "Gefangener",
+          "look": "gefangener",
+          "dialog": "zellengast"
+        },
+        {
+          "id": "dk_kultgruft_1",
+          "type": "sign",
+          "x": 24,
+          "y": 8,
+          "face": 2,
+          "deco": "gitter",
+          "title": "SCHACHT",
+          "text": "Durch das Gitter am Boden zieht feuchte Luft. Tief unten rauscht Wasser.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_kultgruft_2",
+          "type": "sign",
+          "x": 10,
+          "y": 7,
+          "face": 3,
+          "deco": "gitter",
+          "title": "SCHACHT",
+          "text": "Ein enger Schacht, mit Eisenstäben vergittert. Zu klein für einen Menschen.",
+          "style": "dark"
         }
       ],
       "intro": {
@@ -3426,6 +3709,46 @@
           "title": "HOHL",
           "text": "Jemand hat einen Pfeil in den Fels geritzt, darunter: „Klopf nicht. Geh.“",
           "style": "dark"
+        },
+        {
+          "id": "dk_schratgruben_1",
+          "type": "sign",
+          "x": 19,
+          "y": 1,
+          "face": 2,
+          "deco": "gitter",
+          "title": "SCHACHT",
+          "text": "Ein enger Schacht, mit Eisenstäben vergittert. Zu klein für einen Menschen.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_schratgruben_2",
+          "type": "sign",
+          "x": 24,
+          "y": 7,
+          "face": 0,
+          "deco": "gitter",
+          "title": "SCHACHT",
+          "text": "Ein kniehoher Gitterschacht. Dahinter ist nichts als Dunkel und ein Luftzug.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_schratgruben_3",
+          "type": "sign",
+          "x": 16,
+          "y": 8,
+          "face": 2,
+          "deco": "nischeleer",
+          "title": "NISCHE",
+          "text": "Eine kleine Nische in der Wand. Sie ist leer, nur Staub und ein Wachsrest.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_schratgruben_s1",
+          "type": "decor",
+          "x": 22,
+          "y": 9,
+          "look": "schutt"
         }
       ],
       "intro": {
@@ -3773,14 +4096,25 @@
           "style": "dark"
         },
         {
-          "id": "deco_t1",
-          "type": "sign",
-          "x": 17,
+          "id": "dk_nebelturm_f1",
+          "type": "decor",
+          "x": 16,
+          "y": 6,
+          "look": "fass"
+        },
+        {
+          "id": "dk_nebelturm_f2",
+          "type": "decor",
+          "x": 19,
+          "y": 8,
+          "look": "fass"
+        },
+        {
+          "id": "dk_nebelturm_f3",
+          "type": "decor",
+          "x": 21,
           "y": 5,
-          "face": 1,
-          "deco": "painting",
-          "title": "GEMÄLDE",
-          "text": "Ein altes Gemälde des Turms, gemalt bei Vollmond. Jemand hat die Fenster mit schwarzer Farbe übermalt."
+          "look": "fass"
         }
       ],
       "foe": {
@@ -4159,16 +4493,6 @@
           "text": "Hinter einem losen Tuch, vergessen von einem Wachsoldaten."
         },
         {
-          "id": "deco_f1",
-          "type": "sign",
-          "x": 24,
-          "y": 9,
-          "face": 1,
-          "deco": "painting",
-          "title": "GEMÄLDE",
-          "text": "Ein Gemälde: ein Turm im Nebel, darüber ein bleicher Mond. Der Goldrahmen ist gesprungen, als hätte jemand mit der Faust hineingeschlagen."
-        },
-        {
           "id": "npc_gerwin",
           "type": "npc",
           "x": 13,
@@ -4176,6 +4500,67 @@
           "name": "Torwächter Gerwin",
           "look": "wache",
           "dialog": "gerwin"
+        },
+        {
+          "id": "dk_festung1_1",
+          "type": "sign",
+          "x": 10,
+          "y": 6,
+          "face": 3,
+          "deco": "rohr",
+          "title": "ROHR",
+          "text": "Ein Eisenrohr, von Schellen gehalten. Es riecht nach Kalk und kaltem Wasser.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung1_2",
+          "type": "sign",
+          "x": 29,
+          "y": 2,
+          "face": 0,
+          "deco": "gitter",
+          "title": "SCHACHT",
+          "text": "Ein enger Schacht, mit Eisenstäben vergittert. Zu klein für einen Menschen.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung1_3",
+          "type": "sign",
+          "x": 15,
+          "y": 2,
+          "face": 2,
+          "deco": "nischeleer",
+          "title": "NISCHE",
+          "text": "Eine kleine Nische in der Wand. Sie ist leer, nur Staub und ein Wachsrest.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung1_f1",
+          "type": "decor",
+          "x": 27,
+          "y": 15,
+          "look": "fass"
+        },
+        {
+          "id": "dk_festung1_f2",
+          "type": "decor",
+          "x": 15,
+          "y": 16,
+          "look": "fass"
+        },
+        {
+          "id": "dk_festung1_f3",
+          "type": "decor",
+          "x": 9,
+          "y": 14,
+          "look": "fass"
+        },
+        {
+          "id": "dk_festung1_f4",
+          "type": "decor",
+          "x": 21,
+          "y": 11,
+          "look": "fass"
         }
       ]
     },
@@ -4775,6 +5160,98 @@
             "y": 22,
             "dir": 1
           }
+        },
+        {
+          "id": "dk_festung2_1",
+          "type": "sign",
+          "x": 3,
+          "y": 25,
+          "face": 1,
+          "deco": "gitter",
+          "title": "SCHACHT",
+          "text": "Ein enger Schacht, mit Eisenstäben vergittert. Zu klein für einen Menschen.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung2_2",
+          "type": "sign",
+          "x": 11,
+          "y": 4,
+          "face": 3,
+          "deco": "nischeleer",
+          "title": "NISCHE",
+          "text": "Eine flache Wandnische, die einmal etwas getragen hat. Jetzt ist sie leer.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung2_f1",
+          "type": "decor",
+          "x": 34,
+          "y": 6,
+          "look": "fass"
+        },
+        {
+          "id": "dk_festung2_f2",
+          "type": "decor",
+          "x": 35,
+          "y": 6,
+          "look": "fass"
+        },
+        {
+          "id": "dk_festung2_f3",
+          "type": "decor",
+          "x": 47,
+          "y": 11,
+          "look": "fass"
+        },
+        {
+          "id": "dk_festung2_f4",
+          "type": "decor",
+          "x": 43,
+          "y": 4,
+          "look": "fass"
+        },
+        {
+          "id": "dk_festung2_f5",
+          "type": "decor",
+          "x": 15,
+          "y": 33,
+          "look": "fass"
+        },
+        {
+          "id": "dk_festung2_f6",
+          "type": "decor",
+          "x": 37,
+          "y": 12,
+          "look": "fass"
+        },
+        {
+          "id": "dk_festung2_s1",
+          "type": "decor",
+          "x": 11,
+          "y": 1,
+          "look": "schutt"
+        },
+        {
+          "id": "dk_festung2_s2",
+          "type": "decor",
+          "x": 17,
+          "y": 1,
+          "look": "schutt"
+        },
+        {
+          "id": "dk_festung2_s3",
+          "type": "decor",
+          "x": 23,
+          "y": 5,
+          "look": "schutt"
+        },
+        {
+          "id": "dk_festung2_s4",
+          "type": "decor",
+          "x": 15,
+          "y": 7,
+          "look": "schutt"
         }
       ]
     },
@@ -5384,14 +5861,18 @@
           "mat": "blut"
         },
         {
-          "id": "exit_b_tiefe",
-          "type": "exit",
+          "id": "stairs_b_spinne",
+          "type": "stairs",
           "x": 56,
           "y": 22,
           "look": "down",
-          "title": "Tiefe der Blutgruft",
-          "text": "Eine schmale Wendeltreppe führt tiefer hinab. Die Stufen sind feucht.",
-          "again": "Hier geht es in einer späteren Version weiter."
+          "msg": "Ihr steigt die Wendeltreppe hinab. Die Wände sind mit weißen Fäden überzogen.",
+          "to": {
+            "level": "festung4",
+            "x": 2,
+            "y": 27,
+            "dir": 1
+          }
         },
         {
           "id": "door_b_zelle",
@@ -5424,6 +5905,193 @@
             "flag": "talk_valdis",
             "text": "Valdis: Ich handle mit allem, was scharf ist und nicht an der Gruft hängt. Drei Dinge: Geht nie ohne Gegengift ins Schiff. Die Gräfin mag Eisen nicht. Und wer in der Ahnengalerie eine Zelle hört, hat sich nicht verhört."
           }
+        },
+        {
+          "id": "dk_festung3_1",
+          "type": "sign",
+          "x": 38,
+          "y": 35,
+          "face": 0,
+          "deco": "gitter",
+          "title": "SCHACHT",
+          "text": "Ein enger Schacht, mit Eisenstäben vergittert. Zu klein für einen Menschen.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung3_2",
+          "type": "sign",
+          "x": 18,
+          "y": 41,
+          "face": 0,
+          "deco": "gitter",
+          "title": "SCHACHT",
+          "text": "Ein kniehoher Gitterschacht. Dahinter ist nichts als Dunkel und ein Luftzug.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung3_3",
+          "type": "sign",
+          "x": 20,
+          "y": 35,
+          "face": 2,
+          "deco": "gitter",
+          "title": "SCHACHT",
+          "text": "Ein enger Schacht, mit Eisenstäben vergittert. Zu klein für einen Menschen.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung3_4",
+          "type": "sign",
+          "x": 57,
+          "y": 39,
+          "face": 1,
+          "deco": "nischeleer",
+          "title": "NISCHE",
+          "text": "Eine kleine Nische in der Wand. Sie ist leer, nur Staub und ein Wachsrest.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung3_5",
+          "type": "sign",
+          "x": 12,
+          "y": 35,
+          "face": 0,
+          "deco": "rohr",
+          "title": "ROHR",
+          "text": "Ein rostiges Abflussrohr läuft an der Wand herab. Dahinter gluckert es leise.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung3_6",
+          "type": "sign",
+          "x": 6,
+          "y": 41,
+          "face": 0,
+          "deco": "gitter",
+          "title": "SCHACHT",
+          "text": "Ein kniehoher Gitterschacht. Dahinter ist nichts als Dunkel und ein Luftzug.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung3_7",
+          "type": "sign",
+          "x": 52,
+          "y": 35,
+          "face": 0,
+          "deco": "rohr",
+          "title": "ROHR",
+          "text": "Ein rostiges Abflussrohr läuft an der Wand herab. Dahinter gluckert es leise.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung3_8",
+          "type": "sign",
+          "x": 30,
+          "y": 41,
+          "face": 2,
+          "deco": "nischeleer",
+          "title": "NISCHE",
+          "text": "Eine flache Wandnische, die einmal etwas getragen hat. Jetzt ist sie leer.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung3_9",
+          "type": "sign",
+          "x": 45,
+          "y": 40,
+          "face": 1,
+          "deco": "rohr",
+          "title": "ROHR",
+          "text": "Ein altes Abflussrohr, grün vom Belag. Irgendwo tropft es hohl.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung3_10",
+          "type": "sign",
+          "x": 27,
+          "y": 36,
+          "face": 3,
+          "deco": "gitter",
+          "title": "SCHACHT",
+          "text": "Durch das Gitter am Boden zieht feuchte Luft. Tief unten rauscht Wasser.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung3_f1",
+          "type": "decor",
+          "x": 25,
+          "y": 19,
+          "look": "fass"
+        },
+        {
+          "id": "dk_festung3_f2",
+          "type": "decor",
+          "x": 35,
+          "y": 29,
+          "look": "fass"
+        },
+        {
+          "id": "dk_festung3_f3",
+          "type": "decor",
+          "x": 18,
+          "y": 20,
+          "look": "fass"
+        },
+        {
+          "id": "dk_festung3_f4",
+          "type": "decor",
+          "x": 43,
+          "y": 15,
+          "look": "fass"
+        },
+        {
+          "id": "dk_festung3_f5",
+          "type": "decor",
+          "x": 25,
+          "y": 25,
+          "look": "fass"
+        },
+        {
+          "id": "dk_festung3_f6",
+          "type": "decor",
+          "x": 34,
+          "y": 20,
+          "look": "fass"
+        },
+        {
+          "id": "dk_festung3_f7",
+          "type": "decor",
+          "x": 23,
+          "y": 15,
+          "look": "fass"
+        },
+        {
+          "id": "dk_festung3_s1",
+          "type": "decor",
+          "x": 33,
+          "y": 33,
+          "look": "schutt"
+        },
+        {
+          "id": "dk_festung3_s2",
+          "type": "decor",
+          "x": 23,
+          "y": 35,
+          "look": "schutt"
+        },
+        {
+          "id": "dk_festung3_s3",
+          "type": "decor",
+          "x": 31,
+          "y": 35,
+          "look": "schutt"
+        },
+        {
+          "id": "dk_festung3_s4",
+          "type": "decor",
+          "x": 57,
+          "y": 35,
+          "look": "schutt"
         }
       ]
     },
@@ -5674,6 +6342,34 @@
           "dy": 0.44,
           "ax": "x",
           "torch": true
+        },
+        {
+          "id": "dk_moorsee_f1",
+          "type": "decor",
+          "x": 18,
+          "y": 11,
+          "look": "fass"
+        },
+        {
+          "id": "dk_moorsee_f2",
+          "type": "decor",
+          "x": 5,
+          "y": 3,
+          "look": "fass"
+        },
+        {
+          "id": "dk_moorsee_f3",
+          "type": "decor",
+          "x": 6,
+          "y": 3,
+          "look": "fass"
+        },
+        {
+          "id": "dk_moorsee_s1",
+          "type": "decor",
+          "x": 32,
+          "y": 17,
+          "look": "schutt"
         }
       ],
       "waterMsg": "Das Wasser ist tief und kalt. Zur Schatzinsel kommt man nicht durchs Wasser: Der Fuhrmann am Steg im Osten setzt euch über."
@@ -5883,7 +6579,7 @@
           "x": 9,
           "y": 5,
           "look": "kamin",
-          "scale": 1.0
+          "scale": 1
         },
         {
           "id": "m_regal",
@@ -5891,7 +6587,7 @@
           "x": 10,
           "y": 6,
           "look": "regal",
-          "scale": 1.0
+          "scale": 1
         },
         {
           "id": "m_tisch",
@@ -5939,7 +6635,7 @@
           "x": 4,
           "y": 10,
           "look": "haengematte",
-          "scale": 2.0
+          "scale": 2
         },
         {
           "id": "kaktus_i1",
@@ -5955,7 +6651,7 @@
           "x": 14,
           "y": 11,
           "look": "kaktus",
-          "scale": 1.0
+          "scale": 1
         },
         {
           "id": "kaktus_i3",
@@ -5971,7 +6667,7 @@
           "x": 15,
           "y": 5,
           "look": "kaktus",
-          "scale": 1.0
+          "scale": 1
         },
         {
           "id": "kaktus_i5",
@@ -5987,7 +6683,7 @@
           "x": 10,
           "y": 5,
           "look": "kueche",
-          "scale": 1.0
+          "scale": 1
         },
         {
           "id": "m_vase",
@@ -6120,7 +6816,7 @@
             "x": 8,
             "y": 5,
             "look": "roulette",
-            "scale": 1.0
+            "scale": 1
           },
           {
             "id": "v_slot1",
@@ -6128,7 +6824,7 @@
             "x": 10,
             "y": 5,
             "look": "spielautomat",
-            "scale": 1.0
+            "scale": 1
           },
           {
             "id": "v_slot2",
@@ -6136,7 +6832,7 @@
             "x": 10,
             "y": 8,
             "look": "spielautomat",
-            "scale": 1.0
+            "scale": 1
           },
           {
             "id": "v_slot3",
@@ -6144,7 +6840,7 @@
             "x": 10,
             "y": 6,
             "look": "spielautomat",
-            "scale": 1.0
+            "scale": 1
           },
           {
             "id": "v_karten1",
@@ -6164,6 +6860,551 @@
           }
         ]
       }
+    },
+    "festung4": {
+      "id": "festung4",
+      "name": "Spinnenhöhle",
+      "palette": "spinne",
+      "start": {
+        "x": 2,
+        "y": 27,
+        "dir": 1
+      },
+      "foe": {
+        "hp": 330,
+        "atk": 240
+      },
+      "intro": {
+        "title": "Spinnenhöhle",
+        "text": "Hier ist alles weiß vor Fäden. Etwas zupft an den Netzen, als wolle es sagen: Ich weiß, dass ihr da seid."
+      },
+      "map": [
+        "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+        "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+        "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+        "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+        "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrmrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+        "rrrrrrrrrrrrrrrr....rrrrrrrrrrrrrrrrrrr......mmmrrrrrrrrrrrrrmrrrrrrrrrrrrrr",
+        "rrrrrrrrrrrrrr.........rrrrrrrrrrrrrr...........mmrrrrrrrrrrm.mmrrrrrrrrrrrr",
+        "rrrrrrrrrrrr........r....rrrrrrrrrrr..............mrrrrrrrr.....rrrrrrrrrrrr",
+        "rrrrrrrrrrrm.............rrrrrrrrrm...m...........rrrrrrrrm.....rrrrrrrrrrrr",
+        "rrrrrrrrrrm...............rrrrrrmm.................rrrrrmm.......rrrrrrrrrrr",
+        "rrrrrrrrrrm..r..........................r........................rrrrrrrrrrr",
+        "rrrrrrrrrrm...............rrrrrrmm.................rrrrrmmm.....rrrrrrrrrrrr",
+        "rrrrrrrrrrrr.............rrrrrrrrrm................rrrrrrrrrr..rrrrrrrrrrrrr",
+        "rrrrrrrrrrrr............rrrrrrrrrrm......r.......rrrrrrrrrrrrrrrrrrrrrrrrrrr",
+        "rrrrrrrrrrrrrr...r.....rrrrrrrrrrrrmr...........rrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+        "rrrrrrrrrrrrrrrr.....rrrrrrrrrrrrrrrrrr.....mmmmrrrrrrrrrrrrrrrrmmmmrrrrrrrr",
+        "rrrrrrrrrrrrrrrrrr.rmrrrrrrrrrrrrrrrrrrrmm.mrrrrrrrrrrrrrrrmrr......rrrrrrrr",
+        "rrrrrrrrrrrrrrrrrr.rrrrrrrrrrrrrrrrrrrrrrm.mrrrrrrrrrrrrrrm...........rrrrrr",
+        "rrrrrrrrrrrrrrrrrr.rrrrrrrrrrrrrrrrrrrrrrm.mrrrrrrrrrrrrrm.......r....rrrrrr",
+        "rrrrrrrrrrrrrrrrrr.rrrrrrrrrrrrrrrrrrrrrrm.mrrrrrrrrrrrrrm..r..........rrrrr",
+        "rrrrrrrrrrrrrrrrrr.rrrrrrrrrrrrrrrrrrrrrr....rrrrrrrrrrrT...........m...rTrr",
+        "rrrrrrrrrrrrrrrrrr..rrrrrrrrrrrrrrrrrr.........rrrrrrrrr.................rrr",
+        "rrrrrrrrrrrrrrr........rrrrrrrrrrrrrr...........rrrrrrrr.......r.........rrr",
+        "rrrr..rrrrrrr...........mrrrrrrrrrrm....r..r.....rrrrrrr.................rrr",
+        "rrr.....rrrr.............mrrrrrrrrrr.............mrrrrrr..................rr",
+        "rr.......rr...............mrrrrrrrrr..r........m.mrrrrr.........r.........rr",
+        "rr.......rr........r......mmrrrrrrr...............mmrrr...................rr",
+        "r..............r.r.............................m.......................r..rr",
+        "r.........m..r.....r......rrrrrrrrr..............rrrmmm...................rr",
+        "rr.......mrm.............rrrrrrrrrrr.............rrrrrm......r............rr",
+        "rrr.....mrrm..........r..rrrrrrrrrrr...m.........rrrrrrm..................rr",
+        "rrrr..rrrrrrr...........rrrrrrrrrrrr.....m.......rrrrrrm.................rrr",
+        "rrrrrrrrrrrrrm.........rrrrrrrrrrrrrr...........mrrrrrrr........r....r...rrr",
+        "rrrrrrrrrrrrrrmmr....rrrrrrrrrrrrrrrrr.........rrrrrrrrr................rrrr",
+        "rrrrrrrrrrrrrrrrrr.rrrrrrrrrrrrrrrrrrrrr.....rrrrrrrrrrrT...........r..rrTrr",
+        "rrrrrrrrrrrrrrrrrr.rrrrrrrrrrrrrrrrrrrrrrr.rrrrrrrrrrrrrrr.............rrrrr",
+        "rrrrrrrrrrrrrrrrrm.mrrrrrrrrrrrrrrrrrrrrrm.mrrrrrrrrrrrrrr............rrrrrr",
+        "rrrrrrrrrrrrrrrrrm.mrrrrrrrrrrrrrrrrrrrrrm.mrrrrrrrrrrrrrrr..........rrrrrrr",
+        "rrrrrrrrrrrrrrrrrm.mrrrrrrrrrrrrrrrrrrrmrm.mmmrrrrrrrrrrrrrrrr.....mrrrrrrrr",
+        "rrrrrrrrrrrrrrmmm....rrrrrrrrrrrrrrrrmm.m.....mmrrrrrrrrrrrrrrrrmmmrrrrrrrrr",
+        "rrrrrrrrrrrrrr..........mrrrrrrrrrrrr...........rrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+        "rrrrrrrrrrrrr...........mrrrrrrrrrrm..............rrrrrrrrrrrmmrrrrrrrrrrrrr",
+        "rrrrrrrrrrrr.............mrrrrrrrrm...............rrrrrrrrrrm..mrrrrrrrrrrrr",
+        "rrrrrrrrrrr...r...........mmrrrrmm.............r...rmmmmrrr.....rrrrrrrrrrrr",
+        "rrrrrrrrrrm........................r............................rrrrrrrrrrrr",
+        "rrrrrrrrrrm.....r.........mmrrrrrr.................rrrrrmm.......rrrrrrrrrrr",
+        "rrrrrrrrrrrm.......r.....mrrrrrrrrr...............rrrrrrrrm......rrrrrrrrrrr",
+        "rrrrrrrrrrrm............mrrrrrrrrrr..........m...rrrrrrrrrm.....rrrrrrrrrrrr",
+        "rrrrrrrrrrrrrr.........mrrrrrrrrrrrmm...........rrrrrrrrrrrrr.rrrrrrrrrrrrrr",
+        "rrrrrrrrrrrrrrrr.r...mmrrrrrrrrrrrrrrmmmr....rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+        "rrrrrrrrrrrrrrrrrrrrmrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+        "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+        "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+        "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+      ],
+      "objects": [
+        {
+          "id": "stairs_s_up",
+          "type": "stairs",
+          "x": 1,
+          "y": 27,
+          "look": "up",
+          "msg": "Ihr steigt die Wendeltreppe hinauf zur Blutgruft.",
+          "to": {
+            "level": "festung3",
+            "x": 55,
+            "y": 22,
+            "dir": 3
+          }
+        },
+        {
+          "id": "web_s1",
+          "type": "gate",
+          "x": 30,
+          "y": 27,
+          "web": true,
+          "hint": "Ein dickes Netz versperrt den Gang."
+        },
+        {
+          "id": "web_s2",
+          "type": "gate",
+          "x": 52,
+          "y": 27,
+          "web": true,
+          "hint": "Ein dickes Netz versperrt den Gang."
+        },
+        {
+          "id": "web_s3",
+          "type": "gate",
+          "x": 29,
+          "y": 10,
+          "web": true,
+          "hint": "Ein dickes Netz versperrt den Gang."
+        },
+        {
+          "id": "web_s4",
+          "type": "gate",
+          "x": 29,
+          "y": 44,
+          "web": true,
+          "hint": "Ein dickes Netz versperrt den Gang."
+        },
+        {
+          "id": "web_s5",
+          "type": "gate",
+          "x": 54,
+          "y": 10,
+          "web": true,
+          "hint": "Ein dickes Netz versperrt den Gang."
+        },
+        {
+          "id": "web_s6",
+          "type": "gate",
+          "x": 54,
+          "y": 44,
+          "web": true,
+          "hint": "Ein dickes Netz versperrt den Gang."
+        },
+        {
+          "id": "en_s_a1",
+          "type": "enemy",
+          "x": 14,
+          "y": 24,
+          "kind": "riesenspinne",
+          "kinds": [
+            "riesenspinne",
+            "brutspinne",
+            "brutspinne"
+          ]
+        },
+        {
+          "id": "en_s_a2",
+          "type": "enemy",
+          "x": 21,
+          "y": 29,
+          "kind": "netzwaechter",
+          "kinds": [
+            "netzwaechter",
+            "brutspinne"
+          ]
+        },
+        {
+          "id": "chest_s_a",
+          "type": "chest",
+          "x": 23,
+          "y": 24,
+          "guard": [
+            "en_s_a2"
+          ],
+          "loot": [
+            {
+              "gold": 40
+            },
+            {
+              "item": "potion_m",
+              "n": 1
+            }
+          ],
+          "look": "eisen",
+          "mat": "stein"
+        },
+        {
+          "id": "en_s_b1",
+          "type": "enemy",
+          "x": 20,
+          "y": 12,
+          "kind": "netzwaechter",
+          "kinds": [
+            "netzwaechter",
+            "brutspinne",
+            "brutspinne"
+          ]
+        },
+        {
+          "id": "chest_s_b",
+          "type": "chest",
+          "x": 22,
+          "y": 8,
+          "guard": [
+            "en_s_b1"
+          ],
+          "loot": [
+            {
+              "gold": 45
+            },
+            {
+              "item": "zaubertrank_m",
+              "n": 1
+            },
+            {
+              "item": "potion_m",
+              "n": 1
+            }
+          ],
+          "look": "eisen",
+          "mat": "stein"
+        },
+        {
+          "id": "en_s_c1",
+          "type": "enemy",
+          "x": 14,
+          "y": 45,
+          "kind": "riesenspinne",
+          "kinds": [
+            "riesenspinne",
+            "netzwaechter"
+          ]
+        },
+        {
+          "id": "chest_s_c",
+          "type": "chest",
+          "x": 22,
+          "y": 42,
+          "guard": [
+            "en_s_c1"
+          ],
+          "loot": [
+            {
+              "gold": 50
+            },
+            {
+              "item": "potion_m",
+              "n": 2
+            },
+            {
+              "gear": {
+                "boost": 1
+              }
+            }
+          ],
+          "look": "eisen",
+          "mat": "stein"
+        },
+        {
+          "id": "en_s_h1",
+          "type": "enemy",
+          "x": 38,
+          "y": 24,
+          "kind": "netzwaechter",
+          "kinds": [
+            "netzwaechter",
+            "netzwaechter"
+          ]
+        },
+        {
+          "id": "en_s_h2",
+          "type": "enemy",
+          "x": 46,
+          "y": 30,
+          "kind": "riesenspinne",
+          "kinds": [
+            "riesenspinne",
+            "brutspinne",
+            "brutspinne"
+          ]
+        },
+        {
+          "id": "en_s_n1",
+          "type": "enemy",
+          "x": 38,
+          "y": 9,
+          "kind": "netzwaechter",
+          "kinds": [
+            "netzwaechter",
+            "riesenspinne"
+          ]
+        },
+        {
+          "id": "chest_s_n",
+          "type": "chest",
+          "x": 47,
+          "y": 8,
+          "guard": [
+            "en_s_n1"
+          ],
+          "loot": [
+            {
+              "gold": 55
+            },
+            {
+              "item": "potion_m",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 1
+              }
+            }
+          ],
+          "look": "eisen",
+          "mat": "stein"
+        },
+        {
+          "id": "en_s_s1",
+          "type": "enemy",
+          "x": 38,
+          "y": 45,
+          "kind": "riesenspinne",
+          "kinds": [
+            "riesenspinne",
+            "netzwaechter",
+            "brutspinne"
+          ]
+        },
+        {
+          "id": "chest_s_s",
+          "type": "chest",
+          "x": 47,
+          "y": 45,
+          "guard": [
+            "en_s_s1"
+          ],
+          "loot": [
+            {
+              "gold": 55
+            },
+            {
+              "item": "zaubertrank_m",
+              "n": 1
+            },
+            {
+              "item": "potion_m",
+              "n": 1
+            }
+          ],
+          "look": "eisen",
+          "mat": "stein"
+        },
+        {
+          "id": "en_s_k1",
+          "type": "enemy",
+          "x": 59,
+          "y": 9,
+          "kind": "netzwaechter",
+          "kinds": [
+            "netzwaechter",
+            "brutspinne"
+          ]
+        },
+        {
+          "id": "chest_s_nook1",
+          "type": "chest",
+          "x": 62,
+          "y": 9,
+          "guard": [
+            "en_s_k1"
+          ],
+          "loot": [
+            {
+              "gold": 70
+            },
+            {
+              "item": "potion_g",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 2
+              }
+            }
+          ],
+          "look": "edel",
+          "mat": "stein"
+        },
+        {
+          "id": "en_s_k2",
+          "type": "enemy",
+          "x": 59,
+          "y": 45,
+          "kind": "netzwaechter",
+          "kinds": [
+            "netzwaechter",
+            "riesenspinne"
+          ]
+        },
+        {
+          "id": "chest_s_nook2",
+          "type": "chest",
+          "x": 62,
+          "y": 45,
+          "guard": [
+            "en_s_k2"
+          ],
+          "loot": [
+            {
+              "gold": 70
+            },
+            {
+              "item": "zaubertrank_g",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 2
+              }
+            }
+          ],
+          "look": "edel",
+          "mat": "stein"
+        },
+        {
+          "id": "en_s_l1",
+          "type": "enemy",
+          "x": 58,
+          "y": 23,
+          "kind": "netzwaechter",
+          "kinds": [
+            "netzwaechter",
+            "brutspinne"
+          ]
+        },
+        {
+          "id": "en_s_l2",
+          "type": "enemy",
+          "x": 58,
+          "y": 31,
+          "kind": "netzwaechter",
+          "kinds": [
+            "netzwaechter",
+            "brutspinne"
+          ]
+        },
+        {
+          "id": "en_s_boss",
+          "type": "enemy",
+          "x": 67,
+          "y": 27,
+          "kind": "spinnenkoenigin",
+          "kinds": [
+            "spinnenkoenigin"
+          ]
+        },
+        {
+          "id": "chest_sp_boss",
+          "type": "chest",
+          "x": 71,
+          "y": 22,
+          "guard": [
+            "en_s_boss"
+          ],
+          "loot": [
+            {
+              "gold": 90
+            },
+            {
+              "item": "potion_g",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 2
+              }
+            }
+          ],
+          "look": "edel",
+          "mat": "stein"
+        },
+        {
+          "id": "exit_s_tiefe",
+          "type": "exit",
+          "x": 72,
+          "y": 27,
+          "look": "down",
+          "title": "Tiefer in den Fels",
+          "text": "Hinter dem Thron der Königin führt ein Spalt in die Tiefe. Kalte Luft zieht herauf.",
+          "again": "Hier geht es in einer späteren Version weiter."
+        },
+        {
+          "id": "npc_s_orwin",
+          "type": "npc",
+          "x": 14,
+          "y": 9,
+          "name": "Eingesponnener Mann",
+          "look": "kokon",
+          "dialog": "kokon_orwin"
+        },
+        {
+          "id": "npc_s_alder",
+          "type": "npc",
+          "x": 38,
+          "y": 12,
+          "name": "Eingesponnener Mann",
+          "look": "kokon",
+          "dialog": "kokon_alder"
+        },
+        {
+          "id": "npc_s_selka",
+          "type": "npc",
+          "x": 46,
+          "y": 42,
+          "name": "Eingesponnene Frau",
+          "look": "kokon",
+          "dialog": "kokon_selka"
+        },
+        {
+          "id": "sign_s_netz",
+          "type": "sign",
+          "x": 29,
+          "y": 27,
+          "face": 0,
+          "title": "NETZ",
+          "text": "Das Netz ist so dick wie ein Seil. Mit einer Klinge lässt es sich durchtrennen.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung4_s1",
+          "type": "decor",
+          "x": 61,
+          "y": 6,
+          "look": "schutt"
+        },
+        {
+          "id": "dk_festung4_s2",
+          "type": "decor",
+          "x": 39,
+          "y": 39,
+          "look": "schutt"
+        },
+        {
+          "id": "dk_festung4_s3",
+          "type": "decor",
+          "x": 61,
+          "y": 48,
+          "look": "schutt"
+        }
+      ]
     }
   },
   "spot": {
@@ -8279,6 +9520,330 @@
         "z": {
           "text": "Die Zelle ist leer.",
           "choices": [
+            {
+              "t": "Gehen"
+            }
+          ]
+        }
+      }
+    },
+    "zellengast": {
+      "name": "Gefangener",
+      "start": "a",
+      "again": "z",
+      "nodes": {
+        "a": {
+          "text": "Hinter dem Gitter kauert ein hagerer Mann in grauem Kittel. Er blinzelt ins Licht. „Ihr seid keine Kapuzen. Kapuzen tragen keine Laternen, die nach Öl riechen.“ Der Riegel der Zelle ist von außen vorgeschoben.",
+          "choices": [
+            {
+              "t": "Riegel zurückschieben",
+              "to": "b"
+            },
+            {
+              "t": "Wer bist du?",
+              "to": "i1"
+            },
+            {
+              "t": "Später"
+            }
+          ]
+        },
+        "i1": {
+          "text": "„Tilo. Gruftknecht, wenn man das so nennen will. Ich bin hier unten geboren, zwischen Wachs und Wasserschimmel – meine Mutter hat die Kerzen gezogen. Ich kenne jede Stufe, jede Pfütze und jede Ratte beim Namen. Einer Ratte habe ich mal ein halbes Brot überlassen. Sie hat sich nie bedankt.“",
+          "choices": [
+            {
+              "t": "Und wie kamst du in die Zelle?",
+              "to": "i2"
+            },
+            {
+              "t": "Riegel zurückschieben",
+              "to": "b"
+            }
+          ]
+        },
+        "i2": {
+          "text": "„Die Kapelle. Dort brennt eine Kerze, die heißt Ewiglicht. Immer. Seit hundert Jahren. Ich wollte nur wissen, ob sie wirklich ewig brennt. Ich habe sie ausgeblasen. Nur kurz, wirklich. Sie brennt nicht ewig – sie brennt, bis Tilo pustet. Seitdem sitze ich hier. Sie haben sie neu angezündet und mich weggesperrt.“",
+          "choices": [
+            {
+              "t": "Riegel zurückschieben",
+              "to": "b"
+            },
+            {
+              "t": "Später"
+            }
+          ]
+        },
+        "b": {
+          "text": "Der Riegel schabt zurück. Tilo kommt langsam heraus, reibt sich die Augen und hält sich an der Wand fest. „Das Licht… Danke. Wirklich. Seit Tagen hat mir keiner die Tür aufgemacht, nicht mal zum Anspucken.“ Er kramt in seinem Kittel.",
+          "choices": [
+            {
+              "t": "Gern geschehen",
+              "give": [
+                {
+                  "item": "ration",
+                  "n": 1
+                },
+                {
+                  "item": "potion",
+                  "n": 1
+                },
+                {
+                  "gold": 15
+                }
+              ],
+              "set": [
+                "tilo:frei"
+              ],
+              "done": true,
+              "look": "wund",
+              "msg": "Er drückt euch ein hartes Brot, ein Fläschchen und ein paar Münzen in die Hand. „Mehr hab ich nicht. Aber ich vergesse nie, wer mir aufgemacht hat.“"
+            }
+          ]
+        },
+        "z": {
+          "text": "Tilo hockt auf dem Rand der Zelle und kaut an einer Brotrinde. „Ich bleibe noch hier. Draußen ist es mir zu hell. Fragt ruhig, wenn ihr etwas über die Gruft wissen wollt.“",
+          "choices": [
+            {
+              "t": "Wie lebt man hier unten?",
+              "to": "z2"
+            },
+            {
+              "t": "Was weißt du über die Kapuzenleute?",
+              "to": "z3"
+            },
+            {
+              "t": "Gehen"
+            }
+          ]
+        },
+        "z2": {
+          "text": "„Man lernt zu hören. Tropft es links, ist der Gang frei. Tropft es rechts, ist jemand in der Nähe, der die Tropfen verdeckt. Die Skelette? Die sind nicht böse. Sie sind nur die Wachen, die nicht aufgehört haben, Wache zu sein.“",
+          "choices": [
+            {
+              "t": "Weiter fragen",
+              "to": "z"
+            },
+            {
+              "t": "Gehen"
+            }
+          ]
+        },
+        "z3": {
+          "text": "„Sie kommen seit dem Frühjahr. Haben das Siegel mitgebracht und die Halle am Ende für sich beansprucht. Der Hauptmann redet nicht viel. Er hört nur zu, wenn jemand etwas Wertvolles trägt.“",
+          "choices": [
+            {
+              "t": "Weiter fragen",
+              "to": "z"
+            },
+            {
+              "t": "Gehen"
+            }
+          ]
+        }
+      }
+    },
+    "kokon_orwin": {
+      "name": "Eingesponnener Mann",
+      "start": "a",
+      "again": "z",
+      "nodes": {
+        "a": {
+          "text": "Aus dem Kokon schaut ein erschöpftes Gesicht. „Nicht so laut… sie hören Schreie. Schneidet mich los, bitte. Die Fäden sind so eng, dass ich kaum atmen kann.“",
+          "choices": [
+            {
+              "t": "Kokon aufschneiden",
+              "to": "b"
+            },
+            {
+              "t": "Wer bist du?",
+              "to": "i"
+            },
+            {
+              "t": "Später"
+            }
+          ]
+        },
+        "i": {
+          "text": "„Orwin, Salzhändler. Ich wollte einen Weg unter dem Moor abkürzen. Die Spinne hat mich nicht gefressen – sie hebt sich ihre Gäste auf, sagt der Mann dort drüben. Ich glaube ihm das langsam.“",
+          "choices": [
+            {
+              "t": "Kokon aufschneiden",
+              "to": "b"
+            },
+            {
+              "t": "Später"
+            }
+          ]
+        },
+        "b": {
+          "text": "Die Fäden reißen mit einem Geräusch wie nasses Leinen. Orwin fällt euch fast in die Arme und lacht und weint gleichzeitig. „Ich habe nichts mehr bei mir außer dem hier. Nehmt es, bitte.“",
+          "choices": [
+            {
+              "t": "Annehmen",
+              "give": [
+                {
+                  "item": "potion_m",
+                  "n": 2
+                },
+                {
+                  "gold": 60
+                }
+              ],
+              "set": [
+                "orwin:frei"
+              ],
+              "done": true,
+              "leave": true,
+              "msg": "Orwin drückt euch zwei Fläschchen und einen Beutel Münzen in die Hand und humpelt Richtung Treppe. „Ich verkaufe nie wieder Salz.“"
+            }
+          ]
+        },
+        "z": {
+          "text": "Der Kokon hängt leer da, die Fäden zerrissen.",
+          "choices": [
+            {
+              "t": "Gehen"
+            }
+          ]
+        }
+      }
+    },
+    "kokon_alder": {
+      "name": "Eingesponnener Mann",
+      "start": "a",
+      "again": "z",
+      "nodes": {
+        "a": {
+          "text": "Ein Mann in einer zerrissenen Kapuze hängt im Netz. „Ihr tragt Waffen. Gut. Ich trage keine mehr. Bitte, sagt mir, dass ihr nicht nur schaut.“",
+          "choices": [
+            {
+              "t": "Kokon aufschneiden",
+              "to": "b"
+            },
+            {
+              "t": "Wer bist du?",
+              "to": "i"
+            },
+            {
+              "t": "Hängen lassen",
+              "to": "l"
+            },
+            {
+              "t": "Später"
+            }
+          ]
+        },
+        "i": {
+          "text": "„Bruder Alder. Vom Kult. Ja, von dem. Ich habe der Königin Futter gebracht, weil man es mir befohlen hat. Eines Tages war ich das Futter – man hatte mich nicht mehr nötig. Ich weiß, was ich verdiene. Ich weiß aber auch, wo ihre Schwäche liegt. Das ist mein Angebot.“",
+          "choices": [
+            {
+              "t": "Kokon aufschneiden",
+              "to": "b"
+            },
+            {
+              "t": "Hängen lassen",
+              "to": "l"
+            },
+            {
+              "t": "Später"
+            }
+          ]
+        },
+        "b": {
+          "text": "Ihr schneidet ihn frei. Alder sackt zusammen und atmet schwer. „Feuer. Ihre Fäden brennen, und sie hasst den Rauch. Wer sie in der Mitte der Höhle sucht, soll Feuer mitbringen und nicht auf die Kleinen hören, wenn sie rufen. Und ich… ich gehe. Weit weg von hier. Danke.“",
+          "choices": [
+            {
+              "t": "Gehen lassen",
+              "xp": 250,
+              "set": [
+                "alder:frei",
+                "spinne:schwaeche"
+              ],
+              "done": true,
+              "leave": true,
+              "msg": "Alder humpelt davon, ohne sich umzusehen. Ihr merkt euch seinen Rat: Feuer, und keine Gnade für die Rufe der Brut."
+            }
+          ]
+        },
+        "l": {
+          "text": "Ihr lasst ihn hängen. Er sagt nichts mehr. Das Netz schwingt leicht, als atme es.",
+          "choices": [
+            {
+              "t": "Gehen",
+              "set": [
+                "alder:gelassen"
+              ],
+              "done": true
+            }
+          ]
+        },
+        "z": {
+          "text": "Alder hängt still im Netz. Seine Augen folgen euch. „Habt ihr es euch überlegt?“",
+          "choices": [
+            {
+              "t": "Doch freischneiden",
+              "to": "b"
+            },
+            {
+              "t": "Gehen"
+            }
+          ]
+        }
+      }
+    },
+    "kokon_selka": {
+      "name": "Eingesponnene Frau",
+      "start": "a",
+      "again": "z",
+      "nodes": {
+        "a": {
+          "text": "Eine Frau mit grauen Strähnen schaut aus dem Gespinst. „Kräuter und Salbe, das ist mein Handwerk. Die Spinnen wollten Frischfleisch, nicht Heilkunst. Schneidet mich los, und ich schulde euch etwas.“",
+          "choices": [
+            {
+              "t": "Kokon aufschneiden",
+              "to": "b"
+            },
+            {
+              "t": "Später"
+            }
+          ]
+        },
+        "b": {
+          "text": "Selka reibt sich die Handgelenke und beginnt sofort, in ihrer Tasche zu wühlen. „Fast alles weg. Der Rest reicht aber für euch. Setzt euch einen Augenblick, ich versorge eure Wunden.“",
+          "choices": [
+            {
+              "t": "Wunden versorgen lassen",
+              "heal": 60,
+              "give": [
+                {
+                  "item": "potion_g",
+                  "n": 1
+                }
+              ],
+              "set": [
+                "selka:frei",
+                "selka:heal"
+              ],
+              "done": true,
+              "look": "wund",
+              "msg": "Sie arbeitet schnell und ohne Worte. Dann schiebt sie euch noch einen Trank zu. „Mehr hab ich nicht. Ich bleibe hier – da vorn wartet etwas Größeres, und ich will hören, wie es ausgeht.“"
+            }
+          ]
+        },
+        "z": {
+          "text": "Selka sitzt an der Wand und sortiert Kräuter aus ihrer Tasche. „Ihr seht aus, als hättet ihr es nötig.“",
+          "choices": [
+            {
+              "t": "Noch einmal Wunden versorgen",
+              "if": {
+                "noflag": "selka:heal2"
+              },
+              "heal": 40,
+              "set": [
+                "selka:heal2"
+              ],
+              "msg": "Sie wickelt neue Verbände. „Das war die letzte Salbe. Passt auf euch auf.“"
+            },
             {
               "t": "Gehen"
             }

@@ -3,6 +3,13 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.33.0 (21.11.2026, headless)
+- Neues Gebiet unter der Blutgruft: Spinnenhöhle (76×54) mit durchtrennbaren Netzen, Netzwächtern, Brutspinnen, Boss Spinnenkönigin und drei eingesponnenen Menschen (Händler, Kultbruder, Heilerin) mit unterschiedlichen Folgen.
+- Gefangener Tilo in der Kultgruft: erzählt sein Leben im Gewölbe, kann befreit werden, dankt und bleibt ansprechbar.
+- Kämpfe: manche Gegner fliehen bei wenig LP (keine Beute), manche holen Verstärkung (bis drei Gegner).
+- Deko in jedem Gebiet: Abflussrohre, kniehohe Gitterschächte, leere Wandnischen, Fässer in großen Hallen, Geröllhaufen an Gangenden. Gemälde in den Gängen entfernt.
+- Gegner/Balance: neue Gegner Brutspinne, Netzwächter, Spinnenkönigin; BALANCE.md und SIM.md neu.
+
 ## 0.32.2 (20.11.2026, headless)
 - Entdeckte Falle: Warnzeichen kleiner (ca. 55 %), rot statt gelb, Warnstreifen darunter entfernt.
 - Glücksamulett spürt nur noch versteckte Truhen (hinter Geheim- oder Trugwand, Flag `hidden`) und vergrabene Schätze; normale Truhen lösen nichts aus.

@@ -732,6 +732,7 @@ export function interact(state, data, target = null) { // target (0.26.2): Objek
     return { msg: 'Die Tür öffnet sich knarrend.', sfx: 'door', changed: true };
   }
   if (o.type === 'boulder') return pullBoulder(state, data, o);
+  if (o.type === 'gate' && o.web) { o.open = true; const w = state.heroes.find((h) => h.hp > 0 && (h.row === 'front')) || state.heroes.find((h) => h.hp > 0); return { msg: o.cutMsg || `${w ? w.name : 'Jemand'} durchtrennt das zähe Netz. Die Fäden zucken noch einen Augenblick nach.`, sfx: 'door', changed: true }; } // 0.33.0: Spinnennetz – mit ◉ oder Dagegenlaufen durchtrennen
   if (o.type === 'gate') return { msg: o.hint || 'Das Gitter sitzt fest. Es muss einen Hebel geben.', sfx: 'bump' };
   if (o.type === 'lever') { // wall: true = versteckter Schalter (lockerer Stein in der Mauer); Ziel ist ein Gitter oder eine Geheimwand
     const gate = state.objs.find((x) => x.id === o.gate);
@@ -867,6 +868,8 @@ export function dialogChoose(state, data, npc, nodeId, idx) {
     next = eff.to || null;
     if (c.msg) msgs.push(c.msg);
   }
+  if (eff.look) { npc.look = eff.look; npc.lookSet = true; } // 0.33.0: Aussehen wechselt (befreiter Gefangener); lookSet schützt vor dem Zurücksetzen durch syncStatic
+  if (eff.heal) { for (const h of state.heroes) if (h.hp > 0) h.hp = Math.min(h.maxHp, h.hp + Math.ceil((h.maxHp * eff.heal) / 100)); msgs.push(`Wunden werden versorgt: alle wachen Helden +${eff.heal} % LP.`); } // 0.33.0
   if (eff.give) msgs.push(`Erhalten: ${addLoot(state, data, eff.give)}.`);
   if (eff.xp) { const um = []; grantXp(state, data, eff.xp, um); msgs.push(`Erfahrung: +${eff.xp} EP.`, ...um); } // 0.29.0: Wunsch „Erfahrung“
   if (eff.reveal) { const lv = getLevel(data, state); (lv.map || []).forEach((row, y) => [...row].forEach((ch, x) => { if (!state.objs.some((o) => (o.type === 'secret' || o.type === 'illusion') && o.x === x && o.y === y)) state.seen[y * row.length + x] = 1; })); msgs.push('Die Karte dieses Gebiets ist euch nun bekannt.'); } // 0.29.0: Wunsch „Karte“
@@ -1514,6 +1517,7 @@ function finishVictory(state, data, msgs) {
   const c = state.combat;
   let gold = 0, xp = 0;
   for (const e of c.enemies) {
+    if (e.fled) { const o = state.objs.find((q) => q.id === e.objId); if (o) { o.dead = true; o.hp = 0; } continue; } // Geflohene: keine Beute, keine EP
     gold += data.enemies[e.kind].gold;
     xp += data.enemies[e.kind].xp || 0;
     noteBestiary(state, e.kind, 'won');
@@ -1528,7 +1532,7 @@ function finishVictory(state, data, msgs) {
   state.gold += gold;
   msgs.push(`Sieg! Beute: ${gold} Gold${gp > 0 ? ` (Talente +${gp} %)` : ''}.`);
   if (xp > 0) { msgs.push(`Erfahrung: +${xp} EP für jeden Helden, der noch steht.`); grantXp(state, data, xp, msgs); }
-  rollDrops(state, data, c.enemies, msgs);
+  rollDrops(state, data, c.enemies.filter((x) => !x.fled), msgs);
   { const ph = Math.min(25, partyFx(state, data, 'postheal')); if (ph > 0) { for (const h of state.heroes) if (h.hp > 0) h.hp = Math.min(h.maxHp, h.hp + Math.ceil((h.maxHp * ph) / 100)); msgs.push(`Nachsorge: alle wachen Helden +${ph} % LP.`); } } // Heiler (0.22.0)
   { const lp = state.heroes.reduce((m, h) => Math.max(m, h.hp > 0 ? fxSum(data, h, 'loot_potion') : 0), 0); if (lp > 0 && rand(state) * 100 < lp) { state.inv.potion = (state.inv.potion || 0) + 1; markNew(state, 'potion'); msgs.push('Glückspilz: Ihr findet einen Heiltrank bei den Gegnern.'); } } // Gauner
   for (const h of state.heroes) if (h.hp <= 0) { h.hp = 1; msgs.push(`${h.name} kommt mit 1 LP wieder zu sich.`); } // vorläufig, bis die Rast kommt (Schritt 5)
@@ -1794,6 +1798,35 @@ export function enemyStep(state, data, opts = {}) {
   const e = c.enemies[a.idx];
   const en = enemyOf(data, e);
   const msgs = [];
+  { // Taktik (0.33.0): en.tactic = { flee: { below, chance }, call: { below, chance, kind } } – nie bei Bossen; Flucht/Ruf ersetzt den Angriff
+    const tac = en.tactic, pct = (e.hp * 100) / e.maxHp;
+    if (tac && e.hp > 0) {
+      if (tac.call && (e.calls || 0) < (tac.call.max || 1) && pct <= tac.call.below && data.enemies[tac.call.kind] && rand(state) * 100 < tac.call.chance) {
+        let slot = c.enemies.findIndex((x) => x.hp <= 0);
+        if (slot < 0 && c.enemies.length < MAX_ENEMIES) slot = c.enemies.length;
+        e.calls = (e.calls || 0) + 1;
+        if (slot >= 0) {
+          const k = data.enemies[tac.call.kind], hpP = diffPct(state, data, 'hp');
+          const n = c.enemies.filter((x) => x.kind === tac.call.kind).length;
+          const ne = { objId: e.objId, kind: tac.call.kind, name: n ? `${k.name} ${'BCD'[Math.min(2, n - 1)]}` : k.name, hp: Math.max(1, Math.round((k.hp * hpP) / 100)), maxHp: Math.max(1, Math.round((k.hp * hpP) / 100)), cd: 0, intent: null, called: true };
+          c.enemies[slot] = ne; delete c.status['e' + slot];
+          noteBestiary(state, ne.kind, 'seen');
+          msgs.push(`${e.name} schreit nach Hilfe – ${ne.name} kommt dazu!`);
+          if (!c.order.some((o, i) => i > c.pos && o.side === 'e' && o.idx === slot)) c.order.splice(c.pos + 1, 0, { side: 'e', idx: slot }); // Neuer kommt noch in dieser Runde dran
+          advance(state, data);
+          return { msgs, sfx: 'miss', over: null };
+        }
+      } else if (tac.flee && !data.enemies[e.kind].boss && pct <= tac.flee.below && rand(state) * 100 < tac.flee.chance) {
+        e.hp = 0; e.fled = true; delete c.status['e' + a.idx];
+        msgs.push(`${e.name} verliert den Mut und flieht in die Dunkelheit!`);
+        noteBestiary(state, e.kind, 'fled');
+        if (c.enemies.every((x) => x.hp <= 0)) { checkRage(state, data, msgs); const gold = finishVictory(state, data, msgs); return { msgs, sfx: 'miss', over: 'victory', gold }; }
+        checkRage(state, data, msgs);
+        advance(state, data);
+        return { msgs, sfx: 'miss', over: null };
+      }
+    }
+  }
   const hv = en.heavy, heavy = !!hv && e.intent === 'heavy';
   let ti = pickTarget(state, en, data);
   if (heavy) { // schwerer Nahkampfschlag trifft nur die Vorderreihe, solange dort jemand steht (kein Ein-Treffer-Tod für Magier hinten)
@@ -2017,7 +2050,7 @@ export function syncStatic(state, data) {
       else if (STATIC_TYPES.has(o.type) && a.objs[i].type === o.type && JSON.stringify(a.objs[i]) !== JSON.stringify(o)) { a.objs[i] = clone(o); n++; }
       else if (o.type === 'chest' && o.lootV && a.objs[i].type === 'chest' && !a.objs[i].open && a.objs[i].lootV !== o.lootV) { a.objs[i].loot = clone(o.loot); a.objs[i].lootV = o.lootV; n++; } // 0.21.0: neue Beute (z. B. Set-Teile) auch in ungeöffneten Truhen alter Stände
       else if (o.type === 'enemy' && a.objs[i].type === 'enemy' && !a.objs[i].dead && (a.objs[i].x !== o.x || a.objs[i].y !== o.y) && !(a.id === state.levelId && state.player.x === o.x && state.player.y === o.y)) { a.objs[i].x = o.x; a.objs[i].y = o.y; n++; } // 0.23.12: Gegnerplatz (z. B. Hüter am Thron) auch in alten Ständen nachziehen
-      else if (!STATIC_TYPES.has(o.type)) for (const k of o.type === 'chest' ? ['title', 'style', 'torch', 'msg', 'look', 'mat', 'x', 'y'] : o.type === 'npc' || o.type === 'door' || (o.type === 'buried' && !a.objs[i].dug) ? ['title', 'style', 'torch', 'msg', 'x', 'y', 'sym', 'textless', 'autoClose', 'look', 'font'] : ['title', 'style', 'torch', 'msg']) if (o[k] !== undefined && a.objs[i][k] !== o[k]) { a.objs[i][k] = o[k]; n++; } // 0.31.9: Truhenstufe (look) nachziehen // 0.16.14: Beschriftung/Stil von Türen u. a. nachziehen (alte Stände ohne `style` zeigten einen Zufallsstil)
+      else if (!STATIC_TYPES.has(o.type)) for (const k of o.type === 'chest' ? ['title', 'style', 'torch', 'msg', 'look', 'mat', 'x', 'y'] : o.type === 'npc' || o.type === 'door' || (o.type === 'buried' && !a.objs[i].dug) ? ['title', 'style', 'torch', 'msg', 'x', 'y', 'sym', 'textless', 'autoClose', 'look', 'font'] : ['title', 'style', 'torch', 'msg']) if (o[k] !== undefined && a.objs[i][k] !== o[k] && !(k === 'look' && a.objs[i].lookSet)) { a.objs[i][k] = o[k]; n++; } // 0.31.9: Truhenstufe (look) nachziehen // 0.16.14: Beschriftung/Stil von Türen u. a. nachziehen (alte Stände ohne `style` zeigten einen Zufallsstil)
     }
   }
   const cur = getLevel(data, state), pc = cur && state.player ? cellChar(cur, state.player.x, state.player.y) : '.';
@@ -2111,6 +2144,7 @@ export function analyzeLevel(data, levelId) {
   const have = new Set();
   const opened = new Set();
   const gatesOpen = new Set(); // Gitter, deren Hebel erreichbar ist
+  for (const o of lvl.objects) if (o.type === 'gate' && o.web) gatesOpen.add(o.id); // Netze lassen sich durchtrennen
   const boltOpen = new Set(); // Riegeltüren, deren Riegelseite erreicht wurde
   const bfs = () => {
     const seen = new Set([`${lvl.start.x},${lvl.start.y}`]);

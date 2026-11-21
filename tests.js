@@ -510,14 +510,108 @@ export async function runTests(data, env = {}) {
     assert(f2.objects.every((o) => o.type === 'enemy' ? f2.map[o.y][o.x] === '.' : true), 'Gegner auf Boden');
   });
 
-  await test('Ausgang (0.16.4, seit 0.27.0 in der Blutgruft): erstes Betreten = Abschluss, danach kurzer Hinweis', () => {
-    const s = fresh(9); L.jumpToLevel(s, data, 'festung3'); s.objs.forEach((o) => { if (o.type === 'enemy') o.dead = true; });
-    put(s, 55, 22, 1);
+  await test('Ausgang (0.16.4, seit 0.33.0 am Ende der Spinnenhöhle): erstes Betreten = Abschluss, danach kurzer Hinweis', () => {
+    const s = fresh(9); L.jumpToLevel(s, data, 'festung4'); s.objs.forEach((o) => { if (o.type === 'enemy') o.dead = true; });
+    put(s, 71, 27, 1);
     const a = L.tryMove(s, data, 'f'); assert(a.events.some((e) => e.type === 'exit'), 'erstes Mal: exit ' + JSON.stringify(a));
-    put(s, 55, 22, 1);
+    put(s, 71, 27, 1);
     const b = L.tryMove(s, data, 'f'); assert(b.events.some((e) => e.type === 'exitAgain') && !b.events.some((e) => e.type === 'exit'), 'danach: exitAgain ' + JSON.stringify(b));
-    const t = data.levels.festung3.objects.find((o) => o.id === 'exit_b_tiefe');
+    const t = data.levels.festung4.objects.find((o) => o.id === 'exit_s_tiefe');
     assert(t && /späteren Version/.test(t.again), 'Ausgang hat Hinweistext');
+  });
+
+  await test('0.33.0 Gefangener Tilo in der Kultgruft: Lebensgeschichte, Befreiung, Dank, danach Gespräch; Aussehen bleibt nach Laden', () => {
+    const s = fresh(61); L.jumpToLevel(s, data, 'kultgruft');
+    const t = s.objs.find((o) => o.id === 'npc_zelle'); assert(t && t.dialog === 'zellengast' && data.dialogs.zellengast, 'Gefangener in der Zelle');
+    assert(data.levels.kultgruft.map[t.y][t.x] === '.' && t.x >= 10 && t.x <= 15 && t.y >= 10 && t.y <= 11, 'steht im Zellenraum');
+    eq(L.dialogStartNode(s, data, t), 'a', 'Start');
+    let r = L.dialogChoose(s, data, t, 'a', 1); eq(r.next, 'i1', 'Wer bist du');
+    r = L.dialogChoose(s, data, t, 'i1', 0); eq(r.next, 'i2', 'Wie kamst du in die Zelle');
+    assert(/Kerze|Ewiglicht/.test(data.dialogs.zellengast.nodes.i2.text), 'Geschichte nennt den Grund');
+    r = L.dialogChoose(s, data, t, 'i2', 0); eq(r.next, 'b', 'Riegel zurück');
+    const ration = s.inv.ration || 0, gold = s.gold;
+    r = L.dialogChoose(s, data, t, 'b', 0); assert(r.end && /Brot/.test(r.msg), 'Dank');
+    assert(s.inv.ration === ration + 1 && s.gold === gold + 15 && s.flags['tilo:frei'] && s.flags['d:npc_zelle'], 'kleines Dankeschön');
+    assert(!t.gone && t.look === 'wund', 'bleibt, Aussehen wechselt');
+    eq(L.dialogStartNode(s, data, t), 'z', 'danach: Gespräch');
+    assert(L.dialogView(s, data, t, 'z').choices.length === 3, 'drei Antworten');
+    const s2 = L.deserialize(L.serialize(s), data); const t2 = s2.objs.find((o) => o.id === 'npc_zelle'); assert(t2.look === 'wund', 'Aussehen nach Speichern/Laden');
+    L.syncStatic(s2, data); eq(s2.objs.find((o) => o.id === 'npc_zelle').look, 'wund', 'syncStatic setzt das Aussehen nicht zurück');
+  });
+
+  await test('0.33.0 Kampftaktik: Flucht (keine Beute, kein Boss), Verstärkung (Platz, Reihenfolge, Grenzen)', () => {
+    let fled = 0, stayed = 0, noLoot = true;
+    for (let i = 0; i < 80; i++) {
+      const s = L.newGame(data, 500 + i); L.startCombat(s, data, { id: 'f', kind: 'kultist', hp: 20 });
+      s.combat.enemies[0].hp = 3; const gold = s.gold;
+      let g = 0, last = null; while (s.combat && !s.combat.over && g++ < 20) { const a = L.currentActor(s); if (a.side === 'e') { last = L.enemyStep(s, data); if (last.over) break; } else L.heroAction(s, data, { type: 'defend' }); }
+      if (last && last.over === 'victory') { if (last.msgs.some((m) => /flieht/.test(m))) { fled++; if (s.gold !== gold) noLoot = false; } else stayed++; }
+    }
+    assert(fled > 5, `Flucht kommt vor (${fled})`);
+    for (let i = 0; i < 30; i++) { const s = L.newGame(data, 600 + i); L.startCombat(s, data, { id: 'f', kind: 'kultist', hp: 20 }); s.heroes.forEach((h) => { h.maxHp = h.hp = 500; }); let g = 0; while (g++ < 6) { const a = L.currentActor(s); if (a.side === 'e') { const r = L.enemyStep(s, data); assert(!r.msgs.some((m) => /flieht/.test(m)), 'gesunde Gegner fliehen nicht'); } else L.heroAction(s, data, { type: 'defend' }); } } assert(noLoot, 'Geflohene bringen kein Gold');
+    for (let i = 0; i < 40; i++) { const s = L.newGame(data, 700 + i); L.startCombat(s, data, { id: 'b', kind: 'hauptmann', hp: 160 }); s.combat.enemies[0].hp = 5; let g = 0, f = false; while (s.combat && !s.combat.over && g++ < 12) { const a = L.currentActor(s); if (a.side === 'e') { const r = L.enemyStep(s, data); if (r.msgs.some((m) => /flieht/.test(m))) f = true; if (r.over) break; } else L.heroAction(s, data, { type: 'defend' }); } assert(!f, 'Boss flieht nie'); }
+    let called = 0;
+    for (let i = 0; i < 80; i++) {
+      const s = L.newGame(data, 900 + i); L.startCombat(s, data, { id: 'c', kind: 'kultwaechter', hp: 34 });
+      s.combat.enemies[0].hp = 12; s.heroes.forEach((h) => { h.maxHp = h.hp = 400; });
+      let g = 0; while (s.combat && !s.combat.over && g++ < 8) { const a = L.currentActor(s); if (a.side === 'e') { const r = L.enemyStep(s, data); if (r.msgs.some((m) => /schreit nach Hilfe/.test(m))) { called++; const c = s.combat; assert(c.enemies.length === 2 && c.enemies[1].kind === 'skeleton' && c.enemies[1].hp > 0, 'Verstärkung steht da'); assert(c.order.some((o) => o.side === 'e' && o.idx === 1), 'kommt in der Runde noch dran'); break; } if (r.over) break; } else L.heroAction(s, data, { type: 'defend' }); }
+    }
+    assert(called > 5, `Verstärkung kommt manchmal (${called})`);
+    const s = L.newGame(data, 1); L.startCombat(s, data, { id: 'd', kinds: ['kultwaechter', 'wolf', 'wolf'] }); assert(s.combat.enemies.length === 3, 'volle Gruppe'); // Platzgrenze: höchstens drei Einträge
+    for (const [k, e] of Object.entries(data.enemies)) { if (e.tactic) { if (e.tactic.call) assert(data.enemies[e.tactic.call.kind], `${k}: Rufziel existiert`); } }
+  });
+
+  await test('0.33.0 Spinnenhöhle: Treppe hin und zurück, Netze als Engpässe, durchtrennbar, größer als die Blutgruft, Palette', () => {
+    const f3 = data.levels.festung3, f4 = data.levels.festung4;
+    assert(f4 && f4.palette === 'spinne' && data.palettes.spinne && Object.keys(data.palettes.spinne).length === Object.keys(data.palettes.katakomben).length, 'Level und Palette');
+    assert(f4.map.length * f4.map[0].length > f3.map.length * f3.map[0].length, 'größer als die Blutgruft');
+    const dn = f3.objects.find((o) => o.id === 'stairs_b_spinne'), up = f4.objects.find((o) => o.id === 'stairs_s_up');
+    assert(dn && dn.to.level === 'festung4' && up && up.to.level === 'festung3' && f4.map[dn.to.y][dn.to.x] === '.' && f3.map[up.to.y][up.to.x] === '.', 'Treppen mit gültigem Ziel');
+    assert(f4.objects.every((o) => (o.type === 'sign' && o.face != null) || f4.map[o.y][o.x] === '.'), 'Objekte stehen auf Boden');
+    const w = f4.map[0].length, h = f4.map.length, webs = f4.objects.filter((o) => o.type === 'gate' && o.web); assert(webs.length >= 5, 'mehrere Netze');
+    const reach = (closed) => { const seen = new Set([f4.start.y * w + f4.start.x]), q = [[f4.start.x, f4.start.y]]; while (q.length) { const [x, y] = q.shift(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy, k = ny * w + nx; if (f4.map[ny] && f4.map[ny][nx] === '.' && !seen.has(k) && !(closed && webs.some((o) => o.x === nx && o.y === ny))) { seen.add(k); q.push([nx, ny]); } } } return seen; };
+    const closed = reach(true), open = reach(false), at = (id) => { const o = f4.objects.find((q) => q.id === id); return o.y * w + o.x; };
+    assert(!closed.has(at('en_s_boss')) && open.has(at('en_s_boss')), 'Boss nur hinter den Netzen');
+    assert(!closed.has(at('chest_s_nook1')) && open.has(at('chest_s_nook1')), 'Nische hinter Netz');
+    assert(L.analyzeLevel(data, 'festung4').ok, 'Höhle lösbar');
+    const s = fresh(62); L.jumpToLevel(s, data, 'festung4'); s.objs.forEach((o) => { if (o.type === 'enemy') o.dead = true; });
+    put(s, 29, 27, 1); const g = s.objs.find((o) => o.id === 'web_s1'); assert(g && !g.open, 'Netz zu');
+    const m = L.tryMove(s, data, 'f'); assert(!m.moved && m.blocker && m.blocker.id === 'web_s1', 'Netz versperrt');
+    const r = L.interact(s, data); assert(g.open && /durchtrennt/.test(r.msg), 'durchtrennen');
+    const m2 = L.tryMove(s, data, 'f'); assert(m2.moved, 'danach frei');
+    const s3 = L.deserialize(L.serialize(s), data); assert(s3.objs.find((o) => o.id === 'web_s1').open, 'bleibt offen nach Laden');
+    const boss = data.enemies.spinnenkoenigin; assert(boss.boss && boss.phases.length >= 2 && boss.tactic && boss.tactic.call.kind === 'brutspinne' && boss.intro, 'Königin: Phasen, Rufe, Intro');
+    // Königin ruft Brut, nie mehr als drei Gegner
+    let called = 0; for (let i = 0; i < 40; i++) { const q = L.newGame(data, 300 + i); q.heroes.forEach((x) => { x.maxHp = x.hp = 999; }); L.startCombat(q, data, { id: 'qq', kind: 'spinnenkoenigin', hp: 200 }); let gg = 0; while (q.combat && !q.combat.over && gg++ < 20) { const a = L.currentActor(q); if (a.side === 'e') { const rr = L.enemyStep(q, data); if (q.combat && q.combat.enemies.length > 3) throw new Error('mehr als drei Gegner'); if (rr.msgs.some((x) => /schreit nach Hilfe/.test(x))) called++; if (rr.over) break; } else L.heroAction(s === null ? q : q, data, { type: 'defend' }); } }
+    assert(called > 3, `Königin ruft Brut (${called})`);
+  });
+
+  await test('0.33.0 Eingesponnene: Befreiung mit Folgen (Händler, Kultbruder, Heilerin)', () => {
+    const s = fresh(63); L.jumpToLevel(s, data, 'festung4');
+    for (const id of ['npc_s_orwin', 'npc_s_alder', 'npc_s_selka']) { const n = s.objs.find((o) => o.id === id); assert(n && n.look === 'kokon' && data.dialogs[n.dialog], `${id} vorhanden`); }
+    const o = s.objs.find((q) => q.id === 'npc_s_orwin'), g0 = s.gold, p0 = s.inv.potion_m || 0;
+    L.dialogChoose(s, data, o, 'a', 0); const r = L.dialogChoose(s, data, o, 'b', 0); assert(r.end && o.gone && s.flags['orwin:frei'] && s.inv.potion_m === p0 + 2 && s.gold === g0 + 60, 'Orwin dankt und geht');
+    const a = s.objs.find((q) => q.id === 'npc_s_alder'); L.dialogChoose(s, data, a, 'a', 2); L.dialogChoose(s, data, a, 'l', 0); assert(s.flags['alder:gelassen'] && !a.gone && L.dialogStartNode(s, data, a) === 'z', 'Alder hängen lassen: bleibt, später ansprechbar');
+    const xp0 = s.heroes[0].xp; L.dialogChoose(s, data, a, 'z', 0); const rb = L.dialogChoose(s, data, a, 'b', 0); assert(rb.end && a.gone && s.flags['alder:frei'] && s.flags['spinne:schwaeche'] && s.heroes[0].xp > xp0, 'Alder freigeschnitten: EP, Rat, geht');
+    const sk = s.objs.find((q) => q.id === 'npc_s_selka'); s.heroes.forEach((h) => { h.hp = 1; }); L.dialogChoose(s, data, sk, 'a', 0); const rs = L.dialogChoose(s, data, sk, 'b', 0);
+    assert(rs.end && !sk.gone && sk.look === 'wund' && s.heroes.every((h) => h.hp > 1) && s.flags['selka:heal'], 'Selka heilt und bleibt');
+  });
+
+  await test('0.33.0 Deko: keine Bilder in Gängen, Wandschmuck/Fässer/Geröll in den Gebieten, nichts blockiert den Weg', () => {
+    for (const lvl of Object.values(data.levels)) for (const o of lvl.objects) assert(o.deco !== 'painting', `Bild ${o.id} entfernt`);
+    let wall = 0, barrels = 0, rubble = 0;
+    for (const [id, lvl] of Object.entries(data.levels)) {
+      const dk = lvl.objects.filter((o) => String(o.id).startsWith('dk_')); if (!dk.length) continue;
+      const w = lvl.map[0].length;
+      for (const o of dk) {
+        assert(!(o.x === lvl.start.x && o.y === lvl.start.y), `${o.id}: nicht auf dem Startfeld`);
+        if (o.type === 'decor') { assert(lvl.map[o.y][o.x] === '.', `${o.id}: auf Boden`); assert(['fass', 'schutt'].includes(o.look), 'bekannte Optik'); if (o.look === 'fass') barrels++; else rubble++; }
+        else { assert(['rohr', 'gitter', 'nischeleer'].includes(o.deco) && o.face != null && lvl.map[o.y + [-1, 0, 1, 0][o.face]][o.x + [0, 1, 0, -1][o.face]] !== '.', `${o.id}: Schmuck an einer Wand`); wall++; }
+      }
+      assert(L.analyzeLevel(data, id).ok, `${id} bleibt lösbar`);
+    }
+    assert(wall >= 10 && barrels >= 10 && rubble >= 8, `Deko vorhanden (${wall}/${barrels}/${rubble})`);
+    for (const id of ['kultgruft', 'schratgruben', 'nebelturm', 'festung1', 'festung2', 'festung3', 'moorpfad', 'moorsee', 'festung4']) assert(data.levels[id].objects.some((o) => String(o.id).startsWith('dk_')), `${id}: Deko`);
   });
 
   await test('Blutgruft (0.27.0): Treppe aus dem Keller, rote Palette, Vampire, Blutbiss heilt den Gegner, Schlüssel erreichbar', () => {
@@ -530,7 +624,7 @@ export async function runTests(data, env = {}) {
     // Erreichbarkeit: vom Start zu Schlüsseltruhe, Thron und Ausgang (Türen/Gitter offen, nur Wände sperren)
     const w = f3.map[0].length, h = f3.map.length, seen = new Set([f3.start.y * w + f3.start.x]), q = [[f3.start.x, f3.start.y]];
     while (q.length) { const [x, y] = q.shift(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (f3.map[ny] && f3.map[ny][nx] === '.' && !seen.has(ny * w + nx)) { seen.add(ny * w + nx); q.push([nx, ny]); } } }
-    for (const id of ['chest_b_key', 'en_b_boss', 'exit_b_tiefe', 'lever_b1', 'chest_b_g5']) { const o = f3.objects.find((q2) => q2.id === id); assert(o && seen.has(o.y * w + o.x), `${id} erreichbar`); }
+    for (const id of ['chest_b_key', 'en_b_boss', 'stairs_b_spinne', 'lever_b1', 'chest_b_g5']) { const o = f3.objects.find((q2) => q2.id === id); assert(o && seen.has(o.y * w + o.x), `${id} erreichbar`); }
     const gate = f3.objects.find((o) => o.id === 'gate_b1'), lever = f3.objects.find((o) => o.id === 'lever_b1');
     assert(gate && lever && lever.gate === gate.id, 'Hebel öffnet Gitter');
     const th = f3.objects.find((o) => o.id === 'door_b_thron'); assert(th && th.locked && th.key === 'blut_schluessel' && data.items.blut_schluessel && f3.objects.some((o) => o.type === 'chest' && o.loot.some((l) => l.item === 'blut_schluessel')), 'Thron braucht den Blutschlüssel aus dem Kerker');
@@ -999,8 +1093,10 @@ export async function runTests(data, env = {}) {
     assert(low / N > 0.5, `Wolf zielt meist auf den Schwächsten: ${low}/${N}`);
     // Aufstehen nach dem Sieg, aber ohne Erfahrung
     [s, o] = enemyObj('en2'); s.heroes[1].hp = 0; L.startCombat(s, data, o);
+    const wolfTac = data.enemies.wolf.tactic; delete data.enemies.wolf.tactic; // 0.33.0: Flucht würde die EP verhindern – hier nicht Gegenstand
     s.combat.enemies.forEach((e) => { e.hp = 1; });
     let rr = null, g3 = 0; while (s.combat && g3++ < 80) { const a = L.currentActor(s); if (a.side === 'h') { if (s.heroes[a.idx].hp <= 0) throw new Error('bewusstloser Held am Zug'); rr = L.heroAction(s, data, { type: 'sweep' }); } else L.enemyStep(s, data, { god: true }); }
+    if (wolfTac) data.enemies.wolf.tactic = wolfTac;
     assert(rr && rr.over === 'victory', 'Sieg über Gruppe');
     eq([s.heroes[1].hp, s.heroes[1].xp], [1, 0], 'Bewusstloser steht mit 1 LP auf, ohne EP');
     assert(s.heroes[0].xp === 70, 'Gruppen-EP: 2 × 35');
@@ -2083,6 +2179,10 @@ export async function runTests(data, env = {}) {
     await test('Offenes Fallgitter (0.23.9): wird als hochgezogenes Gitter gezeichnet', () => {
       const r = texts['render.js'] || '';
       assert(/function genGateOpen/.test(r) && /gateOpen: smoothSprite/.test(r) && /o\.type === 'gate' && o\.open && grid/.test(r), 'Sprite für offenes Gitter fehlt');
+    });
+    await test('Grafik 0.33.0: Kokon, Königin, Geröll, Netzwand, Wandschmuck (Rohr, Gitterschacht) sind vorhanden', () => {
+      const r = texts['render.js'] || '';
+      for (const re of [/kokon: sm2\(genCocoon/, /koenigin: sm2\(genSpider\(777, true\)\)/, /schutt: sm2\(genFurn\('schutt'/, /\[WALL_WEB\]: genWeb/, /kind === 'rohr'/, /kind === 'gitter'/, /nischeleer/, /o\.web \? WALL_WEB : WALL_GATE/]) assert(re.test(r), 'fehlt: ' + re);
     });
     await test('Layout (0.23.10): Leiste wird bei Größen-/Vollbildwechsel und regelmäßig neu eingepasst', () => {
       const m = texts['main.js'] || '';

@@ -85,7 +85,7 @@ function fight(s, objId, strat) {
 // die Zauberer unter halbem Mana sind (mit Proviant, sonst hungrig; der Rückweg zu einem sicheren Rastplatz wird nicht simuliert),
 // und kauft vor jedem Gebiet bei Hedda nach (bis 4 Heiltränke, 3 Proviant, solange das Gold reicht). Niederlage: Regel des Spiels
 // (halbe LP, 25 % Gold weg), Rast, neuer Versuch; nach 3 Niederlagen am selben Gegner gilt der Lauf als gescheitert.
-const CAMPAIGN = ['test1', 'test2', 'moorpfad', 'kultgruft', 'schratgruben', 'nebelturm', 'festung1', 'festung2', 'festung3']; // 0.27.0: Keller 1 und Blutgruft dazu
+const CAMPAIGN = ['test1', 'test2', 'moorpfad', 'kultgruft', 'schratgruben', 'nebelturm', 'festung1', 'festung2', 'festung3', 'festung4']; // 0.33.0: Spinnenhöhle; 0.27.0: Keller 1 und Blutgruft dazu
 function simRest(s) {
   const need = s.heroes.some((h) => h.hp / h.maxHp < 0.6) || s.heroes.some((h) => data.classes[h.cls].res.name === 'Mana' && h.mp < h.maxMp / 2);
   if (!need) return;
