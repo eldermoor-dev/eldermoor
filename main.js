@@ -3,14 +3,14 @@
 import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, pushError, formatErrorLog, itemDef, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
-  activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogChoose, diceNew, diceRoll, diceKeep, diceNext, diceFinish, diceRoundLine,
+  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, pushError, formatErrorLog, itemDef, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, partyAvgLevel, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
+  activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogChoose, diceNew, diceRoll, diceKeep, diceNext, diceFinish, diceRoundLine, recruitHero, swapHero, dismissReserve, recruitCost, RESERVE_MAX,
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.33.0';
+const VERSION = '0.34.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -31,7 +31,7 @@ const S = {
   debug: { god: false }, itemMode: false, abMode: false, spMode: false, spSel: 0, foe: 0, invUse: null, draft: null, fps: 60, frameMs: 0, lastRender: 0,
   installEvent: null, loadMs: null, hadController: false
 };
-if (new URLSearchParams(location.search).has('dev')) { window.__S = S; S.snapCam = () => snapCam(); S.fn = { openMap: () => openMap(), renderCombat: () => renderCombat(), startCombatUI: (o) => startCombatUI(o), showEvent: (a, b) => showEvent(a, b), openDice: (id) => openDice(id), openShop: (id) => openShop(id, true), gotoArea: (id) => { jumpToLevel(S.game, S.data, id); S.lvl = getLevel(S.data, S.game); S.rc.setPalette(S.data.palettes[S.lvl.palette]); S.held = []; S.queued = null; snapCam(); renderAll(); } }; } // nur für automatische Tests (?dev)
+if (new URLSearchParams(location.search).has('dev')) { window.__S = S; S.snapCam = () => snapCam(); S.fn = { openMap: () => openMap(), renderCombat: () => renderCombat(), startCombatUI: (o) => startCombatUI(o), showEvent: (a, b) => showEvent(a, b), openDice: (id) => openDice(id), openShop: (id) => openShop(id, true), openTavern: () => { S.tav = null; openTavern(); }, gotoArea: (id) => { jumpToLevel(S.game, S.data, id); S.lvl = getLevel(S.data, S.game); S.rc.setPalette(S.data.palettes[S.lvl.palette]); S.held = []; S.queued = null; snapCam(); renderAll(); } }; } // nur für automatische Tests (?dev)
 
 // ---------------------------------------------------------------- Fehlerlog
 const ERR = { list: [], saveT: 0 };
@@ -950,10 +950,47 @@ async function dialogPick(i) {
   if (r.sfx) S.sfx.play(r.sfx);
   if (r.encounter) { closeModal(); renderAll(); startCombatUI(r.encounter); return; }
   if (r.goto) { closeModal(); const t = travelTo(g, S.data, r.goto, r.msg); if (!t.ok) { say(t.msg); renderAll(); return; } S.sfx.play('door'); await afterAreaChange(t); return; } // 0.28.0: Fähre
+  if (r.tavern) { S.tav = { pi: null, sure: null }; openTavern(); return; } // 0.34.0: Taverne
   if (r.game) { closeModal(); openDice(d.id); return; } // 0.32.0: Würfelspiel mit Murmel
   if (r.next) { openDialog(d.id, r.next); renderAll(); return; }
   closeModal(); renderAll();
   try { if (!g.combat) await saveSlot('auto', true); } catch { /* egal */ }
+}
+// ---------- Taverne (0.34.0): Reserve, Heldentausch, Anwerben; Logik: logic.js (recruitHero, swapHero, dismissReserve) ----------
+function tavSync() { // Eingaben der Anwerbe-Zeile merken, bevor die Oberfläche neu gezeichnet wird
+  const t = S.tav = S.tav || { pi: null, sure: null }, n = $('#tv-name'), r = $('#tv-race'), c = $('#tv-cls');
+  if (n) t.name = n.value; if (r) t.race = r.value; if (c) t.cls = c.value;
+  return t;
+}
+function openTavern() {
+  const g = S.game, d = S.data, t = S.tav = S.tav || { pi: null, sure: null }, res = g.reserve || [];
+  const rn = (k) => esc(d.races[k].name), cn = (k) => esc(d.classes[k].name);
+  const line = (h) => `<b>${esc(h.name)}</b> · ${rn(h.race)} ${esc(h.role)} · Stufe ${h.level} · ${h.row === 'front' ? 'vorn' : 'hinten'}<div class="muted">LP ${Math.ceil(h.hp)}/${h.maxHp}${h.maxMp ? ` · ${esc((d.classes[h.cls].res || {}).name || 'Ressource')} ${h.mp}/${h.maxMp}` : ''}${h.hp <= 0 ? ' · bewusstlos' : ''}</div>`;
+  const party = g.heroes.map((h, i) => `<div class="row nw"><div>${line(h)}</div><button class="mb${t.pi === i ? ' primary' : ''}" data-m="tav-pick:${i}">${t.pi === i ? 'Gewählt' : 'Tauschen'}</button></div>`).join('');
+  const resv = res.length ? res.map((h, i) => `<div class="row nw"><div>${line(h)}</div><div style="display:flex;flex-direction:column;gap:4px"><button class="mb" data-m="tav-in:${i}" ${t.pi == null ? 'disabled' : ''}>${t.pi == null ? 'Platz wählen' : 'Einwechseln'}</button><button class="mb${t.sure === i ? ' primary' : ''}" data-m="tav-out:${i}">${t.sure === i ? 'Wirklich?' : 'Verabschieden'}</button></div></div>`).join('') : '<p class="muted">Niemand wartet hier. Wer hier wartet, bekommt ' + ((d.tavern || {}).reserveXp || 0) + ' % der Erfahrung.</p>';
+  const cost = recruitCost(g, d), full = res.length >= RESERVE_MAX;
+  const opt = (obj, sel) => Object.keys(obj).map((k) => `<option value="${k}" ${k === sel ? 'selected' : ''}>${esc(obj[k].name)}</option>`).join('');
+  openModal(`<h2>Taverne – Gruppe verwalten</h2><p>Gold: <b>${g.gold}</b></p>
+    <h3>Gruppe (tippe „Tauschen“, dann „Einwechseln“)</h3>${party}
+    <h3>Reserve (${res.length}/${RESERVE_MAX})</h3>${resv}
+    <h3>Neu anwerben</h3><p class="muted">Der Neue kommt mit Stufe ${partyAvgLevel(g)} (Durchschnitt der Gruppe) in die Reserve.</p>
+    <div class="row"><input type="text" id="tv-name" maxlength="${NAME_MAX}" placeholder="Name" autocomplete="off" autocapitalize="words" spellcheck="false" value="${esc(t.name || '')}"></div>
+    <div class="row"><select id="tv-race">${opt(d.races, t.race || Object.keys(d.races)[0])}</select><select id="tv-cls">${opt(d.classes, t.cls || Object.keys(d.classes)[0])}</select></div>
+    <div class="acts"><button class="mb primary" data-m="tav-hire" ${full || g.gold < cost ? 'disabled' : ''}>${full ? 'Reserve voll' : `Anwerben (${cost} G)`}</button>${closeBtn}</div>`, 'tavern');
+}
+function tavAct(m) {
+  const g = S.game, t = tavSync();
+  let r = null;
+  if (m.startsWith('tav-pick:')) { const i = +m.slice(9); t.pi = t.pi === i ? null : i; t.sure = null; }
+  else if (m.startsWith('tav-in:')) { r = swapHero(g, S.data, t.pi, +m.slice(7)); if (!r.error) t.pi = null; t.sure = null; }
+  else if (m.startsWith('tav-out:')) { const i = +m.slice(8); if (t.sure !== i) t.sure = i; else { r = dismissReserve(g, S.data, i); t.sure = null; } }
+  else if (m === 'tav-hire') { r = recruitHero(g, S.data, { name: t.name || '', race: t.race || Object.keys(S.data.races)[0], cls: t.cls || Object.keys(S.data.classes)[0] }); if (!r.error) { t.name = ''; t.sure = null; } }
+  if (r) {
+    const bad = { 'no-front': 'Mindestens ein Held muss in der Vorderreihe stehen.', 'full': 'Die Reserve ist voll (vier Betten).', 'name': 'Bitte einen Namen eingeben.', 'name-bad': 'Dieser Name ist nicht erlaubt.', 'name-taken': 'Diesen Namen trägt schon jemand.', 'gold': `Dafür fehlen ${r.cost} Gold.`, 'in-combat': 'Im Kampf geht das nicht.' }[r.error];
+    if (r.msg) { say(r.msg); S.sfx.play(r.sfx || 'ui'); toast(r.msg, 3500); } else toast(bad || 'Das geht nicht.', 3200);
+  }
+  const sc = $('#modal-box').scrollTop; renderAll(); openTavern(); $('#modal-box').scrollTop = sc; // Bildlauf bleibt erhalten
+  if (r && r.msg) saveSlot('auto', true).catch(() => {});
 }
 // ---------- Würfelspiel mit Murmel (0.32.0), Regeln und Logik: logic.js (diceNew … diceFinish) ----------
 const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
@@ -1662,6 +1699,7 @@ async function onModalClick(e) {
     if (r.msg) { say(r.msg); toast(r.msg); }
     renderAll(); openCharacter();
   }
+  else if (m.startsWith('tav-')) tavAct(m);
   else if (m === 'shopgo') { S.shopTalk = null; openShop(S.shopId, false); }
   else if (m.startsWith('dlg:')) dialogPick(+m.slice(4));
   else if (m.startsWith('dice-')) diceAction(m);

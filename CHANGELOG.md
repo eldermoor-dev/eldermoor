@@ -3,6 +3,13 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.34.0 (22.11.2026, headless)
+- Neue Taverne „Zum Letzten Licht“ in der Siedlung (Treppe links unten), Wirtin Marga verwaltet die Gruppe.
+- Bis zu vier Reservehelden; sie bekommen 50 % der Erfahrung. Heldentausch jederzeit außerhalb von Kämpfen, Ausrüstung des Gehenden landet im Beutel. Mindestens ein Held bleibt in der Vorderreihe.
+- Neue Helden anwerben (Name, Rasse, Beruf, auch Alchemist): Kosten 40 + 20 × Durchschnittsstufe Gold, Stufe = Durchschnitt der Gruppe. Reservehelden lassen sich verabschieden.
+- Alders Rat wirkt: Die Spinnenkönigin ist mit dem Hinweis anfälliger für Feuer und ruft seltener Brut.
+- Tests: 147 (zwei neue). Werte unverändert, BALANCE.md/SIM.md unverändert.
+
 ## 0.33.0 (21.11.2026, headless)
 - Neues Gebiet unter der Blutgruft: Spinnenhöhle (76×54) mit durchtrennbaren Netzen, Netzwächtern, Brutspinnen, Boss Spinnenkönigin und drei eingesponnenen Menschen (Händler, Kultbruder, Heilerin) mit unterschiedlichen Folgen.
 - Gefangener Tilo in der Kultgruft: erzählt sein Leben im Gewölbe, kann befreit werden, dankt und bleibt ansprechbar.

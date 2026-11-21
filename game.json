@@ -1912,7 +1912,17 @@
       "intro": {
         "title": "Die Spinnenkönigin",
         "text": "Sie hängt in der Mitte der Höhle, groß wie eine Kutsche. Rings um sie hängen Kokons, und einer davon bewegt sich noch."
-      }
+      },
+      "flagFx": [
+        {
+          "flag": "spinne:schwaeche",
+          "resist": {
+            "fire": -30
+          },
+          "callChance": -25,
+          "msg": "Alders Rat wirkt: Die Königin scheut Feuer, und ihre Brut folgt dem Ruf seltener."
+        }
+      ]
     }
   },
   "palettes": {
@@ -2516,6 +2526,20 @@
             "x": 2,
             "y": 3,
             "dir": 1
+          },
+          "look": "path"
+        },
+        {
+          "id": "stairs_taverne",
+          "type": "stairs",
+          "x": 3,
+          "y": 4,
+          "msg": "Du betrittst die Taverne „Zum Letzten Licht“.",
+          "to": {
+            "level": "taverne",
+            "x": 5,
+            "y": 3,
+            "dir": 0
           },
           "look": "path"
         }
@@ -7405,6 +7429,105 @@
           "look": "schutt"
         }
       ]
+    },
+    "taverne": {
+      "id": "taverne",
+      "name": "Taverne „Zum Letzten Licht“",
+      "palette": "festung",
+      "map": [
+        "#####T#####",
+        "#.........#",
+        "#.........#",
+        "#.........#",
+        "#.........#",
+        "###########"
+      ],
+      "start": {
+        "x": 5,
+        "y": 3,
+        "dir": 0
+      },
+      "objects": [
+        {
+          "id": "stairs_taverne_aus",
+          "type": "stairs",
+          "x": 5,
+          "y": 4,
+          "msg": "Du trittst hinaus in den Nebel der Siedlung.",
+          "to": {
+            "level": "moorrand",
+            "x": 3,
+            "y": 3,
+            "dir": 0
+          },
+          "look": "path"
+        },
+        {
+          "id": "npc_wirt",
+          "type": "npc",
+          "x": 5,
+          "y": 1,
+          "name": "Wirtin Marga",
+          "look": "haendler2",
+          "dialog": "wirt"
+        },
+        {
+          "id": "d_kamin",
+          "type": "decor",
+          "x": 9,
+          "y": 1,
+          "look": "kamin"
+        },
+        {
+          "id": "d_regal",
+          "type": "decor",
+          "x": 1,
+          "y": 1,
+          "look": "regal"
+        },
+        {
+          "id": "d_fass1",
+          "type": "decor",
+          "x": 1,
+          "y": 3,
+          "look": "fass"
+        },
+        {
+          "id": "d_fass2",
+          "type": "decor",
+          "x": 9,
+          "y": 3,
+          "look": "fass"
+        },
+        {
+          "id": "d_tisch1",
+          "type": "decor",
+          "x": 3,
+          "y": 2,
+          "look": "tisch"
+        },
+        {
+          "id": "d_tisch2",
+          "type": "decor",
+          "x": 7,
+          "y": 2,
+          "look": "tisch"
+        },
+        {
+          "id": "d_stuhl1",
+          "type": "decor",
+          "x": 2,
+          "y": 2,
+          "look": "stuhl"
+        },
+        {
+          "id": "d_stuhl2",
+          "type": "decor",
+          "x": 8,
+          "y": 2,
+          "look": "stuhl"
+        }
+      ]
     }
   },
   "spot": {
@@ -9850,6 +9973,41 @@
           ]
         }
       }
+    },
+    "wirt": {
+      "name": "Wirtin Marga",
+      "start": "a",
+      "again": "a",
+      "nodes": {
+        "a": {
+          "text": "Eine breite Frau wischt einen Krug aus. „Willkommen im Letzten Licht. Wer hier einkehrt, bleibt nicht allein: Ich führe die Liste derer, die mit euch ziehen würden, und halte ihre Betten warm. Lernen tun sie auch, wenn ihr sie holt – nur langsamer.“",
+          "choices": [
+            {
+              "t": "Gruppe verwalten (Reserve, Tausch, Anwerben)",
+              "tavern": true
+            },
+            {
+              "t": "Wie funktioniert das?",
+              "to": "b"
+            },
+            {
+              "t": "Gehen"
+            }
+          ]
+        },
+        "b": {
+          "text": "„Vier Betten habe ich. Wer dort wartet, bekommt die Hälfte der Erfahrung, die ihr unterwegs sammelt. Tauschen könnt ihr jederzeit, solange ihr nicht kämpft; die Rüstung des Gehenden wandert in euren Beutel. Neue Gesichter kosten Gold – je erfahrener ihr seid, desto mehr, denn desto besser sind sie.“",
+          "choices": [
+            {
+              "t": "Gruppe verwalten",
+              "tavern": true
+            },
+            {
+              "t": "Gehen"
+            }
+          ]
+        }
+      }
     }
   },
   "dicegame": {
@@ -9885,5 +10043,10 @@
       "Murmel gewinnt die Runde.",
       "Murmel tanzt einen kleinen Schritt."
     ]
+  },
+  "tavern": {
+    "reserveXp": 50,
+    "recruitBase": 40,
+    "recruitPerLevel": 20
   }
 }

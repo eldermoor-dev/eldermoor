@@ -108,6 +108,14 @@ export function grantXp(state, data, amount, msgs = []) {
       msgs.push(`${h.name} steigt auf Stufe ${to} auf!${talentPoints(data, h) > 0 && data.talents ? ' Neuer Talentpunkt!' : ''}`);
     }
   }
+  { // 0.34.0: Reservehelden in der Taverne lernen mit (data.tavern.reserveXp Prozent), auch wenn sie bewusstlos sind; die Gruppe bekommt die Meldung nur bei Aufstieg
+    const pct = (data.tavern && data.tavern.reserveXp) || 0, share = Math.floor((amount * pct) / 100);
+    if (share > 0) for (const h of state.reserve || []) {
+      h.xp = Math.min(cap, h.xp + share);
+      const to = levelForXp(data, h.xp);
+      if (to > h.level) { h.level = to; refreshHeroStats(data, h); msgs.push(`${h.name} (Reserve) steigt auf Stufe ${to} auf!`); }
+    }
+  }
   return ups;
 }
 
@@ -166,6 +174,58 @@ export function buildParty(data, specs = data.quickParty) {
   const err = validateParty(data, specs);
   if (err.length) throw new Error('Gruppe ungültig: ' + err.join('; '));
   return specs.map((s, i) => createHero(data, s, i));
+}
+
+// ---------- Taverne (0.34.0): Reservehelden, Heldentausch, Anwerben ----------
+// state.reserve = [Held, …] (höchstens RESERVE_MAX, gleiche Felder wie state.heroes; fehlt das Feld, ist die Reserve leer).
+// data.tavern = { reserveXp (Prozent der Gruppen-EP), recruitBase, recruitPerLevel (Gold), names[] }
+export const RESERVE_MAX = 4;
+export function partyAvgLevel(state) { return Math.max(1, Math.floor(state.heroes.reduce((n, h) => n + h.level, 0) / state.heroes.length)); }
+export function recruitCost(state, data) { const t = data.tavern || {}; return (t.recruitBase || 40) + (t.recruitPerLevel || 20) * partyAvgLevel(state); }
+const nameTaken = (state, name) => [...state.heroes, ...(state.reserve || [])].some((h) => h.name.toLowerCase() === name.toLowerCase());
+// Getragene Ausrüstung kommt zurück ins Inventar, bevor ein Held die Gruppe verlässt (nichts geht verloren)
+function stripGear(state, h) {
+  if (!h.equip) return;
+  for (const k of Object.keys(h.equip)) if (h.equip[k]) { state.inv[h.equip[k]] = (state.inv[h.equip[k]] || 0) + 1; h.equip[k] = null; }
+}
+export function recruitHero(state, data, spec) {
+  if (state.combat) return { error: 'in-combat' };
+  const res = (state.reserve = state.reserve || []);
+  if (res.length >= RESERVE_MAX) return { error: 'full' };
+  const name = typeof spec.name === 'string' ? spec.name.trim() : '';
+  if (!name) return { error: 'name' };
+  if (name.length > NAME_MAX || BAD_NAME_CHARS.test(name)) return { error: 'name-bad' };
+  if (nameTaken(state, name)) return { error: 'name-taken' };
+  if (!has(data.races, spec.race) || !has(data.classes, spec.cls)) return { error: 'spec' };
+  const cost = recruitCost(state, data);
+  if (state.gold < cost) return { error: 'gold', cost };
+  state.gold -= cost;
+  const h = createHero(data, { name, race: spec.race, cls: spec.cls, look: randInt(state, 0, 99) }, 0);
+  state.hid = (state.hid || 0) + 1; h.id = 'n' + state.hid;
+  const lv = partyAvgLevel(state), t = (data.progression && data.progression.xp) || [];
+  h.xp = lv > 1 ? t[lv - 2] : 0; h.level = lv;
+  refreshHeroStats(data, h); h.hp = h.maxHp; h.mp = h.maxMp;
+  res.push(h);
+  return { msg: `${h.name} (${h.role}, Stufe ${h.level}) wartet nun in der Taverne. Kosten: ${cost} Gold.`, sfx: 'ui', hero: h };
+}
+// Tauscht Gruppenplatz pi mit Reserveplatz ri. Der Neue behält Reihe und Werte; Ausrüstung des Gehenden geht ins Inventar.
+export function swapHero(state, data, pi, ri) {
+  if (state.combat) return { error: 'in-combat' };
+  const res = state.reserve || [], out = state.heroes[pi], inn = res[ri];
+  if (!out || !inn) return { error: 'bad-index' };
+  const front = state.heroes.some((h, i) => i !== pi && h.row === 'front') || inn.row === 'front';
+  if (!front) return { error: 'no-front' };
+  stripGear(state, out);
+  state.heroes[pi] = inn; res[ri] = out;
+  return { msg: `${inn.name} kommt in die Gruppe, ${out.name} wartet in der Taverne. (Ausrüstung von ${out.name} liegt im Beutel.)`, sfx: 'ui' };
+}
+export function dismissReserve(state, data, ri) {
+  if (state.combat) return { error: 'in-combat' };
+  const res = state.reserve || [], h = res[ri];
+  if (!h) return { error: 'bad-index' };
+  stripGear(state, h);
+  res.splice(ri, 1);
+  return { msg: `${h.name} verlässt die Taverne. (Ausrüstung liegt im Beutel.)`, sfx: 'ui' };
 }
 
 // Frischer Zustand eines Gebiets (Objekte, Erkundung, Notizen)
@@ -857,6 +917,7 @@ export function dialogChoose(state, data, npc, nodeId, idx) {
   const view = dialogView(state, data, npc, nodeId), ch = view && view.choices.find((x) => x.i === idx);
   if (!ch || !ch.ok) return { error: 'not-possible' };
   if (c.game) return { end: true, game: c.game, npc, changed: false }; // 0.32.0: öffnet das Würfelspiel (Oberfläche)
+  if (c.tavern) return { end: true, tavern: true, npc, changed: false }; // 0.34.0: öffnet die Gruppenverwaltung der Taverne (Oberfläche)
   const msgs = [];
   if (c.cost && c.cost.gold) state.gold -= c.cost.gold;
   if (c.take) state.inv[c.take.item] = (state.inv[c.take.item] || 0) - (c.take.n || 1);
@@ -1369,9 +1430,13 @@ function group(data, obj) {
 // Gegnerwerte mit eingetretenen Bossphasen: phases[i].set überschreibt Felder (atk, def, init, heavy, onHit, ai, resist)
 export function enemyOf(data, e) {
   const en = data.enemies[e.kind];
-  if (!e.phase || !en.phases) return en;
   let m = en;
-  for (let i = 0; i < e.phase && i < en.phases.length; i++) m = { ...m, ...(en.phases[i].set || {}) };
+  if (e.phase && en.phases) for (let i = 0; i < e.phase && i < en.phases.length; i++) m = { ...m, ...(en.phases[i].set || {}) };
+  if (e.fx) { // 0.34.0: Wirkung von Hinweisen (en.flagFx, beim Kampfbeginn in e.fx übernommen): resist = Zuschlag je Element, callChance = Zuschlag auf die Hilferuf-Chance
+    m = { ...m };
+    if (e.fx.resist) { m.resist = { ...(m.resist || {}) }; for (const [el, v] of Object.entries(e.fx.resist)) m.resist[el] = Math.max(-100, Math.min(100, (m.resist[el] || 0) + v)); }
+    if (e.fx.callChance && m.tactic && m.tactic.call) m.tactic = { ...m.tactic, call: { ...m.tactic.call, chance: Math.max(0, m.tactic.call.chance + e.fx.callChance) } };
+  }
   return m;
 }
 // Bossphasen: unter einer LP-Schwelle (Prozent der Höchst-LP) wechselt der Gegner einmalig in die nächste Phase
@@ -1409,6 +1474,10 @@ export function startCombat(state, data, enemyObj, opts = {}) {
     order: [], pos: 0, round: 1, defending: {}, status: {}, over: null, ambush: !!opts.ambush, startMsgs: [], struck: {}
   };
   const c0 = state.combat;
+  for (const e of c0.enemies) for (const fx of data.enemies[e.kind].flagFx || []) if (state.flags[fx.flag]) { // 0.34.0: z. B. Alders Rat (spinne:schwaeche)
+    e.fx = { resist: { ...((e.fx || {}).resist || {}), ...(fx.resist || {}) }, callChance: ((e.fx || {}).callChance || 0) + (fx.callChance || 0) };
+    if (fx.msg && !c0.startMsgs.includes(fx.msg)) c0.startMsgs.push(fx.msg);
+  }
   if (c0.ambush) { const w = state.heroes.find((h) => h.hp > 0 && fxSum(data, h, 'noambush') > 0); if (w) { c0.ambush = false; c0.startMsgs.push(`${w.name} hat den Hinterhalt kommen sehen – kein Überfall.`); } } // Schatten (0.22.0)
   { const n = state.heroes.find((h) => h.hp > 0 && fxSum(data, h, 'opener') > 0); if (n) { const live = c0.enemies.map((e, i) => i); const ti = live[randInt(state, 0, live.length - 1)]; addStatus(state, data, 'e', ti, { status: 'slow', chance: 100, turns: 1 }, c0.startMsgs, state.heroes.indexOf(n)); c0.startMsgs.unshift(`${n.name} wirft ein Fangnetz.`); } } // Fallensteller (0.22.0)
   for (const e of state.combat.enemies) noteBestiary(state, e.kind, 'seen');
@@ -1971,9 +2040,7 @@ export function validateState(state, data) {
   const p = state.player;
   if (!p || !Number.isInteger(p.x) || !Number.isInteger(p.y) || !Number.isInteger(p.dir) || p.dir < 0 || p.dir > 3) err.push('Spielerposition ungültig');
   else if (isWallChar(cellChar(lvl, p.x, p.y))) err.push('Spieler steht in einer Wand');
-  if (!Array.isArray(state.heroes) || state.heroes.length !== 4) err.push('Gruppe ungültig');
-  else state.heroes.forEach((hh, i) => {
-    const n = `Held ${i + 1}`;
+  const checkHero = (hh, n) => {
     if (!hh || typeof hh !== 'object') { err.push(`${n}: ungültig`); return; }
     if (typeof hh.name !== 'string' || !hh.name.trim() || hh.name.length > NAME_MAX_LOAD) err.push(`${n}: Name ungültig`);
     if (!has(data.races, hh.race)) err.push(`${n}: Rasse ungültig`);
@@ -2000,7 +2067,13 @@ export function validateState(state, data) {
       if (typeof hh.equip !== 'object') err.push(`${n}: Ausrüstung ungültig`);
       else for (const s of SLOTS) { const id = hh.equip[s]; if (id != null && !(itemDef(state, data, id) && itemDef(state, data, id).kind === 'equip' && itemDef(state, data, id).slot === s)) err.push(`${n}: Ausrüstung ${s} ungültig`); }
     }
-  });
+  };
+  if (!Array.isArray(state.heroes) || state.heroes.length !== 4) err.push('Gruppe ungültig');
+  else state.heroes.forEach((hh, i) => checkHero(hh, `Held ${i + 1}`));
+  if (state.reserve != null) {
+    if (!Array.isArray(state.reserve) || state.reserve.length > RESERVE_MAX) err.push('Reserve ungültig');
+    else state.reserve.forEach((hh, i) => checkHero(hh, `Reserve ${i + 1}`));
+  }
   if (!state.inv || typeof state.inv !== 'object') err.push('Inventar ungültig');
   else for (const [k, v] of Object.entries(state.inv)) if (!itemDef(state, data, k) || !Number.isInteger(v) || v < 0) err.push(`Inventar: ${k} ungültig`);
   if (state.difficulty != null && !(data.difficulty && data.difficulty[state.difficulty])) err.push('Schwierigkeitsgrad ungültig');

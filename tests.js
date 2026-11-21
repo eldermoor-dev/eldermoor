@@ -2743,6 +2743,71 @@ export async function runTests(data, env = {}) {
     s.player = { x: door.x - 2, y: door.y, dir: 3 }; assert(L.doorAhead2(s, door.x, door.y) === null, 'Blick in die falsche Richtung');
     const rb = s.objs.find((o) => o.id === 'door_f_riegel2'); s.player = { x: rb.x - 2, y: rb.y, dir: 1 }; assert(L.doorAhead2(s, rb.x, rb.y) === null, 'Riegeltür braucht Nähe');
   });
+  await test('Taverne (0.34.0): Zugang, Wirtin, Anwerben, Reserve, Tausch, Verabschieden, Speichern', () => {
+    const s = L.newGame(data, 11); L.jumpToLevel(s, data, 'moorrand');
+    const st = s.objs.find((o) => o.id === 'stairs_taverne'); assert(st && st.to.level === 'taverne', 'Treppe in der Siedlung');
+    const t = L.changeArea(s, data, 'stairs_taverne'); assert(t.ok && s.levelId === 'taverne', 'Taverne erreichbar');
+    const back = s.objs.find((o) => o.id === 'stairs_taverne_aus'); assert(back && back.to.level === 'moorrand' && L.cellChar(data.levels.moorrand, back.to.x, back.to.y) === '.', 'Rückweg liegt auf Boden');
+    const w = s.objs.find((o) => o.id === 'npc_wirt'); assert(w && L.blockerAt(s, w.x, w.y) === w, 'Wirtin versperrt das Feld');
+    const v = L.dialogView(s, data, w, L.dialogStartNode(s, data, w)); assert(v.choices.length === 3, 'Wirtin: drei Wahlmöglichkeiten');
+    const r0 = L.dialogChoose(s, data, w, 'a', 0); assert(r0.end && r0.tavern, 'Wahl öffnet die Taverne');
+    // Anwerben
+    assert(L.recruitCost(s, data) === 60, 'Kosten Stufe 1: 40 + 20 × 1');
+    s.gold = 10; eq(L.recruitHero(s, data, { name: 'Tilda', race: 'dwarf', cls: 'alchemist' }).error, 'gold', 'zu wenig Gold');
+    s.gold = 500; eq(L.recruitHero(s, data, { name: '', race: 'dwarf', cls: 'alchemist' }).error, 'name', 'Name fehlt');
+    eq(L.recruitHero(s, data, { name: s.heroes[0].name.toUpperCase(), race: 'dwarf', cls: 'alchemist' }).error, 'name-taken', 'Name doppelt (Groß/klein egal)');
+    eq(L.recruitHero(s, data, { name: 'Tilda', race: 'xx', cls: 'alchemist' }).error, 'spec', 'Rasse unbekannt');
+    s.heroes.forEach((h) => { h.level = 3; h.xp = data.progression.xp[1]; });
+    const cost = L.recruitCost(s, data); eq(cost, 100, 'Kosten Stufe 3: 40 + 20 × 3');
+    const r = L.recruitHero(s, data, { name: 'Tilda', race: 'dwarf', cls: 'alchemist' });
+    assert(r.msg && s.reserve.length === 1 && s.gold === 500 - cost, 'angeworben, Gold abgezogen');
+    const n = s.reserve[0]; assert(n.level === 3 && n.xp === data.progression.xp[1] && n.hp === n.maxHp && n.cls === 'alchemist' && n.row === 'back', 'Neuer hat Durchschnittsstufe, volle LP, Beruf Alchemist');
+    assert(L.validateState(s, data).length === 0, 'Zustand gültig: ' + L.validateState(s, data).join(';'));
+    for (const nm of ['A1', 'A2', 'A3']) L.recruitHero(s, data, { name: nm, race: 'human', cls: 'mage' });
+    eq(s.reserve.length, L.RESERVE_MAX, 'vier Reserveplätze'); eq(L.recruitHero(s, data, { name: 'A4', race: 'human', cls: 'mage' }).error, 'full', 'Reserve voll');
+    // Reserve lernt mit (50 %), auch wenn die ganze Gruppe bewusstlos wäre
+    const xp0 = s.reserve[0].xp, gx = s.heroes[0].xp; L.grantXp(s, data, 40);
+    assert(s.heroes[0].xp === gx + 40 && s.reserve[0].xp === xp0 + 20, 'Gruppe +40 EP, Reserve +20 EP');
+    s.heroes.forEach((h) => { h.hp = 0; }); const x1 = s.reserve[1].xp; L.grantXp(s, data, 40); assert(s.reserve[1].xp === x1 + 20 && s.heroes[0].xp === gx + 40, 'Bewusstlose bekommen nichts, Reserve schon');
+    s.heroes.forEach((h) => { h.hp = h.maxHp; });
+    // Reserve steigt auf
+    const lv0 = s.reserve[2].level; L.grantXp(s, data, 2000); assert(s.reserve[2].level > lv0 && s.reserve[2].hp <= s.reserve[2].maxHp, 'Reserve steigt auf');
+    assert(L.validateState(s, data).length === 0, 'nach Aufstieg gültig: ' + L.validateState(s, data).join(';'));
+    // Tausch: Ausrüstung des Gehenden kommt ins Inventar
+    const h0 = s.heroes[0]; let wid = null;
+    for (const [id, it] of Object.entries(data.items)) if (!wid && it.kind === 'equip' && it.slot === 'weapon' && L.canEquip(data, h0, id, s)) { wid = id; }
+    assert(wid, 'Waffe für Held 1 gefunden'); s.inv[wid] = (s.inv[wid] || 0) + 1; L.equipItem(s, data, wid, 0);
+    const before = s.inv[wid] || 0, out = s.heroes[0], inn = s.reserve[0];
+    const sw = L.swapHero(s, data, 0, 0); assert(sw.msg && s.heroes[0] === inn && s.reserve[0] === out, 'getauscht');
+    assert((s.inv[wid] || 0) === before + 1 && !out.equip.weapon, 'Waffe des Gehenden liegt im Beutel');
+    eq(L.swapHero(s, data, 9, 0).error, 'bad-index', 'ungültiger Platz'); eq(L.swapHero(s, data, 0, 9).error, 'bad-index', 'ungültige Reserve');
+    // Mindestens ein Held vorn
+    const t2 = L.newGame(data, 12); t2.reserve = [L.createHero(data, { name: 'Hinten', race: 'elf', cls: 'mage' }, 0)];
+    t2.heroes.forEach((h, i) => { h.row = i === 0 ? 'front' : 'back'; });
+    eq(L.swapHero(t2, data, 0, 0).error, 'no-front', 'letzter Vorderreihen-Held darf nicht gehen, wenn der Neue hinten steht');
+    // Verabschieden
+    const rl = s.reserve.length, g2 = out.name; const d = L.dismissReserve(s, data, 0); assert(d.msg && s.reserve.length === rl - 1 && !s.reserve.some((h) => h.name === g2), 'Reserveheld verabschiedet');
+    // Kampf sperrt alles
+    const s3 = L.newGame(data, 13); s3.gold = 999; s3.combat = { enemies: [], order: [], pos: 0, round: 1, defending: {}, status: {}, over: null };
+    eq(L.recruitHero(s3, data, { name: 'X', race: 'human', cls: 'mage' }).error, 'in-combat', 'kein Anwerben im Kampf'); eq(L.swapHero(s3, data, 0, 0).error, 'in-combat', 'kein Tausch im Kampf');
+    // Speichern und Laden
+    const s4 = L.deserialize(JSON.stringify(L.serialize(s)), data); eq(s4.reserve.length, s.reserve.length, 'Reserve bleibt nach Speichern'); eq(s4.reserve.map((h) => h.name), s.reserve.map((h) => h.name), 'gleiche Namen');
+    const bad = JSON.parse(JSON.stringify(s)); bad.reserve[0].level = 99; assert(L.validateState(bad, data).some((e) => /Reserve 1/.test(e)), 'ungültige Reserve erkannt');
+    const bad2 = JSON.parse(JSON.stringify(s)); bad2.reserve = [1, 2, 3, 4, 5]; assert(L.validateState(bad2, data).some((e) => /Reserve ungültig/.test(e)), 'mehr als vier Reservehelden erkannt');
+    const old = L.newGame(data, 14); assert(old.reserve === undefined && L.validateState(old, data).length === 0, 'Altstand ohne Reserve bleibt gültig');
+    // Alter Spielstand bekommt die Treppe nachgeliefert
+    const o2 = L.newGame(data, 15); L.jumpToLevel(o2, data, 'moorrand'); o2.objs = o2.objs.filter((q) => q.id !== 'stairs_taverne'); L.syncStatic(o2, data); assert(o2.objs.some((q) => q.id === 'stairs_taverne'), 'syncStatic liefert die Taverne nach');
+  });
+  await test('Alders Rat wirkt (0.34.0): Spinnenkönigin scheut Feuer und ruft seltener, nur mit Hinweis', () => {
+    const mk = (flag) => { const s = L.newGame(data, 21); L.jumpToLevel(s, data, 'festung4'); if (flag) s.flags['spinne:schwaeche'] = true; const q = s.objs.find((o) => o.type === 'enemy' && o.kind === 'spinnenkoenigin') || { id: 'q', type: 'enemy', kind: 'spinnenkoenigin', x: 1, y: 1, hp: data.enemies.spinnenkoenigin.hp, dead: false }; if (!s.objs.includes(q)) s.objs.push(q); L.startCombat(s, data, q); return s; };
+    const base = data.enemies.spinnenkoenigin, a = mk(false), b = mk(true);
+    const ea = L.enemyOf(data, a.combat.enemies[0]), eb = L.enemyOf(data, b.combat.enemies[0]);
+    eq(ea.resist.fire, base.resist.fire, 'ohne Hinweis unverändert'); eq(ea.tactic.call.chance, base.tactic.call.chance, 'Ruf-Chance ohne Hinweis unverändert');
+    eq(eb.resist.fire, base.resist.fire - 30, 'mit Hinweis: Feuer −30'); eq(eb.tactic.call.chance, base.tactic.call.chance - 25, 'mit Hinweis: Ruf −25');
+    assert(b.combat.startMsgs.some((m) => /Alders Rat/.test(m)) && !a.combat.startMsgs.some((m) => /Alders Rat/.test(m)), 'Meldung nur mit Hinweis');
+    assert(data.enemies.spinnenkoenigin.resist.fire === base.resist.fire, 'Spieldaten bleiben unverändert (Kopie)');
+    const c = JSON.parse(JSON.stringify(L.serialize(b))); assert(L.validateState(L.deserialize(JSON.stringify(c), data), data).length === 0, 'Kampfstand mit Wirkung bleibt gültig');
+  });
   const failed = results.filter((r) => !r.ok).length; // 0.23.0: erst am Ende zählen (vorher fehlten spätere Tests in der Summe)
   return { results, passed: results.length - failed, failed };
 }
