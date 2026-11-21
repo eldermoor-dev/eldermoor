@@ -3,6 +3,12 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.34.1 (22.11.2026, headless)
+- Kampfleiste: nicht verfügbare Aktionen (Fähigkeit ohne Mana/Ausdauer, Gegenstand ohne Vorrat, Heilung bei vollen LP) sind gedämpft und nennen beim Antippen den Grund. Kein Zug wird verbraucht.
+- Im Kampf sind Drehen, Vor, Zurück, Seitwärts und Interagieren gedämpft (Funktion unverändert, Hinweis beim Antippen bleibt).
+- Aktionsleiste etwas höher (36 statt 28 px, vor Skalierung), bessere Treffsicherheit.
+- Kommentar zur Wiederbelebung nach dem Sieg korrigiert. Keine Regel- und Wertänderung, Spielstände unverändert.
+
 ## 0.34.0 (22.11.2026, headless)
 - Neue Taverne „Zum Letzten Licht“ in der Siedlung (Treppe links unten), Wirtin Marga verwaltet die Gruppe.
 - Bis zu vier Reservehelden; sie bekommen 50 % der Erfahrung. Heldentausch jederzeit außerhalb von Kämpfen, Ausrüstung des Gehenden landet im Beutel. Mindestens ein Held bleibt in der Vorderreihe.

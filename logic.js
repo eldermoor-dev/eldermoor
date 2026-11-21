@@ -1604,7 +1604,7 @@ function finishVictory(state, data, msgs) {
   rollDrops(state, data, c.enemies.filter((x) => !x.fled), msgs);
   { const ph = Math.min(25, partyFx(state, data, 'postheal')); if (ph > 0) { for (const h of state.heroes) if (h.hp > 0) h.hp = Math.min(h.maxHp, h.hp + Math.ceil((h.maxHp * ph) / 100)); msgs.push(`Nachsorge: alle wachen Helden +${ph} % LP.`); } } // Heiler (0.22.0)
   { const lp = state.heroes.reduce((m, h) => Math.max(m, h.hp > 0 ? fxSum(data, h, 'loot_potion') : 0), 0); if (lp > 0 && rand(state) * 100 < lp) { state.inv.potion = (state.inv.potion || 0) + 1; markNew(state, 'potion'); msgs.push('Glückspilz: Ihr findet einen Heiltrank bei den Gegnern.'); } } // Gauner
-  for (const h of state.heroes) if (h.hp <= 0) { h.hp = 1; msgs.push(`${h.name} kommt mit 1 LP wieder zu sich.`); } // vorläufig, bis die Rast kommt (Schritt 5)
+  for (const h of state.heroes) if (h.hp <= 0) { h.hp = 1; msgs.push(`${h.name} kommt mit 1 LP wieder zu sich.`); } // bewusstlos statt tot (Entscheidung des Nutzers): nach dem Sieg stehen Besiegte mit 1 LP auf; Heilung über Rast/Tränke
   state.combat = null;
   return gold;
 }

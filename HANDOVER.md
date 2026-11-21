@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.34.0 (22.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.34.1 (22.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1305,3 +1305,13 @@ Entscheidungen des Assistenten (vom Nutzer delegiert, hier begründet): Reserve 
 - **Alders Rat wirkt**: `enemies.<id>.flagFx = [{flag, resist:{element:±n}, callChance:±n, msg}]`; `startCombat` kopiert aktive Einträge in `e.fx`, `enemyOf` rechnet sie ein (Spieldaten bleiben unverändert). Belegt: Spinnenkönigin mit `spinne:schwaeche`: Feuer-Widerstand −30 (also noch anfälliger), Hilferuf-Chance −25 (40 → 15 %), Startmeldung im Kampf.
 - Offen auf Gerät (nichts bestätigt): (1) Treppe in der Siedlung zur Taverne und zurück. (2) Wirtin ansprechen, Fenster lesbar auf dem Handy (Bildlauf, Tastatur beim Namen). (3) Anwerben, Reserve, Einwechseln/Tauschen inkl. Ausrüstung im Beutel. (4) Reserve bekommt EP nach einem Kampf. (5) Speichern/Laden mit Reserve. (6) Spinnenkönigin nach Alders Rat: Startmeldung, Feuer wirkt stärker, weniger Rufe.
 - Offen/Ideen: Aushangbrett und Schmied noch nicht gebaut; Talent-Lehrer in der Taverne (Alternative D) bewusst nicht gebaut; Reserve heilt nicht (Idee: Bett gegen Gold); Wirtin-Sprite ist der Händler (eigener Sprite möglich); Taverne-Palette/Optik nicht auf Gerät gesehen. Erinnerung an zurückgestellte Talent-Alternativen B–F: B als Nächstes, D mit Lehrer in der Taverne, C erst nach Balance.
+
+## 0.34.1 (22.11.2026; headless, nicht auf Gerät getestet)
+Auftrag des Nutzers: Analyse des bestehenden Spiels (Prüf- und Optimierungsauftrag), danach „Freigabe 1 bis 4“ und „Ja gebietsstart“ (Rückkehr nach Niederlage bleibt am Gebietsstart). VERSION in main.js und sw.js 0.34.1. Keine neuen Dateien. Tests 147 grün, Playwright-Rauchtest (nicht auf Gerät getestet): Kampf startet, Leiste zeigt Grund, Zug wird nicht verbraucht, keine Konsolenfehler.
+- **F1 Gründe**: Kampfleiste nutzt statt `disabled` das Attribut `data-why` (+ `aria-disabled`); `onActionBar` zeigt den Text und führt nichts aus. Gründe: zu wenig Mana/Ausdauer (x/y), keine Tränke, volle LP/volles Mana, bewusstlos, nicht vergiftet, Gegner besiegt. `heroAction` unverändert.
+- **F2 Dämpfen**: `body.incombat` (gesetzt in `renderLog`) dämpft `#ctl-left .btn` und `.btn[data-a=interact]` auf 35 %. Funktion unverändert. ⚔/✦ rechts bleiben (Daumenreichweite).
+- **F3 Leistenhöhe**: `#actionbar .ab` min-height 36 px (vorher 28). Auf dem Gerät noch prüfen: Verdeckung der Gegner.
+- **Kommentar** zu `finishVictory` (Wiederbelebung mit 1 LP) korrigiert.
+- Entscheidung des Nutzers: Rückkehr nach Niederlage bleibt am Gebietsstart (F5 erledigt, keine Änderung).
+- Offen auf Gerät (nichts bestätigt): (1) Fähigkeit ohne Mana antippen: Meldung, Zug bleibt. (2) Bewegungsknöpfe im Kampf gedämpft, danach wieder normal. (3) Leiste höher, Gegner nicht stärker verdeckt (Foto). (4) Gegenstand ohne Vorrat, Heilzauber auf vollen Helden: Grund erscheint.
+- Offen/Ideen aus der Analyse: F4 Proviantverbrauch je Gebiet messen (Proviant 6 Gold unbegrenzt in Moorrand und Blutgruft); F6 Kampfspitzen (Turmwache-Gruppen, Blutgruft-Boss laut SIM.md) und Stufenkurve für Akt 3 beachten (Ø Stufe 14,6 beim Betreten der Spinnenhöhle, Simulation); F8 Beschriftung LP/Ausdauer auf der aktiven Heldenkarte (zurückgestellt); Wirkung der Fähigkeit vor dem Einsatz nicht sichtbar (Idee).

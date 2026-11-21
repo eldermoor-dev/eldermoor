@@ -10,7 +10,7 @@ import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, build
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.34.0';
+const VERSION = '0.34.1';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -662,9 +662,12 @@ function onEnemyBox(e) {
   const i = +row.dataset.e;
   if (S.game.combat.enemies[i] && S.game.combat.enemies[i].hp > 0) { S.foe = i; renderCombat(); }
 }
+const whyAttr = (why) => ` data-why="${esc(why)}" aria-disabled="true"`; // 0.34.1
+const wDrink = (mana, h) => (h.hp <= 0 ? `${h.name} ist bewusstlos.` : mana ? `${h.name} hat volles Mana.` : `${h.name} hat volle LP.`);
 function onActionBar(e) {
   const b = e.target.closest('[data-c]');
   if (!b || b.disabled) return;
+  if (b.dataset.why) { say(b.dataset.why); return; } // 0.34.1: gesperrte Aktion nennt den Grund (statt stummem disabled)
   S.sfx.unlock();
   const c = b.dataset.c;
   if (c === 'attack') heroAct({ type: 'attack' });
@@ -771,6 +774,7 @@ function renderLog() {
     if (next < Infinity) renderLog.h = setTimeout(renderLog, next + 30);
   }
   box.classList.toggle('calm', !combat);
+  document.body.classList.toggle('incombat', !!combat); // 0.34.1: Bewegungsknöpfe im Kampf gedämpft
   box.innerHTML = items.map((m) => `<div>${esc(m)}</div>`).join('');
 }
 function makePortrait(h) {
@@ -901,7 +905,7 @@ function renderCombat() {
   const potions = drinkIds().reduce((s, id) => s + S.game.inv[id], 0) + (S.game.inv.gegengift || 0) + (S.game.inv.oelflasche || 0);
   const ch = S.game.heroes[a.idx], cab = S.data.classes[ch.cls].ability, cres = S.data.classes[ch.cls].res;
   const inv = S.game.inv, itemRows = [];
-  { const row = (n, mk) => { const bs = mk(); if (n > 0 && bs.some((x) => x.ok)) itemRows.push(bs.map((x) => `<button class="ab" data-c="${x.c}" ${x.ok ? '' : 'disabled'}>${x.t}</button>`).join('')); }; // nur Zeilen zeigen, in denen etwas geht
+  { const row = (n, mk) => { const bs = mk(); if (n > 0 && bs.some((x) => x.ok)) itemRows.push(bs.map((x) => `<button class="ab" data-c="${x.c}" ${x.ok ? '' : whyAttr(x.w)}>${x.t}</button>`).join('')); }; // nur Zeilen zeigen, in denen etwas geht
     const giver = !!S.data.classes[ch.cls].potionGiver; // Alchemist (0.17.0): Tränke an alle Helden
     const SZ = { 15: 'klein', 40: 'mittel', 90: 'groß', 35: 'mittel', 70: 'groß' }; // 0.24.0: Tränke in drei Größen – je Art eine Zeile
     for (const mana of [false, true]) {
@@ -909,24 +913,24 @@ function renderCombat() {
       const kind = mana ? 'Zaubertrank' : 'Heiltrank';
       row(1, () => ids.flatMap((id) => {
         const df = S.data.items[id], n = inv[id], sz = SZ[df.heal || df.mana] || '', okFor = (h) => h.hp > 0 && (mana ? h.mp < h.maxMp : h.hp < h.maxHp);
-        return giver ? S.game.heroes.map((h, i) => ({ c: `dr:${id}:${i}`, ok: okFor(h), t: `${kind} ${sz} (${n}) → ${esc(h.name)}` })) : [{ c: `dr:${id}:${a.idx}`, ok: okFor(ch), t: `${kind} ${sz} (${n})` }];
+        return giver ? S.game.heroes.map((h, i) => ({ c: `dr:${id}:${i}`, ok: okFor(h), w: wDrink(mana, h), t: `${kind} ${sz} (${n}) → ${esc(h.name)}` })) : [{ c: `dr:${id}:${a.idx}`, ok: okFor(ch), w: wDrink(mana, ch), t: `${kind} ${sz} (${n})` }];
       })); }
-    row(inv.gegengift, () => giver ? S.game.heroes.map((h, i) => ({ c: `cure:${i}`, ok: h.hp > 0 && !!statusOf(S.game, 'h', i).poison, t: `Gegengift (${inv.gegengift}) → ${esc(h.name)}` })) : [{ c: `cure:${a.idx}`, ok: ch.hp > 0 && !!statusOf(S.game, 'h', a.idx).poison, t: `Gegengift (${inv.gegengift}) nehmen` }]);
-    row(inv.oelflasche, () => S.game.combat.enemies.map((e, i) => ({ c: `throw:${i}`, ok: e.hp > 0, t: `Ölflasche (${inv.oelflasche}) → ${esc(e.name)}` }))); }
+    row(inv.gegengift, () => giver ? S.game.heroes.map((h, i) => ({ c: `cure:${i}`, ok: h.hp > 0 && !!statusOf(S.game, 'h', i).poison, w: `${h.name} ist nicht vergiftet.`, t: `Gegengift (${inv.gegengift}) → ${esc(h.name)}` })) : [{ c: `cure:${a.idx}`, ok: ch.hp > 0 && !!statusOf(S.game, 'h', a.idx).poison, w: `${ch.name} ist nicht vergiftet.`, t: `Gegengift (${inv.gegengift}) nehmen` }]);
+    row(inv.oelflasche, () => S.game.combat.enemies.map((e, i) => ({ c: `throw:${i}`, ok: e.hp > 0, w: `${e.name} ist schon besiegt.`, t: `Ölflasche (${inv.oelflasche}) → ${esc(e.name)}` }))); }
   const known = knownSpells(S.data, ch);
-  const abBtn = known.length > 1 ? `<button class="ab" data-c="spells">✦ Zauber (${known.length})${S.spMode ? ' ▴' : ' ▾'}</button>` : cab ? `<button class="ab" data-c="sp:0" ${ch.mp >= cab.cost ? '' : 'disabled'}>✦ ${esc(cab.name)} (${cab.cost} ${esc(cres.name)})</button>` : '';
-  let html = `<button class="ab" data-c="attack">⚔ Angriff</button><button class="ab${heavyNow.length ? ' pulse' : ''}" data-c="defend">⛨ Verteidigen</button><button class="ab" data-c="item" ${potions ? '' : 'disabled'}>Gegenstand (${potions})</button>${abBtn}${multi ? `<button class="ab" data-c="sweep">⚔ Alle (${SWEEP_MULT} %)</button>` : ''}<button class="ab" data-c="log">Protokoll</button>`;
+  const abBtn = known.length > 1 ? `<button class="ab" data-c="spells">✦ Zauber (${known.length})${S.spMode ? ' ▴' : ' ▾'}</button>` : cab ? `<button class="ab" data-c="sp:0"${ch.mp >= cab.cost ? '' : whyAttr(`Zu wenig ${cres.name} (${ch.mp}/${cab.cost}).`)}>✦ ${esc(cab.name)} (${cab.cost} ${esc(cres.name)})</button>` : '';
+  let html = `<button class="ab" data-c="attack">⚔ Angriff</button><button class="ab${heavyNow.length ? ' pulse' : ''}" data-c="defend">⛨ Verteidigen</button><button class="ab" data-c="item"${potions ? '' : whyAttr('Keine Tränke oder Gegengifte im Beutel.')}>Gegenstand (${potions})</button>${abBtn}${multi ? `<button class="ab" data-c="sweep">⚔ Alle (${SWEEP_MULT} %)</button>` : ''}<button class="ab" data-c="log">Protokoll</button>`;
   if (S.itemMode) {
     html += itemRows.length ? itemRows.map((r) => `<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">${r}</div>`).join('') : `<div class="wait" style="flex:1 0 100%">${esc(ch.name)} hat volle LP und kein Gift. Heiltrank und Gegengift wirkt nur auf den, der dran ist (Ausnahme: Alchemist).</div>`;
   }
   if (S.spMode && known.length > 1) {
     html += '<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">' + known.map((sp, i) =>
-      `<button class="ab" data-c="sp:${i}" ${ch.mp >= sp.cost ? '' : 'disabled'}>${esc(sp.name)} (${sp.cost} ${esc(cres.name)})${sp.all ? ' · alle' : ''}</button>`).join('') + '</div>';
+      `<button class="ab" data-c="sp:${i}"${ch.mp >= sp.cost ? '' : whyAttr(`Zu wenig ${cres.name} (${ch.mp}/${sp.cost}).`)}>${esc(sp.name)} (${sp.cost} ${esc(cres.name)})${sp.all ? ' · alle' : ''}</button>`).join('') + '</div>';
   }
   const sel = known[S.spSel];
   if (S.abMode && sel && sel.kind === 'heal' && !sel.all) {
     html += '<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">' + S.game.heroes.map((h, i) =>
-      `<button class="ab" data-c="abheal:${i}" ${h.hp > 0 && (h.hp < h.maxHp || canCleanse(sel, statusOf(S.game, 'h', i))) ? '' : 'disabled'}>${esc(sel.name)} → ${esc(h.name)}</button>`).join('') + '</div>';
+      `<button class="ab" data-c="abheal:${i}"${h.hp > 0 && (h.hp < h.maxHp || canCleanse(sel, statusOf(S.game, 'h', i))) ? '' : whyAttr(h.hp > 0 ? `${h.name} hat volle LP.` : `${h.name} ist bewusstlos.`)}>${esc(sel.name)} → ${esc(h.name)}</button>`).join('') + '</div>';
   }
   ab.innerHTML = html;
 }
