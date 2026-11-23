@@ -10,7 +10,7 @@ import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, build
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.34.1';
+const VERSION = '0.36.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -359,7 +359,8 @@ function act(name) {
       if (r.shop) { if (r.msg) say(r.msg); S.shopTalk = r.msg || null; S.held = []; S.shopTab = 'buy'; S.shopSure = null; openShop(r.shop, true); break; }
       say(r.msg); if (r.sfx) S.sfx.play(r.sfx);
       if (r.moved) { S.target.x = g.player.x + 0.5; S.target.y = g.player.y + 0.5; beginTween(); toast(r.msg, 5000); } // Stein gezogen: Gruppe steht ein Feld weiter hinten
-      if (r.long) toast(r.msg, 8000);
+      if (r.long) toast(r.msg + (r.newNote ? ' – Ins Notizbuch eingetragen.' : ''), 8000);
+      if (r.newNote) say('Ins Notizbuch eingetragen.');
       if (r.changed) vib(20);
       renderAll();
       break;
@@ -1061,6 +1062,7 @@ function openMenu() {
     <button class="mb" data-m="load">Laden</button>
     <button class="mb" data-m="export">Spielstand exportieren (Datei)</button>
     <button class="mb" data-m="import">Spielstand importieren (Datei)</button>
+    <button class="mb" data-m="journal">Notizbuch (${S.game && S.game.journal ? S.game.journal.length : 0})</button>
     <button class="mb" data-m="bestiary">Bestiarium</button>
     <button class="mb" data-m="help">Steuerung &amp; Info</button>
     <button class="mb" data-m="title">Zum Titelbild</button>
@@ -1148,6 +1150,13 @@ function openBestiary() {
     return `<div style="${BX}"><b>${esc(e.name)}${e.boss ? ' · Boss' : ''}</b>${L.map((t) => `<div class="muted">${t}</div>`).join('')}</div>`;
   }).join('');
   openModal(`<h2>Bestiarium</h2><p class="muted">Entdeckt: ${known.length} von ${ids.length}. Werte, Elemente und Besonderheiten werden im Kampf aufgedeckt.</p>${cards}<div class="acts"><button class="mb" data-m="menu">Zurück</button></div>`, 'bestiary');
+}
+function openJournal() { // 0.35.0: gesammelte Hinweise, nach Gebiet geordnet
+  const g = S.game, d = S.data, j = g.journal || [];
+  const BX = 'border:1px solid #5a4a30;border-radius:5px;padding:8px;margin:6px 0';
+  const order = Object.keys(d.levels), lvs = order.filter((id) => j.some((e) => e.lv === id));
+  const body = lvs.length ? lvs.map((id) => `<h3>${esc(d.levels[id].name)}</h3>${j.filter((e) => e.lv === id).map((e) => `<div style="${BX}"><b>${esc(e.title)}</b><div class="muted">${esc(e.text)}</div></div>`).join('')}`).join('') : '<p class="muted">Noch nichts eingetragen. Tafeln, Inschriften, Risse in Wänden, Gitter und Ratschläge landen hier, sobald ihr sie lest oder hört.</p>';
+  openModal(`<h2>Notizbuch</h2><p class="muted">Gesammelte Hinweise: ${j.length}</p>${body}<div class="acts"><button class="mb" data-m="menu">Zurück</button></div>`, 'journal');
 }
 function openHelp() { openModal(helpHtml(), 'help'); }
 
@@ -1608,6 +1617,7 @@ async function onModalClick(e) {
   else if (m === 'settings') openSettings();
   else if (m === 'help') openHelp();
   else if (m === 'bestiary') openBestiary();
+  else if (m === 'journal') openJournal();
   else if (m === 'errlog') openErrorLog();
   else if (m === 'errcopy') copyErrorLog();
   else if (m === 'errclear') { ERR.list = []; store.set('errlog', []); openErrorLog(); }
@@ -1662,18 +1672,20 @@ async function onModalClick(e) {
   }
   else if (m === 'shopbuy' || m === 'shopsellTab') { S.shopTab = m === 'shopbuy' ? 'buy' : 'sell'; S.shopSure = null; openShop(S.shopId); }
   else if (m.startsWith('buy:')) {
+    const sc = $('#modal-box').scrollTop; // 0.35.0: Liste bleibt beim Kaufen an ihrer Stelle
     const r = buyItem(g, S.data, S.shopId, m.slice(4));
     if (r.msg) { say(r.msg); S.sfx.play(r.sfx); toast(r.msg); } else toast(r.error === 'no-gold' ? `Zu wenig Gold (${r.price} nötig).` : 'Das geht nicht.');
-    renderAll(); openShop(S.shopId);
+    renderAll(); openShop(S.shopId); $('#modal-box').scrollTop = sc;
   }
   else if (m.startsWith('shopsell:')) {
     const id = m.slice(9), it = itemDef(g, S.data, id), q = qualityOf(g, S.data, id);
     const dear = it && it.kind === 'equip' && q && (q.id === 'rare' || q.id === 'epic');
-    if (dear && S.shopSure !== id) { S.shopSure = id; openShop(S.shopId); return; } // seltene Ausrüstung: zweiter Tipp bestätigt
+    if (dear && S.shopSure !== id) { const sc0 = $('#modal-box').scrollTop; S.shopSure = id; openShop(S.shopId); $('#modal-box').scrollTop = sc0; return; } // seltene Ausrüstung: zweiter Tipp bestätigt
     S.shopSure = null;
+    const sc = $('#modal-box').scrollTop;
     const r = sellItem(g, S.data, id);
     if (r.msg) { say(r.msg); S.sfx.play(r.sfx); toast(r.msg); } else toast('Das geht nicht.');
-    renderAll(); openShop(S.shopId);
+    renderAll(); openShop(S.shopId); $('#modal-box').scrollTop = sc;
   }
   else if (m.startsWith('eqsel:')) { S.invEquip = m.slice(6); openInventory(); const hs = $('#modal-box [data-m^="eq:"]'); if (hs && hs.parentElement) (hs.parentElement.previousElementSibling || hs.parentElement).scrollIntoView({ block: 'end' }); } // 0.32.2: Heldenauswahl automatisch ins Bild scrollen
   else if (m.startsWith('eq:')) {

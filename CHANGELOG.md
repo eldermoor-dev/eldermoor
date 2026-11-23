@@ -3,6 +3,25 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.36.0 (23.11.2026, headless)
+- Neues Gebiet „Die Gießerei“ (Akt 2, Keller 5, 84×60, größer als die Spinnenhöhle): Hallenbauart mit langer Säulenhalle, drei Kammern im Norden und drei im Süden. Erreicht über die Spalttreppe am Ende der Spinnenhöhle (ersetzt den Platzhalter-Ausgang).
+- Rätselkette: Ofenschlüssel (Süd 1) → Schmelzerkammer (Nord 3) → Gießmeisterschlüssel → Tor zum Gießmeister. Hebel in Nord 1 öffnet das Gitter zur Schatzkammer, Fackelschalter in Nord 2 öffnet eine Geheimkammer, Süd 2 ist ein falscher Schatzraum (Truhe ist Monster).
+- Händler Brum (Werkbank) am Eingang. Neue Gegner: Schlackenwächter, Boss Gießmeister Harkon (Phasen, Ruf, angekündigte Glutwelle/Gussflut). Neuer Ring der Esse. Neue Palette „glut“.
+- Spielstände unverändert gültig (v6). Werte: BALANCE.md/SIM.md neu erzeugt.
+
+## 0.35.1 (22.11.2026, headless)
+- Talente: Die zweiten Wege der 18 ★-Talente haben jetzt eigene Grundwerte (statt derselben wie Weg A), z. B. Giftklinge statt Glückspilz-Werte, Rauchbombe mit Initiative statt Leben. Weg A bleibt unverändert. Werte geschätzt, nicht simuliert.
+
+## 0.35.0 (22.11.2026, headless)
+- Neues Notizbuch im Menü (über dem Bestiarium): Tafeln, Inschriften, Runenstein, Risse in Wänden, Gitter-Hinweise, Händler- und Murmel-Hinweise sowie Alders Rat werden beim Lesen/Hören automatisch eingetragen, je Gebiet geordnet, jeder Hinweis nur einmal.
+- Händler: Die Warenliste springt beim Kaufen und Verkaufen nicht mehr nach oben, man kann direkt weiterkaufen.
+- Hinweis-Toast nennt „Ins Notizbuch eingetragen“. Alte Spielstände laden (Notizbuch leer). Enthält 0.34.2. Werte unverändert.
+
+## 0.34.2 (22.11.2026, headless)
+- Treppen neu gezeichnet: Stufen in Perspektive mit Wangen, Trittflächen und Setzstufen; hinab dunkel, hinauf mit Licht.
+- Nebelturm: Treppe zur Vorburg liegt vor der Ostwand (25,12) und erscheint als Wandbild statt als dünne Platte; Rückweg landet bei (24,12).
+- Gegnerfiguren atmen nicht mehr (kein Größerwerden/Wackeln). Werte unverändert.
+
 ## 0.34.1 (22.11.2026, headless)
 - Kampfleiste: nicht verfügbare Aktionen (Fähigkeit ohne Mana/Ausdauer, Gegenstand ohne Vorrat, Heilung bei vollen LP) sind gedämpft und nennen beim Antippen den Grund. Kein Zug wird verbraucht.
 - Im Kampf sind Drehen, Vor, Zurück, Seitwärts und Interagieren gedämpft (Funktion unverändert, Hinweis beim Antippen bleibt).

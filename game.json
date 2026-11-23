@@ -486,6 +486,28 @@
       ],
       "desc": "Rüstung. +4 Verteidigung. Für Krieger, Kleriker, Waldläufer.",
       "value": 190
+    },
+    "ofenschluessel": {
+      "name": "Ofenschlüssel",
+      "kind": "quest",
+      "desc": "Ein schwerer Schlüssel, noch lauwarm. Öffnet die Schmelzerkammer in der Gießerei."
+    },
+    "giess_schluessel": {
+      "name": "Gießmeisterschlüssel",
+      "kind": "quest",
+      "desc": "Ein Schlüssel mit Hammerzeichen. Öffnet das Tor zum Gießmeister."
+    },
+    "ring_glut": {
+      "name": "Ring der Esse",
+      "kind": "equip",
+      "slot": "ring",
+      "q": "unique",
+      "def": 1,
+      "fx": {
+        "crit": 4,
+        "soak": 1
+      },
+      "desc": "Ring. +1 Verteidigung, Krit +4 %, Schaden gegen dich −1. Vom Gießmeister."
     }
   },
   "races": {
@@ -1923,6 +1945,144 @@
           "msg": "Alders Rat wirkt: Die Königin scheut Feuer, und ihre Brut folgt dem Ruf seltener."
         }
       ]
+    },
+    "schlackenwaechter": {
+      "name": "Schlackenwächter",
+      "hp": 110,
+      "atk": 18,
+      "def": 7,
+      "init": 6,
+      "gold": 30,
+      "xp": 140,
+      "ai": "backline",
+      "heavy": {
+        "name": "Hammerschlag",
+        "every": 3,
+        "mult": 165
+      },
+      "resist": {
+        "fire": 60,
+        "ice": -30
+      },
+      "onHit": {
+        "status": "burn",
+        "chance": 25,
+        "turns": 2,
+        "power": 3
+      },
+      "gearDrop": {
+        "chance": 10
+      },
+      "guard": true,
+      "intro": {
+        "title": "Schlackenwächter",
+        "text": "Eine Rüstung aus erkalteter Schlacke, in der es noch glimmt. Wo sie hintritt, riecht es nach verbranntem Haar."
+      }
+    },
+    "giessmeister": {
+      "name": "Gießmeister Harkon",
+      "hp": 200,
+      "atk": 16,
+      "def": 8,
+      "init": 8,
+      "gold": 240,
+      "xp": 600,
+      "boss": true,
+      "heavy": {
+        "name": "Hammerschlag",
+        "every": 3,
+        "mult": 160
+      },
+      "onHit": {
+        "status": "burn",
+        "chance": 30,
+        "turns": 2,
+        "power": 3
+      },
+      "cast": [
+        {
+          "name": "Glutwelle",
+          "kind": "bolt",
+          "all": true,
+          "every": 4,
+          "mult": 60,
+          "element": "fire",
+          "announce": true,
+          "inflict": {
+            "status": "burn",
+            "chance": 40,
+            "turns": 2,
+            "power": 3
+          }
+        }
+      ],
+      "resist": {
+        "fire": 60,
+        "ice": -40
+      },
+      "tactic": {
+        "call": {
+          "below": 70,
+          "chance": 30,
+          "kind": "schlackenwaechter",
+          "max": 1
+        }
+      },
+      "phases": [
+        {
+          "below": 60,
+          "name": "Glühende Rüstung",
+          "msg": "Der Meister legt die Hand auf die Brust. Seine Rüstung beginnt rot zu glühen.",
+          "set": {
+            "atk": 17,
+            "def": 10,
+            "heavy": {
+              "name": "Hammerschlag",
+              "every": 2,
+              "mult": 160
+            }
+          }
+        },
+        {
+          "below": 30,
+          "name": "Gussflut",
+          "msg": "Er schlägt den Hammer auf den Amboss. Aus den Rinnen im Boden quillt Glut.",
+          "set": {
+            "atk": 18,
+            "cast": [
+              {
+                "name": "Gussflut",
+                "kind": "bolt",
+                "all": true,
+                "every": 3,
+                "mult": 65,
+                "element": "fire",
+                "announce": true,
+                "inflict": {
+                  "status": "burn",
+                  "chance": 60,
+                  "turns": 2,
+                  "power": 3
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "gearDrop": {
+        "chance": 100,
+        "boost": 2
+      },
+      "intro": {
+        "title": "Gießmeister Harkon",
+        "text": "Er steht am Amboss, als hätte er nie aufgehört zu arbeiten. Die Rüstung ist rot an den Fugen, und er dreht sich nicht um, bevor er spricht: „Das Eisen ist nicht fertig.“"
+      },
+      "drops": [
+        {
+          "item": "ring_glut",
+          "chance": 100
+        }
+      ]
     }
   },
   "palettes": {
@@ -2260,6 +2420,48 @@
         204,
         232,
         124
+      ]
+    },
+    "glut": {
+      "stone": [
+        112,
+        102,
+        104
+      ],
+      "moss": [
+        150,
+        70,
+        40
+      ],
+      "wood": [
+        100,
+        66,
+        46
+      ],
+      "iron": [
+        138,
+        138,
+        150
+      ],
+      "floor": [
+        92,
+        78,
+        72
+      ],
+      "ceil": [
+        48,
+        38,
+        40
+      ],
+      "flesh": [
+        210,
+        170,
+        140
+      ],
+      "glow": [
+        255,
+        150,
+        56
       ]
     }
   },
@@ -4041,7 +4243,7 @@
         {
           "id": "stairs_turm_festung",
           "type": "stairs",
-          "x": 24,
+          "x": 25,
           "y": 12,
           "look": "down",
           "to": {
@@ -4196,7 +4398,7 @@
           "look": "up",
           "to": {
             "level": "nebelturm",
-            "x": 23,
+            "x": 24,
             "y": 12,
             "dir": 3
           },
@@ -7361,14 +7563,18 @@
           "mat": "stein"
         },
         {
-          "id": "exit_s_tiefe",
-          "type": "exit",
+          "id": "stairs_s_tiefe",
+          "type": "stairs",
           "x": 72,
           "y": 27,
           "look": "down",
-          "title": "Tiefer in den Fels",
-          "text": "Hinter dem Thron der Königin führt ein Spalt in die Tiefe. Kalte Luft zieht herauf.",
-          "again": "Hier geht es in einer späteren Version weiter."
+          "msg": "Ihr zwängt euch durch den Spalt. Unten ist es warm, und es riecht nach Eisen und Kohle.",
+          "to": {
+            "level": "festung5",
+            "x": 2,
+            "y": 29,
+            "dir": 1
+          }
         },
         {
           "id": "npc_s_orwin",
@@ -7526,6 +7732,711 @@
           "x": 8,
           "y": 2,
           "look": "stuhl"
+        }
+      ]
+    },
+    "festung5": {
+      "id": "festung5",
+      "name": "Die Gießerei",
+      "palette": "glut",
+      "start": {
+        "x": 2,
+        "y": 29,
+        "dir": 1
+      },
+      "foe": {
+        "hp": 350,
+        "atk": 255
+      },
+      "intro": {
+        "title": "Die Gießerei",
+        "text": "Der Boden ist warm. Über euch hängen Ketten, an denen früher Kessel hingen, und irgendwo tropft flüssiges Metall, das längst erstarrt sein müsste."
+      },
+      "map": [
+        "####################################################################################",
+        "####################################################################################",
+        "####################################################################################",
+        "####################################################################################",
+        "####################################################################################",
+        "########################################T###########################################",
+        "##################################.....................#############################",
+        "##############T###################.....................#####T#######################",
+        "############.................#####.....................###.............#############",
+        "############.................#####....#...........#....#...............#############",
+        "############.................#####.....................#...............#############",
+        "############.....#######.....#####..............................#......#############",
+        "############.....#######.....#####..........#..........#........#......#############",
+        "############.....#######.....#####.....................#.......###.....#############",
+        "############.....#######.....#####.....................###......#......#############",
+        "############.....#######.....#####....#...........#....###......#......#############",
+        "############.................#####.....................###.............#############",
+        "############.................#####.....................###.............#############",
+        "############.................#####.....................###.............#############",
+        "####################.#####T#################.###T###############.###T###############",
+        "####################.#######################.###################.###################",
+        "####################.#######################.###################.###########T####T##",
+        "####################.#######################.###################.##########........#",
+        "####################.#######################.###################.##########........#",
+        "####################.#######################.###################.##########........#",
+        "###T##########T#####.#T#######T#######T#####.#T#######T#######T#.#####T####..#..#..#",
+        "##........##............................................................###........#",
+        "##........##....#.....#.....#.....#.....#.....#.....#.....#.....#.......###........#",
+        "##........##............................................................###........#",
+        "#..................................................................................#",
+        "##........##............................................................###........#",
+        "##........##....#.....#.....#.....#.....#.....#.....#.....#.....#.......###........#",
+        "##........##............................................................###........#",
+        "########T########T##.####T#######T#######T##.####T#######T######.T#######T#........#",
+        "####################.#######################.###################.##########..#..#..#",
+        "####################.#######################.###################.##########........#",
+        "####################.#######################.###################.##########........#",
+        "####################.#######################.###################.##########........#",
+        "####################.#######################.###################.###########T####T##",
+        "####################.#######################.###################.###################",
+        "##############T#####.#######################.###T###########T###.###################",
+        "############.................#####.....................###.............#############",
+        "############.................#####.....................###.............######T######",
+        "############.................#####.....................###...#..#..#...####......###",
+        "############.....#######.....#####....#...........#....###.............####......###",
+        "############.................#####.....................###.............####......###",
+        "############.................#####.....................###...#..#..#.............###",
+        "############.................#####.....................###.............####......###",
+        "############.....#######.....#####.....................###.............####......###",
+        "############.................#####.....................###...#..#..#...####......###",
+        "############.................#####....#...........#....###.............####......###",
+        "############.................#####.....................###.............########T####",
+        "##########################T#######.....................#############T###############",
+        "##################################.....................#############################",
+        "########################################T###########################################",
+        "####################################################################################",
+        "####################################################################################",
+        "####################################################################################",
+        "####################################################################################",
+        "####################################################################################"
+      ],
+      "objects": [
+        {
+          "id": "stairs_g_up",
+          "type": "stairs",
+          "x": 1,
+          "y": 29,
+          "look": "up",
+          "msg": "Ihr steigt den Spalt hinauf in die Spinnenhöhle.",
+          "to": {
+            "level": "festung4",
+            "x": 72,
+            "y": 26,
+            "dir": 3
+          }
+        },
+        {
+          "id": "sign_g_start",
+          "type": "sign",
+          "x": 4,
+          "y": 26,
+          "face": 0,
+          "title": "GIESS|EREI",
+          "text": "Hier wurde Eisen für die Festung gegossen. Die Öfen sind kalt, aber die Wände sind noch warm.",
+          "style": "dark"
+        },
+        {
+          "id": "merchant_brum",
+          "type": "merchant",
+          "x": 5,
+          "y": 27,
+          "shop": "giesserei",
+          "look": "haendler2",
+          "talk": {
+            "flag": "talk_brum",
+            "text": "Brum: Ich hab die Öfen nie ausgehen lassen, nur die Leute vergessen. Drei Dinge: Der Meister hinten trägt seine Rüstung wie eine zweite Haut. Feuer hilft nichts, Eis schon. Und lasst die Finger von den Truhen, die zu schön in der Ecke stehen."
+          }
+        },
+        {
+          "id": "door_g_strasse",
+          "type": "door",
+          "x": 10,
+          "y": 29,
+          "locked": false,
+          "title": "GIESS-|STRASSE",
+          "style": "iron",
+          "look": "eisen",
+          "font": "bold"
+        },
+        {
+          "id": "sign_g_halle",
+          "type": "sign",
+          "x": 13,
+          "y": 26,
+          "face": 0,
+          "title": "HAUPT|HALLE",
+          "text": "Links die Kammern der Former, rechts die der Schmelzer. Am Ende der Halle wohnt der Meister.",
+          "style": "dark"
+        },
+        {
+          "id": "trap_g_h1",
+          "type": "trap",
+          "x": 22,
+          "y": 29,
+          "kind": "spikes"
+        },
+        {
+          "id": "trap_g_h2",
+          "type": "trap",
+          "x": 50,
+          "y": 30,
+          "kind": "rune"
+        },
+        {
+          "id": "trap_g_s1",
+          "type": "trap",
+          "x": 20,
+          "y": 38,
+          "kind": "gas"
+        },
+        {
+          "id": "door_g_n1",
+          "type": "door",
+          "x": 20,
+          "y": 22,
+          "locked": false,
+          "title": "FORMER|KAMMER",
+          "style": "dark",
+          "look": "stein",
+          "font": "wavy"
+        },
+        {
+          "id": "lever_gi1",
+          "type": "lever",
+          "x": 14,
+          "y": 9,
+          "gate": "gate_gi1",
+          "msg": "Der Hebel rastet ein. Weit im Süden rasselt ein Gitter nach oben."
+        },
+        {
+          "id": "en_g_n1a",
+          "type": "enemy",
+          "x": 15,
+          "y": 13,
+          "kind": "erzkaefer",
+          "kinds": [
+            "erzkaefer",
+            "erzkaefer",
+            "brandmagier"
+          ]
+        },
+        {
+          "id": "en_g_n1b",
+          "type": "enemy",
+          "x": 25,
+          "y": 16,
+          "kind": "schlackenwaechter",
+          "kinds": [
+            "schlackenwaechter",
+            "erzkaefer",
+            "erzkaefer"
+          ]
+        },
+        {
+          "id": "chest_g_n1",
+          "type": "chest",
+          "x": 26,
+          "y": 9,
+          "guard": [
+            "en_g_n1b"
+          ],
+          "loot": [
+            {
+              "gold": 60
+            },
+            {
+              "item": "potion_g",
+              "n": 1
+            }
+          ],
+          "look": "eisen",
+          "mat": "stein"
+        },
+        {
+          "id": "door_g_n2",
+          "type": "door",
+          "x": 44,
+          "y": 22,
+          "locked": false,
+          "title": "SCHMELZ|HALLE",
+          "style": "iron",
+          "look": "eisen",
+          "font": "wavy"
+        },
+        {
+          "id": "en_g_n2a",
+          "type": "enemy",
+          "x": 42,
+          "y": 9,
+          "kind": "brandmagier",
+          "kinds": [
+            "brandmagier",
+            "schlackenwaechter",
+            "erzkaefer"
+          ]
+        },
+        {
+          "id": "en_g_n2b",
+          "type": "enemy",
+          "x": 47,
+          "y": 14,
+          "kind": "schlackenwaechter",
+          "kinds": [
+            "schlackenwaechter",
+            "schlackenwaechter"
+          ]
+        },
+        {
+          "id": "chest_g_n2",
+          "type": "chest",
+          "x": 36,
+          "y": 7,
+          "guard": [
+            "en_g_n2a"
+          ],
+          "loot": [
+            {
+              "gold": 70
+            },
+            {
+              "item": "zaubertrank_g",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 2
+              }
+            }
+          ],
+          "look": "edel",
+          "mat": "stein"
+        },
+        {
+          "id": "secret_gi1",
+          "type": "secret",
+          "x": 55,
+          "y": 11,
+          "hint": "Die Wand klingt hohl, der Riss läuft wie eine Gussnaht. Eine Fackel in der Halle sitzt lockerer als die anderen."
+        },
+        {
+          "id": "switch_gi1",
+          "type": "lever",
+          "wall": true,
+          "torch": true,
+          "x": 52,
+          "y": 7,
+          "gate": "secret_gi1",
+          "msg": "Die Fackel lässt sich drehen. Nebenan schabt Stein über Stein."
+        },
+        {
+          "id": "niche_gi1",
+          "type": "niche",
+          "x": 57,
+          "y": 9,
+          "face": 0,
+          "loot": [
+            {
+              "item": "zaubertrank_m",
+              "n": 2
+            },
+            {
+              "gold": 80
+            }
+          ],
+          "text": "In einer Wandnische liegt ein Beutel, vom Ruß fast schwarz."
+        },
+        {
+          "id": "chest_g_geheim",
+          "type": "chest",
+          "x": 57,
+          "y": 13,
+          "loot": [
+            {
+              "gold": 90
+            },
+            {
+              "item": "potion_g",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 2
+              }
+            }
+          ],
+          "look": "edel",
+          "mat": "stein",
+          "lock": 40
+        },
+        {
+          "id": "door_g_n3",
+          "type": "door",
+          "x": 64,
+          "y": 22,
+          "locked": true,
+          "key": "ofenschluessel",
+          "title": "SCHMELZER|KAMMER",
+          "style": "iron",
+          "look": "gold",
+          "font": "bold"
+        },
+        {
+          "id": "en_g_n3a",
+          "type": "enemy",
+          "x": 60,
+          "y": 10,
+          "kind": "schlackenwaechter",
+          "kinds": [
+            "schlackenwaechter",
+            "erzkaefer",
+            "schlackenwaechter"
+          ]
+        },
+        {
+          "id": "en_g_n3b",
+          "type": "enemy",
+          "x": 68,
+          "y": 16,
+          "kind": "kultwaechter",
+          "kinds": [
+            "kultwaechter",
+            "skeleton",
+            "skeleton"
+          ]
+        },
+        {
+          "id": "chest_g_n3",
+          "type": "chest",
+          "x": 69,
+          "y": 9,
+          "guard": [
+            "en_g_n3a",
+            "en_g_n3b"
+          ],
+          "loot": [
+            {
+              "gold": 80
+            },
+            {
+              "item": "giess_schluessel",
+              "n": 1
+            },
+            {
+              "item": "potion_g",
+              "n": 1
+            }
+          ],
+          "look": "edel",
+          "mat": "stein"
+        },
+        {
+          "id": "door_g_s1",
+          "type": "door",
+          "x": 20,
+          "y": 36,
+          "locked": false,
+          "title": "GIESS-|RINNEN",
+          "style": "dark",
+          "look": "morsch",
+          "font": "thin"
+        },
+        {
+          "id": "en_g_s1a",
+          "type": "enemy",
+          "x": 15,
+          "y": 46,
+          "kind": "erzkaefer",
+          "kinds": [
+            "erzkaefer",
+            "erzkaefer",
+            "erzkaefer"
+          ]
+        },
+        {
+          "id": "en_g_s1b",
+          "type": "enemy",
+          "x": 26,
+          "y": 46,
+          "kind": "schlackenwaechter",
+          "kinds": [
+            "schlackenwaechter",
+            "erzkaefer"
+          ]
+        },
+        {
+          "id": "chest_g_s1",
+          "type": "chest",
+          "x": 14,
+          "y": 50,
+          "guard": [
+            "en_g_s1a",
+            "en_g_s1b"
+          ],
+          "loot": [
+            {
+              "gold": 60
+            },
+            {
+              "item": "ofenschluessel",
+              "n": 1
+            }
+          ],
+          "look": "eisen",
+          "mat": "stein"
+        },
+        {
+          "id": "sign_g_s1",
+          "type": "sign",
+          "x": 21,
+          "y": 41,
+          "face": 0,
+          "title": "OFEN|RINNE",
+          "text": "Der Ofenschlüssel liegt am Ende der Rinnen.",
+          "style": "dark"
+        },
+        {
+          "id": "door_g_s2",
+          "type": "door",
+          "x": 44,
+          "y": 36,
+          "locked": false,
+          "title": "SCHATZ-|KAMMER",
+          "style": "dark",
+          "look": "gold",
+          "font": "bold"
+        },
+        {
+          "id": "chest_g_s2",
+          "type": "chest",
+          "x": 44,
+          "y": 52,
+          "look": "prunk",
+          "mimic": "truhenmaul",
+          "loot": []
+        },
+        {
+          "id": "en_g_s2a",
+          "type": "enemy",
+          "x": 38,
+          "y": 47,
+          "kind": "brandmagier",
+          "kinds": [
+            "brandmagier",
+            "schlackenwaechter"
+          ]
+        },
+        {
+          "id": "chest_g_s2b",
+          "type": "chest",
+          "x": 51,
+          "y": 42,
+          "guard": [
+            "en_g_s2a"
+          ],
+          "loot": [
+            {
+              "gold": 50
+            },
+            {
+              "item": "zaubertrank_m",
+              "n": 1
+            }
+          ],
+          "look": "eisen",
+          "mat": "stein"
+        },
+        {
+          "id": "door_g_s3",
+          "type": "door",
+          "x": 64,
+          "y": 36,
+          "locked": false,
+          "title": "LAGER|HALLE",
+          "style": "stone",
+          "look": "stein",
+          "font": "wavy"
+        },
+        {
+          "id": "en_g_s3a",
+          "type": "enemy",
+          "x": 60,
+          "y": 47,
+          "kind": "kultwaechter",
+          "kinds": [
+            "kultwaechter",
+            "schlackenwaechter",
+            "erzkaefer"
+          ]
+        },
+        {
+          "id": "en_g_s3b",
+          "type": "enemy",
+          "x": 68,
+          "y": 50,
+          "kind": "schlackenwaechter",
+          "kinds": [
+            "schlackenwaechter",
+            "brandmagier",
+            "erzkaefer"
+          ]
+        },
+        {
+          "id": "gate_gi1",
+          "type": "gate",
+          "x": 73,
+          "y": 46,
+          "hint": "Ein Gitter versperrt den Gang nach Osten. Der Hebel liegt in der Kammer der Former im Norden."
+        },
+        {
+          "id": "chest_g_schatz",
+          "type": "chest",
+          "x": 79,
+          "y": 49,
+          "loot": [
+            {
+              "gold": 140
+            },
+            {
+              "item": "zaubertrank_g",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 3
+              }
+            }
+          ],
+          "look": "prunk",
+          "mat": "stein",
+          "trap": "rune"
+        },
+        {
+          "id": "niche_g_schatz",
+          "type": "niche",
+          "x": 77,
+          "y": 43,
+          "face": 0,
+          "loot": [
+            {
+              "item": "gegengift",
+              "n": 2
+            },
+            {
+              "gold": 50
+            }
+          ],
+          "text": "Zwischen zwei Steinen klemmt ein Lederbeutel. Wer ihn hier versteckt hat, kam nicht zurück."
+        },
+        {
+          "id": "door_g_meister",
+          "type": "door",
+          "x": 73,
+          "y": 29,
+          "locked": true,
+          "key": "giess_schluessel",
+          "title": "GIESS-|MEISTER",
+          "style": "iron",
+          "look": "gold",
+          "font": "bold"
+        },
+        {
+          "id": "sign_g_meister",
+          "type": "sign",
+          "x": 76,
+          "y": 22,
+          "face": 0,
+          "title": "ESSE",
+          "text": "Die große Esse ist erloschen. Über dem Amboss hängt eine Rüstung, die niemand mehr trägt. Fast niemand.",
+          "style": "dark"
+        },
+        {
+          "id": "en_g_boss",
+          "type": "enemy",
+          "x": 80,
+          "y": 29,
+          "kind": "giessmeister",
+          "kinds": [
+            "giessmeister",
+            "schlackenwaechter"
+          ]
+        },
+        {
+          "id": "chest_g_boss",
+          "type": "chest",
+          "x": 81,
+          "y": 23,
+          "guard": [
+            "en_g_boss"
+          ],
+          "loot": [
+            {
+              "gold": 120
+            },
+            {
+              "item": "potion_g",
+              "n": 1
+            },
+            {
+              "item": "ring_glut",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 3
+              }
+            }
+          ],
+          "look": "edel",
+          "mat": "stein"
+        },
+        {
+          "id": "exit_g_tiefe",
+          "type": "exit",
+          "x": 82,
+          "y": 36,
+          "look": "down",
+          "title": "Tiefer in die Esse",
+          "text": "Hinter dem Amboss führt ein Schacht in die Tiefe. Von unten steigt Hitze auf.",
+          "again": "Hier geht es in einer späteren Version weiter."
+        },
+        {
+          "id": "dk_festung5_f1",
+          "type": "decor",
+          "x": 13,
+          "y": 32,
+          "look": "fass"
+        },
+        {
+          "id": "dk_festung5_f2",
+          "type": "decor",
+          "x": 40,
+          "y": 26,
+          "look": "fass"
+        },
+        {
+          "id": "dk_festung5_s1",
+          "type": "decor",
+          "x": 70,
+          "y": 32,
+          "look": "schutt"
+        },
+        {
+          "id": "dk_festung5_s2",
+          "type": "decor",
+          "x": 3,
+          "y": 32,
+          "look": "schutt"
+        },
+        {
+          "id": "dk_festung5_f3",
+          "type": "decor",
+          "x": 22,
+          "y": 51,
+          "look": "fass"
         }
       ]
     }
@@ -8022,6 +8933,37 @@
           "item": "plattenpanzer"
         }
       ]
+    },
+    "giesserei": {
+      "name": "Brums Werkbank",
+      "owner": "Brum",
+      "greeting": "Brum wischt sich die Hände an der Schürze ab. „Was ich nicht gegossen hab, hab ich wenigstens geschliffen.“",
+      "stock": [
+        {
+          "item": "potion_m"
+        },
+        {
+          "item": "potion_g"
+        },
+        {
+          "item": "zaubertrank_m"
+        },
+        {
+          "item": "zaubertrank_g"
+        },
+        {
+          "item": "gegengift"
+        },
+        {
+          "item": "ration"
+        },
+        {
+          "item": "stahlschwert"
+        },
+        {
+          "item": "plattenpanzer"
+        }
+      ]
     }
   },
   "talents": {
@@ -8071,10 +9013,10 @@
               "alt": {
                 "id": "w_wall_b",
                 "name": "Schutzwall",
-                "desc": "+2 Verteidigung, +10 LP. ★ Schutzwall: Schaden gegen die ganze Gruppe −1.",
+                "desc": "+1 Verteidigung, +6 LP. ★ Schutzwall: Schaden gegen die ganze Gruppe −1.",
                 "fx": {
-                  "def": 2,
-                  "hp": 10,
+                  "def": 1,
+                  "hp": 6,
                   "aura_soak": 1
                 },
                 "sig": true
@@ -8121,9 +9063,10 @@
               "alt": {
                 "id": "w_wucht_b",
                 "name": "Raserei",
-                "desc": "Fähigkeiten +20 % Schaden. ★ Vorstoß: der erste Angriff in jedem Kampf ist kritisch.",
+                "desc": "+10 % kritische Treffer, +1 Angriff. ★ Vorstoß: der erste Angriff in jedem Kampf ist kritisch.",
                 "fx": {
-                  "abil": 20,
+                  "crit": 10,
+                  "atk": 1,
                   "firstcrit": 1
                 },
                 "sig": true
@@ -8172,10 +9115,10 @@
               "alt": {
                 "id": "w_kraft_b",
                 "name": "Schlachtplan",
-                "desc": "+14 LP, +1 Angriff. ★ Schlachtplan: zu Kampfbeginn wird ein Gegner verlangsamt.",
+                "desc": "+8 LP, +2 Initiative. ★ Schlachtplan: zu Kampfbeginn wird ein Gegner verlangsamt.",
                 "fx": {
-                  "hp": 14,
-                  "atk": 1,
+                  "hp": 8,
+                  "init": 2,
                   "opener": 1
                 },
                 "sig": true
@@ -8224,9 +9167,10 @@
               "alt": {
                 "id": "r_gift_b",
                 "name": "Meuchler",
-                "desc": "Fähigkeiten +20 % Schaden. ★ Schwachstelle: Angriffe ignorieren die Hälfte der Rüstung.",
+                "desc": "+2 Angriff, Fähigkeiten +10 % Schaden. ★ Schwachstelle: Angriffe ignorieren die Hälfte der Rüstung.",
                 "fx": {
-                  "abil": 20,
+                  "atk": 2,
+                  "abil": 10,
                   "pierce": 50
                 },
                 "sig": true
@@ -8274,10 +9218,10 @@
               "alt": {
                 "id": "r_geist_b",
                 "name": "Rauchbombe",
-                "desc": "+8 % Ausweichen, +6 LP. ★ Rauchbombe: zu Kampfbeginn wird ein Gegner verlangsamt.",
+                "desc": "+6 % Ausweichen, +2 Initiative. ★ Rauchbombe: zu Kampfbeginn wird ein Gegner verlangsamt.",
                 "fx": {
-                  "dodge": 8,
-                  "hp": 6,
+                  "dodge": 6,
+                  "init": 2,
                   "opener": 1
                 },
                 "sig": true
@@ -8331,10 +9275,10 @@
               "alt": {
                 "id": "r_glueck_b",
                 "name": "Giftklinge",
-                "desc": "+20 % Gold, +1 Verteidigung. Fallen: weitere +25 %. Schlösser +25 %. ★ Giftklinge: Gift, Brand und Blutung dieses Helden +2 Schaden je Runde.",
+                "desc": "+1 Angriff, Fähigkeiten +15 % Schaden. Fallen: weitere +25 %. Schlösser +25 %. ★ Giftklinge: Gift, Brand und Blutung dieses Helden +2 Schaden je Runde.",
                 "fx": {
-                  "gold": 20,
-                  "def": 1,
+                  "atk": 1,
+                  "abil": 15,
                   "trap": 25,
                   "lock": 25,
                   "dotplus": 2
@@ -8385,9 +9329,10 @@
               "alt": {
                 "id": "p_gnade_b",
                 "name": "Heilkunde",
-                "desc": "Heilzauber +6 LP. ★ Heilkunde: Heiltränke heilen 50 % mehr.",
+                "desc": "Heilzauber +3 LP, +8 Max-LP. ★ Heilkunde: Heiltränke heilen 50 % mehr.",
                 "fx": {
-                  "heal": 6,
+                  "heal": 3,
+                  "hp": 8,
                   "potionplus": 50
                 },
                 "sig": true
@@ -8436,10 +9381,10 @@
               "alt": {
                 "id": "p_glaube_b",
                 "name": "Fürsprecher",
-                "desc": "+12 LP, +1 Verteidigung. ★ Fürsprecher: Gegner greifen zu 40 % diesen Helden an.",
+                "desc": "+16 LP, +2 Verteidigung. ★ Fürsprecher: Gegner greifen zu 40 % diesen Helden an.",
                 "fx": {
-                  "hp": 12,
-                  "def": 1,
+                  "hp": 16,
+                  "def": 2,
                   "taunt": 40
                 },
                 "sig": true
@@ -8487,10 +9432,11 @@
               "alt": {
                 "id": "p_eifer_b",
                 "name": "Strafgericht",
-                "desc": "Fähigkeiten +15 % Schaden, +1 Angriff. ★ Strafgericht: Lebensraub 10 %.",
+                "desc": "+8 LP, +1 Angriff, Fähigkeiten +10 % Schaden. ★ Strafgericht: Lebensraub 10 %.",
                 "fx": {
-                  "abil": 15,
+                  "hp": 8,
                   "atk": 1,
+                  "abil": 10,
                   "lifesteal": 10
                 },
                 "sig": true
@@ -8540,10 +9486,10 @@
               "alt": {
                 "id": "m_krit_b",
                 "name": "Glutatem",
-                "desc": "+8 % kritische Treffer, Fähigkeiten +10 % Schaden. ★ Glutatem: Angriffe setzen zu 25 % in Brand.",
+                "desc": "+4 % kritische Treffer, Fähigkeiten +20 % Schaden. ★ Glutatem: Angriffe setzen zu 25 % in Brand.",
                 "fx": {
-                  "crit": 8,
-                  "abil": 10,
+                  "crit": 4,
+                  "abil": 20,
                   "burnhit": 25
                 },
                 "sig": true
@@ -8594,10 +9540,10 @@
               "alt": {
                 "id": "m_panzer_b",
                 "name": "Eiswall",
-                "desc": "+1 Verteidigung, +8 LP. ★ Eiswall: Schaden gegen die ganze Gruppe −1.",
+                "desc": "+6 LP, +6 Mana. ★ Eiswall: Schaden gegen die ganze Gruppe −1.",
                 "fx": {
-                  "def": 1,
-                  "hp": 8,
+                  "hp": 6,
+                  "mp": 6,
                   "aura_soak": 1
                 },
                 "sig": true
@@ -8646,11 +9592,11 @@
               "alt": {
                 "id": "m_tief_b",
                 "name": "Zeitriss",
-                "desc": "+10 Mana, +1 Angriff, Zauber +10 % Schaden. ★ Zeitriss: zu Kampfbeginn wird ein Gegner verlangsamt.",
+                "desc": "+6 Mana, Zauber +15 % Schaden, +2 Initiative. ★ Zeitriss: zu Kampfbeginn wird ein Gegner verlangsamt.",
                 "fx": {
-                  "mp": 10,
-                  "atk": 1,
-                  "abil": 10,
+                  "mp": 6,
+                  "abil": 15,
+                  "init": 2,
                   "opener": 1
                 },
                 "sig": true
@@ -8700,9 +9646,10 @@
               "alt": {
                 "id": "g_kraft_b",
                 "name": "Erster Schuss",
-                "desc": "Fähigkeiten +20 % Schaden. ★ Erster Schuss: der erste Angriff in jedem Kampf ist kritisch.",
+                "desc": "+10 % kritische Treffer, Fähigkeiten +10 % Schaden. ★ Erster Schuss: der erste Angriff in jedem Kampf ist kritisch.",
                 "fx": {
-                  "abil": 20,
+                  "crit": 10,
+                  "abil": 10,
                   "firstcrit": 1
                 },
                 "sig": true
@@ -8753,11 +9700,11 @@
               "alt": {
                 "id": "g_netz_b",
                 "name": "Spurenleser",
-                "desc": "+10 % Ausweichen, +1 Initiative. Fallen: weitere +25 %. ★ Spurenleser: die Gruppe wird nie überfallen.",
+                "desc": "+6 % Ausweichen, +2 Initiative. Fallen: weitere +40 %. ★ Spurenleser: die Gruppe wird nie überfallen.",
                 "fx": {
-                  "dodge": 10,
-                  "init": 1,
-                  "trap": 25,
+                  "dodge": 6,
+                  "init": 2,
+                  "trap": 40,
                   "noambush": 1
                 },
                 "sig": true
@@ -8806,10 +9753,10 @@
               "alt": {
                 "id": "g_kraeut_b",
                 "name": "Heilkräuter",
-                "desc": "+14 LP, +1 Verteidigung. ★ Heilkräuter: nach jedem Sieg alle wachen Helden +10 % LP.",
+                "desc": "+10 LP, +2 Verteidigung. ★ Heilkräuter: nach jedem Sieg alle wachen Helden +10 % LP.",
                 "fx": {
-                  "hp": 14,
-                  "def": 1,
+                  "hp": 10,
+                  "def": 2,
                   "postheal": 10
                 },
                 "sig": true
@@ -8860,10 +9807,10 @@
               "alt": {
                 "id": "a_dosis_b",
                 "name": "Säurewurf",
-                "desc": "Fähigkeiten +20 % Schaden, +1 Angriff. ★ Säurewurf: Angriffe ignorieren die Hälfte der Rüstung.",
+                "desc": "+2 Angriff, Fähigkeiten +10 % Schaden. ★ Säurewurf: Angriffe ignorieren die Hälfte der Rüstung.",
                 "fx": {
-                  "abil": 20,
-                  "atk": 1,
+                  "atk": 2,
+                  "abil": 10,
                   "pierce": 50
                 },
                 "sig": true
@@ -8912,10 +9859,10 @@
               "alt": {
                 "id": "a_fest_b",
                 "name": "Schutztrank",
-                "desc": "+10 LP, +1 Verteidigung. ★ Schutztrank: Schaden gegen die ganze Gruppe −1.",
+                "desc": "+6 LP, +6 Mana. ★ Schutztrank: Schaden gegen die ganze Gruppe −1.",
                 "fx": {
-                  "hp": 10,
-                  "def": 1,
+                  "hp": 6,
+                  "mp": 6,
                   "aura_soak": 1
                 },
                 "sig": true
@@ -8966,12 +9913,12 @@
               "alt": {
                 "id": "a_kuehl_b",
                 "name": "Blendpulver",
-                "desc": "+4 % Ausweichen, +8 LP, +4 Mana. Fallen: +20 % entdecken und entschärfen. ★ Blendpulver: zu Kampfbeginn wird ein Gegner verlangsamt.",
+                "desc": "+6 % Ausweichen, +2 Initiative, +6 Mana. Fallen: +30 % entdecken und entschärfen. ★ Blendpulver: zu Kampfbeginn wird ein Gegner verlangsamt.",
                 "fx": {
-                  "dodge": 4,
-                  "hp": 8,
-                  "mp": 4,
-                  "trap": 20,
+                  "dodge": 6,
+                  "init": 2,
+                  "mp": 6,
+                  "trap": 30,
                   "opener": 1
                 },
                 "sig": true
@@ -9882,6 +10829,8 @@
                 "alder:frei",
                 "spinne:schwaeche"
               ],
+              "note": "Alder: Die Spinnenkönigin fürchtet Feuer. Ihre Fäden brennen, sie hasst den Rauch. Auf die Rufe der Brut nicht hören.",
+              "noteTitle": "Alders Rat",
               "done": true,
               "leave": true,
               "msg": "Alder humpelt davon, ohne sich umzusehen. Ihr merkt euch seinen Rat: Feuer, und keine Gnade für die Rufe der Brut."

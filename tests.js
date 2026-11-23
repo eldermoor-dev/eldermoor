@@ -510,14 +510,47 @@ export async function runTests(data, env = {}) {
     assert(f2.objects.every((o) => o.type === 'enemy' ? f2.map[o.y][o.x] === '.' : true), 'Gegner auf Boden');
   });
 
-  await test('Ausgang (0.16.4, seit 0.33.0 am Ende der Spinnenhöhle): erstes Betreten = Abschluss, danach kurzer Hinweis', () => {
-    const s = fresh(9); L.jumpToLevel(s, data, 'festung4'); s.objs.forEach((o) => { if (o.type === 'enemy') o.dead = true; });
-    put(s, 71, 27, 1);
+  await test('Ausgang (0.16.4, seit 0.36.0 am Ende der Gießerei): erstes Betreten = Abschluss, danach kurzer Hinweis', () => {
+    const s = fresh(9); L.jumpToLevel(s, data, 'festung5'); s.objs.forEach((o) => { if (o.type === 'enemy') o.dead = true; });
+    put(s, 81, 36, 1);
     const a = L.tryMove(s, data, 'f'); assert(a.events.some((e) => e.type === 'exit'), 'erstes Mal: exit ' + JSON.stringify(a));
-    put(s, 71, 27, 1);
+    put(s, 81, 36, 1);
     const b = L.tryMove(s, data, 'f'); assert(b.events.some((e) => e.type === 'exitAgain') && !b.events.some((e) => e.type === 'exit'), 'danach: exitAgain ' + JSON.stringify(b));
-    const t = data.levels.festung4.objects.find((o) => o.id === 'exit_s_tiefe');
+    const t = data.levels.festung5.objects.find((o) => o.id === 'exit_g_tiefe');
     assert(t && /späteren Version/.test(t.again), 'Ausgang hat Hinweistext');
+    const st = data.levels.festung4.objects.find((o) => o.id === 'stairs_s_tiefe'); assert(st && st.to.level === 'festung5' && !data.levels.festung4.objects.some((o) => o.type === 'exit'), 'Spinnenhöhle führt per Treppe in die Gießerei');
+  });
+
+  await test('0.36.0 Gießerei: Treppe hin und zurück, größer als die Spinnenhöhle, Palette, Objekte auf Boden, lösbar, Schlüsselkette', () => {
+    const f4 = data.levels.festung4, f5 = data.levels.festung5;
+    assert(f5 && f5.palette === 'glut' && Object.keys(data.palettes.glut).length === Object.keys(data.palettes.katakomben).length, 'Level und Palette');
+    assert(f5.map.length * f5.map[0].length > f4.map.length * f4.map[0].length, 'größer als die Spinnenhöhle');
+    const dn = f4.objects.find((o) => o.id === 'stairs_s_tiefe'), up = f5.objects.find((o) => o.id === 'stairs_g_up');
+    assert(dn && dn.to.level === 'festung5' && up && up.to.level === 'festung4' && f5.map[dn.to.y][dn.to.x] === '.' && f4.map[up.to.y][up.to.x] === '.', 'Treppen mit gültigem Ziel');
+    assert(f5.objects.every((o) => (o.type === 'sign' && o.face != null) || f5.map[o.y][o.x] === '.'), 'Objekte stehen auf Boden');
+    assert(L.analyzeLevel(data, 'festung5').ok, 'Gießerei lösbar (Schlüssel, Hebel, Geheimwand erreichbar)');
+    const key = (id) => f5.objects.find((o) => o.id === id);
+    assert(key('door_g_n3').key === 'ofenschluessel' && key('chest_g_s1').loot.some((l) => l.item === 'ofenschluessel'), 'Ofenschlüssel liegt in Süd 1');
+    assert(key('door_g_meister').key === 'giess_schluessel' && key('chest_g_n3').loot.some((l) => l.item === 'giess_schluessel'), 'Meisterschlüssel liegt in Nord 3 hinter der Ofentür');
+    for (const o of f5.objects) if (o.type === 'enemy') for (const k of o.kinds || [o.kind]) assert(data.enemies[k], `${o.id}: Gegner ${k}`);
+    const w = f5.map[0].length, reach = (closed) => { const seen = new Set([f5.start.y * w + f5.start.x]), q = [[f5.start.x, f5.start.y]]; while (q.length) { const [x, y] = q.shift(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy, k = ny * w + nx; if (f5.map[ny] && f5.map[ny][nx] === '.' && !seen.has(k) && !(closed && f5.objects.some((o) => o.x === nx && o.y === ny && ((o.type === 'door' && o.locked) || o.type === 'gate' || o.type === 'secret' || (o.type === 'lever' && o.wall))))) { seen.add(k); q.push([nx, ny]); } } } return seen; };
+    const closed = reach(true), open = reach(false), at = (id) => { const o = key(id); return o.y * w + o.x; };
+    assert(!closed.has(at('en_g_boss')) && open.has(at('en_g_boss')), 'Gießmeister nur hinter der Schlüsseltür');
+    assert(!closed.has(at('chest_g_n3')) && !closed.has(at('chest_g_schatz')) && !closed.has(at('chest_g_geheim')), 'Schlüsselkammer, Schatzkammer und Geheimkammer verschlossen');
+    assert(closed.has(at('chest_g_n1')) && closed.has(at('chest_g_s1')) && closed.has(at('merchant_brum')), 'Nord 1, Süd 1 und Händler frei erreichbar');
+    const s = fresh(70); L.jumpToLevel(s, data, 'festung5');
+    assert(!!s.objs.find((o) => o.id === 'merchant_brum') && data.shops.giesserei.stock.every((q) => data.items[q.item]), 'Händler Brum und Waren');
+    const mi = s.objs.find((o) => o.id === 'chest_g_s2'); assert(mi && mi.mimic === 'truhenmaul', 'falscher Schatzraum (Truhe ist Monster)');
+  });
+
+  await test('0.36.0 Gießmeister: Phasen, Rufe, Ankündigung, Ring der Esse; Schlackenwächter', () => {
+    const b = data.enemies.giessmeister, w = data.enemies.schlackenwaechter;
+    assert(b.boss && b.phases.length >= 2 && b.tactic.call.kind === 'schlackenwaechter' && b.intro && b.cast.every((c) => c.announce) && data.enemies[b.tactic.call.kind], 'Boss: Phasen, Rufe, Intro, Ankündigung');
+    assert(w && w.hp > 0 && w.intro, 'Schlackenwächter');
+    assert(data.items.ring_glut.q === 'unique' && b.drops.some((d) => d.item === 'ring_glut'), 'Ring der Esse als Unikat-Drop');
+    for (const q of ['ofenschluessel', 'giess_schluessel']) assert(data.items[q].kind === 'quest', q);
+    const s = L.newGame(data, 71); s.heroes.forEach((x) => { x.maxHp = x.hp = 999; }); L.startCombat(s, data, { id: 'bb', kind: 'giessmeister', kinds: ['giessmeister'] });
+    assert(s.combat && s.combat.enemies.length >= 1, 'Kampf startet');
   });
 
   await test('0.33.0 Gefangener Tilo in der Kultgruft: Lebensgeschichte, Befreiung, Dank, danach Gespräch; Aussehen bleibt nach Laden', () => {
@@ -1333,6 +1366,28 @@ export async function runTests(data, env = {}) {
     while (s.combat && !s.combat.over && guard++ < 10) { const a = L.currentActor(s); if (a.side === 'h') { const r = L.heroAction(s, data, { type: 'defend' }); msgs.push(...r.msgs); } else { const r = L.enemyStep(s, data, {}); msgs.push(...r.msgs); } if (e.phase === boss.phases.length) break; }
     eq(e.phase, boss.phases.length, 'alle Phasen durchlaufen');
     assert(msgs.filter((m) => /– Phase \d/.test(m)).length === boss.phases.length, 'jede Phase einmal gemeldet');
+  });
+
+  await test('Notizbuch (0.35.0): Tafel, Riss, Gitter, Runenstein und Ratschlag werden einmal eingetragen, gespeichert, alter Stand lädt', () => {
+    const s = fresh(31); L.jumpToLevel(s, data, 'kultgruft');
+    assert(!s.journal || s.journal.length === 0, 'zu Beginn leer');
+    // Tafel direkt lesen
+    const sg = s.objs.find((o) => o.id === 'sign_g2'); assert(sg, 'Tafel vorhanden');
+    let r = L.interact(s, data, sg); assert(r.newNote && s.journal.length === 1 && s.journal[0].id === 'sign_g2' && s.journal[0].lv === 'kultgruft' && !/\|/.test(s.journal[0].title), 'Tafel eingetragen');
+    r = L.interact(s, data, sg); assert(!r.newNote && s.journal.length === 1, 'zweites Lesen trägt nicht doppelt ein');
+    // Deko-Tafel zählt nicht
+    const dk = s.objs.find((o) => /^dk_/.test(o.id)); if (dk) { L.interact(s, data, dk); assert(s.journal.length === 1, 'Deko nicht eingetragen'); }
+    // Geheimwand
+    const sc = s.objs.find((o) => o.id === 'secret_g1'); r = L.interact(s, data, sc); assert(r.newNote && s.journal.some((e) => e.id === 'secret_g1'), 'Riss eingetragen');
+    // Ratschlag aus Dialog (Alder)
+    const s2 = fresh(32); L.jumpToLevel(s2, data, 'festung4'); const a = s2.objs.find((q) => q.id === 'npc_s_alder');
+    L.dialogChoose(s2, data, a, 'a', 2); L.dialogChoose(s2, data, a, 'z', 0); const rb = L.dialogChoose(s2, data, a, 'b', 0);
+    assert(s2.journal && s2.journal.some((e) => /Feuer/.test(e.text) && e.title === 'Alders Rat'), 'Alders Rat im Notizbuch');
+    // Speichern/Laden
+    const back = L.deserialize(JSON.parse(JSON.stringify(L.serialize(s))), data); eq(back.journal, s.journal, 'Notizbuch überlebt Speichern/Laden');
+    const old = JSON.parse(JSON.stringify(L.serialize(fresh(33)))); delete old.state.journal; assert(L.deserialize(old, data), 'Stand ohne Notizbuch lädt');
+    const bad = JSON.parse(JSON.stringify(L.serialize(s))); bad.state.journal = [{ id: 'x', lv: 'gibtsnicht', title: 't', text: 'x' }];
+    let threw = false; try { L.deserialize(bad, data); } catch (e) { threw = /Notizbuch/.test(e.message); } assert(threw, 'ungültiges Notizbuch wird abgelehnt');
   });
 
   await test('Bestiarium (Phase 3): Begegnung, Sieg, aufgedeckte Elemente und Besonderheiten werden gemerkt und gespeichert', () => {
@@ -2710,6 +2765,7 @@ export async function runTests(data, env = {}) {
     const fs1 = () => { const s = L.newGame(data, 7); L.jumpToLevel(s, data, 'festung1'); s.objs.forEach((o) => { if (o.type === 'enemy') o.dead = true; }); return s; };
     assert(L.analyzeLevel(data, 'festung1').ok, 'Vorburg lösbar');
     const nt = data.levels.nebelturm.objects.find((o) => o.id === 'stairs_turm_festung'); assert(nt && nt.to.level === 'festung1', 'Treppe vom Nebelturm');
+    { const lv = data.levels.nebelturm; const row = lv.map[nt.y]; assert(nt.x === 25 && row[26] !== '.' && row[24] === '.', 'Treppe (0.34.2) liegt vor der Ostwand, Ankunft davor frei'); const back = data.levels.festung1.objects.find((o) => o.id === 'stairs_festung_turm'); assert(back.to.x === 24 && back.to.y === 12 && back.to.dir === 3, 'Rückweg landet vor der Treppe'); }
     // sichtbarer Teleporter im Nordgang
     let s = fs1(); s.player = { x: 21, y: 2, dir: 1 };
     let r = L.tryMove(s, data, 'f'); const ev = r.events.find((e) => e.type === 'teleport');

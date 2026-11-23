@@ -30,7 +30,7 @@ Annahmen stehen in sim.js über `campaign`. „1. Versuch“ = Sieg ohne vorheri
 | Strategie | Kampagne geschafft | Ø Stufe am Ende | Niederlagen je Lauf |
 |---|---|---|---|
 | nur Angriff | 0 % | 5.6 | 4.3 |
-| klug | 49 % | 13.0 | 3.1 |
+| klug | 49 % | 13.0 | 3.3 |
 
 | Gebiet | Gegner | Strategie | erreicht | Ø Stufe | Sieg 1. Versuch | Runden | KO-Helden | Schaden |
 |---|---|---|---|---|---|---|---|---|
@@ -170,5 +170,29 @@ Annahmen stehen in sim.js über `campaign`. „1. Versuch“ = Sieg ohne vorheri
 | Spinnenhöhle | Netzwächter + Brutspinne | klug | 49 % | 15.0 | 100 % | 3.0 | 0.0 | 14 % |
 | Spinnenhöhle | en_s_boss | nur Angriff | 0 % | – | – | – | – | – |
 | Spinnenhöhle | Spinnenkönigin (Boss) | klug | 49 % | 15.0 | 100 % | 9.0 | 0.0 | 61 % |
+| Die Gießerei | en_g_n1a | nur Angriff | 0 % | – | – | – | – | – |
+| Die Gießerei | Erzkäfer + Erzkäfer + Brandmagier | klug | 49 % | 15.0 | 100 % | 2.5 | 0.0 | 17 % |
+| Die Gießerei | en_g_n1b | nur Angriff | 0 % | – | – | – | – | – |
+| Die Gießerei | Schlackenwächter + Erzkäfer + Erzkäfer | klug | 49 % | 15.0 | 100 % | 3.6 | 0.1 | 37 % |
+| Die Gießerei | en_g_n2a | nur Angriff | 0 % | – | – | – | – | – |
+| Die Gießerei | Brandmagier + Schlackenwächter + Erzkäfer | klug | 49 % | 15.0 | 98 % | 4.3 | 0.3 | 58 % |
+| Die Gießerei | en_g_n2b | nur Angriff | 0 % | – | – | – | – | – |
+| Die Gießerei | Schlackenwächter + Schlackenwächter | klug | 49 % | 15.0 | 100 % | 4.6 | 0.0 | 38 % |
+| Die Gießerei | en_g_n3a | nur Angriff | 0 % | – | – | – | – | – |
+| Die Gießerei | Schlackenwächter + Erzkäfer + Schlackenwächter | klug | 49 % | 15.0 | 99 % | 5.4 | 0.3 | 62 % |
+| Die Gießerei | en_g_n3b | nur Angriff | 0 % | – | – | – | – | – |
+| Die Gießerei | Kultwächter + Gruftskelett + Gruftskelett | klug | 49 % | 15.0 | 100 % | 1.9 | 0.0 | 4 % |
+| Die Gießerei | en_g_s1a | nur Angriff | 0 % | – | – | – | – | – |
+| Die Gießerei | Erzkäfer + Erzkäfer + Erzkäfer | klug | 49 % | 15.0 | 100 % | 2.1 | 0.0 | 9 % |
+| Die Gießerei | en_g_s1b | nur Angriff | 0 % | – | – | – | – | – |
+| Die Gießerei | Schlackenwächter + Erzkäfer | klug | 49 % | 15.0 | 100 % | 3.0 | 0.0 | 19 % |
+| Die Gießerei | en_g_s2a | nur Angriff | 0 % | – | – | – | – | – |
+| Die Gießerei | Brandmagier + Schlackenwächter | klug | 49 % | 15.0 | 99 % | 4.0 | 0.2 | 43 % |
+| Die Gießerei | en_g_s3a | nur Angriff | 0 % | – | – | – | – | – |
+| Die Gießerei | Kultwächter + Schlackenwächter + Erzkäfer | klug | 49 % | 15.0 | 100 % | 4.2 | 0.1 | 35 % |
+| Die Gießerei | en_g_s3b | nur Angriff | 0 % | – | – | – | – | – |
+| Die Gießerei | Schlackenwächter + Brandmagier + Erzkäfer | klug | 49 % | 15.0 | 97 % | 4.8 | 0.4 | 64 % |
+| Die Gießerei | en_g_boss | nur Angriff | 0 % | – | – | – | – | – |
+| Die Gießerei | Gießmeister Harkon + Schlackenwächter (Boss) | klug | 49 % | 15.0 | 76 % | 12.8 | 1.3 | 127 % |
 
 Hinweis: Die Simulation nutzt die echten Regeln, aber nur zwei feste Strategien. Ein echter Spieler liegt dazwischen.

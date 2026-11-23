@@ -739,6 +739,17 @@ export function wallSignAhead(state, data) {
   if (isWallChar(cellChar(lvl, fx, fy)) || blockerAt(state, fx, fy)) return null;
   return at(fx, fy) || null;
 }
+// 0.35.0: Notizbuch – state.journal = [{ id, lv, title, text }]; Hinweise werden beim Lesen/Hören eingetragen (je id einmal), Reihenfolge = Fundreihenfolge
+export function noteClue(state, id, title, text) {
+  if (!id || !text) return false;
+  const j = (state.journal = Array.isArray(state.journal) ? state.journal : []);
+  if (j.some((e) => e.id === id)) return false;
+  j.push({ id, lv: state.levelId, title: title || 'Hinweis', text });
+  return true;
+}
+const isClueSign = (o) => o && o.type === 'sign' && o.text && !/^(dk_|deco_)/.test(o.id);
+const signClue = (state, o) => { const r = { msg: o.text, sfx: 'ui', long: true }; if (isClueSign(o) && noteClue(state, o.id, String(o.title || 'Tafel').replace(/\|/g, ' '), o.text)) r.newNote = true; return r; };
+const recClue = (state, id, title, text, r) => { if (noteClue(state, id, title, text)) r.newNote = true; return r; };
 export function interact(state, data, target = null) { // target (0.26.2): Objekt, das aus 2 Feldern Abstand benutzt wird (nur Türen)
   const f = frontCell(state);
   const o = target || blockerAt(state, f.x, f.y);
@@ -749,29 +760,29 @@ export function interact(state, data, target = null) { // target (0.26.2): Objek
     const bu = state.objs.find((q) => q.type === 'buried' && q.sensed && !q.dug && q.x === f.x && q.y === f.y);
     if (bu) { bu.dug = true; return { msg: `${bu.text || 'Ihr grabt im Sand.'} Ihr findet: ${addLoot(state, data, bu.loot)}.`, sfx: 'chest', changed: true, long: true }; }
     const il = illusionAt(state, f.x, f.y);
-    if (il) { const sk = partySkill(state, data, 'secret'); il.sensed = il.sensed || sk > 0; return { msg: il.hint || (sk > 0 ? `${bestAt(state, data, 'secret').name}: „Das ist keine Mauer. Das Licht bricht sich falsch darin.“` : 'Die Steine wirken seltsam unscharf, als läge ein Schleier darüber.'), sfx: 'ui' }; }
+    if (il) { const sk = partySkill(state, data, 'secret'); il.sensed = il.sensed || sk > 0; const ir = { msg: il.hint || (sk > 0 ? `${bestAt(state, data, 'secret').name}: „Das ist keine Mauer. Das Licht bricht sich falsch darin.“` : 'Die Steine wirken seltsam unscharf, als läge ein Schleier darüber.'), sfx: 'ui' }; return il.hint ? recClue(state, il.id, 'Flimmernde Wand', il.hint, ir) : ir; }
     const tr = trapAt(state, f.x, f.y);
     if (tr && tr.spotted) return disarmTrap(state, data, tr);
     if (tr) { tr.spotted = true; tr.checked = true; return { msg: `Du untersuchst den Boden: eine Falle (${data.traps.kinds[tr.kind].name})! Noch einmal ◉ entschärft sie.`, sfx: 'ui' }; }
     const nc = state.objs.find((q) => q.type === 'niche' && q.face === state.player.dir && q.x === state.player.x && q.y === state.player.y); // 0.23.0: Wandnische vor der Nase
     if (nc) { if (nc.taken || !(nc.loot || []).length) return { msg: nc.empty || 'Die Nische ist leer. Nur Staub und Spinnweben.', sfx: 'ui' }; nc.taken = true; return { msg: `${nc.text ? nc.text + ' ' : ''}In der Nische liegt: ${addLoot(state, data, nc.loot)}.`, sfx: 'chest', changed: true, long: true }; }
     const ws = wallSignAhead(state, data);
-    if (ws) return { msg: ws.text, sfx: 'ui', long: true };
+    if (ws) return signClue(state, ws);
     const hs = state.objs.find((q) => q.type === 'sign' && q.face != null && q.x === state.player.x && q.y === state.player.y); // 0.22.1: Tafel am eigenen Feld (seitlich) ist auch lesbar
-    if (hs && !blockerAt(state, f.x, f.y)) return { msg: hs.text, sfx: 'ui', long: true };
+    if (hs && !blockerAt(state, f.x, f.y)) return signClue(state, hs);
     const p = state.player, f2 = { x: f.x + DIRS[p.dir].dx, y: f.y + DIRS[p.dir].dy };
     const b2 = blockerAt(state, f2.x, f2.y);
-    if (b2 && b2.type === 'sign' && cellChar(getLevel(data, state), f.x, f.y) === '.') return { msg: b2.text, sfx: 'ui', long: true }; // Tafeln lassen sich aus bis zu 2 Feldern Abstand lesen
+    if (b2 && b2.type === 'sign' && cellChar(getLevel(data, state), f.x, f.y) === '.') return signClue(state, b2); // Tafeln lassen sich aus bis zu 2 Feldern Abstand lesen
     if (b2 && cellChar(getLevel(data, state), f.x, f.y) === '.') return { msg: 'Geh näher heran.' };
     return { msg: 'Hier gibt es nichts zu tun.' };
   }
   if (o.type === 'enemy') return { encounter: o };
   if (o.type === 'npc') return { talk: o.id, sfx: 'ui' };
-  if (o.type === 'sign') return { msg: o.text, sfx: 'ui', long: true };
-  if (o.type === 'runestone') return { msg: o.text, sfx: 'ui', long: true }; // 0.16.5: Inschrift übersetzt (später Reisenetz)
+  if (o.type === 'sign') return signClue(state, o);
+  if (o.type === 'runestone') return recClue(state, o.id, 'Runenstein', o.text, { msg: o.text, sfx: 'ui', long: true }); // 0.16.5: Inschrift übersetzt (später Reisenetz)
   if (o.type === 'merchant') {
     const r = { shop: o.shop, merchant: o.id };
-    if (o.talk && !state.flags[o.talk.flag]) { state.flags[o.talk.flag] = true; r.msg = o.talk.text; r.changed = true; }
+    if (o.talk && !state.flags[o.talk.flag]) { state.flags[o.talk.flag] = true; r.msg = o.talk.text; r.changed = true; recClue(state, 'talk:' + o.id, o.name || 'Händler', o.talk.text, r); }
     return r;
   }
   if (o.type === 'door') {
@@ -793,7 +804,7 @@ export function interact(state, data, target = null) { // target (0.26.2): Objek
   }
   if (o.type === 'boulder') return pullBoulder(state, data, o);
   if (o.type === 'gate' && o.web) { o.open = true; const w = state.heroes.find((h) => h.hp > 0 && (h.row === 'front')) || state.heroes.find((h) => h.hp > 0); return { msg: o.cutMsg || `${w ? w.name : 'Jemand'} durchtrennt das zähe Netz. Die Fäden zucken noch einen Augenblick nach.`, sfx: 'door', changed: true }; } // 0.33.0: Spinnennetz – mit ◉ oder Dagegenlaufen durchtrennen
-  if (o.type === 'gate') return { msg: o.hint || 'Das Gitter sitzt fest. Es muss einen Hebel geben.', sfx: 'bump' };
+  if (o.type === 'gate') { const gr = { msg: o.hint || 'Das Gitter sitzt fest. Es muss einen Hebel geben.', sfx: 'bump' }; return o.hint ? recClue(state, o.id, 'Gitter', o.hint, gr) : gr; }
   if (o.type === 'lever') { // wall: true = versteckter Schalter (lockerer Stein in der Mauer); Ziel ist ein Gitter oder eine Geheimwand
     const gate = state.objs.find((x) => x.id === o.gate);
     if (o.used) return { msg: o.torch ? 'Die Fackel ist schon gedreht.' : o.wall ? 'Der Stein ist schon eingedrückt.' : 'Der Hebel ist schon umgelegt.', sfx: 'ui' };
@@ -812,7 +823,7 @@ export function interact(state, data, target = null) { // target (0.26.2): Objek
     const txt = addLoot(state, data, o.loot);
     return { msg: `${pre.length ? pre.join(' ') + ' ' : ''}Truhe geöffnet: ${txt}.`, sfx: 'chest', changed: true, long: pre.length > 0 };
   }
-  if (o.type === 'secret') return secretHint(state, data, o);
+  if (o.type === 'secret') return recClue(state, o.id, 'Rissige Wand', o.hint || 'Die Wand klingt hohl. Der Riss ist zu gerade für einen Zufall.', secretHint(state, data, o));
   return { msg: 'Hier gibt es nichts zu tun.' };
 }
 
@@ -894,7 +905,7 @@ export function diceFinish(state, data, npc, g) {
   if (g.won) {
     if (g.stake) { state.gold += g.stake * 2; msgs.push(`Gewinn: +${g.stake} Gold.`); }
     msgs.push(pick(state, cfg.murmelLoses));
-    if (!f['gnom:w1']) { f['gnom:w1'] = true; msgs.push(cfg.hint); }
+    if (!f['gnom:w1']) { f['gnom:w1'] = true; msgs.push(cfg.hint); noteClue(state, 'dice:hint', 'Murmels Versprechen', cfg.hint); }
     else if (!f['gnom:w2']) { f['gnom:w2'] = true; f['gnom:gewonnen'] = true; msgs.push(cfg.amuletLine, `Erhalten: ${addLoot(state, data, [{ item: cfg.amulet, n: 1 }])}.`); }
     return { won: true, msg: msgs.join(' '), changed: true };
   }
@@ -935,6 +946,7 @@ export function dialogChoose(state, data, npc, nodeId, idx) {
   if (eff.xp) { const um = []; grantXp(state, data, eff.xp, um); msgs.push(`Erfahrung: +${eff.xp} EP.`, ...um); } // 0.29.0: Wunsch „Erfahrung“
   if (eff.reveal) { const lv = getLevel(data, state); (lv.map || []).forEach((row, y) => [...row].forEach((ch, x) => { if (!state.objs.some((o) => (o.type === 'secret' || o.type === 'illusion') && o.x === x && o.y === y)) state.seen[y * row.length + x] = 1; })); msgs.push('Die Karte dieses Gebiets ist euch nun bekannt.'); } // 0.29.0: Wunsch „Karte“
   for (const f of eff.set || []) state.flags[f] = true;
+  if (eff.note && noteClue(state, 'dlg:' + npc.id + ':' + (eff.set && eff.set[eff.set.length - 1] || 'x'), eff.noteTitle || npc.name || 'Gespräch', eff.note)) msgs.push('Ins Notizbuch eingetragen.'); // 0.35.0
   if (eff.done || c.done) state.flags['d:' + npc.id] = true;
   if (eff.msg) msgs.push(eff.msg);
   if (c.msg && !c.dice) msgs.unshift(c.msg);
@@ -2088,6 +2100,9 @@ export function validateState(state, data) {
         || !['atk', 'def', 'init'].every((x) => Number.isInteger(g[x]) && g[x] >= 0 && g[x] <= 20)) err.push(`Ausrüstung ${k} ungültig`);
     }
     if (!Number.isInteger(state.uid) || state.uid < 0) err.push('Zähler für Ausrüstung ungültig');
+  }
+  if (state.journal != null) {
+    if (!Array.isArray(state.journal) || state.journal.some((e) => !e || typeof e.id !== 'string' || typeof e.text !== 'string' || typeof e.title !== 'string' || !data.levels[e.lv])) err.push('Notizbuch ungültig');
   }
   if (state.bestiary != null) {
     if (typeof state.bestiary !== 'object' || Array.isArray(state.bestiary)) err.push('Bestiarium ungültig');

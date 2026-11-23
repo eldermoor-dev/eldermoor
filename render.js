@@ -1046,29 +1046,31 @@ export function buildDecals(lvl, objs, tex) {
 }
 
 function genStairs(kind, seed) {
-  // Steinbogen wie beim Pfad, darin eine gut lesbare Treppe
+  // 0.34.2: Steinbogen mit perspektivischer Treppe: Stufen werden nach hinten schmaler und niedriger, helle Trittflächen mit Vorderkante,
+  // dunkle Setzstufen, seitliche Wangen. Hinab: von oben nach unten dunkler bis Schwarz. Hinauf: von unten nach oben, oben fällt Licht ein.
   const t = mk(255);
   const set = (x, y, v) => { if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
   const up = kind === 'up';
+  const SMAX = 43, bounds = [0]; // Stufenränder (Abstand von der nahen Kante), jede Stufe 0,8× so hoch wie die davor
+  for (let k = 0, p = 9; bounds[bounds.length - 1] < SMAX + 10; k++, p *= 0.8) bounds.push(bounds[bounds.length - 1] + Math.max(2.2, p));
   for (let y = 6; y <= 62; y++) for (let x = 5; x <= 59; x++) {
     const dx = x - 32, dy = y - 34, top = y <= 34, ro = Math.hypot(dx, dy);
     const outer = top ? ro <= 27 : Math.abs(dx) <= 27, inner = top ? ro <= 18 : Math.abs(dx) <= 18;
     if (!outer) continue;
     if (!inner) { set(x, y, P('stone', 3.4 + hash(x >> 1, y >> 1, seed) * 1.3 - (dx > 0 ? 0.5 : 0))); continue; }
-    const k = up ? Math.floor((61 - y) / 6) : Math.floor((y - 20) / 6), pos = up ? (61 - y) % 6 : (y - 20) % 6;
-    const tread = pos < 3;
+    const s = Math.max(0, up ? 61 - y : y - 18);
+    const w = 17.5 - s * 0.2;
+    if (Math.abs(dx) > w) { set(x, y, P('stone', (up ? 2.6 : 2.0) - Math.min(1.2, s * 0.03) - (dx > 0 ? 0.3 : 0))); continue; } // Wange
+    let k = 0; while (k < bounds.length - 2 && s >= bounds[k + 1]) k++;
+    const frac = (s - bounds[k]) / (bounds[k + 1] - bounds[k]), tread = frac < 0.6, nose = frac < 0.12;
     if (up) {
-      // aufwärts: Stufen werden nach oben schmaler und hell, oben fällt Licht ein
-      const narrow = Math.abs(dx) > 18 - k * 1.2;
-      if (narrow) { set(x, y, P('ceil', 0.4)); continue; }
-      const lightTop = 1 - Math.min(1, (y - 14) / 30);
-      set(x, y, tread ? P('stone', 5.8 - k * 0.15 + hash(x, y, seed + 1) * 0.5) : P('stone', 1.6 + lightTop * 1.2));
-      if (y < 24) set(x, y, P('glow', 4.5 + (1 - (y - 14) / 10) * 2));
+      if (s > 38) { set(x, y, P('glow', 4.2 + Math.min(2, (s - 38) * 0.4))); continue; } // oben fällt Licht ein
+      const b = 5.6 - s * 0.04;
+      set(x, y, tread ? P('stone', b + (nose ? 0.9 : 0) + hash(x, y, seed + 1) * 0.3) : P('stone', 1.0 + s * 0.02));
     } else {
-      // abwärts: Stufen werden nach unten dunkler und enden im Schwarz
-      const fade = Math.max(0, 1 - k / 5.5);
-      if (k > 5) { set(x, y, P('ceil', 0)); continue; }
-      set(x, y, tread ? P('stone', 0.4 + fade * 5.2 + hash(x, y, seed + 1) * 0.4) : P('stone', 0.2 + fade * 1.4));
+      if (s > 40) { set(x, y, P('ceil', 0)); continue; } // endet im Schwarz
+      const fade = Math.max(0, 1 - s / 40);
+      set(x, y, tread ? P('stone', 0.4 + fade * 5.2 + (nose ? 0.8 * fade : 0) + hash(x, y, seed + 1) * 0.3) : P('stone', 0.1 + fade * 1.0));
     }
   }
   return t;
@@ -2806,8 +2808,8 @@ export function buildGrid(lvl, objs) {
   for (const o of objs) { if (o.type === 'secret' && !o.open) grid[o.y * w + o.x] = WALL_SECRET; else if (o.type === 'lever' && o.wall) grid[o.y * w + o.x] = o.torch ? WALL_TORCH : o.used ? WALL_SWITCH_ON : WALL_SWITCH; } // torch (0.23.7): Schalter sieht aus wie eine gewöhnliche Wandfackel
   return { grid, gw: w, gh: h };
 }
-const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'turmwache' ? tex.sprites.turmwache : k === 'wolf' ? tex.sprites.wolf : k === 'kultist' ? tex.sprites.kultist : k === 'hauptmann' ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'truhenmaul' ? tex.sprites.mimic : k === 'brandmagier' ? tex.sprites.magier : (k === 'riesenspinne' || k === 'brutspinne' || k === 'netzwaechter') ? tex.sprites.spinne : k === 'spinnenkoenigin' ? tex.sprites.koenigin : k === 'blutdiener' ? tex.sprites.diener : k === 'vampirbrut' ? tex.sprites.brut : k === 'blutgraefin' ? tex.sprites.graefin : k === 'teufel' ? tex.sprites.teufel : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
-const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' || k === 'blutgraefin' ? 1.12 : k === 'truhenmaul' ? 0.8 : k === 'spinnenkoenigin' ? 1.4 : k === 'brutspinne' ? 0.7 : k === 'netzwaechter' ? 1.0 : k === 'riesenspinne' ? 1.15 : k === 'teufel' ? 1.12 : 0.9); // Bosse stehen größer im Gang
+const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : (k === 'turmwache' || k === 'schlackenwaechter') ? tex.sprites.turmwache : k === 'wolf' ? tex.sprites.wolf : k === 'kultist' ? tex.sprites.kultist : (k === 'hauptmann' || k === 'giessmeister') ? tex.sprites.captain : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : k === 'kultpriester' ? tex.sprites.priester : k === 'truhenmaul' ? tex.sprites.mimic : k === 'brandmagier' ? tex.sprites.magier : (k === 'riesenspinne' || k === 'brutspinne' || k === 'netzwaechter') ? tex.sprites.spinne : k === 'spinnenkoenigin' ? tex.sprites.koenigin : k === 'blutdiener' ? tex.sprites.diener : k === 'vampirbrut' ? tex.sprites.brut : k === 'blutgraefin' ? tex.sprites.graefin : k === 'teufel' ? tex.sprites.teufel : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
+const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' || k === 'blutgraefin' || k === 'giessmeister' ? 1.12 : k === 'truhenmaul' ? 0.8 : k === 'spinnenkoenigin' ? 1.4 : k === 'brutspinne' ? 0.7 : k === 'netzwaechter' ? 1.0 : k === 'riesenspinne' ? 1.15 : k === 'teufel' ? 1.12 : 0.9); // Bosse stehen größer im Gang
 export const GROUP_SCALE = 0.78, GROUP_GAP = 0.44, CHEST_SCALE = 0.58; // 0.16.4: Gruppen vorher 0.62/0.36, Truhe 0.5 (Nutzer: zu klein, hinter der Leiste)
 let combatFit = 1; // 0.16.17: im Kampf verkleinert die Kamera zu große Figuren so, dass sie samt Füßen über der Leiste ins Bild passen
 export const setCombatFit = (v) => { combatFit = v; };
@@ -2893,7 +2895,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
         const { lat, dep, grow } = offs[i];
         const kd = kindList ? kindList[i] : kindOf(o, i), sc = spriteScale(kd, n) * combatFit * (grow || 1);
         const inFight = !!(alive && alive[o.id] != null);
-        out.push({ x: o.x + rx * lat + fx * dep, y: o.y + ry * lat + fy * dep, tex: spriteFor(tex, kd), scale: sc * (1 + 0.02 * Math.sin(time * 3 + i)), base: sc, front: inFight, foe: inFight ? { id: o.id, k: i } : null });
+        out.push({ x: o.x + rx * lat + fx * dep, y: o.y + ry * lat + fy * dep, tex: spriteFor(tex, kd), scale: sc, base: sc, front: inFight, foe: inFight ? { id: o.id, k: i } : null });
       }
     }
     else if (o.type === 'buried') { if (o.sensed && !o.dug) out.push({ x: o.x, y: o.y, tex: tex.sprites.mound, scale: 0.55 }); }
