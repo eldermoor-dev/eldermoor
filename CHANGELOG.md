@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.39.0 (25.11.2026, headless)
+- Taverne „Zum goldenen Eber“: Holzfassade in der Siedlung, größere Schankstube mit Tresen, Weinregalen, Weinfässern und Gästen an Tischen, Zimmer gegen Gold (heilt auch die Reserve).
+
 ## 0.38.1 (25.11.2026, headless)
 - Hindernis-Meldungen: Einrichtung (Fass, Schutt, Tisch usw.) heißt nicht mehr „Ein Gegner steht im Weg“.
 

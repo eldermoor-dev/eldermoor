@@ -423,7 +423,7 @@ function blockedText(b) {
   if (b.type === 'enemy') return 'Ein Gegner steht im Weg.';
   return 'Hier steht etwas im Weg.';
 }
-const DECOR_TEXT = { fass: 'Ein Fass versperrt den Weg.', schutt: 'Ein Schutthaufen versperrt den Weg.', palme: 'Eine Palme steht im Weg.', kaktus: 'Ein Kaktus steht im Weg.', tisch: 'Ein Tisch steht im Weg.', stuhl: 'Ein Stuhl steht im Weg.', boot: 'Ein Boot liegt im Weg.', kamin: 'Ein Kamin versperrt den Weg.', regal: 'Ein Regal versperrt den Weg.', bett: 'Ein Bett steht im Weg.', haengematte: 'Eine Hängematte hängt im Weg.', kueche: 'Der Herd versperrt den Weg.', vase: 'Eine Vase steht im Weg.' };
+const DECOR_TEXT = { fass: 'Ein Fass versperrt den Weg.', schutt: 'Ein Schutthaufen versperrt den Weg.', palme: 'Eine Palme steht im Weg.', kaktus: 'Ein Kaktus steht im Weg.', tisch: 'Ein Tisch steht im Weg.', stuhl: 'Ein Stuhl steht im Weg.', boot: 'Ein Boot liegt im Weg.', kamin: 'Ein Kamin versperrt den Weg.', regal: 'Ein Regal versperrt den Weg.', bett: 'Ein Bett steht im Weg.', haengematte: 'Eine Hängematte hängt im Weg.', kueche: 'Der Herd versperrt den Weg.', vase: 'Eine Vase steht im Weg.', tresen: 'Der Tresen versperrt den Weg.', weinregal: 'Ein Weinregal versperrt den Weg.', weinfass: 'Ein Weinfass versperrt den Weg.', gast0: 'Ein Gast sitzt im Weg.', gast1: 'Ein Gast sitzt im Weg.', gast2: 'Ein Gast sitzt im Weg.' };
 
 // rel: 'f' vor, 'b' zurück, 'l' seitwärts links, 'r' seitwärts rechts
 export function tryMove(state, data, rel) {
@@ -855,6 +855,9 @@ export function dialogStartNode(state, data, npc) {
   for (const r of dl.startBy || []) if ((!r.if || !r.if.flag || state.flags[r.if.flag]) && (!r.if || !r.if.noflag || !state.flags[r.if.noflag])) return r.node; // 0.32.0: Startknoten nach Marken (Murmel)
   return state.flags['d:' + npc.id] && dl.again ? dl.again : dl.start;
 }
+// 0.39.0: Zimmer in der Taverne – kostet innBase + innPerLevel × Durchschnittsstufe, stellt LP/MP von Gruppe UND Reserve her, weckt Bewusstlose
+export function innCost(state, data) { const t = data.tavern || {}; return (t.innBase || 15) + (t.innPerLevel || 5) * partyAvgLevel(state); }
+const innNeeded = (state) => [...state.heroes, ...(state.reserve || [])].some((h) => h.hp < h.maxHp || h.mp < h.maxMp);
 export function dialogView(state, data, npc, nodeId) {
   const dl = dlgOf(data, npc), nd = dl && dl.nodes[nodeId];
   if (!nd) return null;
@@ -864,6 +867,7 @@ export function dialogView(state, data, npc, nodeId) {
     if ((f.flag && !state.flags[f.flag]) || (f.noflag && state.flags[f.noflag]) || (f.item && !((state.inv[f.item] || 0) > 0))) return;
     let ok = true, suffix = '';
     if (c.cost && c.cost.gold) { suffix += ` (${c.cost.gold} Gold)`; if (state.gold < c.cost.gold) ok = false; }
+    if (c.inn) { const p = innCost(state, data); if (!innNeeded(state)) { suffix += ' (alle ausgeruht)'; ok = false; } else { suffix += ` (${p} Gold)`; if (state.gold < p) ok = false; } }
     if (c.take) { const it = data.items[c.take.item]; suffix += ` (${it ? it.name : c.take.item})`; if (!((state.inv[c.take.item] || 0) >= (c.take.n || 1))) ok = false; }
     choices.push({ i, t: c.t + suffix, ok });
   });
@@ -959,6 +963,7 @@ export function dialogChoose(state, data, npc, nodeId, idx) {
   if (c.tavern) return { end: true, tavern: true, npc, changed: false }; // 0.34.0: öffnet die Gruppenverwaltung der Taverne (Oberfläche)
   const msgs = [];
   if (c.cost && c.cost.gold) state.gold -= c.cost.gold;
+  if (c.inn) { const p = innCost(state, data); state.gold -= p; for (const h of [...state.heroes, ...(state.reserve || [])]) { h.hp = h.maxHp; h.mp = h.maxMp; } for (const o of state.objs) if (o.jammed) delete o.jammed; msgs.push(`Ihr schlaft in warmen Betten (${p} Gold). Alle sind ausgeruht, auch die Reserve.`); }
   if (c.take) state.inv[c.take.item] = (state.inv[c.take.item] || 0) - (c.take.n || 1);
   let eff = c, next = c.to || null;
   if (c.dice) { // 0.28.0: Würfel – Zahl 1–10; gerade → dice.even, ungerade → dice.odd (Felder wie bei einer Wahl: give, set, done, leave, attack, goto, msg, to)
@@ -985,7 +990,7 @@ export function dialogChoose(state, data, npc, nodeId, idx) {
     Object.assign(npc, { type: 'enemy', kind: eff.attack, hp: en.hp, dead: false });
     return { end: true, encounter: npc, msg: msgs.join(' '), changed: true };
   }
-  return { end: !next, next, msg: msgs.join(' '), changed: true, sfx: eff.give ? 'chest' : 'ui' };
+  return { end: !next, next, msg: msgs.join(' '), changed: true, sfx: c.inn ? 'heal' : eff.give ? 'chest' : 'ui' };
 }
 
 export function useItemOutside(state, data, itemId, heroIdx) {

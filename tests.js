@@ -2876,7 +2876,7 @@ export async function runTests(data, env = {}) {
     const t = L.changeArea(s, data, 'stairs_taverne'); assert(t.ok && s.levelId === 'taverne', 'Taverne erreichbar');
     const back = s.objs.find((o) => o.id === 'stairs_taverne_aus'); assert(back && back.to.level === 'moorrand' && L.cellChar(data.levels.moorrand, back.to.x, back.to.y) === '.', 'Rückweg liegt auf Boden');
     const w = s.objs.find((o) => o.id === 'npc_wirt'); assert(w && L.blockerAt(s, w.x, w.y) === w, 'Wirtin versperrt das Feld');
-    const v = L.dialogView(s, data, w, L.dialogStartNode(s, data, w)); assert(v.choices.length === 3, 'Wirtin: drei Wahlmöglichkeiten');
+    const v = L.dialogView(s, data, w, L.dialogStartNode(s, data, w)); assert(v.choices.length === 4, 'Wirtin: vier Wahlmöglichkeiten (Gruppe, Zimmer, Erklärung, Gehen)');
     const r0 = L.dialogChoose(s, data, w, 'a', 0); assert(r0.end && r0.tavern, 'Wahl öffnet die Taverne');
     // Anwerben
     assert(L.recruitCost(s, data) === 60, 'Kosten Stufe 1: 40 + 20 × 1');
@@ -2980,6 +2980,26 @@ export async function runTests(data, env = {}) {
     const d = s.objs.find((o) => o.type === 'decor' && o.look === 'fass'); assert(d, 'Fass vorhanden');
     for (const [dir, dx, dy] of [[0, 0, 1], [1, -1, 0], [2, 0, -1], [3, 1, 0]]) { /* Gruppe neben das Fass stellen und hineinlaufen */ const px = d.x + dx, py = d.y + dy; if (L.cellChar(lv, px, py) === '.' && !L.blockerAt(s, px, py)) { s.player = { x: px, y: py, dir }; const r = L.tryMove(s, data, 'f'); assert(!r.moved && /Fass/.test(r.msg) && !/Gegner/.test(r.msg), 'Fass: ' + r.msg); return; } }
     assert(false, 'kein freies Nachbarfeld am Fass');
+  });
+  await test('0.39.0 Taverne „Zum goldenen Eber“: Fassade, Einrichtung, Zimmer gegen Gold', () => {
+    const tv = data.levels.taverne, mo = data.levels.moorrand;
+    eq(tv.name, 'Taverne „Zum goldenen Eber“', 'Name'); assert(data.palettes[tv.palette], 'Palette vorhanden');
+    // Fassade: Holzwände (h) beidseits des Eingangs, Eingang auf Boden, Rückweg stimmt
+    const st = mo.objects.find((o) => o.id === 'stairs_taverne'); assert(L.cellChar(mo, st.x, st.y) === '.' && mo.map[st.y + 1][st.x] === 'h' && mo.map[st.y][st.x - 2] === 'h' && mo.map[st.y][st.x + 2] === 'h', 'Holzfassade um den Eingang');
+    const out = tv.objects.find((o) => o.id === 'stairs_taverne_aus'); assert(L.cellChar(mo, out.to.x, out.to.y) === '.' && out.to.y === st.y - 1, 'Ausgang vor der Fassade');
+    // Innen: alle Dekorationen auf Boden, ohne Doppelbelegung, Wirtin erreichbar, Sprites bekannt
+    const seen = new Set(); for (const o of tv.objects) { assert(L.cellChar(tv, o.x, o.y) === '.', o.id + ' auf Boden'); const k = o.x + ',' + o.y; assert(!seen.has(k), o.id + ' doppelt belegt ' + k); seen.add(k); }
+    const looks = new Set(tv.objects.filter((o) => o.type === 'decor').map((o) => o.look)); for (const k of ['tresen', 'weinregal', 'weinfass', 'gast0', 'gast1', 'gast2', 'tisch', 'stuhl', 'kamin', 'fass']) assert(looks.has(k), 'Deko ' + k);
+    assert(tv.objects.filter((o) => /^gast/.test(o.look || '')).length >= 5, 'mindestens fünf Gäste');
+    const w = tv.objects.find((o) => o.id === 'npc_wirt'); assert(!seen.has('7,3') && !tv.objects.some((o) => o.x === 7 && o.y >= 3 && o.y <= 7 && o.type !== 'stairs'), 'Mittelgang zur Wirtin frei'); eq(w.y, 2, 'Wirtin im Tresen-Spalt');
+    const s = L.newGame(data, 39); L.jumpToLevel(s, data, 'taverne'); s.heroes.forEach((h) => { h.hp = 1; h.mp = 0; });
+    const npc = s.objs.find((o) => o.id === 'npc_wirt'), p = L.innCost(s, data); eq(p, 15 + 5 * L.partyAvgLevel(s), 'Preis');
+    // Zimmer: zu wenig Gold gesperrt; sonst alle (auch Reserve) voll, Gold abgezogen; ausgeruht: gesperrt
+    s.gold = p - 1; eq(L.dialogView(s, data, npc, 'a').choices.find((c) => /Zimmer/.test(c.t)).ok, false, 'zu wenig Gold');
+    s.gold = 200; s.reserve = [L.createHero(data, { name: 'Resa', race: 'human', cls: 'warrior' }, 0)]; s.reserve[0].hp = 1;
+    const idx = data.dialogs.wirt.nodes.a.choices.findIndex((c) => c.inn), r = L.dialogChoose(s, data, npc, 'a', idx);
+    assert(!r.error && s.gold === 200 - p && s.heroes.every((h) => h.hp === h.maxHp && h.mp === h.maxMp) && s.reserve[0].hp === s.reserve[0].maxHp, 'alle ausgeruht, Gold abgezogen: ' + JSON.stringify(r));
+    eq(L.dialogView(s, data, npc, 'a').choices.find((c) => /Zimmer/.test(c.t)).ok, false, 'ausgeruht: gesperrt'); eq(L.dialogChoose(s, data, npc, 'a', idx).error, 'not-possible', 'kein zweites Zimmer');
   });
   const failed = results.filter((r) => !r.ok).length; // 0.23.0: erst am Ende zählen (vorher fehlten spätere Tests in der Summe)
   return { results, passed: results.length - failed, failed };

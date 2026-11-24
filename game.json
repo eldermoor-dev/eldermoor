@@ -2727,6 +2727,48 @@
         220,
         232
       ]
+    },
+    "schenke": {
+      "stone": [
+        130,
+        100,
+        70
+      ],
+      "moss": [
+        88,
+        100,
+        60
+      ],
+      "wood": [
+        170,
+        118,
+        66
+      ],
+      "iron": [
+        122,
+        126,
+        134
+      ],
+      "floor": [
+        136,
+        98,
+        60
+      ],
+      "ceil": [
+        72,
+        50,
+        34
+      ],
+      "flesh": [
+        120,
+        130,
+        96
+      ],
+      "glow": [
+        255,
+        196,
+        100
+      ]
     }
   },
   "levels": {
@@ -2946,8 +2988,8 @@
         "####T###T###",
         "#.....m....#",
         "#..........#",
-        "#..........#",
-        "#....m.....#",
+        "#.hh.hh....#",
+        "#.hhhhh....#",
         "############"
       ],
       "start": {
@@ -2998,9 +3040,9 @@
         {
           "id": "stairs_taverne",
           "type": "stairs",
-          "x": 3,
-          "y": 4,
-          "msg": "Du betrittst die Taverne „Zum Letzten Licht“.",
+          "x": 4,
+          "y": 3,
+          "msg": "Du betrittst die Taverne „Zum goldenen Eber“.",
           "to": {
             "level": "taverne",
             "x": 5,
@@ -3008,6 +3050,16 @@
             "dir": 0
           },
           "look": "path"
+        },
+        {
+          "id": "sign_taverne",
+          "type": "sign",
+          "x": 6,
+          "y": 2,
+          "title": "GOLDENER|EBER",
+          "text": "Taverne „Zum goldenen Eber“. Warme Stube, kühler Wein, saubere Betten. Rast im Zimmer kostet Gold.",
+          "style": "wood",
+          "face": 2
         }
       ]
     },
@@ -7902,102 +7954,260 @@
     },
     "taverne": {
       "id": "taverne",
-      "name": "Taverne „Zum Letzten Licht“",
-      "palette": "festung",
+      "name": "Taverne „Zum goldenen Eber“",
+      "palette": "schenke",
       "map": [
-        "#####T#####",
-        "#.........#",
-        "#.........#",
-        "#.........#",
-        "#.........#",
-        "###########"
+        "hhhThhhThhhThhh",
+        "h.............h",
+        "h.............h",
+        "h.............h",
+        "T.............T",
+        "h.............h",
+        "h.............h",
+        "T.............T",
+        "hhhhhhhhhhhhhhh"
       ],
       "start": {
-        "x": 5,
-        "y": 3,
+        "x": 7,
+        "y": 6,
         "dir": 0
       },
       "objects": [
         {
           "id": "stairs_taverne_aus",
           "type": "stairs",
-          "x": 5,
-          "y": 4,
+          "x": 7,
+          "y": 7,
           "msg": "Du trittst hinaus in den Nebel der Siedlung.",
           "to": {
             "level": "moorrand",
-            "x": 3,
-            "y": 3,
-            "dir": 0
+            "x": 4,
+            "y": 2,
+            "dir": 2
           },
           "look": "path"
         },
         {
           "id": "npc_wirt",
           "type": "npc",
-          "x": 5,
-          "y": 1,
+          "x": 7,
+          "y": 2,
           "name": "Wirtin Marga",
           "look": "haendler2",
           "dialog": "wirt"
         },
         {
-          "id": "d_kamin",
+          "id": "d_tresen1",
+          "type": "decor",
+          "x": 5,
+          "y": 2,
+          "look": "tresen"
+        },
+        {
+          "id": "d_tresen2",
+          "type": "decor",
+          "x": 6,
+          "y": 2,
+          "look": "tresen"
+        },
+        {
+          "id": "d_tresen3",
+          "type": "decor",
+          "x": 8,
+          "y": 2,
+          "look": "tresen"
+        },
+        {
+          "id": "d_tresen4",
           "type": "decor",
           "x": 9,
+          "y": 2,
+          "look": "tresen"
+        },
+        {
+          "id": "d_weinregal1",
+          "type": "decor",
+          "x": 2,
           "y": 1,
+          "look": "weinregal"
+        },
+        {
+          "id": "d_weinregal2",
+          "type": "decor",
+          "x": 4,
+          "y": 1,
+          "look": "weinregal"
+        },
+        {
+          "id": "d_weinregal3",
+          "type": "decor",
+          "x": 10,
+          "y": 1,
+          "look": "weinregal"
+        },
+        {
+          "id": "d_weinregal4",
+          "type": "decor",
+          "x": 12,
+          "y": 1,
+          "look": "weinregal"
+        },
+        {
+          "id": "d_weinfass3",
+          "type": "decor",
+          "x": 6,
+          "y": 1,
+          "look": "weinfass"
+        },
+        {
+          "id": "d_weinfass4",
+          "type": "decor",
+          "x": 8,
+          "y": 1,
+          "look": "weinfass"
+        },
+        {
+          "id": "d_kamin",
+          "type": "decor",
+          "x": 13,
+          "y": 4,
           "look": "kamin"
         },
         {
-          "id": "d_regal",
+          "id": "d_weinfass1",
           "type": "decor",
           "x": 1,
-          "y": 1,
-          "look": "regal"
+          "y": 3,
+          "look": "weinfass"
         },
         {
           "id": "d_fass1",
           "type": "decor",
           "x": 1,
-          "y": 3,
+          "y": 4,
           "look": "fass"
         },
         {
           "id": "d_fass2",
           "type": "decor",
-          "x": 9,
-          "y": 3,
+          "x": 1,
+          "y": 5,
           "look": "fass"
+        },
+        {
+          "id": "d_weinfass2",
+          "type": "decor",
+          "x": 13,
+          "y": 2,
+          "look": "weinfass"
         },
         {
           "id": "d_tisch1",
           "type": "decor",
-          "x": 3,
-          "y": 2,
+          "x": 4,
+          "y": 4,
           "look": "tisch"
         },
         {
-          "id": "d_tisch2",
+          "id": "d_gast1",
           "type": "decor",
-          "x": 7,
-          "y": 2,
-          "look": "tisch"
+          "x": 3,
+          "y": 4,
+          "look": "gast0"
         },
         {
           "id": "d_stuhl1",
           "type": "decor",
-          "x": 2,
-          "y": 2,
+          "x": 5,
+          "y": 4,
           "look": "stuhl"
+        },
+        {
+          "id": "d_tisch2",
+          "type": "decor",
+          "x": 10,
+          "y": 4,
+          "look": "tisch"
+        },
+        {
+          "id": "d_gast2",
+          "type": "decor",
+          "x": 11,
+          "y": 4,
+          "look": "gast1"
+        },
+        {
+          "id": "d_gast3",
+          "type": "decor",
+          "x": 9,
+          "y": 4,
+          "look": "gast2"
+        },
+        {
+          "id": "d_tisch3",
+          "type": "decor",
+          "x": 4,
+          "y": 6,
+          "look": "tisch"
         },
         {
           "id": "d_stuhl2",
           "type": "decor",
-          "x": 8,
-          "y": 2,
+          "x": 3,
+          "y": 6,
           "look": "stuhl"
+        },
+        {
+          "id": "d_gast4",
+          "type": "decor",
+          "x": 5,
+          "y": 6,
+          "look": "gast2"
+        },
+        {
+          "id": "d_tisch4",
+          "type": "decor",
+          "x": 10,
+          "y": 6,
+          "look": "tisch"
+        },
+        {
+          "id": "d_gast5",
+          "type": "decor",
+          "x": 9,
+          "y": 6,
+          "look": "gast0"
+        },
+        {
+          "id": "d_stuhl3",
+          "type": "decor",
+          "x": 11,
+          "y": 6,
+          "look": "stuhl"
+        },
+        {
+          "id": "d_bett1",
+          "type": "decor",
+          "x": 13,
+          "y": 6,
+          "look": "bett"
+        },
+        {
+          "id": "d_bett2",
+          "type": "decor",
+          "x": 13,
+          "y": 7,
+          "look": "bett"
+        },
+        {
+          "id": "d_vase",
+          "type": "decor",
+          "x": 12,
+          "y": 3,
+          "look": "vase"
         }
-      ]
+      ],
+      "fog": 0.4
     },
     "festung5": {
       "id": "festung5",
@@ -12719,11 +12929,15 @@
       "again": "a",
       "nodes": {
         "a": {
-          "text": "Eine breite Frau wischt einen Krug aus. „Willkommen im Letzten Licht. Wer hier einkehrt, bleibt nicht allein: Ich führe die Liste derer, die mit euch ziehen würden, und halte ihre Betten warm. Lernen tun sie auch, wenn ihr sie holt – nur langsamer.“",
+          "text": "Eine breite Frau wischt hinter dem Tresen einen Krug aus. „Willkommen im Goldenen Eber. Wer hier einkehrt, bleibt nicht allein: Ich führe die Liste derer, die mit euch ziehen würden, und halte ihre Betten warm. Lernen tun sie auch, wenn ihr sie holt – nur langsamer. Und wer müde ist, bekommt ein Zimmer.“",
           "choices": [
             {
               "t": "Gruppe verwalten (Reserve, Tausch, Anwerben)",
               "tavern": true
+            },
+            {
+              "t": "Zimmer nehmen (alle ausruhen)",
+              "inn": true
             },
             {
               "t": "Wie funktioniert das?",
@@ -12735,11 +12949,15 @@
           ]
         },
         "b": {
-          "text": "„Vier Betten habe ich. Wer dort wartet, bekommt die Hälfte der Erfahrung, die ihr unterwegs sammelt. Tauschen könnt ihr jederzeit, solange ihr nicht kämpft; die Rüstung des Gehenden wandert in euren Beutel. Neue Gesichter kosten Gold – je erfahrener ihr seid, desto mehr, denn desto besser sind sie.“",
+          "text": "„Vier Betten habe ich. Wer dort wartet, bekommt die Hälfte der Erfahrung, die ihr unterwegs sammelt. Tauschen könnt ihr jederzeit, solange ihr nicht kämpft; die Rüstung des Gehenden wandert in euren Beutel. Neue Gesichter kosten Gold – je erfahrener ihr seid, desto mehr, denn desto besser sind sie.“ Ein Zimmer für die Nacht kostet je nach Stufe etwas mehr, dafür ruht auch die Reserve, und wer bewusstlos war, steht am Morgen wieder.",
           "choices": [
             {
               "t": "Gruppe verwalten",
               "tavern": true
+            },
+            {
+              "t": "Zimmer nehmen",
+              "inn": true
             },
             {
               "t": "Gehen"
@@ -13012,6 +13230,8 @@
   "tavern": {
     "reserveXp": 50,
     "recruitBase": 40,
-    "recruitPerLevel": 20
+    "recruitPerLevel": 20,
+    "innBase": 15,
+    "innPerLevel": 5
   }
 }

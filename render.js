@@ -1445,6 +1445,33 @@ function paintFigure(seed, build, SN = 128, outline = true) {
   return t;
 }
 
+// 0.39.0: Gast auf einem Stuhl (sitzend, Krug in den Händen); v = 0 Hutträger mit Bart, 1 Kapuze, 2 Dunkelhaar im roten Wams
+function genGuest(seed, v) {
+  return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y }) => {
+    const l = lit(px, py), n = nz(x >> 1, y >> 1), ax = Math.abs(px - 32), wd = (b) => ['wood', b - l * 0.9 + n * 0.45];
+    const skin = (b) => ['glow', b - l * 0.8 + n * 0.3], base = [['blood', 3.3], ['moss', 3.1], ['ice', 3.3]][v % 3], cl = (b) => [base[0], b - l * 0.8 + n * 0.4];
+    if (v === 0 && (ell(px, py, 32, 10.5, 10.5, 2.3) <= 1 || (py >= 3.5 && py < 11 && ax < 5.8))) return wd(2.5);
+    if (v === 1 && py < 18 && ell(px, py, 32, 15, 9.2, 10.5) <= 1) return cl(2.4);
+    if (v === 2 && py < 12.6 && ell(px, py, 32, 12.5, 7, 5.4) <= 1) return ['wood', 1.5 - l * 0.3];
+    if (ell(px, py, 32, 17.5, 6.4, 7.4) <= 1) {
+      if (ell(px, py, 29.3, 17, 1.1, 1.3) <= 1 || ell(px, py, 34.7, 17, 1.1, 1.3) <= 1) return ['ceil', 0];
+      if (py > 21.2 && py < 22.8 && ax < 2.2) return ['blood', 2.3];
+      if (v === 0 && py > 20.5) return ['wood', 2.0 - l * 0.4 + n * 0.4];
+      return skin(5.3);
+    }
+    if (cap(px, py, 21, 29, 27, 41, 3.3, 3.1) || cap(px, py, 43, 29, 37, 41, 3.3, 3.1)) return cl(3.9);
+    if (px >= 28 && px < 36 && py >= 34 && py < 43) return py < 36 ? ['glow', 6.8] : ['iron', 4.6 - l * 0.8];
+    if (ell(px, py, 27.5, 41, 2.6, 2.4) <= 1 || ell(px, py, 36.5, 41, 2.6, 2.4) <= 1) return skin(4.9);
+    if (py >= 24 && py <= 49 && ax < 12.5 - Math.max(0, py - 44) * 0.5) return cl(3.1);
+    if (py >= 49 && py < 57 && ax >= 3 && ax < 14) return ['iron', 1.6 - l * 0.4];
+    if (py >= 57 && py <= 61 && ax >= 3 && ax < 15) return wd(1.7);
+    if (py >= 22 && py < 29 && ax >= 13.5 && ax < 17.5) return wd(2.7);
+    if (py >= 29 && py < 50 && ax >= 14.5 && ax < 17.5) return wd(2.8);
+    if (py >= 49 && py < 53 && ax < 17.5) return wd(3.7);
+    if (py >= 53 && py <= 61 && ax >= 14.5 && ax < 17.5) return wd(2.2);
+  }, 128);
+}
+
 // ---------- Begegnungspersonen (0.26.1): drei eigene Figuren, nicht mehr die Händlerin / Gegnerbilder ----------
 // kind: 'torf' (Torfstecher: Schlapphut, Bart, Spaten), 'wache' (Wachmann: Rundhelm, Lederharnisch, Wappenrock, Speer), 'wund' (verwundeter Kultist: Kapuze, Verbände, gebeugt)
 function genPerson(seed, kind) {
@@ -1760,6 +1787,24 @@ function genFurn(kind, seed) {
         if (py > bh - 11 - (hash(bk, bh, seed) * 3) && ax < 16) return [cols[Math.floor(hash(bk, bh + 1, seed) * 5)], 3.4 + hash(bk, bh + 2, seed) * 1.4 - l * 0.5];
         return ['ceil', 0.4];
       }
+    } else if (kind === 'tresen') { // 0.39.0: Schanktheke mit Krügen (Teile reihen sich zu einer Theke)
+      const mug = [14, 26, 40, 51].find((cx) => Math.abs(px - cx) < 3 && py >= 22 && py < 30);
+      if (mug != null) return py < 24 ? ['glow', 6.8] : ['iron', 4.6 - l * 0.8 + n * 0.3];
+      if (py >= 30 && py < 35 && ax < 31) return wd(5 - (py - 30) * 0.25);
+      if (py >= 35 && py <= 61 && ax < 29) { if (ax > 26.5 || ax < 1.2 || py > 57) return wd(2.3); return wd(3.2 + (Math.floor((px + 40) / 8) % 2) * 0.55); }
+    } else if (kind === 'weinregal') { // 0.39.0: Regal mit liegenden Flaschen (Stirnseiten rot, grün, hell)
+      if (py >= 5 && py <= 62 && ax < 21) {
+        if (ax >= 19 || py < 9 || py > 59.5 || [22, 38, 54].some((q) => Math.abs(py - q) < 1.5)) return wd(3.1);
+        const cx = [14.5, 23.5, 32.5, 41.5, 50.5].find((q) => Math.abs(px - q) < 4.5), cy = [15.5, 30.5, 46.5].find((q) => Math.abs(py - q) < 7.5);
+        if (cx != null && cy != null && ell(px, py, cx, cy, 3.6, 3.6) <= 1) { const h = hash(Math.round(cx), Math.round(cy), seed), r = ell(px, py, cx, cy, 1.5, 1.5) <= 1; return r ? ['wood', 4.8] : h < 0.45 ? ['blood', 2.6 - l * 0.5] : h < 0.75 ? ['moss', 3.2 - l * 0.5] : ['glow', 4.2 - l * 0.5]; }
+        return ['ceil', 0.3];
+      }
+    } else if (kind === 'weinfass') { // 0.39.0: liegendes Fass auf Gestell, Stirnseite mit Reifen, Zapfhahn und Tropfen
+      const dx2 = px - 32, dy2 = py - 36, r = Math.hypot(dx2, dy2);
+      if (Math.abs(px - 32) < 2.3 && py >= 41 && py < 48.5) return ['iron', 4.8 - l * 0.4];
+      if (ell(px, py, 32, 50, 1.6, 2.2) <= 1) return ['blood', 3.6];
+      if (r < 22) { if (r > 19) return ['iron', 3.8 - l * 0.7]; if (ell(px, py, 32, 24, 2.2, 1.7) <= 1) return wd(1.4); if (Math.abs(r - 13) < 0.8 || Math.abs(r - 6.5) < 0.8) return wd(2.1); return wd(3.5 + (Math.floor((dx2 + 40) / 5) % 2) * 0.55); }
+      if (py >= 54 && py <= 62 && ax >= 10 && ax < 25) return wd(2.3);
     } else if (kind === 'kamin') {
       if (py >= 18 && py <= 62 && ax < 21) {
         if (ax < 10 && py >= 38) { // Feuerstelle
@@ -2627,7 +2672,7 @@ export function makeTextures(detail = 1) {
     rug: genRug(64, nf),
     paving: genPaving(66, nf),
     ceil: genCeil(53, nf),
-    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), rail: genRail(441), railTorch: genRailTorch(442), palme: sm2(genPalm(461)), fass: sm2(genFurn('fass', 471)), tisch: sm2(genFurn('tisch', 472)), stuhl: sm2(genFurn('stuhl', 473)), bett: sm2(genFurn('bett', 474)), regal: sm2(genFurn('regal', 475)), kamin: sm2(genFurn('kamin', 476)), kaktus: sm2(genFurn('kaktus', 477)), haengematte: sm2(genFurn('haengematte', 478)), spielautomat: sm2(genFurn('spielautomat', 479)), roulette: sm2(genFurn('roulette', 480)), vase: sm2(genFurn('vase', 483)), kueche: sm2(genFurn('kueche', 484)), kartentisch: sm2(genFurn('kartentisch', 481)), teufel: sm2(genDevil(482)), mound: sm2(genMound(463)), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)),  chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), giessmeister: sm2(genGiessmeister(195)), schlacke: sm2(genSchlacke(197)), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), fuhrmann: sm2(genFerryman(771)), boot: sm2(genBoat(772)), gnom: sm2(genGnome(773)), spinne: sm2(genSpider(774)), koenigin: sm2(genSpider(777, true)), kokon: sm2(genCocoon(778)), schutt: sm2(genFurn('schutt', 474)), diener: sm2(genVampire(741, 'diener')), brut: sm2(genVampire(742, 'brut')), graefin: sm2(genVampire(743, 'graefin')), wache: sm2(genPerson(721, 'wache')), haendler2: sm2(genVendor2(751)), gefangener: sm2(genPrisoner(761)), wund: sm2(genPerson(731, 'wund')), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), rail: genRail(441), railTorch: genRailTorch(442), palme: sm2(genPalm(461)), fass: sm2(genFurn('fass', 471)), tisch: sm2(genFurn('tisch', 472)), stuhl: sm2(genFurn('stuhl', 473)), bett: sm2(genFurn('bett', 474)), regal: sm2(genFurn('regal', 475)), kamin: sm2(genFurn('kamin', 476)), tresen: sm2(genFurn('tresen', 485)), weinregal: sm2(genFurn('weinregal', 486)), weinfass: sm2(genFurn('weinfass', 487)), gast0: sm2(genGuest(488, 0)), gast1: sm2(genGuest(489, 1)), gast2: sm2(genGuest(490, 2)), kaktus: sm2(genFurn('kaktus', 477)), haengematte: sm2(genFurn('haengematte', 478)), spielautomat: sm2(genFurn('spielautomat', 479)), roulette: sm2(genFurn('roulette', 480)), vase: sm2(genFurn('vase', 483)), kueche: sm2(genFurn('kueche', 484)), kartentisch: sm2(genFurn('kartentisch', 481)), teufel: sm2(genDevil(482)), mound: sm2(genMound(463)), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)),  chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), giessmeister: sm2(genGiessmeister(195)), schlacke: sm2(genSchlacke(197)), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), fuhrmann: sm2(genFerryman(771)), boot: sm2(genBoat(772)), gnom: sm2(genGnome(773)), spinne: sm2(genSpider(774)), koenigin: sm2(genSpider(777, true)), kokon: sm2(genCocoon(778)), schutt: sm2(genFurn('schutt', 474)), diener: sm2(genVampire(741, 'diener')), brut: sm2(genVampire(742, 'brut')), graefin: sm2(genVampire(743, 'graefin')), wache: sm2(genPerson(721, 'wache')), haendler2: sm2(genVendor2(751)), gefangener: sm2(genPrisoner(761)), wund: sm2(genPerson(731, 'wund')), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
@@ -2666,7 +2711,7 @@ export class Raycaster {
     const t = view.time || 0;
     const amp = q === 'low' ? 0 : this.flicker;
     const fl = 1 + amp * (0.07 * Math.sin(t * 11.3) + 0.05 * Math.sin(t * 5.1 + 1.3) + 0.03 * Math.sin(t * 23.7));
-    const fogK = 0.85 / (this.bright || 1);
+    const fogK = 0.85 / (this.bright || 1) * (view.fog || 1); // 0.39.0: Ebenen können den Nebel dünner machen (Taverne: fog 0.4)
     const dropFor = (dist) => Math.min(7, Math.floor(dist * fogK / fl));
 
     // Decke und Boden. Horizont verschiebbar (view.horizon in Pixeln; Standard H/2): kleiner = Blick nach unten, größer = Blick nach oben
