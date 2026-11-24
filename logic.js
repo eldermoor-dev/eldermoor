@@ -419,8 +419,11 @@ function blockedText(b) {
   if (b.type === 'gate') return 'Ein Fallgitter versperrt den Weg.';
   if (b.type === 'secret') return 'Eine Wand. Durch die Fugen läuft ein feiner Riss.';
   if (b.type === 'lever') return b.torch ? 'Eine Wandfackel. Ihre Halterung sitzt locker.' : b.wall ? 'Ein Stein in der Wand sitzt locker.' : 'Ein Wandhebel steht im Weg.';
-  return 'Ein Gegner steht im Weg.';
+  if (b.type === 'decor') return DECOR_TEXT[b.look] || 'Hier steht etwas im Weg.'; // 0.38.1: Einrichtung hieß fälschlich „Gegner“
+  if (b.type === 'enemy') return 'Ein Gegner steht im Weg.';
+  return 'Hier steht etwas im Weg.';
 }
+const DECOR_TEXT = { fass: 'Ein Fass versperrt den Weg.', schutt: 'Ein Schutthaufen versperrt den Weg.', palme: 'Eine Palme steht im Weg.', kaktus: 'Ein Kaktus steht im Weg.', tisch: 'Ein Tisch steht im Weg.', stuhl: 'Ein Stuhl steht im Weg.', boot: 'Ein Boot liegt im Weg.', kamin: 'Ein Kamin versperrt den Weg.', regal: 'Ein Regal versperrt den Weg.', bett: 'Ein Bett steht im Weg.', haengematte: 'Eine Hängematte hängt im Weg.', kueche: 'Der Herd versperrt den Weg.', vase: 'Eine Vase steht im Weg.' };
 
 // rel: 'f' vor, 'b' zurück, 'l' seitwärts links, 'r' seitwärts rechts
 export function tryMove(state, data, rel) {

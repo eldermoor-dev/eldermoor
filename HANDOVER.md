@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.38.0 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.38.1 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1387,6 +1387,10 @@ Nutzer (18:30, Screenshot Kampf gegen Gießmeister Harkon + Foto eines Gießers 
 - **Runentruhe:** `chest_z_rune` (65,44) im Pumpenkeller trägt `runes: true`, bleibt versiegelt. Drei Wandplatten `rune_z_1..3` (Hebel mit `wall`, `seq: {chest, n}`) in der Nordwand: Ost (69,34) → Mitte (67,34) → West (65,34). Rätselhinweis `sign_z_rune` (71,34): „Beginne dort, wo der Tag beginnt. Ende dort, wo er endet. Die Mitte war immer dazwischen.“ Falsche Platte setzt alle zurück (Meldung „Von vorn“). Beute: 130 Gold, Heiltrank groß, Zaubertrank groß, Ausrüstung Stufe 3. Technik: `runePlate`, Truhen-Felder `prog`, `runesOk`.
 - Neue Objekte werden in alten Ständen per `syncStatic` nachgeliefert (Test). Tests 157 grün. Keine Werteänderung bei Gegnern/Helden: BALANCE.md/SIM.md unverändert.
 - Offen auf dem Gerät: Flut spürbar, aber fair? (Zahlen sind Vermutung, nicht getestet); Wart blockiert die Tür sichtbar; Überreden beide Ausgänge; Platten reagieren, Reihenfolge lösbar mit Kompass; Truhe öffnet sich danach. Tuning-Hebel: `FLOOD_PCT` in logic.js, Preis in `dialogs.wart.nodes.a`.
+
+## 0.38.1 (25.11.2026; headless, nicht auf Gerät getestet)
+- Nutzer (00:34): „Wenn ich gegen Gegenstände laufe steht da Gegner im Weg, ändern.“ Ursache (belegt im Code): `blockedText` kannte Einrichtung (`decor`) nicht und fiel auf „Ein Gegner steht im Weg.“ zurück.
+- Änderung: eigene Texte je Einrichtung (Fass, Schutthaufen, Palme, Kaktus, Tisch, Stuhl, Boot, Kamin, Regal, Bett, Hängematte, Herd, Vase, z. B. „Ein Fass versperrt den Weg.“); „Gegner“ steht nur noch bei echten Gegnern, alles Übrige: „Hier steht etwas im Weg.“ Test mit Fass in der Nebelturm-Ebene. Tests 158 grün. Keine Werteänderung.
 
 ## Für den nächsten Chat (Stand 25.11.2026)
 - Offene Gerätetests (alle bisher nur headless): Zisterne-Paket 0.38.0 (Flut/Pumpenhahn, Schleusenwart, Runentruhe), neues Gießmeister-Bild (0.37.1), Zisterne (0.37.0), Gießerei (0.36.0), Notizbuch (0.35.0), Shop-Scrollposition bei Hedda (0.35.0), Treppen/Thronsaal (0.34.2), B-Talentwege (0.35.1), Taverne (0.34.0), Spinnenhöhle (0.33.0).

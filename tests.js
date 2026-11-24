@@ -2975,6 +2975,12 @@ export async function runTests(data, env = {}) {
     // Erreichbarkeit: Pumpenkeller-Truhe, Hahn und Tür des Pumpenhauses liegen auf begehbaren Feldern
     const lvl = data.levels.festung6; for (const id of ['chest_z_rune', 'lever_z_pumpe', 'npc_z_wart', 'sign_z_rune', 'sign_z_hahn', 'sign_z_flut']) { const o = lvl.objects.find((q) => q.id === id); assert(o && (o.type === 'lever' && o.wall ? true : lvl.map[o.y][o.x] === '.'), id + ' liegt auf Boden'); }
   });
+  await test('0.38.1 Hindernis-Texte: Einrichtung heißt nicht „Gegner“', () => {
+    const s = L.newGame(data, 5); L.jumpToLevel(s, data, 'nebelturm'); const lv = L.getLevel(data, s);
+    const d = s.objs.find((o) => o.type === 'decor' && o.look === 'fass'); assert(d, 'Fass vorhanden');
+    for (const [dir, dx, dy] of [[0, 0, 1], [1, -1, 0], [2, 0, -1], [3, 1, 0]]) { /* Gruppe neben das Fass stellen und hineinlaufen */ const px = d.x + dx, py = d.y + dy; if (L.cellChar(lv, px, py) === '.' && !L.blockerAt(s, px, py)) { s.player = { x: px, y: py, dir }; const r = L.tryMove(s, data, 'f'); assert(!r.moved && /Fass/.test(r.msg) && !/Gegner/.test(r.msg), 'Fass: ' + r.msg); return; } }
+    assert(false, 'kein freies Nachbarfeld am Fass');
+  });
   const failed = results.filter((r) => !r.ok).length; // 0.23.0: erst am Ende zählen (vorher fehlten spätere Tests in der Summe)
   return { results, passed: results.length - failed, failed };
 }
