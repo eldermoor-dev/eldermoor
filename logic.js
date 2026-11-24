@@ -1220,13 +1220,14 @@ export function unequipItem(state, data, heroIdx, slot) {
 // Erzeugt eine Ausrüstung aus einem Grundgegenstand (data.lootBases): Qualität nach Gewichten (boost = so oft neu gewürfelt, bestes zählt),
 // Qualität gibt +statBonus auf den Hauptwert (Waffe: Angriff, Rüstung: Verteidigung) und affixes Zufallseigenschaften (data.affixes).
 export function rollGear(state, data, opts = {}) {
-  const bases = (data.lootBases || []).filter((id) => data.items[id] && data.items[id].kind === 'equip' && (!opts.slot || data.items[id].slot === opts.slot));
+  const bases = (opts.bases || data.lootBases || []).filter((id) => data.items[id] && data.items[id].kind === 'equip' && (!opts.slot || data.items[id].slot === opts.slot));
   if (!bases.length) return null;
   const base = data.items[bases[randInt(state, 0, bases.length - 1)]], baseId = bases.find((id) => data.items[id] === base);
   const Q = data.quality, total = Q.reduce((n, q) => n + q.weight, 0);
   const pick = () => { let r = rand(state) * total; for (let i = 0; i < Q.length; i++) { r -= Q[i].weight; if (r < 0) return i; } return 0; };
   let qi = pick();
   for (let b = 0; b < (opts.boost || 0); b++) qi = Math.max(qi, pick());
+  qi = Math.max(qi, Math.min(Q.length - 1, opts.minQ || 0)); // 0.37.5: Mindestqualität (Index) für Bosse
   const q = Q[qi];
   const inst = { kind: 'equip', base: baseId, slot: base.slot, q: q.id, atk: base.atk || 0, def: base.def || 0, init: 0, classes: base.classes ? [...base.classes] : null, name: base.name };
   inst[base.slot === 'weapon' ? 'atk' : 'def'] += q.statBonus;

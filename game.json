@@ -524,6 +524,60 @@
       },
       "init": 2,
       "desc": "Ring. +2 Initiative, Statusabwehr 20 %. Von der Quellhüterin Maris."
+    },
+    "kriegsklinge": {
+      "name": "Kriegsklinge",
+      "kind": "equip",
+      "slot": "weapon",
+      "atk": 5,
+      "classes": [
+        "warrior",
+        "rogue",
+        "ranger"
+      ],
+      "desc": "Waffe. +5 Angriff. Für Krieger, Schurke, Waldläufer.",
+      "value": 210
+    },
+    "arkanstab": {
+      "name": "Arkanstab",
+      "kind": "equip",
+      "slot": "weapon",
+      "atk": 5,
+      "classes": [
+        "mage",
+        "priest",
+        "alchemist"
+      ],
+      "desc": "Waffe. +5 Angriff. Für Magier, Kleriker und Alchemisten.",
+      "value": 210
+    },
+    "bollwerkpanzer": {
+      "name": "Bollwerkpanzer",
+      "kind": "equip",
+      "slot": "armor",
+      "def": 5,
+      "classes": [
+        "warrior",
+        "priest",
+        "ranger"
+      ],
+      "desc": "Rüstung. +5 Verteidigung. Für Krieger, Kleriker, Waldläufer.",
+      "value": 260
+    },
+    "schattenschuppe": {
+      "name": "Schattenschuppe",
+      "kind": "equip",
+      "slot": "armor",
+      "def": 4,
+      "classes": [
+        "rogue",
+        "mage",
+        "priest",
+        "ranger",
+        "alchemist"
+      ],
+      "desc": "Rüstung. +4 Verteidigung. Für alle außer Krieger.",
+      "value": 230
     }
   },
   "races": {
@@ -1706,7 +1760,14 @@
       ],
       "gearDrop": {
         "chance": 100,
-        "boost": 2
+        "boost": 2,
+        "bases": [
+          "stahlschwert",
+          "runenstab",
+          "schuppenpanzer",
+          "plattenpanzer"
+        ],
+        "minQ": 1
       },
       "intro": {
         "title": "Die Blutgräfin",
@@ -1803,7 +1864,14 @@
       ],
       "gearDrop": {
         "chance": 100,
-        "boost": 2
+        "boost": 2,
+        "bases": [
+          "stahlschwert",
+          "runenstab",
+          "schuppenpanzer",
+          "plattenpanzer"
+        ],
+        "minQ": 1
       },
       "intro": {
         "title": "Der Teufel",
@@ -1948,7 +2016,14 @@
       ],
       "gearDrop": {
         "chance": 100,
-        "boost": 2
+        "boost": 2,
+        "bases": [
+          "stahlschwert",
+          "runenstab",
+          "schuppenpanzer",
+          "plattenpanzer"
+        ],
+        "minQ": 1
       },
       "intro": {
         "title": "Die Spinnenkönigin",
@@ -2090,7 +2165,14 @@
       ],
       "gearDrop": {
         "chance": 100,
-        "boost": 2
+        "boost": 2,
+        "bases": [
+          "kriegsklinge",
+          "arkanstab",
+          "bollwerkpanzer",
+          "schattenschuppe"
+        ],
+        "minQ": 2
       },
       "intro": {
         "title": "Gießmeister Harkon",
@@ -2204,7 +2286,14 @@
       ],
       "gearDrop": {
         "chance": 100,
-        "boost": 2
+        "boost": 2,
+        "bases": [
+          "kriegsklinge",
+          "arkanstab",
+          "bollwerkpanzer",
+          "schattenschuppe"
+        ],
+        "minQ": 2
       },
       "intro": {
         "title": "Quellhüterin Maris",

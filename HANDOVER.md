@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.37.4 (24.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.37.5 (24.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1395,4 +1395,11 @@ Nutzer (18:30, Screenshot Kampf gegen Gießmeister Harkon + Foto eines Gießers 
 - Nutzer (18:56): „Schlackenwächter sieht einer anderen Spielfigur zu ähnlich. Umgestalten.“ Befund (belegt): `schlackenwaechter` nutzte das Sprite der Turmwache (`spriteFor`), beide sahen gleich aus.
 - Änderung (render.js): neues Sprite `genSchlacke(197)` (`sprites.schlacke`): gedrungener Golem aus dunkler, erkalteter Schlacke mit glühenden Rissen, leuchtendem Kern in der Brust, kleinem Kopf mit Zacken und Glutaugen, riesiger linker Faust, erhobenem Schlackenblock als Hammer (passt zum Hammerschlag), geschmolzener Pfütze am Boden. `spriteFor` ordnet `schlackenwaechter` zu; `turmwache` behält ihr Bild. Größe (`bossScale` 0,9) unverändert.
 - Keine Werte-/Datenänderung, BALANCE.md/SIM.md unverändert. Tests 154 grün. Vorschau nur als Einzelbild in Node (Palette „glut“); Wirkung im Kampf/Gruppe neben Gießmeister nicht auf Gerät getestet.
+
+## 0.37.5 (24.11.2026; headless, nicht auf Gerät getestet)
+- Nutzer (19:16): „Die letzten 3 Gegenstände Ausrüstung nach Bosskampf sehen brachte keine Verbesserung mehr. Ändern.“ Welche drei Bosse gemeint sind, ist nicht gesichert (Vermutung: Spinnenkönigin, Gießmeister, Quellhüterin oder Blutgräfin).
+- Ursache (aus den Daten belegt): Bosse würfelten Ausrüstung nur aus `lootBases` (Eisenschwert +2, Eichenstab +2, Lederharnisch +1, Kettenhemd +2); mit Qualitätsbonus (+1/+2) und Eigenschaften ergibt das höchstens etwa +4/+5, was Händlerware (Stahlschwert/Runenstab +4, Plattenpanzer +4) und Unikate schon erreichen.
+- Änderung: `gearDrop` kennt jetzt `bases` (eigene Grundgegenstände) und `minQ` (Mindestqualität als Index: 0 gewöhnlich, 1 gut, 2 selten, 3 episch); `rollGear` wertet beides aus. Stufe 2 (Blutgräfin, Spinnenkönigin, Teufel): Stahlschwert, Runenstab, Schuppenpanzer, Plattenpanzer, mindestens „Gut“. Stufe 3 (Gießmeister, Quellhüterin): neue Gegenstände Kriegsklinge +5 Angriff, Arkanstab +5 Angriff, Bollwerkpanzer +5 Vert., Schattenschuppe +4 Vert. (nicht im Handel, nicht in `lootBases`), mindestens „Selten“, also mindestens +6 Angriff bzw. +6/+5 Verteidigung plus Eigenschaft. Boss-Boost bleibt. Frühere Bosse (Schrat, Hauptmann, Grubenschrat, Nebelhüter) unverändert. Normale Gegner und Truhen unverändert.
+- Keine Gegner-/Heldenwerte geändert; BALANCE.md neu erzeugt (unverändert), SIM.md unverändert (Simulation nutzt Bossbeute nicht). Alte Spielstände: bereits gefallene Beute bleibt; Wirkung gilt für noch nicht besiegte Bosse (Beute wird beim Sieg gewürfelt). Tests 155 grün.
+- Offen: Wirkung auf dem Gerät; ob die gemeinte Beute eher Ringe/Amulette waren (feste Unikate, nicht geändert).
 

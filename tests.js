@@ -594,6 +594,19 @@ export async function runTests(data, env = {}) {
     }
   });
 
+  await test('0.37.5 Bossbeute: stärkere Grundgegenstände und Mindestqualität', () => {
+    const val = (id) => { const i = data.items[id]; return (i.atk || 0) + (i.def || 0); };
+    for (const k of ['blutgraefin', 'spinnenkoenigin', 'teufel', 'giessmeister', 'quellhueterin']) {
+      const g = data.enemies[k].gearDrop; assert(g.bases && g.bases.length === 4 && g.minQ >= 1, k + ' Daten');
+      for (const id of g.bases) { assert(data.items[id] && data.items[id].kind === 'equip', k + ' ' + id); assert(!(data.lootBases || []).includes(id), id + ' nicht in lootBases'); }
+      const best = Math.max(...data.lootBases.map(val)); assert(g.bases.every((id) => val(id) > best - 1) && g.bases.some((id) => val(id) > best), k + ' besser als normale Beute');
+      const sh = Object.values(data.shops).flatMap((s2) => s2.stock.map((x) => x.item)); if (g.minQ >= 2) assert(g.bases.every((id) => !sh.includes(id)), id0(g) + ' nicht im Handel');
+      for (let i = 0; i < 40; i++) { const s = fresh(900 + i), inst = L.rollGear(s, data, g); assert(g.bases.includes(inst.base), 'Basis'); assert(data.quality.findIndex((q) => q.id === inst.q) >= g.minQ, 'Mindestqualität'); }
+    }
+    function id0(g) { return g.bases[0]; }
+    const w = L.rollGear(fresh(5), data, { bases: ['kriegsklinge'], minQ: 2 }); assert(w.atk >= 6, 'Kriegsklinge selten ab +6 Angriff: ' + w.atk);
+  });
+
   await test('0.37.0 Quellhüterin: Boss mit Phasen, Ankündigung, Heilzauber, Ring der Tiefe', () => {
     const b = data.enemies.quellhueterin;
     assert(b.boss && b.phases.length >= 2 && b.intro && data.enemies[b.tactic.call.kind] && b.cast.filter((c) => c.kind === 'bolt').every((c) => c.announce), 'Boss: Phasen, Rufe, Intro, Ankündigung');
