@@ -2256,6 +2256,41 @@ function genGiessmeister(seed) { // 0.37.1 (Nutzer: Gießmeister wirkte wie ein 
     return null;
   });
 }
+function genSchlacke(seed) { // 0.37.4 (Nutzer: Schlackenwächter sah einer anderen Spielfigur zu ähnlich): gedrungener Golem aus erkalteter Schlacke – klumpiger Körper, glühende Risse, Kern in der Brust, riesige Faust, erhobener Schlackenblock als Hammer, geschmolzene Pfütze am Boden
+  return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y, vn }) => {
+    const l = lit(px, py), n = nz(x >> 1, y >> 1);
+    const lump = vn(px * 1.3, py * 1.3, 5) - 0.5; // Klumpen
+    const crack = Math.abs(vn(px * 1.1 + 7, py * 1.1, 6) - 0.5); // Risslinien: nahe 0 = Riss
+    const G = (b) => crack < 0.04 ? ['glow', 4.2 + (0.04 - crack) * 60] : ['iron', b - 0.5 - l * 1.5 + lump * 3 + n * 0.6]; // dunkle Schlacke mit glühenden Rissen
+    const dx = px - 32, ax = Math.abs(dx);
+    // geschmolzene Pfütze und Tropfen am Boden
+    if (ell(px, py, 32, 62, 22, 1.9) <= 1) return ['glow', 3.4 + Math.abs(dx) * -0.05 + n * 1.2 + 1.2];
+    if (hash(px * 2 | 0, 0, seed + 5) > 0.93 && py > 40 && py < 58 && ax < 20 && ell(px, py, px, 50, 0.6, 9) <= 1) return ['glow', 5.2];
+    // Augen und Maul im kleinen, tief sitzenden Kopf
+    if (cap(px, py, 27.4, 13.6, 30.6, 14.6, 0.95, 0.7) || cap(px, py, 36.6, 13.6, 33.4, 14.6, 0.95, 0.7)) return ['glow', 7];
+    if (py > 18.2 && py < 19.8 && ax < 3.6 && (Math.floor(px * 1.6) % 2 === 0)) return ['glow', 5.6];
+    // Hammer: Schlackenblock rechts oben auf glühendem Stiel
+    if (px > 43 && px < 61 && py > 1 && py < 14) { const hx = px - 43, hy = py - 1; if (hx < 1.2 || hx > 16.4 || hy < 1.2 || hy > 11) return ['iron', 0.5 + n * 0.5]; if (hy > 9 || (Math.abs(hx - 8.5) < 0.7 && hy < 9)) return ['glow', 4.8 + n]; return ['iron', 1.5 - l * 1.1 + lump * 3 + n * 0.6]; }
+    if (cap(px, py, 51.5, 12, 51.5, 26, 1.7, 1.7)) return ['iron', 1.6 - l * 0.8 + n * 0.5];
+    // Arme: rechts hebt den Hammer, links hängt eine riesige Faust
+    if (cap(px, py, 44, 28, 51.5, 24, 5, 4.4)) return G(2.4);
+    if (ell(px, py, 52, 23.5, 4.2, 3.6) <= 1) return G(3.1);
+    if (cap(px, py, 19.5, 27, 13.5, 46, 6.2, 5.4)) return G(2.2);
+    if (ell(px, py, 12.6, 51.5, 7.2, 6.4) <= 1) return G(3.0);
+    // Kopf: kantiger Klumpen zwischen den Schultern, Zacken oben
+    if (ell(px, py, 32, 14.5, 8.6, 7.6) <= 1 || cap(px, py, 27, 9, 25.6, 3.4, 2.1, 0.4) || cap(px, py, 37, 9, 38.6, 3.8, 2.1, 0.4)) return G(2.8);
+    // Rumpf mit Kern
+    if (ell(px, py, 32, 33.5, 17.4, 14.2) <= 1) {
+      const core = ell(px, py, 32, 32, 6.2, 7.4);
+      if (core <= 1) return ['glow', 7 - core * 2.4 + n * 0.4];
+      if (core <= 1.5) return ['blood', 4.4];
+      return G(2.5);
+    }
+    // Beine: zwei kurze Pfeiler
+    if (ell(px, py, 24, 54, 7.4, 8.6) <= 1 || ell(px, py, 40, 54, 7.4, 8.6) <= 1) return G(1.9);
+    return null;
+  });
+}
 function genPriester(seed) { // Kultpriester (192 px): Spitzhaube mit drittem Auge, Perlenkette, rote Stola mit goldenen Zeichen, schwebendes Zauberbuch, Schädelstab mit Frostkugel, Räuchergefäß an Ketten, zerrissener Saum mit Runen
   const sparks = Array.from({ length: 8 }, (_, i) => ({ x: 9 + hash(i, 1, seed) * 12, y: 27 + hash(i, 2, seed) * 11, r: 0.35 + hash(i, 3, seed) * 0.4 }));
   return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y, vn }) => {
@@ -2592,7 +2627,7 @@ export function makeTextures(detail = 1) {
     rug: genRug(64, nf),
     paving: genPaving(66, nf),
     ceil: genCeil(53, nf),
-    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), rail: genRail(441), railTorch: genRailTorch(442), palme: sm2(genPalm(461)), fass: sm2(genFurn('fass', 471)), tisch: sm2(genFurn('tisch', 472)), stuhl: sm2(genFurn('stuhl', 473)), bett: sm2(genFurn('bett', 474)), regal: sm2(genFurn('regal', 475)), kamin: sm2(genFurn('kamin', 476)), kaktus: sm2(genFurn('kaktus', 477)), haengematte: sm2(genFurn('haengematte', 478)), spielautomat: sm2(genFurn('spielautomat', 479)), roulette: sm2(genFurn('roulette', 480)), vase: sm2(genFurn('vase', 483)), kueche: sm2(genFurn('kueche', 484)), kartentisch: sm2(genFurn('kartentisch', 481)), teufel: sm2(genDevil(482)), mound: sm2(genMound(463)), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)),  chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), giessmeister: sm2(genGiessmeister(195)), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), fuhrmann: sm2(genFerryman(771)), boot: sm2(genBoat(772)), gnom: sm2(genGnome(773)), spinne: sm2(genSpider(774)), koenigin: sm2(genSpider(777, true)), kokon: sm2(genCocoon(778)), schutt: sm2(genFurn('schutt', 474)), diener: sm2(genVampire(741, 'diener')), brut: sm2(genVampire(742, 'brut')), graefin: sm2(genVampire(743, 'graefin')), wache: sm2(genPerson(721, 'wache')), haendler2: sm2(genVendor2(751)), gefangener: sm2(genPrisoner(761)), wund: sm2(genPerson(731, 'wund')), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), rail: genRail(441), railTorch: genRailTorch(442), palme: sm2(genPalm(461)), fass: sm2(genFurn('fass', 471)), tisch: sm2(genFurn('tisch', 472)), stuhl: sm2(genFurn('stuhl', 473)), bett: sm2(genFurn('bett', 474)), regal: sm2(genFurn('regal', 475)), kamin: sm2(genFurn('kamin', 476)), kaktus: sm2(genFurn('kaktus', 477)), haengematte: sm2(genFurn('haengematte', 478)), spielautomat: sm2(genFurn('spielautomat', 479)), roulette: sm2(genFurn('roulette', 480)), vase: sm2(genFurn('vase', 483)), kueche: sm2(genFurn('kueche', 484)), kartentisch: sm2(genFurn('kartentisch', 481)), teufel: sm2(genDevil(482)), mound: sm2(genMound(463)), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)),  chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), giessmeister: sm2(genGiessmeister(195)), schlacke: sm2(genSchlacke(197)), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), fuhrmann: sm2(genFerryman(771)), boot: sm2(genBoat(772)), gnom: sm2(genGnome(773)), spinne: sm2(genSpider(774)), koenigin: sm2(genSpider(777, true)), kokon: sm2(genCocoon(778)), schutt: sm2(genFurn('schutt', 474)), diener: sm2(genVampire(741, 'diener')), brut: sm2(genVampire(742, 'brut')), graefin: sm2(genVampire(743, 'graefin')), wache: sm2(genPerson(721, 'wache')), haendler2: sm2(genVendor2(751)), gefangener: sm2(genPrisoner(761)), wund: sm2(genPerson(731, 'wund')), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
@@ -2857,7 +2892,7 @@ export function buildGrid(lvl, objs) {
   for (const o of objs) { if (o.type === 'secret' && !o.open) grid[o.y * w + o.x] = WALL_SECRET; else if (o.type === 'lever' && o.wall) grid[o.y * w + o.x] = o.torch ? WALL_TORCH : o.used ? WALL_SWITCH_ON : WALL_SWITCH; } // torch (0.23.7): Schalter sieht aus wie eine gewöhnliche Wandfackel
   return { grid, gw: w, gh: h };
 }
-const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : (k === 'turmwache' || k === 'schlackenwaechter') ? tex.sprites.turmwache : k === 'wolf' ? tex.sprites.wolf : k === 'kultist' ? tex.sprites.kultist : k === 'hauptmann' ? tex.sprites.captain : k === 'giessmeister' ? tex.sprites.giessmeister : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : (k === 'kultpriester' || k === 'quellhueterin') ? tex.sprites.priester : k === 'truhenmaul' ? tex.sprites.mimic : k === 'brandmagier' ? tex.sprites.magier : (k === 'riesenspinne' || k === 'brutspinne' || k === 'netzwaechter') ? tex.sprites.spinne : k === 'spinnenkoenigin' ? tex.sprites.koenigin : k === 'blutdiener' ? tex.sprites.diener : k === 'vampirbrut' ? tex.sprites.brut : k === 'blutgraefin' ? tex.sprites.graefin : k === 'teufel' ? tex.sprites.teufel : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
+const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'turmwache' ? tex.sprites.turmwache : k === 'schlackenwaechter' ? tex.sprites.schlacke : k === 'wolf' ? tex.sprites.wolf : k === 'kultist' ? tex.sprites.kultist : k === 'hauptmann' ? tex.sprites.captain : k === 'giessmeister' ? tex.sprites.giessmeister : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : (k === 'kultpriester' || k === 'quellhueterin') ? tex.sprites.priester : k === 'truhenmaul' ? tex.sprites.mimic : k === 'brandmagier' ? tex.sprites.magier : (k === 'riesenspinne' || k === 'brutspinne' || k === 'netzwaechter') ? tex.sprites.spinne : k === 'spinnenkoenigin' ? tex.sprites.koenigin : k === 'blutdiener' ? tex.sprites.diener : k === 'vampirbrut' ? tex.sprites.brut : k === 'blutgraefin' ? tex.sprites.graefin : k === 'teufel' ? tex.sprites.teufel : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
 const bossScale = (k) => (k === 'schrat' || k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' || k === 'blutgraefin' || k === 'giessmeister' || k === 'quellhueterin' ? 1.12 : k === 'truhenmaul' ? 0.8 : k === 'spinnenkoenigin' ? 1.4 : k === 'brutspinne' ? 0.7 : k === 'netzwaechter' ? 1.0 : k === 'riesenspinne' ? 1.15 : k === 'teufel' ? 1.12 : 0.9); // Bosse stehen größer im Gang
 export const GROUP_SCALE = 0.78, GROUP_GAP = 0.44, CHEST_SCALE = 0.58; // 0.16.4: Gruppen vorher 0.62/0.36, Truhe 0.5 (Nutzer: zu klein, hinter der Leiste)
 let combatFit = 1; // 0.16.17: im Kampf verkleinert die Kamera zu große Figuren so, dass sie samt Füßen über der Leiste ins Bild passen

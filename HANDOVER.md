@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.37.3 (24.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.37.4 (24.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1390,4 +1390,9 @@ Nutzer (18:30, Screenshot Kampf gegen Gießmeister Harkon + Foto eines Gießers 
 - Nutzer (18:55): „Die Maultruhe kann nicht bluten“. Deutung (Vermutung, nicht gesichert): gemeint ist das Truhenmaul (Mimik) – eine Holztruhe soll nicht bluten, also immun gegen Blutung. Nicht auf dem Gerät nachgestellt; im Code belegt: Heldenangriffe/Kombis (Zornhieb, Meucheln, Offene Wunde) setzten Blutung auch auf das Truhenmaul. Die Blutung, die das Truhenmaul selbst auf Helden setzt (Biss, 30 %), bleibt.
 - Änderung: neues Datenfeld `enemies.<art>.immune = [Status]` (logic.js `addStatus`, Meldung „X ist immun gegen Blutung.“, `addStatus` jetzt exportiert für Tests). Belegt nur `truhenmaul: ["bleed"]`. Test: Truhenmaul immun, Wolf nicht. Tests 154 grün. Keine Wertänderung, BALANCE.md/SIM.md unverändert.
 - Offen/Vorschlag (nicht gebaut): Skelett, Schlackenwächter, Nebelgeist, Moorlicht, Teufel ebenfalls blutimmun? Bestiarium zeigt Immunität noch nicht.
+
+## 0.37.4 (24.11.2026; headless, nicht auf Gerät getestet)
+- Nutzer (18:56): „Schlackenwächter sieht einer anderen Spielfigur zu ähnlich. Umgestalten.“ Befund (belegt): `schlackenwaechter` nutzte das Sprite der Turmwache (`spriteFor`), beide sahen gleich aus.
+- Änderung (render.js): neues Sprite `genSchlacke(197)` (`sprites.schlacke`): gedrungener Golem aus dunkler, erkalteter Schlacke mit glühenden Rissen, leuchtendem Kern in der Brust, kleinem Kopf mit Zacken und Glutaugen, riesiger linker Faust, erhobenem Schlackenblock als Hammer (passt zum Hammerschlag), geschmolzener Pfütze am Boden. `spriteFor` ordnet `schlackenwaechter` zu; `turmwache` behält ihr Bild. Größe (`bossScale` 0,9) unverändert.
+- Keine Werte-/Datenänderung, BALANCE.md/SIM.md unverändert. Tests 154 grün. Vorschau nur als Einzelbild in Node (Palette „glut“); Wirkung im Kampf/Gruppe neben Gießmeister nicht auf Gerät getestet.
 
