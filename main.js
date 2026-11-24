@@ -4,13 +4,13 @@ import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
   buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, pushError, formatErrorLog, itemDef, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, partyAvgLevel, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
-  activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogEnter, dialogChoose, diceNew, diceRoll, diceKeep, diceNext, diceFinish, diceRoundLine, recruitHero, swapHero, dismissReserve, recruitCost, RESERVE_MAX,
+  activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogEnter, roomAt, dialogChoose, diceNew, diceRoll, diceKeep, diceNext, diceFinish, diceRoundLine, recruitHero, swapHero, dismissReserve, recruitCost, RESERVE_MAX,
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.37.5';
+const VERSION = '0.37.6';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -1293,7 +1293,7 @@ const talentNodesOf = (d, h, b) => b.nodes.map((n, ni) => ({ ...n, ni, cost: (d.
 function openMap() {
   const w = S.lvl.map[0].length, h = S.lvl.map.length;
   const cs = 3 * Math.max(8, Math.min(Math.floor(560 / w), Math.floor(230 / h))); // 0.19.5: dreifache Auflösung, damit Zoomen scharf bleibt
-  openModal(`<h2 style="margin:0 0 4px">Karte – ${esc(S.lvl.name)}</h2><div class="mapwrap"><div id="mapvp"><canvas id="mapcv" width="${cs * w}" height="${cs * h}"></canvas></div>${mapLegendHtml()}</div>
+  openModal(`<h2 style="margin:0 0 4px">Karte – ${esc(S.lvl.name)}<span id="mapname" style="font-size:.7em;font-weight:normal;color:var(--gold,#e0b45a);margin-left:10px"></span></h2><div class="mapwrap"><div id="mapvp"><canvas id="mapcv" width="${cs * w}" height="${cs * h}"></canvas></div>${mapLegendHtml()}</div>
   <div class="acts mapbar"><span class="muted">Blick: ${DIR_NAMES[S.game.player.dir]} · Tippen = Notiz ◆ · 2 Finger oder ＋/− = Zoom, Ziehen = Verschieben</span><button class="mb" id="mz-in" aria-label="Vergrößern">＋</button><button class="mb" id="mz-out" aria-label="Verkleinern">−</button><button class="mb" id="mz-reset" aria-label="Zoom zurücksetzen">1:1</button>${closeBtn}</div>`, 'map');
   paintLegend();
   const cv = $('#mapcv'), vp = $('#mapvp');
@@ -1308,6 +1308,7 @@ function openMap() {
     const x = Math.floor((e.clientX - r.left) * cv.width / r.width / cs), y = Math.floor((e.clientY - r.top) * cv.height / r.height / cs);
     const idx = y * w + x;
     if (x < 0 || y < 0 || x >= w || y >= h || !S.game.seen[idx] || cellChar(S.lvl, x, y) !== '.') return;
+    const rn = roomAt(S.lvl, x, y), mn = $('#mapname'); if (mn) mn.textContent = rn ? '· ' + rn : ''; // 0.37.6: Raumname beim Antippen
     const i = S.game.notes.indexOf(idx);
     if (i >= 0) S.game.notes.splice(i, 1); else S.game.notes.push(idx);
     S.sfx.play('ui');

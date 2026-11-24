@@ -859,6 +859,12 @@ export function dialogEnter(state, data, npc, nodeId) {
   if (!nd || !nd.note) return { newNote: false };
   return { newNote: noteClue(state, 'dlg:' + npc.id + ':x', nd.noteTitle || npc.name || 'Gespräch', nd.note) };
 }
+// 0.37.6: Raumname für die Karte – levels.<id>.rooms = [{name, x0, y0, x1, y1}] (Rechtecke inklusive, erster Treffer gilt, spezielle vor allgemeinen); ohne Treffer 'Gang', ohne rooms-Liste null
+export function roomAt(lvl, x, y) {
+  if (!lvl || !Array.isArray(lvl.rooms) || !lvl.rooms.length) return null;
+  const r = lvl.rooms.find((q) => x >= q.x0 && x <= q.x1 && y >= q.y0 && y <= q.y1);
+  return r ? r.name : 'Gang';
+}
 // ---------- Würfelspiel mit Murmel (0.32.0) ----------
 // data.dicegame = { stakes, rules, amulet, devilKind, devilGame, intro:{...}, hint, amuletLine, devilLine, murmelLoses[], murmelWins[], roundWin[], roundLose[] }
 // Ablauf: Jede Runde würfeln beide drei Würfel (Murmels liegen offen). Die Gruppe darf einen eigenen Würfel einmal neu werfen, danach wirft Murmel seinen niedrigsten

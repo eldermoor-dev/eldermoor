@@ -607,6 +607,15 @@ export async function runTests(data, env = {}) {
     const w = L.rollGear(fresh(5), data, { bases: ['kriegsklinge'], minQ: 2 }); assert(w.atk >= 6, 'Kriegsklinge selten ab +6 Angriff: ' + w.atk);
   });
 
+  await test('0.37.6 Raumnamen der Zisterne für die Karte', () => {
+    const lv = data.levels.festung6;
+    eq(L.roomAt(lv, 30, 45), 'Schleusen', 'Schleusen'); eq(L.roomAt(lv, 30, 5), 'Pumpenhaus', 'Pumpenhaus'); eq(L.roomAt(lv, 40, 25), 'Mittelinsel', 'Mittelinsel');
+    eq(L.roomAt(lv, 70, 25), 'Quellkammer', 'Quellkammer'); eq(L.roomAt(lv, 21, 16), 'Hüterplattform I', 'Plattform'); eq(L.roomAt(lv, 5, 25), 'Ankunftshalle', 'Ankunft');
+    eq(L.roomAt(data.levels.test1, 1, 1), null, 'ohne rooms');
+    // jede begehbare Zelle der Zisterne hat einen Namen (Gang gilt, wenn kein Raum passt); Räume liegen auf Boden
+    for (const r of lv.rooms) { let floor = 0; for (let y = r.y0; y <= r.y1; y++) for (let x = r.x0; x <= r.x1; x++) if (lv.map[y][x] === '.') floor++; assert(floor > 3, r.name + ' enthält Boden'); }
+  });
+
   await test('0.37.0 Quellhüterin: Boss mit Phasen, Ankündigung, Heilzauber, Ring der Tiefe', () => {
     const b = data.enemies.quellhueterin;
     assert(b.boss && b.phases.length >= 2 && b.intro && data.enemies[b.tactic.call.kind] && b.cast.filter((c) => c.kind === 'bolt').every((c) => c.announce), 'Boss: Phasen, Rufe, Intro, Ankündigung');

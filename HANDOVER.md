@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.37.5 (24.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.37.6 (24.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1402,4 +1402,10 @@ Nutzer (18:30, Screenshot Kampf gegen Gießmeister Harkon + Foto eines Gießers 
 - Änderung: `gearDrop` kennt jetzt `bases` (eigene Grundgegenstände) und `minQ` (Mindestqualität als Index: 0 gewöhnlich, 1 gut, 2 selten, 3 episch); `rollGear` wertet beides aus. Stufe 2 (Blutgräfin, Spinnenkönigin, Teufel): Stahlschwert, Runenstab, Schuppenpanzer, Plattenpanzer, mindestens „Gut“. Stufe 3 (Gießmeister, Quellhüterin): neue Gegenstände Kriegsklinge +5 Angriff, Arkanstab +5 Angriff, Bollwerkpanzer +5 Vert., Schattenschuppe +4 Vert. (nicht im Handel, nicht in `lootBases`), mindestens „Selten“, also mindestens +6 Angriff bzw. +6/+5 Verteidigung plus Eigenschaft. Boss-Boost bleibt. Frühere Bosse (Schrat, Hauptmann, Grubenschrat, Nebelhüter) unverändert. Normale Gegner und Truhen unverändert.
 - Keine Gegner-/Heldenwerte geändert; BALANCE.md neu erzeugt (unverändert), SIM.md unverändert (Simulation nutzt Bossbeute nicht). Alte Spielstände: bereits gefallene Beute bleibt; Wirkung gilt für noch nicht besiegte Bosse (Beute wird beim Sieg gewürfelt). Tests 155 grün.
 - Offen: Wirkung auf dem Gerät; ob die gemeinte Beute eher Ringe/Amulette waren (feste Unikate, nicht geändert).
+
+## 0.37.6 (24.11.2026; headless, nicht auf Gerät getestet)
+- Nutzer (19:34): „Bei tippen auf die Minister wird der Raumname genannt zb schleusen, etc“. Deutung (Vermutung, nicht gesichert): „Minister“ = Minimap/Karte; eine Minimap im Bild gibt es nicht, also das Kartenfenster (Menü → Karte).
+- Änderung: Tippen auf ein erkundetes Bodenfeld der Karte zeigt den Raumnamen rechts neben der Überschrift („Karte – Die Zisterne · Schleusen“). Das bisherige Verhalten (Tippen setzt/entfernt eine Notiz ◆) bleibt; beim Namenlesen entsteht also auch eine Notiz, zweites Tippen entfernt sie (Alternative: Auswahl ohne Notiz, nur auf Wunsch).
+- Daten: `levels.<id>.rooms = [{name,x0,y0,x1,y1}]` (Rechtecke inklusive, erster Treffer gilt, spezielle vor allgemeinen), `roomAt` in logic.js; Felder ohne Raum heißen „Gang“, Gebiete ohne `rooms` zeigen keinen Namen. Bisher nur die Zisterne beschriftet (Ankunftshalle, Wächterkammer, Kerker, vier Hüterplattformen, Mittelinsel, Pumpenhaus, Schleusen, Sickerhalle, Archiv, Pumpenkeller, Quellkammer, Kanalnetz, Große Wasserhalle). Rechtecke nach der Karte gesetzt, Lage nicht auf dem Gerät geprüft.
+- Offen: Raumnamen für die übrigen Gebiete (Gießerei, Blutgruft usw.) nach demselben Muster. Tests 156 grün. Keine Werteänderung, BALANCE.md/SIM.md unverändert.
 
