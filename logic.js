@@ -750,6 +750,16 @@ export function noteClue(state, id, title, text) {
 const isClueSign = (o) => o && o.type === 'sign' && o.text && !/^(dk_|deco_)/.test(o.id);
 const signClue = (state, o) => { const r = { msg: o.text, sfx: 'ui', long: true }; if (isClueSign(o) && noteClue(state, o.id, String(o.title || 'Tafel').replace(/\|/g, ' '), o.text)) r.newNote = true; return r; };
 const recClue = (state, id, title, text, r) => { if (noteClue(state, id, title, text)) r.newNote = true; return r; };
+function runePlate(state, o) {
+  const ch = state.objs.find((x) => x.id === o.seq.chest), plates = state.objs.filter((x) => x.type === 'lever' && x.seq && x.seq.chest === o.seq.chest);
+  if (!ch || ch.runesOk) return { msg: 'Die Rune ist erloschen. Das Siegel der Truhe ist längst gelöst.', sfx: 'ui' };
+  if (o.used) return { msg: 'Diese Platte ist schon eingedrückt.', sfx: 'ui' };
+  const want = (ch.prog || 0) + 1;
+  if (o.seq.n !== want) { ch.prog = 0; for (const p of plates) p.used = false; return { msg: 'Die Platte sinkt ein. Ein Zischen läuft durch den Boden, und alle Platten springen zurück. Von vorn.', sfx: 'bump', changed: true }; }
+  o.used = true; ch.prog = want;
+  if (want >= plates.length) { ch.runesOk = true; return { msg: 'Die letzte Rune leuchtet auf. Weit im Süden des Raums knackt ein Siegel.', sfx: 'unlock', changed: true, long: true }; }
+  return { msg: `Die Platte rastet ein, die Rune glimmt (${want} von ${plates.length}).`, sfx: 'door', changed: true };
+}
 export function interact(state, data, target = null) { // target (0.26.2): Objekt, das aus 2 Feldern Abstand benutzt wird (nur Türen)
   const f = frontCell(state);
   const o = target || blockerAt(state, f.x, f.y);
@@ -806,15 +816,18 @@ export function interact(state, data, target = null) { // target (0.26.2): Objek
   if (o.type === 'gate' && o.web) { o.open = true; const w = state.heroes.find((h) => h.hp > 0 && (h.row === 'front')) || state.heroes.find((h) => h.hp > 0); return { msg: o.cutMsg || `${w ? w.name : 'Jemand'} durchtrennt das zähe Netz. Die Fäden zucken noch einen Augenblick nach.`, sfx: 'door', changed: true }; } // 0.33.0: Spinnennetz – mit ◉ oder Dagegenlaufen durchtrennen
   if (o.type === 'gate') { const gr = { msg: o.hint || 'Das Gitter sitzt fest. Es muss einen Hebel geben.', sfx: 'bump' }; return o.hint ? recClue(state, o.id, 'Gitter', o.hint, gr) : gr; }
   if (o.type === 'lever') { // wall: true = versteckter Schalter (lockerer Stein in der Mauer); Ziel ist ein Gitter oder eine Geheimwand
+    if (o.seq) return runePlate(state, o); // 0.38.0: Runenplatten in fester Reihenfolge
     const gate = state.objs.find((x) => x.id === o.gate);
     if (o.used) return { msg: o.torch ? 'Die Fackel ist schon gedreht.' : o.wall ? 'Der Stein ist schon eingedrückt.' : 'Der Hebel ist schon umgelegt.', sfx: 'ui' };
     o.used = true;
     if (gate) gate.open = true;
+    for (const f of o.set || []) state.flags[f] = true; // 0.38.0: Hebel kann Marken setzen (Pumpenhahn)
     return { msg: o.msg || (o.torch ? 'Die Fackel lässt sich drehen. In der Nähe schabt Stein über Stein.' : o.wall ? 'Der Stein gibt nach. In der Nähe schabt Stein über Stein.' : 'Der Hebel rastet ein. Irgendwo rasselt eine Kette.'), sfx: 'door', changed: true };
   }
   if (o.type === 'chest') {
     if (o.open) return { msg: 'Die Truhe ist leer.' };
     if (chestGuarded(state, data, o)) return { msg: 'Die Truhe ist bewacht. Erst die Gegner in diesem Raum besiegen.', sfx: 'bump', guarded: true };
+    if (o.runes && !o.runesOk) return { msg: 'Die Truhe ist mit Runen versiegelt. Die Platten an der Nordwand gehören dazu.', sfx: 'bump' }; // 0.38.0
     const cfg = chestCfg(state, data, o), pre = [];
     if (cfg.mimic) return wakeMimic(state, data, o, cfg);
     if (cfg.trap && !o.trapDone) { const r = chestTrap(state, data, o, cfg); if (r.stop) return r; pre.push(r.msg); }
@@ -948,7 +961,7 @@ export function dialogChoose(state, data, npc, nodeId, idx) {
   if (c.dice) { // 0.28.0: Würfel – Zahl 1–10; gerade → dice.even, ungerade → dice.odd (Felder wie bei einer Wahl: give, set, done, leave, attack, goto, msg, to)
     const roll = randInt(state, 1, 10);
     eff = Object.assign({}, c.dice[roll % 2 === 0 ? 'even' : 'odd']);
-    msgs.push(`Der Würfel zeigt ${roll}.`);
+    if (!c.noRoll) msgs.push(`Der Würfel zeigt ${roll}.`); // 0.38.0: noRoll = Zufall ohne Würfeltext (Überreden)
     next = eff.to || null;
     if (c.msg) msgs.push(c.msg);
   }
@@ -1499,6 +1512,8 @@ export function startCombat(state, data, enemyObj, opts = {}) {
     order: [], pos: 0, round: 1, defending: {}, status: {}, over: null, ambush: !!opts.ambush, startMsgs: [], struck: {}
   };
   const c0 = state.combat;
+  { const lo = (getLevel(data, state).objects || []).find((q) => q.id === enemyObj.id), fl = lo && lo.flood; // 0.38.0: Flutkampf; `off` = Marke, die der Pumpenhahn setzt
+    if (fl) { c0.flood = { on: !state.flags[fl.off] }; c0.startMsgs.push(c0.flood.on ? 'Die Pumpen laufen noch: das Wasser steigt mit jeder Runde. Wer lange kämpft, steht bald bis zur Brust im Wasser.' : 'Die Pumpen stehen still. Das Wasser bleibt unten.'); } }
   for (const e of c0.enemies) for (const fx of data.enemies[e.kind].flagFx || []) if (state.flags[fx.flag]) { // 0.34.0: z. B. Alders Rat (spinne:schwaeche)
     e.fx = { resist: { ...((e.fx || {}).resist || {}), ...(fx.resist || {}) }, callChance: ((e.fx || {}).callChance || 0) + (fx.callChance || 0) };
     if (fx.msg && !c0.startMsgs.includes(fx.msg)) c0.startMsgs.push(fx.msg);
@@ -1599,13 +1614,24 @@ export function skipStunned(state, data) {
   if (endOfTurn(state, data, a.side, a.idx, msgs)) { finishVictory(state, data, msgs); return { msgs, sfx: 'miss', over: 'victory' }; }
   checkRage(state, data, msgs);
   checkPhases(state, data, msgs);
-  advance(state, data);
+  advance(state, data, msgs);
   return { msgs, sfx: 'miss', over: null };
 }
 
-function advance(state, data) {
-  state.combat.pos++;
+function advance(state, data, msgs) {
+  const c = state.combat, r0 = c.round;
+  c.pos++;
   normalizeTurn(state, data);
+  if (msgs && c.flood && c.flood.on && c.round > r0) floodTick(state, c, msgs);
+}
+// 0.38.0: Flutkampf – steigt das Wasser (Gruppe mit `flood`, Pumpen laufen noch), verlieren alle wachen Helden ab Runde 3 Lebenspunkte; sie sinken nie unter 1
+const FLOOD_LABEL = ['das Wasser steigt', 'knöchelhoch', 'kniehoch', 'hüfthoch', 'brusthoch'], FLOOD_PCT = [0, 0, 5, 8, 12];
+export function floodLabel(c) { return c && c.flood && c.flood.on ? FLOOD_LABEL[Math.min(4, c.round - 1)] : ''; }
+function floodTick(state, c, msgs) {
+  const lv = Math.min(4, c.round - 1), pct = FLOOD_PCT[lv];
+  if (!pct) { msgs.push(`Die Flut: ${FLOOD_LABEL[lv]}.`); return; }
+  for (const h of state.heroes) if (h.hp > 0) h.hp = Math.max(1, h.hp - Math.max(1, Math.ceil((h.maxHp * pct) / 100)));
+  msgs.push(`Die Flut steht ${FLOOD_LABEL[lv]}: alle wachen Helden verlieren ${pct} % ihrer Höchst-LP.`);
 }
 
 function finishVictory(state, data, msgs) {
@@ -1818,7 +1844,7 @@ export function heroAction(state, data, act) {
   checkRage(state, data, msgs);
   checkPhases(state, data, msgs);
   endOfTurn(state, data, 'h', a.idx, msgs);
-  advance(state, data);
+  advance(state, data, msgs);
   return { msgs, sfx, over };
 }
 
@@ -1908,7 +1934,7 @@ export function enemyStep(state, data, opts = {}) {
           noteBestiary(state, ne.kind, 'seen');
           msgs.push(`${e.name} schreit nach Hilfe – ${ne.name} kommt dazu!`);
           if (!c.order.some((o, i) => i > c.pos && o.side === 'e' && o.idx === slot)) c.order.splice(c.pos + 1, 0, { side: 'e', idx: slot }); // Neuer kommt noch in dieser Runde dran
-          advance(state, data);
+          advance(state, data, msgs);
           return { msgs, sfx: 'miss', over: null };
         }
       } else if (tac.flee && !data.enemies[e.kind].boss && pct <= tac.flee.below && rand(state) * 100 < tac.flee.chance) {
@@ -1917,7 +1943,7 @@ export function enemyStep(state, data, opts = {}) {
         noteBestiary(state, e.kind, 'fled');
         if (c.enemies.every((x) => x.hp <= 0)) { checkRage(state, data, msgs); const gold = finishVictory(state, data, msgs); return { msgs, sfx: 'miss', over: 'victory', gold }; }
         checkRage(state, data, msgs);
-        advance(state, data);
+        advance(state, data, msgs);
         return { msgs, sfx: 'miss', over: null };
       }
     }
@@ -1970,7 +1996,7 @@ export function enemyStep(state, data, opts = {}) {
   if (endOfTurn(state, data, 'e', a.idx, msgs)) { const gold = finishVictory(state, data, msgs); return { msgs, sfx, over: 'victory', gold }; }
   checkRage(state, data, msgs);
   checkPhases(state, data, msgs);
-  advance(state, data);
+  advance(state, data, msgs);
   return { msgs, sfx, over: null };
 }
 

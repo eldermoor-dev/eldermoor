@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.38.0 (25.11.2026, headless)
+- Zisterne: Flutkampf an der Mittelinsel (Wasser steigt je Runde, Pumpenhahn im Pumpenhaus schaltet ihn ab), Schleusenwart vor dem Pumpenhaus (zahlen, überreden oder kämpfen), Runentruhe im Pumpenkeller (drei Wandplatten in fester Reihenfolge).
+
 ## 0.37.6 (24.11.2026, headless)
 - Karte: Tippen auf ein Feld nennt den Raumnamen (bisher nur in der Zisterne beschriftet).
 

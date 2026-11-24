@@ -8904,7 +8904,10 @@
             "nebelgeist",
             "nebelgeist",
             "kultpriester"
-          ]
+          ],
+          "flood": {
+            "off": "pumpe:aus"
+          }
         },
         {
           "id": "en_z_h2",
@@ -8940,7 +8943,10 @@
             "kultwaechter",
             "nebelgeist",
             "nebelgeist"
-          ]
+          ],
+          "flood": {
+            "off": "pumpe:aus"
+          }
         },
         {
           "id": "chest_z_insel",
@@ -9998,6 +10004,115 @@
           "look": "edel",
           "mat": "nebel",
           "hidden": true
+        },
+        {
+          "id": "npc_z_wart",
+          "type": "npc",
+          "x": 30,
+          "y": 10,
+          "name": "Schleusenwart",
+          "look": "wache",
+          "dialog": "wart"
+        },
+        {
+          "id": "lever_z_pumpe",
+          "type": "lever",
+          "x": 49,
+          "y": 3,
+          "set": [
+            "pumpe:aus"
+          ],
+          "msg": "Der Absperrhahn klemmt, dann dreht er sich. Die Pumpen verstummen eine nach der anderen. Tief unten in der großen Halle hört das Wasser auf zu steigen."
+        },
+        {
+          "id": "sign_z_hahn",
+          "type": "sign",
+          "x": 46,
+          "y": 3,
+          "face": 0,
+          "title": "ABSPERR-|HAHN",
+          "text": "Alle Pumpen laufen über einen Hahn am Ostende. Solange er offen ist, drücken sie Wasser in die große Halle. Jeder Kampf dort wird zum Wettlauf gegen die Flut.",
+          "style": "iron"
+        },
+        {
+          "id": "sign_z_flut",
+          "type": "sign",
+          "x": 14,
+          "y": 26,
+          "face": 3,
+          "title": "HOHES|WASSER",
+          "text": "Die Gruppen nördlich und südlich der Insel stehen im Wasser. Seit die Pumpen laufen, steigt es mit jeder Kampfrunde. Der Hahn dazu sitzt im Pumpenhaus.",
+          "style": "iron"
+        },
+        {
+          "id": "sign_z_rune",
+          "type": "sign",
+          "x": 71,
+          "y": 34,
+          "face": 0,
+          "title": "DREI|RUNEN",
+          "text": "Beginne dort, wo der Tag beginnt. Ende dort, wo er endet. Die Mitte war immer dazwischen.",
+          "style": "stone"
+        },
+        {
+          "id": "rune_z_1",
+          "type": "lever",
+          "wall": true,
+          "x": 69,
+          "y": 34,
+          "seq": {
+            "chest": "chest_z_rune",
+            "n": 1
+          }
+        },
+        {
+          "id": "rune_z_2",
+          "type": "lever",
+          "wall": true,
+          "x": 67,
+          "y": 34,
+          "seq": {
+            "chest": "chest_z_rune",
+            "n": 2
+          }
+        },
+        {
+          "id": "rune_z_3",
+          "type": "lever",
+          "wall": true,
+          "x": 65,
+          "y": 34,
+          "seq": {
+            "chest": "chest_z_rune",
+            "n": 3
+          }
+        },
+        {
+          "id": "chest_z_rune",
+          "type": "chest",
+          "x": 65,
+          "y": 44,
+          "loot": [
+            {
+              "gold": 130
+            },
+            {
+              "item": "potion_g",
+              "n": 1
+            },
+            {
+              "item": "zaubertrank_g",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 3
+              }
+            }
+          ],
+          "look": "edel",
+          "mat": "nebel",
+          "runes": true
         }
       ],
       "rooms": [
@@ -12769,6 +12884,88 @@
         },
         "z": {
           "text": "Die Statue steht still. Der Stein ist nur noch Stein.",
+          "choices": [
+            {
+              "t": "Gehen"
+            }
+          ]
+        }
+      }
+    },
+    "wart": {
+      "name": "Schleusenwart",
+      "start": "a",
+      "again": "z",
+      "nodes": {
+        "a": {
+          "text": "Ein Wärter in einem schimmeligen Wappenrock versperrt die Tür zum Pumpenhaus. „Gesperrt. Seit der Wasserstand schwankt, kommt keiner mehr hinein, den ich nicht kenne. Ihr könnt eine Durchgangsmarke kaufen, 60 Gold, und niemand fragt nach. Oder ihr redet mit mir, wenn ihr euch traut.“",
+          "choices": [
+            {
+              "t": "Durchgang kaufen",
+              "cost": {
+                "gold": 60
+              },
+              "to": "b"
+            },
+            {
+              "t": "Ihn überreden",
+              "to": "c"
+            },
+            {
+              "t": "Mit Gewalt vorbei",
+              "attack": "kultwaechter",
+              "done": true,
+              "msg": "Der Wärter greift nach seinem Speer. Das Gespräch ist beendet."
+            },
+            {
+              "t": "Gehen"
+            }
+          ]
+        },
+        "b": {
+          "text": "Er wiegt die Münzen in der Hand und nickt. „Das Pumpenhaus ist hinter der Tür. Wer den Hahn am Ostende findet, versteht, warum es hier unten nass ist. Geht. Ich habe euch nicht gesehen.“",
+          "choices": [
+            {
+              "t": "Weiter",
+              "leave": true,
+              "set": [
+                "wart:bezahlt"
+              ],
+              "done": true,
+              "msg": "Der Wärter räumt den Weg."
+            }
+          ]
+        },
+        "c": {
+          "text": "Ihr redet auf ihn ein, von Auftrag und Dringlichkeit. Der Wärter beißt sich auf die Lippe. Er sieht zur Tür, dann zu euch.",
+          "choices": [
+            {
+              "t": "Weiterreden",
+              "dice": {
+                "even": {
+                  "leave": true,
+                  "set": [
+                    "wart:ueberredet"
+                  ],
+                  "done": true,
+                  "msg": "„Meinetwegen. Aber ihr wart nie hier.“ Er tritt beiseite."
+                },
+                "odd": {
+                  "attack": "kultwaechter",
+                  "done": true,
+                  "msg": "„Genug!“ Er reißt den Speer hoch."
+                }
+              },
+              "noRoll": true
+            },
+            {
+              "t": "Lieber doch nicht",
+              "to": "a"
+            }
+          ]
+        },
+        "z": {
+          "text": "Der Wärter steht noch da, die Hand am Speer. „Ihr hattet eure Antwort.“",
           "choices": [
             {
               "t": "Gehen"

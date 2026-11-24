@@ -2935,6 +2935,46 @@ export async function runTests(data, env = {}) {
     assert(data.enemies.spinnenkoenigin.resist.fire === base.resist.fire, 'Spieldaten bleiben unverändert (Kopie)');
     const c = JSON.parse(JSON.stringify(L.serialize(b))); assert(L.validateState(L.deserialize(JSON.stringify(c), data), data).length === 0, 'Kampfstand mit Wirkung bleibt gültig');
   });
+
+  await test('0.38.0 Zisterne: Flutkampf, Pumpenhahn, Schleusenwart, Runentruhe', () => {
+    const mk = (flag) => { const s = L.newGame(data, 38); L.jumpToLevel(s, data, 'festung6'); s.heroes.forEach((h) => { h.maxHp = h.hp = 400; }); if (flag) s.flags['pumpe:aus'] = true; return s; };
+    // Flut: läuft nur mit offenem Hahn, ab Runde 3 Verlust, nie unter 1 LP; ohne Flut-Marke kein Verlust
+    const run = (s, rounds) => { const en = s.objs.find((o) => o.id === 'en_z_h1'); L.startCombat(s, data, en); const c = s.combat; c.enemies.forEach((e) => { e.hp = e.maxHp = 99999; }); const msgs = []; for (let g = 0; g < 400 && s.combat && s.combat.round <= rounds; g++) { const a = L.currentActor(s); const r = a.side === 'h' ? L.heroAction(s, data, { type: 'defend' }) : L.enemyStep(s, data); if (r.msgs) msgs.push(...r.msgs); if (r.over) break; } return msgs; };
+    const s1 = mk(false), m1 = run(s1, 4);
+    assert(s1.combat.flood && s1.combat.flood.on && L.floodLabel(s1.combat) === 'brusthoch', 'Flut aktiv, Stufe in Runde 5: ' + L.floodLabel(s1.combat));
+    assert(m1.some((m) => /Die Flut steht kniehoch/.test(m)) && m1.some((m) => /Die Flut: knöchelhoch/.test(m)), 'Meldungen der Stufen');
+    assert(s1.heroes.every((h) => h.hp <= 400 - 20 && h.hp >= 1), 'Helden verlieren LP durch die Flut (nie unter 1)');
+    const s2 = mk(true), m2 = run(s2, 4);
+    assert(s2.combat.flood && !s2.combat.flood.on && L.floodLabel(s2.combat) === '' && !m2.some((m) => /Die Flut/.test(m)), 'Pumpen aus: keine Flut');
+    const s3 = mk(false); L.startCombat(s3, data, s3.objs.find((o) => o.id === 'en_z_h2')); assert(!s3.combat.flood, 'Gruppe ohne flood: kein Flutkampf');
+    for (const h of s1.heroes) h.hp = 1; s1.combat.round = 8; assert(L.floodLabel(s1.combat) === 'brusthoch', 'Stufe gedeckelt');
+    const sj = JSON.parse(JSON.stringify(L.serialize(s1))); assert(L.validateState(L.deserialize(JSON.stringify(sj), data), data).length === 0, 'Flutstand bleibt gültig');
+    // Pumpenhahn setzt die Marke
+    const sp = mk(false), lv = sp.objs.find((o) => o.id === 'lever_z_pumpe'); assert(lv, 'Hahn vorhanden');
+    const r = L.interact(sp, data, lv); assert(sp.flags['pumpe:aus'] && lv.used && /Pumpen verstummen/.test(r.msg), 'Hahn setzt pumpe:aus');
+    // Schleusenwart: blockiert die Tür, zahlen / überreden / angreifen
+    const sw = mk(false), wt = sw.objs.find((o) => o.id === 'npc_z_wart'); assert(wt && wt.x === 30 && wt.y === 10 && L.blockerAt(sw, 30, 10) === wt, 'Wart steht vor der Tür');
+    sw.gold = 10; eq(L.dialogView(sw, data, wt, 'a').choices.find((c) => /kaufen/.test(c.t)).ok, false, 'zu wenig Gold: Zahlung gesperrt');
+    sw.gold = 100; let d = L.dialogChoose(sw, data, wt, 'a', 0); eq(d.next, 'b', 'Zahlung führt weiter'); eq(sw.gold, 40, '60 Gold abgezogen');
+    d = L.dialogChoose(sw, data, wt, 'b', 0); assert(wt.gone && sw.flags['wart:bezahlt'] && !L.blockerAt(sw, 30, 10), 'Wart räumt den Weg');
+    let won = 0, lost = 0; for (let seed = 1; seed < 40 && (!won || !lost); seed++) { const s = mk(false); s.rng = seed * 7919; const n = s.objs.find((o) => o.id === 'npc_z_wart'); const r2 = L.dialogChoose(s, data, n, 'c', 0); if (n.gone) { won++; assert(!/Würfel/.test(r2.msg), 'kein Würfeltext'); } else { lost++; assert(r2.encounter && n.type === 'enemy' && n.kind === 'kultwaechter', 'Misserfolg: Kampf'); } }
+    assert(won && lost, 'Überreden: beide Ausgänge möglich');
+    const sa = mk(false), na = sa.objs.find((o) => o.id === 'npc_z_wart'); assert(L.dialogChoose(sa, data, na, 'a', 2).encounter, 'Gewalt: Kampf');
+    // Runentruhe: Reihenfolge Ost → Mitte → West, Fehler setzt zurück, Truhe erst danach offen
+    const sr = mk(false), ch = sr.objs.find((o) => o.id === 'chest_z_rune'), pl = [1, 2, 3].map((n) => sr.objs.find((o) => o.id === 'rune_z_' + n));
+    assert(pl[0].x > pl[1].x && pl[1].x > pl[2].x, 'Platte 1 liegt im Osten, 3 im Westen');
+    ch.guard = undefined; assert(/versiegelt/.test(L.interact(sr, data, ch).msg) && !ch.open, 'Truhe zu');
+    L.interact(sr, data, pl[0]); assert(pl[0].used && ch.prog === 1, 'erste Rune');
+    const bad = L.interact(sr, data, pl[2]); assert(/Von vorn/.test(bad.msg) && !pl[0].used && ch.prog === 0, 'falsche Reihenfolge setzt zurück');
+    L.interact(sr, data, pl[0]); L.interact(sr, data, pl[1]); assert(/schon eingedrückt/.test(L.interact(sr, data, pl[1]).msg), 'doppelt gedrückt');
+    const fin = L.interact(sr, data, pl[2]); assert(ch.runesOk && /Siegel/.test(fin.msg), 'dritte Rune löst das Siegel');
+    assert(/Truhe geöffnet/.test(L.interact(sr, data, ch).msg) && ch.open, 'Truhe öffnet sich');
+    // alter Spielstand bekommt die neuen Objekte nachgeliefert
+    const so = mk(false); so.objs = so.objs.filter((o) => !['npc_z_wart', 'lever_z_pumpe', 'chest_z_rune', 'rune_z_1'].includes(o.id)); L.syncStatic(so, data);
+    assert(['npc_z_wart', 'lever_z_pumpe', 'chest_z_rune', 'rune_z_1'].every((id) => so.objs.some((o) => o.id === id)), 'Nachlieferung in alten Ständen');
+    // Erreichbarkeit: Pumpenkeller-Truhe, Hahn und Tür des Pumpenhauses liegen auf begehbaren Feldern
+    const lvl = data.levels.festung6; for (const id of ['chest_z_rune', 'lever_z_pumpe', 'npc_z_wart', 'sign_z_rune', 'sign_z_hahn', 'sign_z_flut']) { const o = lvl.objects.find((q) => q.id === id); assert(o && (o.type === 'lever' && o.wall ? true : lvl.map[o.y][o.x] === '.'), id + ' liegt auf Boden'); }
+  });
   const failed = results.filter((r) => !r.ok).length; // 0.23.0: erst am Ende zählen (vorher fehlten spätere Tests in der Summe)
   return { results, passed: results.length - failed, failed };
 }

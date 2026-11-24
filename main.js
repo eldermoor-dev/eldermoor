@@ -4,13 +4,13 @@ import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
   buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, pushError, formatErrorLog, itemDef, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, partyAvgLevel, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
-  activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogEnter, roomAt, dialogChoose, diceNew, diceRoll, diceKeep, diceNext, diceFinish, diceRoundLine, recruitHero, swapHero, dismissReserve, recruitCost, RESERVE_MAX,
+  activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogEnter, roomAt, floodLabel, dialogChoose, diceNew, diceRoll, diceKeep, diceNext, diceFinish, diceRoundLine, recruitHero, swapHero, dismissReserve, recruitCost, RESERVE_MAX,
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.37.6';
+const VERSION = '0.38.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -885,7 +885,7 @@ function renderCombat() {
   S.warnKey = warnKey;
   const warnBar = heavyNow.length ? `<div class="heavywarn">⚠ ${esc(heavyNow[0].name)}: ${esc(enemyOf(S.data, heavyNow[0]).heavy.name)}! Jetzt verteidigen</div>` : '';
   const hint = multi && c.round === 1 ? ' · Gegner antippen = Ziel' : ''; // 0.23.3: Hinweis nur noch in der ersten Runde
-  eb.innerHTML = warnBar + `<div class="order"><b>Runde ${c.round}</b>` + c.order.map((o, i) => {
+  eb.innerHTML = warnBar + `<div class="order"><b>Runde ${c.round}</b>` + (floodLabel(c) ? `<span class="flood">🌊 Flut: ${floodLabel(c)}</span>` : '') + c.order.map((o, i) => {
     const nm = o.side === 'h' ? S.game.heroes[o.idx].name : c.enemies[o.idx].name;
     return `<span class="${(i === c.pos ? 'now' : i < c.pos ? 'done' : '') + (o.side === 'e' ? ' foe' : '')}">${esc(nm)}</span>`;
   }).join('') + (cur && cur.side === 'h' && hint ? `<em>${hint.slice(3)}</em>` : '') + '</div>' + (cur && cur.side === 'h' ? comboHint(cur, S.foe) : ''); // 0.23.4: Kombi-Text für das gewählte Ziel (war seit 0.23.3 unsichtbar)
