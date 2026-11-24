@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.37.2 (24.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.37.3 (24.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1385,4 +1385,9 @@ Nutzer (18:30, Screenshot Kampf gegen Gießmeister Harkon + Foto eines Gießers 
 - Änderung: Die vier Hüterstatuen tragen ihren Satz beim ersten Ansprechen automatisch ins Notizbuch ein (neue Funktion `dialogEnter` in logic.js, Knotenfelder `note`/`noteTitle`). Die Wahl „Den Satz merken“ entfällt. Im Dialog steht dauerhaft „✔ Im Notizbuch eingetragen“; der Satz bleibt im Dialog stehen, bis der Spieler ihn schließt. Kennung der Einträge unverändert (`dlg:<npc>:x`), alte Spielstände bekommen keine Doppeleinträge.
 - Keine Wertänderung, BALANCE.md/SIM.md unverändert. Tests: 153 grün (Node).
 - Offen: Gerätetest. Falls „länger zeigen“ etwas anderes meinte (z. B. Hinweis-Einblendung im Kampf/Lauf), Nutzer fragt nach Schaltfläche/Meldung.
+
+## 0.37.3 (24.11.2026; headless, nicht auf Gerät getestet)
+- Nutzer (18:55): „Die Maultruhe kann nicht bluten“. Deutung (Vermutung, nicht gesichert): gemeint ist das Truhenmaul (Mimik) – eine Holztruhe soll nicht bluten, also immun gegen Blutung. Nicht auf dem Gerät nachgestellt; im Code belegt: Heldenangriffe/Kombis (Zornhieb, Meucheln, Offene Wunde) setzten Blutung auch auf das Truhenmaul. Die Blutung, die das Truhenmaul selbst auf Helden setzt (Biss, 30 %), bleibt.
+- Änderung: neues Datenfeld `enemies.<art>.immune = [Status]` (logic.js `addStatus`, Meldung „X ist immun gegen Blutung.“, `addStatus` jetzt exportiert für Tests). Belegt nur `truhenmaul: ["bleed"]`. Test: Truhenmaul immun, Wolf nicht. Tests 154 grün. Keine Wertänderung, BALANCE.md/SIM.md unverändert.
+- Offen/Vorschlag (nicht gebaut): Skelett, Schlackenwächter, Nebelgeist, Moorlicht, Teufel ebenfalls blutimmun? Bestiarium zeigt Immunität noch nicht.
 

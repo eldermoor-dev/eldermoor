@@ -584,6 +584,16 @@ export async function runTests(data, env = {}) {
     assert(!JSON.stringify(data.dialogs).includes('Den Satz merken'), 'alte Wahl entfernt');
   });
 
+  await test('0.37.3 Truhenmaul ist immun gegen Blutung, Wolf nicht', () => {
+    assert((data.enemies.truhenmaul.immune || []).includes('bleed'), 'Daten');
+    for (const [kind, want] of [['truhenmaul', false], ['wolf', true]]) {
+      const s = fresh(75); L.startCombat(s, data, { id: 'x_' + kind, type: 'enemy', kind, x: 1, y: 1, hp: data.enemies[kind].hp });
+      const sm = L.statusOf; const before = !!sm(s, 'e', 0).bleed; assert(!before, 'vorher keine Blutung');
+      L.addStatus(s, data, 'e', 0, { status: 'bleed', chance: 100, turns: 2, power: 3 }, []);
+      eq(!!sm(s, 'e', 0).bleed, want, kind + (want ? ' blutet' : ' immun'));
+    }
+  });
+
   await test('0.37.0 Quellhüterin: Boss mit Phasen, Ankündigung, Heilzauber, Ring der Tiefe', () => {
     const b = data.enemies.quellhueterin;
     assert(b.boss && b.phases.length >= 2 && b.intro && data.enemies[b.tactic.call.kind] && b.cast.filter((c) => c.kind === 'bolt').every((c) => c.announce), 'Boss: Phasen, Rufe, Intro, Ankündigung');

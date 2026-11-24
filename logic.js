@@ -1535,10 +1535,11 @@ export function explain(tr) {
 const skey = (side, idx) => side + idx;
 const actorName = (state, side, idx) => (side === 'h' ? state.heroes[idx].name : state.combat.enemies[idx].name);
 export function statusOf(state, side, idx) { return (state.combat && state.combat.status[skey(side, idx)]) || {}; }
-function addStatus(state, data, side, idx, inf, msgs, src = null) {
+export function addStatus(state, data, side, idx, inf, msgs, src = null) {
   if (!inf) return;
   if (inf.chance < 100 && rand(state) * 100 >= inf.chance) return;
   if (side === 'h') { const rs = fxSum(data, state.heroes[idx], 'resist'); if (rs > 0 && rand(state) * 100 < rs) { msgs.push(`${state.heroes[idx].name} wehrt ${data.statuses[inf.status].name} ab.`); return; } }
+  if (side === 'e') { const ie = enemyOf(data, state.combat.enemies[idx]); if (ie && (ie.immune || []).includes(inf.status)) { msgs.push(`${actorName(state, side, idx)} ist immun gegen ${data.statuses[inf.status].name}.`); return; } } // 0.37.3: enemies.<art>.immune = [Status]
   if (side === 'h' && inf.status === 'poison' && partyFx(state, data, 'immune_poison') > 0) { msgs.push(`${state.heroes[idx].name} ist gegen Gift gefeit (Kräuterkunde).`); return; } // Naturkundiger (0.22.0)
   if (side === 'e' && src != null && (inf.status === 'poison' || inf.status === 'burn' || inf.status === 'bleed')) { const dp = fxSum(data, state.heroes[src], 'dotplus'); if (dp > 0) inf = { ...inf, power: (inf.power || 0) + dp }; } // Giftmischer
   const c = state.combat, k = skey(side, idx);

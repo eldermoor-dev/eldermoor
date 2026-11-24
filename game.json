@@ -1501,7 +1501,10 @@
       "intro": {
         "title": "Truhenmaul",
         "text": "Gier hat Zähne."
-      }
+      },
+      "immune": [
+        "bleed"
+      ]
     },
     "brandmagier": {
       "name": "Brandmagier",
