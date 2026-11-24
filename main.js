@@ -4,13 +4,13 @@ import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
   buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, pushError, formatErrorLog, itemDef, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, partyAvgLevel, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
-  activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogChoose, diceNew, diceRoll, diceKeep, diceNext, diceFinish, diceRoundLine, recruitHero, swapHero, dismissReserve, recruitCost, RESERVE_MAX,
+  activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogEnter, dialogChoose, diceNew, diceRoll, diceKeep, diceNext, diceFinish, diceRoundLine, recruitHero, swapHero, dismissReserve, recruitCost, RESERVE_MAX,
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.37.1';
+const VERSION = '0.37.2';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -944,7 +944,10 @@ function openDialog(id, node) {
   const nid = node || dialogStartNode(g, S.data, npc), v = dialogView(g, S.data, npc, nid);
   if (!v) return;
   S.dlg = { id, node: nid };
-  openModal(`<h2>${esc(v.name)}</h2><p style="font-style:italic;line-height:1.45;margin:6px 0 10px">${esc(v.text)}</p><div class="acts" style="flex-direction:column;align-items:stretch">${v.choices.map((c) => `<button class="mb" data-m="dlg:${c.i}" ${c.ok ? '' : 'disabled'}>${esc(c.t)}</button>`).join('')}</div>`, 'dialog');
+  const en = dialogEnter(g, S.data, npc, nid), nd = ((S.data.dialogs[npc.dialog] || {}).nodes || {})[nid];
+  if (en.newNote) say('Ins Notizbuch eingetragen.');
+  const noted = nd && nd.note && (g.journal || []).some((e) => e.id === 'dlg:' + npc.id + ':x') ? '<p class="muted" style="margin:0 0 10px">✔ Im Notizbuch eingetragen</p>' : '';
+  openModal(`<h2>${esc(v.name)}</h2><p style="font-style:italic;line-height:1.45;margin:6px 0 10px">${esc(v.text)}</p>${noted}<div class="acts" style="flex-direction:column;align-items:stretch">${v.choices.map((c) => `<button class="mb" data-m="dlg:${c.i}" ${c.ok ? '' : 'disabled'}>${esc(c.t)}</button>`).join('')}</div>`, 'dialog');
 }
 async function dialogPick(i) {
   const g = S.game, d = S.dlg, npc = d && g.objs.find((o) => o.id === d.id);

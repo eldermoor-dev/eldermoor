@@ -12436,12 +12436,6 @@
           "text": "Eine Statue aus nassem Stein, die Augen leer, aber aufmerksam. Auf dem Sockel steht „Hüter I“. Als ihr näher tretet, bewegen sich die Lippen: „Hüter II sagt die Wahrheit.“",
           "choices": [
             {
-              "t": "Den Satz merken",
-              "to": "a",
-              "note": "Hüter I sagt: „Hüter II sagt die Wahrheit.“ Genau einer der vier Hüter lügt, drei sagen die Wahrheit.",
-              "noteTitle": "Zisterne: Hüter I"
-            },
-            {
               "t": "Die Hand der Statue drücken",
               "if": {
                 "noflag": "zisterne:statue"
@@ -12453,7 +12447,9 @@
             {
               "t": "Zurücktreten"
             }
-          ]
+          ],
+          "note": "Hüter I sagt: „Hüter II sagt die Wahrheit.“ Genau einer der vier Hüter lügt, drei sagen die Wahrheit.",
+          "noteTitle": "Zisterne: Hüter I"
         },
         "z": {
           "text": "Die Statue steht still. Der Stein ist nur noch Stein.",
@@ -12474,12 +12470,6 @@
           "text": "Eine Statue aus nassem Stein, die Augen leer, aber aufmerksam. Auf dem Sockel steht „Hüter II“. Als ihr näher tretet, bewegen sich die Lippen: „Hüter III lügt.“",
           "choices": [
             {
-              "t": "Den Satz merken",
-              "to": "a",
-              "note": "Hüter II sagt: „Hüter III lügt.“ Genau einer der vier Hüter lügt, drei sagen die Wahrheit.",
-              "noteTitle": "Zisterne: Hüter II"
-            },
-            {
               "t": "Die Hand der Statue drücken",
               "if": {
                 "noflag": "zisterne:statue"
@@ -12491,7 +12481,9 @@
             {
               "t": "Zurücktreten"
             }
-          ]
+          ],
+          "note": "Hüter II sagt: „Hüter III lügt.“ Genau einer der vier Hüter lügt, drei sagen die Wahrheit.",
+          "noteTitle": "Zisterne: Hüter II"
         },
         "z": {
           "text": "Die Statue steht still. Der Stein ist nur noch Stein.",
@@ -12512,12 +12504,6 @@
           "text": "Eine Statue aus nassem Stein, die Augen leer, aber aufmerksam. Auf dem Sockel steht „Hüter III“. Als ihr näher tretet, bewegen sich die Lippen: „Hüter IV lügt.“",
           "choices": [
             {
-              "t": "Den Satz merken",
-              "to": "a",
-              "note": "Hüter III sagt: „Hüter IV lügt.“ Genau einer der vier Hüter lügt, drei sagen die Wahrheit.",
-              "noteTitle": "Zisterne: Hüter III"
-            },
-            {
               "t": "Die Hand der Statue drücken",
               "if": {
                 "noflag": "zisterne:statue"
@@ -12537,7 +12523,9 @@
             {
               "t": "Zurücktreten"
             }
-          ]
+          ],
+          "note": "Hüter III sagt: „Hüter IV lügt.“ Genau einer der vier Hüter lügt, drei sagen die Wahrheit.",
+          "noteTitle": "Zisterne: Hüter III"
         },
         "z": {
           "text": "Die Statue steht still. Der Stein ist nur noch Stein.",
@@ -12558,12 +12546,6 @@
           "text": "Eine Statue aus nassem Stein, die Augen leer, aber aufmerksam. Auf dem Sockel steht „Hüter IV“. Als ihr näher tretet, bewegen sich die Lippen: „Hüter I sagt die Wahrheit.“",
           "choices": [
             {
-              "t": "Den Satz merken",
-              "to": "a",
-              "note": "Hüter IV sagt: „Hüter I sagt die Wahrheit.“ Genau einer der vier Hüter lügt, drei sagen die Wahrheit.",
-              "noteTitle": "Zisterne: Hüter IV"
-            },
-            {
               "t": "Die Hand der Statue drücken",
               "if": {
                 "noflag": "zisterne:statue"
@@ -12575,7 +12557,9 @@
             {
               "t": "Zurücktreten"
             }
-          ]
+          ],
+          "note": "Hüter IV sagt: „Hüter I sagt die Wahrheit.“ Genau einer der vier Hüter lügt, drei sagen die Wahrheit.",
+          "noteTitle": "Zisterne: Hüter IV"
         },
         "z": {
           "text": "Die Statue steht still. Der Stein ist nur noch Stein.",

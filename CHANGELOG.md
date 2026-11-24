@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.37.2 (24.11.2026, headless)
+- Hüterstatuen (Zisterne): Satz wird beim Ansprechen automatisch ins Notizbuch eingetragen, Hinweis „✔ Im Notizbuch eingetragen“ im Dialog; Wahl „Den Satz merken“ entfällt.
+
 ## 0.37.1 (24.11.2026, headless)
 - Gießmeister Harkon hat ein eigenes Bild: Gießer im silbernen Hitzeschutzanzug mit goldorangem Gesichtsschild und rotglühender Eisenstange (vorher Hauptmann-Figur mit blauem Ring). Keine Wertänderung.
 

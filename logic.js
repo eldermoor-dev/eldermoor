@@ -853,6 +853,12 @@ export function dialogView(state, data, npc, nodeId) {
   });
   return { name: npc.name || dl.name, text: nd.text, choices };
 }
+// 0.37.2: Knoten mit note/noteTitle tragen ihren Text beim Betreten ins Notizbuch ein (je Gesprächspartner einmal; gleiche Kennung wie früher „Den Satz merken“)
+export function dialogEnter(state, data, npc, nodeId) {
+  const dl = dlgOf(data, npc), nd = dl && dl.nodes[nodeId];
+  if (!nd || !nd.note) return { newNote: false };
+  return { newNote: noteClue(state, 'dlg:' + npc.id + ':x', nd.noteTitle || npc.name || 'Gespräch', nd.note) };
+}
 // ---------- Würfelspiel mit Murmel (0.32.0) ----------
 // data.dicegame = { stakes, rules, amulet, devilKind, devilGame, intro:{...}, hint, amuletLine, devilLine, murmelLoses[], murmelWins[], roundWin[], roundLose[] }
 // Ablauf: Jede Runde würfeln beide drei Würfel (Murmels liegen offen). Die Gruppe darf einen eigenen Würfel einmal neu werfen, danach wirft Murmel seinen niedrigsten

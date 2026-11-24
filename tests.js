@@ -576,6 +576,14 @@ export async function runTests(data, env = {}) {
     assert(r2.encounter && !s2.inv.quellschluessel, 'falsche Statue greift an');
   });
 
+  await test('0.37.2 Hüterstatuen tragen den Satz beim Ansprechen ins Notizbuch ein', () => {
+    const s = fresh(74); L.jumpToLevel(s, data, 'festung6'); const n0 = (s.journal || []).length;
+    for (const id of ['npc_z_st1', 'npc_z_st2', 'npc_z_st3', 'npc_z_st4']) { const o = s.objs.find((x) => x.id === id); eq(L.dialogEnter(s, data, o, 'a').newNote, true, id + ' neu'); eq(L.dialogEnter(s, data, o, 'a').newNote, false, id + ' nur einmal'); }
+    eq(s.journal.length, n0 + 4, 'vier Einträge');
+    assert(s.journal.every((e) => !e.title.startsWith('Zisterne') || /Hüter/.test(e.text)), 'Texte mit Hüter');
+    assert(!JSON.stringify(data.dialogs).includes('Den Satz merken'), 'alte Wahl entfernt');
+  });
+
   await test('0.37.0 Quellhüterin: Boss mit Phasen, Ankündigung, Heilzauber, Ring der Tiefe', () => {
     const b = data.enemies.quellhueterin;
     assert(b.boss && b.phases.length >= 2 && b.intro && data.enemies[b.tactic.call.kind] && b.cast.filter((c) => c.kind === 'bolt').every((c) => c.announce), 'Boss: Phasen, Rufe, Intro, Ankündigung');
