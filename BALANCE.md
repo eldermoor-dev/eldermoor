@@ -53,6 +53,7 @@ Gegner (EP: jeder Held, der nach dem Kampf nicht bewusstlos ist, bekommt die vol
 | Spinnenkönigin | 260 | 17 | 7 | 10 | 520 | 200 | Giftbiss jeden 3. Zug, angekündigt (170 %); Treffer: Gift 60 %; Zaubert: Gifthauch (jeden 4. Zug, angekündigt); Boss, Phasen: Brutwelle ab ≤ 60 % LP (Angriff 18), Raserei ab ≤ 30 % LP (Angriff 20) |
 | Schlackenwächter | 110 | 18 | 7 | 6 | 140 | 30 | zielt auf die Hinterreihe; Wache: deckt Verbündete (−25 % Schaden); Hammerschlag jeden 3. Zug, angekündigt (165 %); Treffer: Brennen 25 % |
 | Gießmeister Harkon | 200 | 16 | 8 | 8 | 600 | 240 | Hammerschlag jeden 3. Zug, angekündigt (160 %); Treffer: Brennen 30 %; Zaubert: Glutwelle (jeden 4. Zug, angekündigt); Boss, Phasen: Glühende Rüstung ab ≤ 60 % LP (Angriff 17), Gussflut ab ≤ 30 % LP (Angriff 18) |
+| Quellhüterin Maris | 270 | 17 | 7 | 9 | 650 | 260 | Wasserpeitsche jeden 4. Zug, angekündigt (150 %); Treffer: Verlangsamt 25 %; Zaubert: Flutwelle (jeden 4. Zug, angekündigt), Quellsegen (jeden 5. Zug); Boss, Phasen: Springflut ab ≤ 60 % LP (Angriff 18), Sturzbach ab ≤ 30 % LP (Angriff 19) |
 
 ## Rassen (Modifikatoren)
 
@@ -289,6 +290,7 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 | Spinnenkönigin | 100 %, Boost 2 | – |
 | Schlackenwächter | 10 % | – |
 | Gießmeister Harkon | 100 %, Boost 2 | Ring der Esse (100 %, nur einmal) |
+| Quellhüterin Maris | 100 %, Boost 2 | Ring der Tiefe (100 %, nur einmal) |
 
 ## Ausrüstungseffekte und Sets
 
@@ -312,6 +314,7 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 | Nebeltränen-Amulett | Amulett |  | Ausweichen % 6, Fähigkeiten % 10 | – |
 | Kette der Gier | Amulett |  | gold 40 | – |
 | Ring der Esse | Ring | Vert. +1 | Krit % 4, Schaden − 1 | – |
+| Ring der Tiefe | Ring | Init +2 | Statusabwehr % 20 | – |
 
 | Set | Teile | Bonus (alle Teile) |
 |---|---|---|

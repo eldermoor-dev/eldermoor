@@ -3,6 +3,11 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.37.0 (24.11.2026, headless)
+- Neues Gebiet „Die Zisterne“ (Akt 2, Keller 6, 100×64): Wasserhalle mit Stegen und vier Hüterstatuen, Pumpenhaus, Schleusen, Wächter- und Kerkerkammer, Archiv, Kanalnetz (Labyrinth) und Sickerhalle. Erreicht über die Treppe am Ende der Gießerei (ersetzt den Platzhalter-Ausgang).
+- Rätsel: vier Statuen, genau eine lügt; ihre Hand gibt den Quellschlüssel zur Quellkammer. Hebel öffnet Schleusengitter, Fackelschalter öffnet Geheimkammer, zwei Illusionswände, falsche Truhen.
+- Neuer Boss Quellhüterin Maris (angekündigte Flutwelle, Heilung, Phasen), neuer Ring der Tiefe, neue Palette „zisterne“. Lösbarkeitsprüfung zählt Schlüssel aus Gesprächen. Werte: BALANCE.md/SIM.md neu erzeugt. Spielstände unverändert gültig (v6).
+
 ## 0.36.0 (23.11.2026, headless)
 - Neues Gebiet „Die Gießerei“ (Akt 2, Keller 5, 84×60, größer als die Spinnenhöhle): Hallenbauart mit langer Säulenhalle, drei Kammern im Norden und drei im Süden. Erreicht über die Spalttreppe am Ende der Spinnenhöhle (ersetzt den Platzhalter-Ausgang).
 - Rätselkette: Ofenschlüssel (Süd 1) → Schmelzerkammer (Nord 3) → Gießmeisterschlüssel → Tor zum Gießmeister. Hebel in Nord 1 öffnet das Gitter zur Schatzkammer, Fackelschalter in Nord 2 öffnet eine Geheimkammer, Süd 2 ist ein falscher Schatzraum (Truhe ist Monster).

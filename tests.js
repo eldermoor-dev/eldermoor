@@ -510,15 +510,16 @@ export async function runTests(data, env = {}) {
     assert(f2.objects.every((o) => o.type === 'enemy' ? f2.map[o.y][o.x] === '.' : true), 'Gegner auf Boden');
   });
 
-  await test('Ausgang (0.16.4, seit 0.36.0 am Ende der Gießerei): erstes Betreten = Abschluss, danach kurzer Hinweis', () => {
-    const s = fresh(9); L.jumpToLevel(s, data, 'festung5'); s.objs.forEach((o) => { if (o.type === 'enemy') o.dead = true; });
-    put(s, 81, 36, 1);
+  await test('Ausgang (0.16.4, seit 0.37.0 am Ende der Zisterne): erstes Betreten = Abschluss, danach kurzer Hinweis', () => {
+    const s = fresh(9); L.jumpToLevel(s, data, 'festung6'); s.objs.forEach((o) => { if (o.type === 'enemy') o.dead = true; });
+    put(s, 74, 29, 2);
     const a = L.tryMove(s, data, 'f'); assert(a.events.some((e) => e.type === 'exit'), 'erstes Mal: exit ' + JSON.stringify(a));
-    put(s, 81, 36, 1);
+    put(s, 74, 29, 2);
     const b = L.tryMove(s, data, 'f'); assert(b.events.some((e) => e.type === 'exitAgain') && !b.events.some((e) => e.type === 'exit'), 'danach: exitAgain ' + JSON.stringify(b));
-    const t = data.levels.festung5.objects.find((o) => o.id === 'exit_g_tiefe');
+    const t = data.levels.festung6.objects.find((o) => o.id === 'exit_z_tiefe');
     assert(t && /späteren Version/.test(t.again), 'Ausgang hat Hinweistext');
     const st = data.levels.festung4.objects.find((o) => o.id === 'stairs_s_tiefe'); assert(st && st.to.level === 'festung5' && !data.levels.festung4.objects.some((o) => o.type === 'exit'), 'Spinnenhöhle führt per Treppe in die Gießerei');
+    const g5 = data.levels.festung5.objects.find((o) => o.id === 'stairs_g_tiefe'); assert(g5 && g5.to.level === 'festung6' && !data.levels.festung5.objects.some((o) => o.type === 'exit'), 'Gießerei führt per Treppe in die Zisterne');
   });
 
   await test('0.36.0 Gießerei: Treppe hin und zurück, größer als die Spinnenhöhle, Palette, Objekte auf Boden, lösbar, Schlüsselkette', () => {
@@ -550,6 +551,36 @@ export async function runTests(data, env = {}) {
     assert(data.items.ring_glut.q === 'unique' && b.drops.some((d) => d.item === 'ring_glut'), 'Ring der Esse als Unikat-Drop');
     for (const q of ['ofenschluessel', 'giess_schluessel']) assert(data.items[q].kind === 'quest', q);
     const s = L.newGame(data, 71); s.heroes.forEach((x) => { x.maxHp = x.hp = 999; }); L.startCombat(s, data, { id: 'bb', kind: 'giessmeister', kinds: ['giessmeister'] });
+    assert(s.combat && s.combat.enemies.length >= 1, 'Kampf startet');
+  });
+
+  await test('0.37.0 Zisterne: Treppen, Größe, Palette, Objekte auf Boden, lösbar (Schlüssel aus Statue), Rätsel eindeutig', () => {
+    const f5 = data.levels.festung5, f6 = data.levels.festung6;
+    assert(f6 && f6.palette === 'zisterne' && Object.keys(data.palettes.zisterne).length === Object.keys(data.palettes.glut).length, 'Level und Palette');
+    assert(f6.map.length * f6.map[0].length > f5.map.length * f5.map[0].length * 0.9, 'Zisterne ist groß');
+    const dn = f5.objects.find((o) => o.id === 'stairs_g_tiefe'), up = f6.objects.find((o) => o.id === 'stairs_z_up');
+    assert(dn && up && dn.to.level === 'festung6' && up.to.level === 'festung5' && f6.map[dn.to.y][dn.to.x] === '.' && f5.map[up.to.y][up.to.x] === '.', 'Treppen mit gültigem Ziel');
+    assert(f6.objects.every((o) => (o.type === 'sign' && o.face != null) || f6.map[o.y][o.x] === '.'), 'Objekte stehen auf Boden');
+    const an = L.analyzeLevel(data, 'festung6'); assert(an.ok && an.keys.includes('quellschluessel'), 'Zisterne lösbar, Schlüssel aus Statue ' + JSON.stringify(an));
+    assert(L.analyzeLevel(data, 'festung5').ok, 'Gießerei weiter lösbar');
+    for (const o of f6.objects) if (o.type === 'enemy') for (const k of o.kinds || [o.kind]) assert(data.enemies[k], `${o.id}: Gegner ${k}`);
+    // Rätsel: genau ein Hüter lügt, nur dessen Hand gibt den Schlüssel
+    const ids = ['statue1', 'statue2', 'statue3', 'statue4'], claims = ids.map((id) => { const m = /Hüter (I+V?|IV|V?I*) (sagt die Wahrheit|lügt)/.exec(data.dialogs[id].nodes.a.text); assert(m, id + ' Satz'); return [['I', 'II', 'III', 'IV'].indexOf(m[1]), m[2] !== 'lügt']; });
+    const sols = []; for (let l = 0; l < 4; l++) { let ok = true; for (let a = 0; a < 4; a++) { const [t, truth] = claims[a], tt = t !== l, st = truth ? tt : !tt; if (st === (a === l)) ok = false; } if (ok) sols.push(l); }
+    eq(sols.length, 1, 'genau eine Lösung'); 
+    ids.forEach((id, i) => { const pick = data.dialogs[id].nodes.a.choices.find((c) => /Hand/.test(c.t)); assert(i === sols[0] ? !!(pick.give && pick.give[0].item === 'quellschluessel') : pick.attack === 'kultwaechter', id + (i === sols[0] ? ' gibt den Schlüssel' : ' greift an')); });
+    const s = fresh(72); L.jumpToLevel(s, data, 'festung6');
+    const st = s.objs.find((o) => o.id === 'npc_z_st3'), r = L.dialogChoose(s, data, st, 'a', data.dialogs.statue3.nodes.a.choices.findIndex((c) => /Hand/.test(c.t)));
+    assert(s.inv.quellschluessel === 1 && r.end, 'richtige Statue gibt Schlüssel');
+    const s2 = fresh(73); L.jumpToLevel(s2, data, 'festung6'); const w = s2.objs.find((o) => o.id === 'npc_z_st1'), r2 = L.dialogChoose(s2, data, w, 'a', data.dialogs.statue1.nodes.a.choices.findIndex((c) => /Hand/.test(c.t)));
+    assert(r2.encounter && !s2.inv.quellschluessel, 'falsche Statue greift an');
+  });
+
+  await test('0.37.0 Quellhüterin: Boss mit Phasen, Ankündigung, Heilzauber, Ring der Tiefe', () => {
+    const b = data.enemies.quellhueterin;
+    assert(b.boss && b.phases.length >= 2 && b.intro && data.enemies[b.tactic.call.kind] && b.cast.filter((c) => c.kind === 'bolt').every((c) => c.announce), 'Boss: Phasen, Rufe, Intro, Ankündigung');
+    assert(data.items.ring_quelle.q === 'unique' && b.drops.some((d) => d.item === 'ring_quelle') && data.items.quellschluessel.kind === 'quest', 'Ring und Schlüssel');
+    const s = L.newGame(data, 74); s.heroes.forEach((x) => { x.maxHp = x.hp = 999; }); L.startCombat(s, data, { id: 'bq', kind: 'quellhueterin', kinds: ['quellhueterin'] });
     assert(s.combat && s.combat.enemies.length >= 1, 'Kampf startet');
   });
 

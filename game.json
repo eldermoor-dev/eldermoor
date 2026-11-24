@@ -508,6 +508,22 @@
         "soak": 1
       },
       "desc": "Ring. +1 Verteidigung, Krit +4 %, Schaden gegen dich −1. Vom Gießmeister."
+    },
+    "quellschluessel": {
+      "name": "Quellschlüssel",
+      "kind": "quest",
+      "desc": "Ein Schlüssel aus Wasserstein, feucht und kalt. Öffnet die Quellkammer der Zisterne."
+    },
+    "ring_quelle": {
+      "name": "Ring der Tiefe",
+      "kind": "equip",
+      "slot": "ring",
+      "q": "unique",
+      "fx": {
+        "resist": 20
+      },
+      "init": 2,
+      "desc": "Ring. +2 Initiative, Statusabwehr 20 %. Von der Quellhüterin Maris."
     }
   },
   "races": {
@@ -2083,6 +2099,120 @@
           "chance": 100
         }
       ]
+    },
+    "quellhueterin": {
+      "name": "Quellhüterin Maris",
+      "hp": 270,
+      "atk": 17,
+      "def": 7,
+      "init": 9,
+      "gold": 260,
+      "xp": 650,
+      "boss": true,
+      "heavy": {
+        "name": "Wasserpeitsche",
+        "every": 4,
+        "mult": 150
+      },
+      "onHit": {
+        "status": "slow",
+        "chance": 25,
+        "turns": 2
+      },
+      "cast": [
+        {
+          "name": "Flutwelle",
+          "kind": "bolt",
+          "all": true,
+          "every": 4,
+          "mult": 58,
+          "element": "ice",
+          "announce": true,
+          "inflict": {
+            "status": "slow",
+            "chance": 50,
+            "turns": 2
+          }
+        },
+        {
+          "name": "Quellsegen",
+          "kind": "heal",
+          "every": 5,
+          "heal": 32
+        }
+      ],
+      "resist": {
+        "ice": 60,
+        "fire": -30,
+        "lightning": -40
+      },
+      "tactic": {
+        "call": {
+          "below": 65,
+          "chance": 35,
+          "kind": "nebelgeist",
+          "max": 1
+        }
+      },
+      "phases": [
+        {
+          "below": 60,
+          "name": "Springflut",
+          "msg": "Das Wasser im Becken steigt, ohne dass jemand es ruft. Maris hebt die Hände, und es folgt.",
+          "set": {
+            "atk": 18,
+            "cast": [
+              {
+                "name": "Flutwelle",
+                "kind": "bolt",
+                "all": true,
+                "every": 3,
+                "mult": 60,
+                "element": "ice",
+                "announce": true,
+                "inflict": {
+                  "status": "slow",
+                  "chance": 55,
+                  "turns": 2
+                }
+              },
+              {
+                "name": "Quellsegen",
+                "kind": "heal",
+                "every": 5,
+                "heal": 32
+              }
+            ]
+          }
+        },
+        {
+          "below": 30,
+          "name": "Sturzbach",
+          "msg": "Die Decke tropft, dann strömt sie. Maris lacht, und es klingt wie ein Wasserfall.",
+          "set": {
+            "atk": 19,
+            "heavy": {
+              "name": "Wasserpeitsche",
+              "every": 2,
+              "mult": 150
+            }
+          }
+        }
+      ],
+      "gearDrop": {
+        "chance": 100,
+        "boost": 2
+      },
+      "intro": {
+        "title": "Quellhüterin Maris",
+        "text": "Sie steht bis zu den Knöcheln im Becken, und das Wasser ordnet sich um sie wie um einen Stein. „Ihr habt den Schlüssel geholt. Dann habt ihr auch zugehört. Das ist selten.“"
+      },
+      "drops": [
+        {
+          "item": "ring_quelle",
+          "chance": 100
+        }
+      ]
     }
   },
   "palettes": {
@@ -2462,6 +2592,48 @@
         255,
         150,
         56
+      ]
+    },
+    "zisterne": {
+      "stone": [
+        88,
+        104,
+        112
+      ],
+      "moss": [
+        58,
+        112,
+        94
+      ],
+      "wood": [
+        84,
+        70,
+        58
+      ],
+      "iron": [
+        128,
+        142,
+        154
+      ],
+      "floor": [
+        64,
+        80,
+        90
+      ],
+      "ceil": [
+        28,
+        40,
+        50
+      ],
+      "flesh": [
+        196,
+        190,
+        176
+      ],
+      "glow": [
+        120,
+        220,
+        232
       ]
     }
   },
@@ -8394,14 +8566,18 @@
           "mat": "stein"
         },
         {
-          "id": "exit_g_tiefe",
-          "type": "exit",
+          "id": "stairs_g_tiefe",
+          "type": "stairs",
           "x": 82,
           "y": 36,
           "look": "down",
-          "title": "Tiefer in die Esse",
-          "text": "Hinter dem Amboss führt ein Schacht in die Tiefe. Von unten steigt Hitze auf.",
-          "again": "Hier geht es in einer späteren Version weiter."
+          "msg": "Ihr folgt dem Schacht hinab. Aus der Hitze wird Kühle, und aus dem Rauch wird Feuchte.",
+          "to": {
+            "level": "festung6",
+            "x": 2,
+            "y": 25,
+            "dir": 1
+          }
         },
         {
           "id": "dk_festung5_f1",
@@ -8437,6 +8613,1299 @@
           "x": 22,
           "y": 51,
           "look": "fass"
+        }
+      ]
+    },
+    "festung6": {
+      "id": "festung6",
+      "name": "Die Zisterne",
+      "palette": "zisterne",
+      "start": {
+        "x": 2,
+        "y": 25,
+        "dir": 1
+      },
+      "foe": {
+        "hp": 380,
+        "atk": 270
+      },
+      "intro": {
+        "title": "Die Zisterne",
+        "text": "Das Wasser steht still und klar, und darin spiegeln sich Gewölbe, die es hier nicht gibt. Irgendwo tropft etwas im Takt eines Herzens."
+      },
+      "map": [
+        "####################################################################################################",
+        "################################################################.....###############################",
+        "######################T########T########T########T##############.....################T########T#####",
+        "##################........................................######.....T#######.......#.#...........##",
+        "#################T........................................########.###.############.#.#.#######.####",
+        "##################......#.....#.....#.....#.....#.....#...######..........###.....#.#.#.#.....#...##",
+        "##################......#.....#.....#.....#.....#.....#...######..........###.###.#.#.#.#.###.###.##",
+        "#####T############........................................######..........###...#...#.#.#...#.#...##",
+        "##........########........................................######..........#####.#####.#.T##.#.#.#.##",
+        "##........####################.################################T..........###.#...#.....#...#...#.##",
+        "##........####................................................##..........###.###.#####.#.##T####.##",
+        "##........###T................................................##................#.....#.#.#...#...##",
+        "##........#..#..~~~~~~~~~~~~~~~~~~~~~..~~~~~~~~~~~~~~~~~~~~~..##..........###.#######.###.#.#.#.####",
+        "##...........#..~~~~~~~~~~~~~~~~~~~~~..~~~~~~~~~~~~~~~~~~~~~..............###.#.......#...#.#.#.#.T#",
+        "#T........#..#..~~~~~~~~~~~~~~~~~~~~~..~~~~~~~~~~~~~~~~~~~~~..##..........###.#.#######.###.###.#.##",
+        "##........##T#..~~~~....~~~~~~~~~~~~~..~~~~~~~~~~~~~....~~~~..##..........###.#.#...#...#.#.....#.##",
+        "##........####..~~~~....~~~#~~~~m~~~~..~~~~#~~~~#~~~....~~~~..##..........###.#.###.#.#.#.#.#####.##",
+        "##........####..~~~~....~~~~~~~~~~~~~..~~~~~~~~~~~~~....~~~~..########T######.#...#...#.#.........##",
+        "##........####..~~~~....~~~~~~~~~~~~~..~~~~~~~~~~~~~....~~~~..##########T####.###.#####.#.#######.##",
+        "##........####..~~~~~.~~~~~~~~~~~~~~~..~~~~~~~~~~~~~~~.~~~~~..#####........##.....#...#.#.#...#.#.##",
+        "#####.#######T..~~~~~.~~~~~#~~~~#~~~~..~~~~#~~~~#~~~~~.~~~~~..#####........#T.#####.#.#.###.#.#.#.##",
+        "#####.########..~~~~~.~~~~~~~~~~~~~~~..~~~~~~~~~~~~~~~.~~~~~..#####........##.#.....#.#.....#.#...##",
+        "#.........####..~~~~~.~~~~~~~~~~~..........~~~~~~~~~~~.~~~~~..T####........##.#.#####.#.#####.######",
+        "#.........T###..~~~~~.~~~~~~~~~~~..........~~~~~~~~~~~.~~~~~..#####........##...#.#...#.....#.....##",
+        "#.........##T#..~~~~~.~~~~~~~~~~~..........~~~~~~~~~~~.~~~~~..#####........T#####.#.#######.#####.##",
+        "#..........................................................................##.......#.....#.#...#.##",
+        "#.........####................................................#####........##.#######.###.#.###.#.##",
+        "#.........####..~~~~~.~~~~~~~~~~~..........~~~~~~~~~~~.~~~~~..#####........##.#.......#...#.#...#.##",
+        "#.........####..~~~~~.~~~~~~~~~~~..........~~~~~~~~~~~.~~~~~..#####........##.#######.#.###.#.###.##",
+        "#.........###T..~~~~~.~~~~~~~~~~~..........~~~~~~~~~~~.~~~~~..#####........#T...#...#.#.#.....#...##",
+        "#####.########..~~~~~.~~~~~~~~~~~~~~~..~~~~~~~~~~~~~~~.~~~~~..#####........####.#.#.#.#.#####.#.####",
+        "#####.##T#####..~~~~~.~~~~~m~~~~#~~~~..~~~~#~~~~m~~~~~.~~~~~..T####........##...#.#.#.#.#...#.#...T#",
+        "#T........T###..~~~~~.~~~~~~~~~~~~~~~..~~~~~~~~~~~~~~~.~~~~~..###########T###.###.#.#.#.#.#.#####.##",
+        "##........####..~~~~....~~~~~~~~~~~~~..~~~~~~~~~~~~~....~~~~..####T##########.....#...#...#.......##",
+        "##........####..~~~~....~~~~~~~~~~~~~..~~~~~~~~~~~~~....~~~~..##..........###T#################T####",
+        "##........####..~~~~....~~~#~~~~#~~~~..~~~~#~~~~#~~~....~~~~..##..........##########################",
+        "##........####..~~~~....~~~~~~~~~~~~~..~~~~~~~~~~~~~....~~~~..##..........##########################",
+        "##........####..~~~~~~~~~~~~~~~~~~~~~..~~~~~~~~~~~~~~~~~~~~~..............T#########################",
+        "##........###T..~~~~~~~~~~~~~~~~~~~~~..~~~~~~~~~~~~~~~~~~~~~..##..........##########################",
+        "##........####..~~~~~~~~~~~~~~~~~~~~~..~~~~~~~~~~~~~~~~~~~~~..##..........##########################",
+        "##........####................................................T#..........##########################",
+        "#T........T###................................................##..........##########################",
+        "##........####################.#################################..........##########################",
+        "##........########............................#...........######..........##########################",
+        "#######T##########............................#...........######..........##########################",
+        "##################........................................#####T..........##########################",
+        "##################............................#...........#######T##################################",
+        "##################............................#...........T#########################################",
+        "##################............................#...........##########################################",
+        "########################################.###########################################################",
+        "##################........................................##########################################",
+        "##################........................................##########################################",
+        "##################........................................##########################################",
+        "##################......#.....#.....#.......#.....#.......##########################################",
+        "##################........................................##########################################",
+        "##############...#........................................##########################################",
+        "#############T............................................T#########################################",
+        "##############...#......#.....#.....#.......#.....#.......##########################################",
+        "#################T........................................##########################################",
+        "##################........................................##########################################",
+        "##################........................................##########################################",
+        "##################......#.....#.....#.......#.....#.......##########################################",
+        "##################........................................##########################################",
+        "####################################################################################################"
+      ],
+      "objects": [
+        {
+          "id": "stairs_z_up",
+          "type": "stairs",
+          "x": 1,
+          "y": 25,
+          "look": "up",
+          "msg": "Ihr steigt die Stufen hinauf. Die Hitze der Gießerei schlägt euch entgegen.",
+          "to": {
+            "level": "festung5",
+            "x": 81,
+            "y": 36,
+            "dir": 3
+          }
+        },
+        {
+          "id": "sign_z_start",
+          "type": "sign",
+          "x": 4,
+          "y": 22,
+          "face": 0,
+          "title": "ZISTER|NE",
+          "text": "Hier unten sammelte sich alles Wasser der Festung. Das Wasser steht noch, aber es ist nicht mehr dasselbe Wasser.",
+          "style": "stone"
+        },
+        {
+          "id": "door_z_tor",
+          "type": "door",
+          "x": 10,
+          "y": 25,
+          "locked": false,
+          "title": "ZISTER-|NE",
+          "style": "dark",
+          "look": "bogen",
+          "font": "wavy"
+        },
+        {
+          "id": "sign_z_statuen",
+          "type": "sign",
+          "x": 13,
+          "y": 25,
+          "face": 0,
+          "title": "VIER|HUETER",
+          "text": "Vier Hüter, vier Sätze. Einer von ihnen lügt, die anderen drei sagen die Wahrheit. Drück nur die Hand des Lügners. Wer irrt, weckt den Stein.",
+          "style": "stone"
+        },
+        {
+          "id": "trap_z_1",
+          "type": "trap",
+          "x": 37,
+          "y": 15,
+          "kind": "spikes"
+        },
+        {
+          "id": "trap_z_2",
+          "type": "trap",
+          "x": 64,
+          "y": 25,
+          "kind": "rune"
+        },
+        {
+          "id": "trap_z_3",
+          "type": "trap",
+          "x": 28,
+          "y": 46,
+          "kind": "gas"
+        },
+        {
+          "id": "npc_z_st1",
+          "type": "npc",
+          "x": 21,
+          "y": 15,
+          "name": "Hüter I (Nordwest)",
+          "look": "hueter",
+          "dialog": "statue1"
+        },
+        {
+          "id": "npc_z_st2",
+          "type": "npc",
+          "x": 54,
+          "y": 15,
+          "name": "Hüter II (Nordost)",
+          "look": "hueter",
+          "dialog": "statue2"
+        },
+        {
+          "id": "npc_z_st3",
+          "type": "npc",
+          "x": 21,
+          "y": 36,
+          "name": "Hüter III (Südwest)",
+          "look": "hueter",
+          "dialog": "statue3"
+        },
+        {
+          "id": "npc_z_st4",
+          "type": "npc",
+          "x": 54,
+          "y": 36,
+          "name": "Hüter IV (Südost)",
+          "look": "hueter",
+          "dialog": "statue4"
+        },
+        {
+          "id": "en_z_h1",
+          "type": "enemy",
+          "x": 37,
+          "y": 19,
+          "kind": "nebelgeist",
+          "kinds": [
+            "nebelgeist",
+            "nebelgeist",
+            "kultpriester"
+          ]
+        },
+        {
+          "id": "en_z_h2",
+          "type": "enemy",
+          "x": 28,
+          "y": 25,
+          "kind": "skeleton",
+          "kinds": [
+            "skeleton",
+            "kultwaechter",
+            "skeleton"
+          ]
+        },
+        {
+          "id": "en_z_h3",
+          "type": "enemy",
+          "x": 47,
+          "y": 25,
+          "kind": "kultpriester",
+          "kinds": [
+            "kultpriester",
+            "nebelgeist",
+            "schlackenwaechter"
+          ]
+        },
+        {
+          "id": "en_z_h4",
+          "type": "enemy",
+          "x": 37,
+          "y": 34,
+          "kind": "kultwaechter",
+          "kinds": [
+            "kultwaechter",
+            "nebelgeist",
+            "nebelgeist"
+          ]
+        },
+        {
+          "id": "chest_z_insel",
+          "type": "chest",
+          "x": 36,
+          "y": 25,
+          "loot": [
+            {
+              "gold": 120
+            },
+            {
+              "item": "potion_g",
+              "n": 1
+            },
+            {
+              "item": "zaubertrank_g",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 2
+              }
+            }
+          ],
+          "look": "edel",
+          "mat": "nebel",
+          "guard": [
+            "en_z_h2",
+            "en_z_h3",
+            "en_z_h1",
+            "en_z_h4"
+          ]
+        },
+        {
+          "id": "sign_z_blitz",
+          "type": "sign",
+          "x": 14,
+          "y": 24,
+          "face": 3,
+          "title": "WASSER|LEITET",
+          "text": "Wo Wasser steht, wird jeder Funke zum Blitz. Die Quelle fürchtet nur, was ihr nicht trocken halten kann.",
+          "style": "iron"
+        },
+        {
+          "id": "door_z_n",
+          "type": "door",
+          "x": 30,
+          "y": 9,
+          "locked": false,
+          "title": "PUMPEN-|HAUS",
+          "style": "dark",
+          "look": "eisen",
+          "font": "bold"
+        },
+        {
+          "id": "en_z_n1",
+          "type": "enemy",
+          "x": 24,
+          "y": 4,
+          "kind": "schlackenwaechter",
+          "kinds": [
+            "schlackenwaechter",
+            "kultpriester"
+          ]
+        },
+        {
+          "id": "en_z_n2",
+          "type": "enemy",
+          "x": 40,
+          "y": 7,
+          "kind": "nebelgeist",
+          "kinds": [
+            "nebelgeist",
+            "skeleton",
+            "nebelgeist"
+          ]
+        },
+        {
+          "id": "en_z_n3",
+          "type": "enemy",
+          "x": 52,
+          "y": 4,
+          "kind": "kultwaechter",
+          "kinds": [
+            "kultwaechter",
+            "kultpriester",
+            "nebelgeist"
+          ]
+        },
+        {
+          "id": "lever_zi1",
+          "type": "lever",
+          "x": 18,
+          "y": 4,
+          "gate": "gate_z1",
+          "msg": "Der Hebel schwergängig, aber er gibt nach. Tief im Süden rauscht Wasser ab, und ein Gitter hebt sich."
+        },
+        {
+          "id": "chest_z_n1",
+          "type": "chest",
+          "x": 56,
+          "y": 3,
+          "loot": [
+            {
+              "gold": 70
+            },
+            {
+              "item": "potion_m",
+              "n": 2
+            }
+          ],
+          "look": "eisen",
+          "mat": "nebel",
+          "guard": [
+            "en_z_n3"
+          ]
+        },
+        {
+          "id": "chest_z_n2",
+          "type": "chest",
+          "x": 20,
+          "y": 8,
+          "loot": [
+            {
+              "gold": 60
+            },
+            {
+              "item": "zaubertrank_m",
+              "n": 2
+            },
+            {
+              "gear": {
+                "boost": 1
+              }
+            }
+          ],
+          "look": "eisen",
+          "mat": "nebel",
+          "guard": [
+            "en_z_n1"
+          ]
+        },
+        {
+          "id": "sign_z_pumpe",
+          "type": "sign",
+          "x": 31,
+          "y": 3,
+          "face": 0,
+          "title": "SCHLEU|SE",
+          "text": "Der Hebel am Westende der Pumpen öffnet die Schleuse im Süden. Das Wasser dort steht seit Jahren hinter dem Gitter.",
+          "style": "iron"
+        },
+        {
+          "id": "door_z_s",
+          "type": "door",
+          "x": 30,
+          "y": 42,
+          "locked": false,
+          "title": "SCHLEU-|SEN",
+          "style": "dark",
+          "look": "eisen",
+          "font": "bold"
+        },
+        {
+          "id": "gate_z1",
+          "type": "gate",
+          "x": 46,
+          "y": 45,
+          "hint": "Ein Gitter hält das Wasser der Ostkammer zurück. Der Hebel liegt weit im Norden, in den Pumpen."
+        },
+        {
+          "id": "en_z_s1",
+          "type": "enemy",
+          "x": 26,
+          "y": 46,
+          "kind": "skeleton",
+          "kinds": [
+            "skeleton",
+            "kultwaechter",
+            "skeleton"
+          ]
+        },
+        {
+          "id": "en_z_s2",
+          "type": "enemy",
+          "x": 38,
+          "y": 44,
+          "kind": "schlackenwaechter",
+          "kinds": [
+            "schlackenwaechter",
+            "nebelgeist"
+          ]
+        },
+        {
+          "id": "chest_z_maul",
+          "type": "chest",
+          "x": 20,
+          "y": 47,
+          "loot": [],
+          "look": "prunk",
+          "mat": "nebel",
+          "mimic": "truhenmaul"
+        },
+        {
+          "id": "chest_z_s1",
+          "type": "chest",
+          "x": 54,
+          "y": 46,
+          "loot": [
+            {
+              "gold": 150
+            },
+            {
+              "item": "potion_g",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 3
+              }
+            }
+          ],
+          "look": "prunk",
+          "mat": "nebel",
+          "trap": "rune"
+        },
+        {
+          "id": "niche_z_s",
+          "type": "niche",
+          "x": 52,
+          "y": 43,
+          "face": 0,
+          "loot": [
+            {
+              "item": "zaubertrank_m",
+              "n": 2
+            },
+            {
+              "gold": 60
+            }
+          ],
+          "text": "Hinter einem lockeren Stein liegt ein Beutel, noch trocken. Das ist hier unten verdächtig."
+        },
+        {
+          "id": "door_z_wn",
+          "type": "door",
+          "x": 5,
+          "y": 21,
+          "locked": false,
+          "title": "WÄCHTER-|KAMMER",
+          "style": "dark",
+          "look": "stein",
+          "font": "thin"
+        },
+        {
+          "id": "en_z_wn1",
+          "type": "enemy",
+          "x": 5,
+          "y": 14,
+          "kind": "kultwaechter",
+          "kinds": [
+            "kultwaechter",
+            "skeleton",
+            "skeleton"
+          ]
+        },
+        {
+          "id": "en_z_wn2",
+          "type": "enemy",
+          "x": 7,
+          "y": 10,
+          "kind": "kultpriester",
+          "kinds": [
+            "kultpriester",
+            "nebelgeist"
+          ]
+        },
+        {
+          "id": "chest_z_wn",
+          "type": "chest",
+          "x": 3,
+          "y": 9,
+          "loot": [
+            {
+              "gold": 80
+            },
+            {
+              "item": "potion_m",
+              "n": 2
+            },
+            {
+              "gear": {
+                "boost": 1
+              }
+            }
+          ],
+          "look": "eisen",
+          "mat": "nebel",
+          "guard": [
+            "en_z_wn2"
+          ]
+        },
+        {
+          "id": "ill_z1",
+          "type": "illusion",
+          "x": 10,
+          "y": 13,
+          "hint": "Die Wand hier wirft keinen Schatten. Das Wasser hat an dieser Stelle keine Spuren hinterlassen."
+        },
+        {
+          "id": "chest_z_ill",
+          "type": "chest",
+          "x": 12,
+          "y": 13,
+          "loot": [
+            {
+              "gold": 100
+            },
+            {
+              "item": "zaubertrank_g",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 2
+              }
+            }
+          ],
+          "look": "edel",
+          "mat": "nebel",
+          "hidden": true
+        },
+        {
+          "id": "sign_z_ill",
+          "type": "sign",
+          "x": 9,
+          "y": 11,
+          "face": 1,
+          "title": "NICHT|ALLES",
+          "text": "Nicht jede Wand hält, was sie verspricht. Manche hält nur den Blick.",
+          "style": "moss"
+        },
+        {
+          "id": "door_z_ws",
+          "type": "door",
+          "x": 5,
+          "y": 30,
+          "locked": false,
+          "title": "KERKER",
+          "style": "dark",
+          "look": "morsch",
+          "font": "thin"
+        },
+        {
+          "id": "en_z_ws1",
+          "type": "enemy",
+          "x": 5,
+          "y": 36,
+          "kind": "skeleton",
+          "kinds": [
+            "skeleton",
+            "skeleton",
+            "kultwaechter"
+          ]
+        },
+        {
+          "id": "en_z_ws2",
+          "type": "enemy",
+          "x": 7,
+          "y": 41,
+          "kind": "nebelgeist",
+          "kinds": [
+            "nebelgeist",
+            "kultpriester",
+            "nebelgeist"
+          ]
+        },
+        {
+          "id": "chest_z_ws",
+          "type": "chest",
+          "x": 3,
+          "y": 42,
+          "loot": [
+            {
+              "gold": 70
+            },
+            {
+              "item": "gegengift",
+              "n": 2
+            },
+            {
+              "item": "potion_m",
+              "n": 1
+            }
+          ],
+          "look": "eisen",
+          "mat": "nebel",
+          "guard": [
+            "en_z_ws2"
+          ]
+        },
+        {
+          "id": "sign_z_ws",
+          "type": "sign",
+          "x": 7,
+          "y": 32,
+          "face": 0,
+          "title": "KERKER",
+          "text": "Wer hier saß, hat sich die Zeit mit Zählen vertrieben. Die Striche reichen bis zur Decke.",
+          "style": "moss"
+        },
+        {
+          "id": "door_z_en",
+          "type": "door",
+          "x": 62,
+          "y": 13,
+          "locked": false,
+          "title": "ARCHIV",
+          "style": "dark",
+          "look": "gitter",
+          "font": "tall"
+        },
+        {
+          "id": "en_z_en1",
+          "type": "enemy",
+          "x": 68,
+          "y": 10,
+          "kind": "kultpriester",
+          "kinds": [
+            "kultpriester",
+            "schlackenwaechter",
+            "nebelgeist"
+          ]
+        },
+        {
+          "id": "en_z_en2",
+          "type": "enemy",
+          "x": 72,
+          "y": 14,
+          "kind": "kultwaechter",
+          "kinds": [
+            "kultwaechter",
+            "kultpriester"
+          ]
+        },
+        {
+          "id": "chest_z_en",
+          "type": "chest",
+          "x": 72,
+          "y": 6,
+          "loot": [
+            {
+              "gold": 90
+            },
+            {
+              "item": "zaubertrank_m",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 2
+              }
+            }
+          ],
+          "look": "edel",
+          "mat": "nebel",
+          "guard": [
+            "en_z_en1"
+          ]
+        },
+        {
+          "id": "secret_zi1",
+          "type": "secret",
+          "x": 66,
+          "y": 4,
+          "hint": "Die Wand ist trocken wie Papier, der Riss läuft schnurgerade nach oben. Eine Fackel am Ostrand des Archivs sitzt lockerer als die anderen."
+        },
+        {
+          "id": "switch_zi1",
+          "type": "lever",
+          "wall": true,
+          "torch": true,
+          "x": 70,
+          "y": 4,
+          "gate": "secret_zi1",
+          "msg": "Die Fackel dreht sich. Irgendwo schabt Stein über Stein."
+        },
+        {
+          "id": "chest_z_geheim",
+          "type": "chest",
+          "x": 65,
+          "y": 2,
+          "loot": [
+            {
+              "gold": 120
+            },
+            {
+              "item": "potion_g",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 3
+              }
+            }
+          ],
+          "look": "edel",
+          "mat": "nebel",
+          "lock": 25
+        },
+        {
+          "id": "door_z_es",
+          "type": "door",
+          "x": 62,
+          "y": 37,
+          "locked": false,
+          "title": "PUMPEN-|KELLER",
+          "style": "dark",
+          "look": "eisen",
+          "font": "bold"
+        },
+        {
+          "id": "en_z_es1",
+          "type": "enemy",
+          "x": 68,
+          "y": 38,
+          "kind": "nebelgeist",
+          "kinds": [
+            "nebelgeist",
+            "nebelgeist",
+            "kultwaechter"
+          ]
+        },
+        {
+          "id": "en_z_es2",
+          "type": "enemy",
+          "x": 71,
+          "y": 43,
+          "kind": "schlackenwaechter",
+          "kinds": [
+            "schlackenwaechter",
+            "skeleton",
+            "kultpriester"
+          ]
+        },
+        {
+          "id": "chest_z_es",
+          "type": "chest",
+          "x": 72,
+          "y": 35,
+          "loot": [
+            {
+              "gold": 80
+            },
+            {
+              "item": "potion_m",
+              "n": 2
+            },
+            {
+              "gear": {
+                "boost": 1
+              }
+            }
+          ],
+          "look": "eisen",
+          "mat": "nebel",
+          "guard": [
+            "en_z_es2"
+          ]
+        },
+        {
+          "id": "door_z_quelle",
+          "type": "door",
+          "x": 66,
+          "y": 25,
+          "locked": true,
+          "title": "QUELL-|KAMMER",
+          "style": "iron",
+          "look": "gold",
+          "font": "bold",
+          "key": "quellschluessel"
+        },
+        {
+          "id": "sign_z_quelle",
+          "type": "sign",
+          "x": 67,
+          "y": 19,
+          "face": 0,
+          "title": "QUELLE",
+          "text": "Hier entspringt alles. Das Wasser hört dir zu, bevor du sprichst.",
+          "style": "stone"
+        },
+        {
+          "id": "en_z_boss",
+          "type": "enemy",
+          "x": 72,
+          "y": 25,
+          "kind": "quellhueterin",
+          "kinds": [
+            "quellhueterin",
+            "nebelgeist"
+          ]
+        },
+        {
+          "id": "chest_z_boss",
+          "type": "chest",
+          "x": 73,
+          "y": 20,
+          "loot": [
+            {
+              "gold": 150
+            },
+            {
+              "item": "potion_g",
+              "n": 1
+            },
+            {
+              "item": "ring_quelle",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 3
+              }
+            }
+          ],
+          "look": "edel",
+          "mat": "nebel",
+          "guard": [
+            "en_z_boss"
+          ]
+        },
+        {
+          "id": "exit_z_tiefe",
+          "type": "exit",
+          "x": 74,
+          "y": 30,
+          "look": "down",
+          "title": "Tiefer hinab",
+          "text": "Unter dem Quellbecken führt ein Schacht weiter nach unten. Das Wasser dort fließt in die falsche Richtung.",
+          "again": "Hier geht es in einer späteren Version weiter."
+        },
+        {
+          "id": "dk_festung6_f1",
+          "type": "decor",
+          "x": 7,
+          "y": 28,
+          "look": "fass"
+        },
+        {
+          "id": "dk_festung6_s1",
+          "type": "decor",
+          "x": 22,
+          "y": 41,
+          "look": "schutt"
+        },
+        {
+          "id": "dk_festung6_s2",
+          "type": "decor",
+          "x": 58,
+          "y": 10,
+          "look": "schutt"
+        },
+        {
+          "id": "dk_festung6_f2",
+          "type": "decor",
+          "x": 67,
+          "y": 44,
+          "look": "fass"
+        },
+        {
+          "id": "chest_z_k1",
+          "type": "chest",
+          "x": 95,
+          "y": 19,
+          "loot": [
+            {
+              "gold": 140
+            },
+            {
+              "item": "potion_g",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 3
+              }
+            }
+          ],
+          "look": "edel",
+          "mat": "nebel"
+        },
+        {
+          "id": "chest_z_k2",
+          "type": "chest",
+          "x": 85,
+          "y": 3,
+          "loot": [
+            {
+              "gold": 110
+            },
+            {
+              "item": "zaubertrank_g",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 2
+              }
+            }
+          ],
+          "look": "eisen",
+          "mat": "nebel"
+        },
+        {
+          "id": "chest_z_k3",
+          "type": "chest",
+          "x": 97,
+          "y": 13,
+          "loot": [
+            {
+              "gold": 90
+            },
+            {
+              "item": "potion_m",
+              "n": 2
+            },
+            {
+              "gear": {
+                "boost": 2
+              }
+            }
+          ],
+          "look": "eisen",
+          "mat": "nebel"
+        },
+        {
+          "id": "chest_z_k4",
+          "type": "chest",
+          "x": 83,
+          "y": 9,
+          "loot": [
+            {
+              "gold": 70
+            },
+            {
+              "item": "zaubertrank_m",
+              "n": 2
+            },
+            {
+              "gear": {
+                "boost": 1
+              }
+            }
+          ],
+          "look": "eisen",
+          "mat": "nebel"
+        },
+        {
+          "id": "en_z_k1",
+          "type": "enemy",
+          "x": 87,
+          "y": 11,
+          "kind": "nebelgeist",
+          "kinds": [
+            "nebelgeist",
+            "kultpriester",
+            "nebelgeist"
+          ]
+        },
+        {
+          "id": "en_z_k2",
+          "type": "enemy",
+          "x": 93,
+          "y": 13,
+          "kind": "skeleton",
+          "kinds": [
+            "skeleton",
+            "schlackenwaechter",
+            "kultwaechter"
+          ]
+        },
+        {
+          "id": "en_z_k3",
+          "type": "enemy",
+          "x": 89,
+          "y": 15,
+          "kind": "kultwaechter",
+          "kinds": [
+            "kultwaechter",
+            "kultwaechter",
+            "nebelgeist"
+          ]
+        },
+        {
+          "id": "en_z_k4",
+          "type": "enemy",
+          "x": 89,
+          "y": 19,
+          "kind": "kultpriester",
+          "kinds": [
+            "kultpriester",
+            "skeleton",
+            "schlackenwaechter"
+          ]
+        },
+        {
+          "id": "en_z_kk1",
+          "type": "enemy",
+          "x": 77,
+          "y": 19,
+          "kind": "kultwaechter",
+          "kinds": [
+            "kultwaechter",
+            "kultwaechter",
+            "nebelgeist"
+          ]
+        },
+        {
+          "id": "en_z_kk2",
+          "type": "enemy",
+          "x": 97,
+          "y": 7,
+          "kind": "kultpriester",
+          "kinds": [
+            "kultpriester",
+            "skeleton",
+            "schlackenwaechter"
+          ]
+        },
+        {
+          "id": "en_z_kk3",
+          "type": "enemy",
+          "x": 97,
+          "y": 17,
+          "kind": "nebelgeist",
+          "kinds": [
+            "nebelgeist",
+            "kultpriester",
+            "nebelgeist"
+          ]
+        },
+        {
+          "id": "niche_z_k",
+          "type": "niche",
+          "x": 97,
+          "y": 3,
+          "face": 0,
+          "loot": [
+            {
+              "item": "zaubertrank_m",
+              "n": 1
+            },
+            {
+              "gold": 80
+            }
+          ],
+          "text": "In der Wand steckt ein Beutel, vom Schimmel fast zerfressen."
+        },
+        {
+          "id": "trap_z_k1",
+          "type": "trap",
+          "x": 77,
+          "y": 11,
+          "kind": "gas"
+        },
+        {
+          "id": "door_z_kanal",
+          "type": "door",
+          "x": 74,
+          "y": 11,
+          "locked": false,
+          "title": "KANAL-|NETZ",
+          "style": "dark",
+          "look": "gitter",
+          "font": "tall"
+        },
+        {
+          "id": "sign_z_kanal",
+          "type": "sign",
+          "x": 77,
+          "y": 3,
+          "face": 0,
+          "title": "KANAL|NETZ",
+          "text": "Wer sich hier verirrt, folgt dem Wasser. Es fließt immer bergab, nie im Kreis.",
+          "style": "moss"
+        },
+        {
+          "id": "door_z_halle",
+          "type": "door",
+          "x": 40,
+          "y": 49,
+          "locked": false,
+          "title": "SICKER-|HALLE",
+          "style": "dark",
+          "look": "stein",
+          "font": "wide"
+        },
+        {
+          "id": "en_z_h5",
+          "type": "enemy",
+          "x": 22,
+          "y": 51,
+          "kind": "kultwaechter",
+          "kinds": [
+            "kultwaechter",
+            "nebelgeist",
+            "kultpriester"
+          ]
+        },
+        {
+          "id": "en_z_h6",
+          "type": "enemy",
+          "x": 34,
+          "y": 55,
+          "kind": "skeleton",
+          "kinds": [
+            "skeleton",
+            "schlackenwaechter",
+            "skeleton"
+          ]
+        },
+        {
+          "id": "en_z_h7",
+          "type": "enemy",
+          "x": 47,
+          "y": 59,
+          "kind": "nebelgeist",
+          "kinds": [
+            "nebelgeist",
+            "kultpriester",
+            "kultwaechter"
+          ]
+        },
+        {
+          "id": "en_z_h8",
+          "type": "enemy",
+          "x": 54,
+          "y": 52,
+          "kind": "schlackenwaechter",
+          "kinds": [
+            "schlackenwaechter",
+            "nebelgeist"
+          ]
+        },
+        {
+          "id": "chest_z_halle1",
+          "type": "chest",
+          "x": 20,
+          "y": 61,
+          "loot": [
+            {
+              "gold": 100
+            },
+            {
+              "item": "potion_g",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 2
+              }
+            }
+          ],
+          "look": "edel",
+          "mat": "nebel",
+          "guard": [
+            "en_z_h5",
+            "en_z_h6"
+          ]
+        },
+        {
+          "id": "chest_z_halle2",
+          "type": "chest",
+          "x": 55,
+          "y": 61,
+          "loot": [
+            {
+              "gold": 110
+            },
+            {
+              "item": "zaubertrank_g",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 3
+              }
+            }
+          ],
+          "look": "edel",
+          "mat": "nebel",
+          "guard": [
+            "en_z_h7",
+            "en_z_h8"
+          ],
+          "trap": "rune"
+        },
+        {
+          "id": "chest_z_halle3",
+          "type": "chest",
+          "x": 38,
+          "y": 56,
+          "loot": [],
+          "look": "prunk",
+          "mat": "nebel",
+          "mimic": "truhenmaul"
+        },
+        {
+          "id": "trap_z_h1",
+          "type": "trap",
+          "x": 40,
+          "y": 51,
+          "kind": "spikes"
+        },
+        {
+          "id": "ill_z2",
+          "type": "illusion",
+          "x": 17,
+          "y": 56
+        },
+        {
+          "id": "sign_z_halle",
+          "type": "sign",
+          "x": 18,
+          "y": 54,
+          "face": 3,
+          "title": "ALTES|WASSER",
+          "text": "An dieser Wand lief das Wasser nie ab. Wo nichts nass wird, ist nichts dahinter. Oder doch.",
+          "style": "moss"
+        },
+        {
+          "id": "chest_z_halle4",
+          "type": "chest",
+          "x": 14,
+          "y": 56,
+          "loot": [
+            {
+              "gold": 130
+            },
+            {
+              "item": "potion_g",
+              "n": 1
+            },
+            {
+              "item": "zaubertrank_g",
+              "n": 1
+            },
+            {
+              "gear": {
+                "boost": 3
+              }
+            }
+          ],
+          "look": "edel",
+          "mat": "nebel",
+          "hidden": true
         }
       ]
     }
@@ -10951,6 +12420,166 @@
               "t": "Gruppe verwalten",
               "tavern": true
             },
+            {
+              "t": "Gehen"
+            }
+          ]
+        }
+      }
+    },
+    "statue1": {
+      "name": "Hüter I",
+      "start": "a",
+      "again": "z",
+      "nodes": {
+        "a": {
+          "text": "Eine Statue aus nassem Stein, die Augen leer, aber aufmerksam. Auf dem Sockel steht „Hüter I“. Als ihr näher tretet, bewegen sich die Lippen: „Hüter II sagt die Wahrheit.“",
+          "choices": [
+            {
+              "t": "Den Satz merken",
+              "to": "a",
+              "note": "Hüter I sagt: „Hüter II sagt die Wahrheit.“ Genau einer der vier Hüter lügt, drei sagen die Wahrheit.",
+              "noteTitle": "Zisterne: Hüter I"
+            },
+            {
+              "t": "Die Hand der Statue drücken",
+              "if": {
+                "noflag": "zisterne:statue"
+              },
+              "attack": "kultwaechter",
+              "done": true,
+              "msg": "Der Stein knirscht. Die Hand der Statue greift zu, und das ist nicht der Gruß, den ihr erwartet habt."
+            },
+            {
+              "t": "Zurücktreten"
+            }
+          ]
+        },
+        "z": {
+          "text": "Die Statue steht still. Der Stein ist nur noch Stein.",
+          "choices": [
+            {
+              "t": "Gehen"
+            }
+          ]
+        }
+      }
+    },
+    "statue2": {
+      "name": "Hüter II",
+      "start": "a",
+      "again": "z",
+      "nodes": {
+        "a": {
+          "text": "Eine Statue aus nassem Stein, die Augen leer, aber aufmerksam. Auf dem Sockel steht „Hüter II“. Als ihr näher tretet, bewegen sich die Lippen: „Hüter III lügt.“",
+          "choices": [
+            {
+              "t": "Den Satz merken",
+              "to": "a",
+              "note": "Hüter II sagt: „Hüter III lügt.“ Genau einer der vier Hüter lügt, drei sagen die Wahrheit.",
+              "noteTitle": "Zisterne: Hüter II"
+            },
+            {
+              "t": "Die Hand der Statue drücken",
+              "if": {
+                "noflag": "zisterne:statue"
+              },
+              "attack": "kultwaechter",
+              "done": true,
+              "msg": "Der Stein knirscht. Die Hand der Statue greift zu, und das ist nicht der Gruß, den ihr erwartet habt."
+            },
+            {
+              "t": "Zurücktreten"
+            }
+          ]
+        },
+        "z": {
+          "text": "Die Statue steht still. Der Stein ist nur noch Stein.",
+          "choices": [
+            {
+              "t": "Gehen"
+            }
+          ]
+        }
+      }
+    },
+    "statue3": {
+      "name": "Hüter III",
+      "start": "a",
+      "again": "z",
+      "nodes": {
+        "a": {
+          "text": "Eine Statue aus nassem Stein, die Augen leer, aber aufmerksam. Auf dem Sockel steht „Hüter III“. Als ihr näher tretet, bewegen sich die Lippen: „Hüter IV lügt.“",
+          "choices": [
+            {
+              "t": "Den Satz merken",
+              "to": "a",
+              "note": "Hüter III sagt: „Hüter IV lügt.“ Genau einer der vier Hüter lügt, drei sagen die Wahrheit.",
+              "noteTitle": "Zisterne: Hüter III"
+            },
+            {
+              "t": "Die Hand der Statue drücken",
+              "if": {
+                "noflag": "zisterne:statue"
+              },
+              "give": [
+                {
+                  "item": "quellschluessel",
+                  "n": 1
+                }
+              ],
+              "set": [
+                "zisterne:statue"
+              ],
+              "done": true,
+              "msg": "Die Hand gibt nach. In der Handfläche liegt ein Schlüssel aus Wasserstein. Die anderen drei Statuen rühren sich nicht mehr."
+            },
+            {
+              "t": "Zurücktreten"
+            }
+          ]
+        },
+        "z": {
+          "text": "Die Statue steht still. Der Stein ist nur noch Stein.",
+          "choices": [
+            {
+              "t": "Gehen"
+            }
+          ]
+        }
+      }
+    },
+    "statue4": {
+      "name": "Hüter IV",
+      "start": "a",
+      "again": "z",
+      "nodes": {
+        "a": {
+          "text": "Eine Statue aus nassem Stein, die Augen leer, aber aufmerksam. Auf dem Sockel steht „Hüter IV“. Als ihr näher tretet, bewegen sich die Lippen: „Hüter I sagt die Wahrheit.“",
+          "choices": [
+            {
+              "t": "Den Satz merken",
+              "to": "a",
+              "note": "Hüter IV sagt: „Hüter I sagt die Wahrheit.“ Genau einer der vier Hüter lügt, drei sagen die Wahrheit.",
+              "noteTitle": "Zisterne: Hüter IV"
+            },
+            {
+              "t": "Die Hand der Statue drücken",
+              "if": {
+                "noflag": "zisterne:statue"
+              },
+              "attack": "kultwaechter",
+              "done": true,
+              "msg": "Der Stein knirscht. Die Hand der Statue greift zu, und das ist nicht der Gruß, den ihr erwartet habt."
+            },
+            {
+              "t": "Zurücktreten"
+            }
+          ]
+        },
+        "z": {
+          "text": "Die Statue steht still. Der Stein ist nur noch Stein.",
+          "choices": [
             {
               "t": "Gehen"
             }

@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.36.0 (23.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.37.0 (24.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1354,8 +1354,20 @@ Entscheidungen des Assistenten (vom Nutzer delegiert): Thema „Gießerei“ (Sc
 - Kein Spoiler-Inhalt (kein Story-Ende) in Texten des neuen Gebiets.
 - Offen auf Gerät (nichts bestätigt): siehe Checkliste im Chat. Offen/Ideen: Elementarfackeln, Aushangbrett, Schmied in der Siedlung und sechs Siegel noch nicht gebaut; `spinne:schwaeche` wirkt nur beim Königinnenkampf; Schlackenwächter/Gießmeister nutzen vorhandene Figuren (eigene Sprites möglich); Gießerei hat wenige Notizbuch-Dialoge (keine NPCs außer Brum); Nach der Gießerei fehlt der Weiterweg (Platzhalter `exit_g_tiefe`).
 
-## Für den nächsten Chat (Stand 23.11.2026)
-- Offene Gerätetests (alle bisher nur headless): Gießerei (0.36.0), Notizbuch (0.35.0), Shop-Scrollposition bei Hedda (0.35.0), Treppen/Thronsaal (0.34.2), B-Talentwege (0.35.1), Taverne (0.34.0), Spinnenhöhle (0.33.0).
+## 0.37.0 (24.11.2026; headless, nicht auf Gerät getestet)
+Auftrag des Nutzers (24.11.2026, 16:20): „Aktueller Stand mit offener Artefakt checkliste. Dungeon Weiter erstellen“. Deutung: Keller 6 nach der Gießerei, Testliste als ✓/✗-Artefakt. Entscheidungen des Assistenten (delegiert): Thema „Zisterne“ (Wasserkeller; Bauart: große Wasserhalle mit Stegen, Plattformen und Flügeln, dazu Labyrinth und Pfeilerhalle), weil sie sich von Höhle und Gießhalle klar abhebt.
+- **Gebiet `festung6` „Die Zisterne“** (100×64, Palette `zisterne`, `foe` 380/270): Ankunft (2,25), Treppe `stairs_g_tiefe` (Gießerei (82,36)) ↔ `stairs_z_up`. Der alte Platzhalter `exit_g_tiefe` ist weg; der neue Platzhalter-Ausgang `exit_z_tiefe` (74,30) liegt hinter dem Boss (Text „später“).
+- **Wasser**: Zellen `~` sperren (wie Moorsee). Mittelhalle mit Kreuzstegen, Mittelinsel (Truhe mit vier Wachgruppen) und vier Plattformen mit je einer Hüterstatue.
+- **Rätsel**: vier Hüterstatuen (NPC-Look `hueter`, Dialoge `statue1`–`statue4`), jede nennt einen Satz über eine andere; genau eine lügt. Die Hand der lügenden Statue gibt `quellschluessel`, jede andere Statue greift an (Kultwächter). Der Test prüft, dass die Aussagen genau eine Lösung haben. Sätze lassen sich per „Den Satz merken“ ins Notizbuch eintragen. Schlüssel öffnet `door_z_quelle` zum Boss.
+- **Weitere Elemente**: Hebel im Pumpenhaus (Nord) öffnet Gitter `gate_z1` im Süden (Schleusen: Truhe mit Runenfalle, Wandnische, falsche Truhe). Illusionswand mit Alkove in der Wächterkammer (West). Fackelschalter im Archiv (Ost) öffnet Geheimkammer. Kanalnetz (Labyrinth, Osten, Tür `door_z_kanal`) mit vier Truhen in Sackgassen und Wachen. Sickerhalle (Süden, Tür `door_z_halle`) mit Pfeilern, falscher Truhe und Illusionswand zu einer Truhe.
+- **Boss `quellhueterin` „Quellhüterin Maris“** (270 LP, Eis 60 %, Feuer −30, Blitz −40; Flutwelle angekündigt, Quellsegen heilt, Ruf eines Nebelgeists, Phasen <60 %/<30 %); Drop `ring_quelle` „Ring der Tiefe“ (+2 Init, Statusabwehr 20 %). Sprite: Priester (Boss ×1,12); Statuen: Sprite `hueter` (eigene Sprites mögliche Verbesserung). Hinweisschild „Wasser leitet“ deutet auf Blitz hin.
+- **Code**: `analyzeLevel` zählt Schlüssel aus Dialogen erreichbarer NPCs (`give` mit Quest-Item). `sim.js` CAMPAIGN um `festung6`. VERSION 0.37.0 (main.js, sw.js). Tests: 152 grün (Ausgang jetzt in der Zisterne; neue Tests Zisterne und Quellhüterin).
+- **Balance (Simulation, klug, Ø Stufe 15,0)**: Boss 82 % Sieg im 1. Versuch, 121 % Schaden (Harkon 76 %/127 %). BALANCE.md/SIM.md neu erzeugt.
+- Kein Spoiler-Inhalt (kein Story-Ende) in Texten des neuen Gebiets.
+- Offen auf Gerät (nichts bestätigt): siehe Checkliste. Nur headless geprüft: Karte/Verbindungen, Rätselbeweis, Lösbarkeit; Optik, Spielgefühl und Kampf nicht auf Gerät getestet.
+
+## Für den nächsten Chat (Stand 24.11.2026)
+- Offene Gerätetests (alle bisher nur headless): Zisterne (0.37.0), Gießerei (0.36.0), Notizbuch (0.35.0), Shop-Scrollposition bei Hedda (0.35.0), Treppen/Thronsaal (0.34.2), B-Talentwege (0.35.1), Taverne (0.34.0), Spinnenhöhle (0.33.0).
 - Offen vom Nutzer: Screenshot der Wache ohne Text – nach Gebiet und Beschwerde fragen. Entscheidungen in der Checkliste (Artefakt) weiter offen.
-- Mögliche nächste Schritte nur auf Wunsch: Weiterweg hinter der Gießerei (Keller 6), Aushangbrett, Schmied in der Siedlung, Elementarfackeln, weitere Dialoge mit `note`, Talent-Alternativen B–F, Truhen-Option C.
-- Nutzer hat bis zum Folgetag wenig Kontingent: neuen Chat im Projekt mit „HANDOVER.md lesen“ starten.
+- Mögliche nächste Schritte nur auf Wunsch: Weiterweg hinter der Zisterne (Keller 7, Platzhalter `exit_z_tiefe`), Aushangbrett, Schmied in der Siedlung, Elementarfackeln, weitere Dialoge mit `note`, Talent-Alternativen B–F, Truhen-Option C, eigenes Statuen-Sprite.
+- Nutzer hat wenig Kontingent: neuen Chat im Projekt mit „HANDOVER.md lesen“ starten.

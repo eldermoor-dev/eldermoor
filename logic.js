@@ -2272,6 +2272,11 @@ export function analyzeLevel(data, levelId) {
         for (const e of c.loot || []) if (e.item && data.items[e.item].kind === 'quest') have.add(e.item);
       }
     }
+    for (const np of lvl.objects.filter((o) => o.type === 'npc' && o.dialog)) { // 0.37.0: Schlüssel aus Gesprächen (z. B. Hüterstatuen der Zisterne)
+      if (opened.has(np.id) || !DIRS.some((d) => reach.has(`${np.x + d.dx},${np.y + d.dy}`))) continue;
+      opened.add(np.id); changed = true;
+      for (const nd of Object.values(data.dialogs?.[np.dialog]?.nodes || {})) for (const c of nd.choices || []) for (const e of c.give || []) if (e.item && data.items[e.item]?.kind === 'quest') have.add(e.item);
+    }
   }
   const reach = bfs();
   const unreachableExits = exits.filter((o) => !reach.has(`${o.x},${o.y}`)).map((o) => o.id);
