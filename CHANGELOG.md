@@ -3,6 +3,11 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.40.0 (25.11.2026, headless)
+- Schatzkarten: Wirtin Marga verkauft je besuchtem Gebiet eine Karte (150–400 Gold, zehn Gebiete: Moorpfad bis Festung 6). Mit Karte zeigt die Gebietskarte ein rotes Kreuz an einer Wand; ◉ öffnet sie. Dahinter liegt ein Extraraum mit Truhe (bessere Ausrüstung, Tränke, Gold). Ohne Karte ist die Wand eine gewöhnliche Mauer.
+- Steckbriefe: Aushangbrett in der Taverne (Tafel an der Westwand und Wahl bei Marga). Drei Zettel gleichzeitig, 17 Aufträge (Gegner erlegen, Trophäe beschaffen, seltene Waffe/Rüstung abgeben). Belohnung: Erfahrung für alle wachen Helden, dazu etwas Gold. Neue Zettel nach etwa 60 Schritten; Abreißen möglich.
+- Moorpfad: fünf Mauerzeilen unten angefügt (Platz für den Extraraum); alte Spielstände bleiben gültig.
+
 ## 0.39.0 (25.11.2026, headless)
 - Taverne „Zum goldenen Eber“: Holzfassade in der Siedlung, größere Schankstube mit Tresen, Weinregalen, Weinfässern und Gästen an Tischen, Zimmer gegen Gold (heilt auch die Reserve).
 

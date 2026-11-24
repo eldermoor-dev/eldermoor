@@ -2876,7 +2876,7 @@ export async function runTests(data, env = {}) {
     const t = L.changeArea(s, data, 'stairs_taverne'); assert(t.ok && s.levelId === 'taverne', 'Taverne erreichbar');
     const back = s.objs.find((o) => o.id === 'stairs_taverne_aus'); assert(back && back.to.level === 'moorrand' && L.cellChar(data.levels.moorrand, back.to.x, back.to.y) === '.', 'Rückweg liegt auf Boden');
     const w = s.objs.find((o) => o.id === 'npc_wirt'); assert(w && L.blockerAt(s, w.x, w.y) === w, 'Wirtin versperrt das Feld');
-    const v = L.dialogView(s, data, w, L.dialogStartNode(s, data, w)); assert(v.choices.length === 4, 'Wirtin: vier Wahlmöglichkeiten (Gruppe, Zimmer, Erklärung, Gehen)');
+    const v = L.dialogView(s, data, w, L.dialogStartNode(s, data, w)); assert(v.choices.length === 6, 'Wirtin: sechs Wahlmöglichkeiten (Gruppe, Zimmer, Karten, Aushang, Erklärung, Gehen)');
     const r0 = L.dialogChoose(s, data, w, 'a', 0); assert(r0.end && r0.tavern, 'Wahl öffnet die Taverne');
     // Anwerben
     assert(L.recruitCost(s, data) === 60, 'Kosten Stufe 1: 40 + 20 × 1');
@@ -3000,6 +3000,77 @@ export async function runTests(data, env = {}) {
     const idx = data.dialogs.wirt.nodes.a.choices.findIndex((c) => c.inn), r = L.dialogChoose(s, data, npc, 'a', idx);
     assert(!r.error && s.gold === 200 - p && s.heroes.every((h) => h.hp === h.maxHp && h.mp === h.maxMp) && s.reserve[0].hp === s.reserve[0].maxHp, 'alle ausgeruht, Gold abgezogen: ' + JSON.stringify(r));
     eq(L.dialogView(s, data, npc, 'a').choices.find((c) => /Zimmer/.test(c.t)).ok, false, 'ausgeruht: gesperrt'); eq(L.dialogChoose(s, data, npc, 'a', idx).error, 'not-possible', 'kein zweites Zimmer');
+  });
+  await test('0.40.0 Schatzkarten: Daten, Kartenwand ohne/mit Karte, Kauf, Extraraum erreichbar', () => {
+    const ids = Object.keys(data.maps || {}); assert(ids.length >= 10, 'mindestens zehn Gebiete mit Karte: ' + ids.length);
+    for (const id of ids) {
+      const m = data.maps[id], it = data.items[m.item], lvl = data.levels[id];
+      assert(it && it.kind === 'quest' && it.noSell, id + ': Karte ist ein unverkäuflicher Questgegenstand'); assert(m.price >= 150 && m.price <= 400, id + ': Preis 150–400');
+      const wall = lvl.objects.find((o) => o.type === 'secret' && o.needs === m.item), chest = lvl.objects.find((o) => o.id === 'chest_karte_' + id);
+      assert(wall && chest, id + ': Kartenwand und Truhe'); assert(L.cellChar(lvl, wall.x, wall.y) === '.' && L.cellChar(lvl, chest.x, chest.y) === '.', id + ': beide auf Boden');
+      assert(!lvl.objects.some((o) => o.type === 'secret' && o.needs !== m.item && o.needs), id + ': nur eine Karte je Gebiet');
+      const a = L.analyzeLevel(data, id); assert(a.ok, id + ': Analyse ok ' + JSON.stringify(a));
+    }
+    const lvl = data.levels.kultgruft, wall = lvl.objects.find((o) => o.id === 'kartenwand_kultgruft'), chest = lvl.objects.find((o) => o.id === 'chest_karte_kultgruft');
+    const s = L.newGame(data, 40); L.jumpToLevel(s, data, 'moorrand');
+    assert(!L.mapOffers(s, data).some((o) => o.id === 'kultgruft'), 'unbesuchtes Gebiet: keine Karte im Angebot');
+    L.jumpToLevel(s, data, 'kultgruft');
+    const dir = [[0, -1], [1, 0], [0, 1], [-1, 0]].findIndex(([dx, dy]) => L.cellChar(lvl, wall.x - dx, wall.y - dy) === '.' && !lvl.objects.some((o) => o.x === wall.x - dx && o.y === wall.y - dy && o.type !== 'enemy' && o.type !== 'decor'));
+    const [dx, dy] = [[0, -1], [1, 0], [0, 1], [-1, 0]][dir], F = { x: wall.x - dx, y: wall.y - dy };
+    s.objs.forEach((o) => { if (o.type === 'enemy') o.dead = true; });
+    s.player = { x: F.x, y: F.y, dir }; const gold0 = s.gold = 1000;
+    // ohne Karte: gewöhnliche Mauer (keine Meldung, kein Hinweis, nicht zu öffnen)
+    const r0 = L.tryMove(s, data, 'f'); assert(!r0.moved && r0.wall && !r0.msg && !r0.blocker, 'ohne Karte: Mauer'); assert(L.interact(s, data).msg === 'Hier gibt es nichts zu tun.' && !s.objs.find((o) => o.id === wall.id).open, 'ohne Karte: nicht zu öffnen');
+    const g = buildGrid(data.levels.kultgruft, s.objs).grid; assert(g[wall.y * lvl.map[0].length + wall.x] > 0, 'Kartenwand sieht aus wie Mauer');
+    // Kauf
+    const off = L.mapOffers(s, data).find((o) => o.id === 'kultgruft'); assert(off && off.ok && !off.owned, 'Angebot da'); const price = data.maps.kultgruft.price;
+    s.gold = price - 1; eq(L.buyMap(s, data, 'kultgruft').error, 'gold', 'zu wenig Gold'); s.gold = gold0;
+    const b = L.buyMap(s, data, 'kultgruft'); assert(!b.error && s.gold === gold0 - price && s.inv.karte_kultgruft === 1, 'gekauft'); eq(L.buyMap(s, data, 'kultgruft').error, 'owned', 'nur einmal');
+    // mit Karte: Hinweis, ◉ öffnet, Weg frei
+    const r1 = L.tryMove(s, data, 'f'); assert(!r1.moved && r1.blocker && /Schatzkarte/.test(r1.msg), 'mit Karte: Hinweis'); const o1 = L.interact(s, data); assert(o1.changed && s.objs.find((o) => o.id === wall.id).open, 'Wand offen');
+    const r2 = L.tryMove(s, data, 'f'); assert(r2.moved, 'Wand durchschritten');
+    // Speichern/Laden: Wand bleibt offen; alter Stand ohne Raum bekommt Wand und Truhe nachgereicht
+    const s2 = L.deserialize(JSON.parse(JSON.stringify(L.serialize(s))), data); assert(s2.objs.find((o) => o.id === wall.id).open, 'offen nach Laden');
+    const old = L.newGame(data, 41); L.jumpToLevel(old, data, 'kultgruft'); old.objs = old.objs.filter((o) => o.id !== wall.id && o.id !== chest.id); L.syncStatic(old, data);
+    assert(old.objs.some((o) => o.id === wall.id && !o.open) && old.objs.some((o) => o.id === chest.id && !o.open), 'Alt-Stand: Wand und Truhe nachgetragen');
+  });
+  await test('0.40.0 Steckbriefe: Daten, Aushang nur für besuchte Gebiete, Abschüsse, Trophäen, Abgabe, Nachrücken, Abreißen', () => {
+    const B = data.bounties; assert(B.length >= 15, 'mindestens 15 Steckbriefe'); const kinds = new Set(B.map((b) => b.type)); for (const k of ['kill', 'trophy', 'gear']) assert(kinds.has(k), 'Art ' + k);
+    for (const b of B) {
+      assert(data.levels[b.lvl] && b.title && b.text && b.xp > 0, b.id + ': Felder');
+      if (b.type === 'kill') assert(data.enemies[b.enemy] && b.n >= 1 && b.from.every((l) => data.levels[l]), b.id + ': Gegner');
+      if (b.type === 'trophy') { assert(data.items[b.item] && data.items[b.item].kind === 'quest' && data.items[b.item].noSell && b.enemies.every((k) => data.enemies[k]), b.id + ': Trophäe'); }
+      if (b.type === 'gear') assert(['weapon', 'armor'].includes(b.slot) && b.minQ >= 1, b.id + ': Ausrüstung');
+      if (b.type !== 'gear') { const n = b.from.reduce((a, l) => a + data.levels[l].objects.filter((o) => o.type === 'enemy' && (b.type === 'kill' ? o.kind === b.enemy : b.enemies.includes(o.kind))).length, 0); assert(n >= (b.type === 'kill' ? b.n : 1), b.id + ': genug Quellen ' + n); }
+    }
+    assert(new Set(B.map((b) => b.id)).size === B.length, 'Kennungen eindeutig');
+    const sign = data.levels.taverne.objects.find((o) => o.board); assert(sign && sign.face != null, 'Aushangbrett in der Taverne');
+    const s = L.newGame(data, 42); eq(L.boardView(s, data).length, 0, 'noch kein besuchtes Gebiet mit Steckbrief');
+    L.jumpToLevel(s, data, 'moorpfad'); const v = L.boardView(s, data); eq(v.length, 3, 'drei Zettel'); assert(v.every((x) => data.bounties.find((b) => b.id === x.id).lvl === 'moorpfad'), 'nur besuchtes Gebiet');
+    eq(L.boardTurnIn(s, data, v[0].id).error, 'not-ready', 'noch nicht erfüllt');
+    // Abschüsse zählen ab Aushang (Wölfe), Trophäe fällt nur bei aushängendem Zettel
+    s.board.slots = [{ id: 'b_wolf', base: 0 }, { id: 'b_wolfsfell', base: 0 }, { id: 'b_irrlicht', base: 0 }];
+    s.heroes.forEach((h) => { h.maxHp = h.hp = 5000; });
+    let wolves = 0; for (const o of s.objs) if (o.type === 'enemy' && o.kind === 'wolf' && !o.dead) {
+      s.player = { x: o.x, y: o.y, dir: 0 }; const e = o; L.startCombat(s, data, e); assert(playOut(s) === 'victory', 'Sieg'); wolves++;
+    }
+    eq(s.kills.wolf, wolves, 'Abschüsse gezählt'); assert((s.inv.wolfsfell || 0) === 1, 'Wolfsfell als Trophäe (letzte Quelle sicher)'); assert(!s.inv.irrlichtstaub, 'Irrlichtstaub nicht von Wölfen');
+    // Abgabe: Trophäe wird abgegeben, EP + Gold, Zettel weg, nächster erst nach Wartezeit
+    const xp0 = s.heroes[0].xp, gold0 = s.gold, r = L.boardTurnIn(s, data, 'b_wolfsfell'); assert(!r.error && s.heroes[0].xp > xp0 && s.gold === gold0 + data.bounties.find((b) => b.id === 'b_wolfsfell').gold && !s.inv.wolfsfell, 'EP, Gold, Trophäe weg');
+    assert(!L.boardView(s, data).some((x) => x.id === 'b_wolfsfell'), 'erledigter Zettel weg'); eq(s.board.slots.length, 2, 'Platz frei, noch kein Ersatz'); s.steps += 59; eq(L.boardView(s, data).length, 2, 'nach 59 Schritten noch nicht'); s.steps += 1; assert(L.boardView(s, data).length === 3 || !data.bounties.some((b) => b.lvl === 'moorpfad' && !s.board.done.includes(b.id) && !s.board.slots.some((q) => q.id === b.id)), 'nach 60 Schritten Ersatz');
+    assert(!L.boardView(s, data).some((x) => x.id === 'b_wolfsfell') && s.board.done.includes('b_wolfsfell'), 'jeder Zettel nur einmal');
+    // Abreißen
+    const first = s.board.slots[0].id; assert(!L.boardDismiss(s, data, first).error && !s.board.slots.some((q) => q.id === first) && s.board.skip.includes(first), 'abgerissen');
+    // Abschuss-Auftrag
+    const sk = L.newGame(data, 43); L.jumpToLevel(sk, data, 'kultgruft'); L.boardView(sk, data); sk.board.slots = [{ id: 'b_skelett', base: 0 }]; sk.kills = { skeleton: 2 }; eq(L.boardView(sk, data)[0].ready, false, '2 von 3'); sk.kills.skeleton = 3; assert(L.boardView(sk, data)[0].ready, '3 von 3');
+    // Ausrüstungsauftrag: seltene Waffe wird gebraucht, gewöhnliche nicht
+    const gs = L.newGame(data, 44); L.jumpToLevel(gs, data, 'kultgruft'); L.boardView(gs, data); gs.board.slots = [{ id: 'b_waffe', base: 0 }];
+    gs.gear.w1 = { kind: 'equip', slot: 'weapon', q: 'common' }; gs.inv.w1 = 1; eq(L.boardView(gs, data)[0].ready, false, 'gewöhnliche Waffe zählt nicht');
+    gs.gear.w2 = { kind: 'equip', slot: 'weapon', q: 'rare' }; gs.inv.w2 = 1; assert(L.boardView(gs, data)[0].ready, 'seltene Waffe zählt'); assert(!L.boardTurnIn(gs, data, 'b_waffe').error && !gs.inv.w2 && gs.inv.w1 === 1 && !gs.gear.w2, 'seltene Waffe abgegeben');
+    // Dialog und Tafel öffnen die Fenster
+    const w = data.dialogs.wirt.nodes.a.choices; assert(w.some((c) => c.maps) && w.some((c) => c.board), 'Wirtin bietet Karten und Aushang an');
+    const ts = L.newGame(data, 45); L.jumpToLevel(ts, data, 'taverne'); ts.player = { x: sign.x, y: sign.y, dir: sign.face }; const ri = L.interact(ts, data); assert(ri.board, 'Tafel öffnet das Aushangbrett');
+    const rs = L.deserialize(JSON.parse(JSON.stringify(L.serialize(s))), data); eq(JSON.stringify(rs.board), JSON.stringify(s.board), 'Aushang übersteht Speichern'); eq(rs.kills.wolf, s.kills.wolf, 'Abschüsse überstehen Speichern');
   });
   const failed = results.filter((r) => !r.ok).length; // 0.23.0: erst am Ende zählen (vorher fehlten spätere Tests in der Summe)
   return { results, passed: results.length - failed, failed };

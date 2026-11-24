@@ -2928,13 +2928,13 @@ export function buildGrid(lvl, objs) {
     const c = lvl.map[y][x];
     grid[y * w + x] = c === '#' ? WALL_STONE : c === 'm' ? WALL_MOSS : c === 'T' ? WALL_TORCH : c === 'r' ? WALL_ROCK : c === 'o' ? WALL_LICHEN : c === 'h' ? WALL_HOUSE : c === 'v' ? WALL_VEGAS : 0;
   }
-  for (const o of objs) if (o.type === 'illusion' && !o.found) { // 0.22.0: Illusionswand = Mauer wie die Nachbarn
+  for (const o of objs) if ((o.type === 'illusion' && !o.found) || (o.type === 'secret' && o.needs && !o.open)) { // 0.40.0: Kartenwand sieht aus wie jede Mauer; // 0.22.0: Illusionswand = Mauer wie die Nachbarn
     const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => grid[(o.y + dy) * w + o.x + dx]).find((v) => v === WALL_STONE || v === WALL_MOSS || v === WALL_ROCK || v === WALL_LICHEN);
     grid[o.y * w + o.x] = nb || WALL_STONE;
   }
   for (const o of objs) if (o.type === 'door' && !o.open) grid[o.y * w + o.x] = doorWall(o);
   for (const o of objs) if (o.type === 'gate' && !o.open) grid[o.y * w + o.x] = o.web ? WALL_WEB : WALL_GATE;
-  for (const o of objs) { if (o.type === 'secret' && !o.open) grid[o.y * w + o.x] = WALL_SECRET; else if (o.type === 'lever' && o.wall) grid[o.y * w + o.x] = o.torch ? WALL_TORCH : o.used ? WALL_SWITCH_ON : WALL_SWITCH; } // torch (0.23.7): Schalter sieht aus wie eine gewöhnliche Wandfackel
+  for (const o of objs) { if (o.type === 'secret' && !o.open && !o.needs) grid[o.y * w + o.x] = WALL_SECRET; else if (o.type === 'lever' && o.wall) grid[o.y * w + o.x] = o.torch ? WALL_TORCH : o.used ? WALL_SWITCH_ON : WALL_SWITCH; } // torch (0.23.7): Schalter sieht aus wie eine gewöhnliche Wandfackel
   return { grid, gw: w, gh: h };
 }
 const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'turmwache' ? tex.sprites.turmwache : k === 'schlackenwaechter' ? tex.sprites.schlacke : k === 'wolf' ? tex.sprites.wolf : k === 'kultist' ? tex.sprites.kultist : k === 'hauptmann' ? tex.sprites.captain : k === 'giessmeister' ? tex.sprites.giessmeister : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : (k === 'kultpriester' || k === 'quellhueterin') ? tex.sprites.priester : k === 'truhenmaul' ? tex.sprites.mimic : k === 'brandmagier' ? tex.sprites.magier : (k === 'riesenspinne' || k === 'brutspinne' || k === 'netzwaechter') ? tex.sprites.spinne : k === 'spinnenkoenigin' ? tex.sprites.koenigin : k === 'blutdiener' ? tex.sprites.diener : k === 'vampirbrut' ? tex.sprites.brut : k === 'blutgraefin' ? tex.sprites.graefin : k === 'teufel' ? tex.sprites.teufel : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);

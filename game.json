@@ -578,6 +578,120 @@
       ],
       "desc": "Rüstung. +4 Verteidigung. Für alle außer Krieger.",
       "value": 230
+    },
+    "karte_moorpfad": {
+      "name": "Schatzkarte: Moorpfad",
+      "kind": "quest",
+      "noSell": true,
+      "desc": "Von Marga gezeichnet. Auf der Gebietskarte steht ein Kreuz an einer Wand. Nur mit dieser Karte lässt sich die Wand öffnen."
+    },
+    "karte_kultgruft": {
+      "name": "Schatzkarte: Kultgruft",
+      "kind": "quest",
+      "noSell": true,
+      "desc": "Von Marga gezeichnet. Auf der Gebietskarte steht ein Kreuz an einer Wand. Nur mit dieser Karte lässt sich die Wand öffnen."
+    },
+    "karte_schratgruben": {
+      "name": "Schatzkarte: Schratgruben",
+      "kind": "quest",
+      "noSell": true,
+      "desc": "Von Marga gezeichnet. Auf der Gebietskarte steht ein Kreuz an einer Wand. Nur mit dieser Karte lässt sich die Wand öffnen."
+    },
+    "karte_nebelturm": {
+      "name": "Schatzkarte: Nebelturm",
+      "kind": "quest",
+      "noSell": true,
+      "desc": "Von Marga gezeichnet. Auf der Gebietskarte steht ein Kreuz an einer Wand. Nur mit dieser Karte lässt sich die Wand öffnen."
+    },
+    "karte_festung1": {
+      "name": "Schatzkarte: Moorfestung – Vorburg",
+      "kind": "quest",
+      "noSell": true,
+      "desc": "Von Marga gezeichnet. Auf der Gebietskarte steht ein Kreuz an einer Wand. Nur mit dieser Karte lässt sich die Wand öffnen."
+    },
+    "karte_festung2": {
+      "name": "Schatzkarte: Moorfestung – Kellergewölbe",
+      "kind": "quest",
+      "noSell": true,
+      "desc": "Von Marga gezeichnet. Auf der Gebietskarte steht ein Kreuz an einer Wand. Nur mit dieser Karte lässt sich die Wand öffnen."
+    },
+    "karte_festung3": {
+      "name": "Schatzkarte: Moorfestung – Blutgruft",
+      "kind": "quest",
+      "noSell": true,
+      "desc": "Von Marga gezeichnet. Auf der Gebietskarte steht ein Kreuz an einer Wand. Nur mit dieser Karte lässt sich die Wand öffnen."
+    },
+    "karte_festung4": {
+      "name": "Schatzkarte: Spinnenhöhle",
+      "kind": "quest",
+      "noSell": true,
+      "desc": "Von Marga gezeichnet. Auf der Gebietskarte steht ein Kreuz an einer Wand. Nur mit dieser Karte lässt sich die Wand öffnen."
+    },
+    "karte_festung5": {
+      "name": "Schatzkarte: Die Gießerei",
+      "kind": "quest",
+      "noSell": true,
+      "desc": "Von Marga gezeichnet. Auf der Gebietskarte steht ein Kreuz an einer Wand. Nur mit dieser Karte lässt sich die Wand öffnen."
+    },
+    "karte_festung6": {
+      "name": "Schatzkarte: Die Zisterne",
+      "kind": "quest",
+      "noSell": true,
+      "desc": "Von Marga gezeichnet. Auf der Gebietskarte steht ein Kreuz an einer Wand. Nur mit dieser Karte lässt sich die Wand öffnen."
+    },
+    "wolfsfell": {
+      "name": "Wolfsfell",
+      "kind": "quest",
+      "noSell": true,
+      "desc": "Ein zerzaustes Fell vom Sumpfwolf. Der Gerber am Moorrand zahlt dafür – über das Aushangbrett."
+    },
+    "irrlichtstaub": {
+      "name": "Irrlichtstaub",
+      "kind": "quest",
+      "noSell": true,
+      "desc": "Glitzernder Staub, den ein Moorlicht hinterließ. Er wärmt nicht, aber er leuchtet."
+    },
+    "kultmedaillon": {
+      "name": "Kultmedaillon",
+      "kind": "quest",
+      "noSell": true,
+      "desc": "Ein Wächtermedaillon aus dunklem Eisen. Es trägt das Zeichen der Gruft."
+    },
+    "kaeferpanzer": {
+      "name": "Erzkäferpanzer",
+      "kind": "quest",
+      "noSell": true,
+      "desc": "Eine glänzende Panzerplatte, erzgesprenkelt. Schwer und erstaunlich leicht zu brechen."
+    },
+    "nebelperle": {
+      "name": "Nebelperle",
+      "kind": "quest",
+      "noSell": true,
+      "desc": "Eine trübe Perle, in der sich etwas bewegt, wenn man nicht hinsieht."
+    },
+    "glutasche": {
+      "name": "Glutasche",
+      "kind": "quest",
+      "noSell": true,
+      "desc": "Warme Asche eines Brandmagiers. Sie glimmt, auch wenn man sie nicht anfacht."
+    },
+    "blutphiole": {
+      "name": "Blutphiole",
+      "kind": "quest",
+      "noSell": true,
+      "desc": "Ein Fläschchen, dunkel und warm. Besser nicht schütteln."
+    },
+    "spinnenauge": {
+      "name": "Spinnenauge",
+      "kind": "quest",
+      "noSell": true,
+      "desc": "Ein glasiges, faustgroßes Auge. Es folgt euch nicht, auch wenn es sich so anfühlt."
+    },
+    "schlackenkern": {
+      "name": "Schlackenkern",
+      "kind": "quest",
+      "noSell": true,
+      "desc": "Ein glühender Klumpen aus dem Inneren eines Schlackenwächters. Er ist längst erkaltet, nur nicht ganz."
     }
   },
   "races": {
@@ -3076,6 +3190,11 @@
         "#..#.#..###.....#...#..#",
         "#.......#m#..####...#..#",
         "#.....m.#...........#..#",
+        "###################.####",
+        "##################...###",
+        "##################...###",
+        "##################...###",
+        "########################",
         "########################"
       ],
       "start": {
@@ -3299,6 +3418,41 @@
           "x": 8,
           "y": 1,
           "look": "schutt"
+        },
+        {
+          "id": "kartenwand_moorpfad",
+          "type": "secret",
+          "x": 19,
+          "y": 8,
+          "needs": "karte_moorpfad",
+          "hint": "Eine Wand wie jede andere – nur das Kreuz auf der Karte verrät sie."
+        },
+        {
+          "id": "chest_karte_moorpfad",
+          "type": "chest",
+          "x": 19,
+          "y": 11,
+          "loot": [
+            {
+              "gold": 105
+            },
+            {
+              "gear": {
+                "boost": 1,
+                "minQ": 1
+              }
+            },
+            {
+              "item": "potion_m",
+              "n": 2
+            },
+            {
+              "item": "zaubertrank_m",
+              "n": 1
+            }
+          ],
+          "look": "eisen",
+          "mat": "stein"
         }
       ],
       "intro": {
@@ -3322,10 +3476,10 @@
         "#......###......########..#",
         "m.....m##m......mT####T#..#",
         "#.........................m",
-        "m.....###m......m##m####..#",
-        "#.....####......########..#",
-        "##.Tm#######.#T##########m#",
-        "#.....#.##......m##########",
+        "m.....###m......m##m#.##..#",
+        "#.....####......####...#..#",
+        "##.Tm#######.#T#####...##m#",
+        "#.....#.##......m###...####",
         "#.......#m......###########",
         "#############Tm############"
       ],
@@ -3783,6 +3937,41 @@
           "title": "SCHACHT",
           "text": "Ein enger Schacht, mit Eisenstäben vergittert. Zu klein für einen Menschen.",
           "style": "dark"
+        },
+        {
+          "id": "kartenwand_kultgruft",
+          "type": "secret",
+          "x": 21,
+          "y": 7,
+          "needs": "karte_kultgruft",
+          "hint": "Eine Wand wie jede andere – nur das Kreuz auf der Karte verrät sie."
+        },
+        {
+          "id": "chest_karte_kultgruft",
+          "type": "chest",
+          "x": 21,
+          "y": 10,
+          "loot": [
+            {
+              "gold": 125
+            },
+            {
+              "gear": {
+                "boost": 1,
+                "minQ": 1
+              }
+            },
+            {
+              "item": "potion_m",
+              "n": 2
+            },
+            {
+              "item": "zaubertrank_m",
+              "n": 1
+            }
+          ],
+          "look": "eisen",
+          "mat": "stein"
         }
       ],
       "intro": {
@@ -3802,9 +3991,9 @@
         "rororrororoorrorrrrrrorroorrrrrrroo",
         "rrrrr.....rr.....r.....rr..rrrrrrrr",
         "orrororr.........r.rr......rrrrrrrr",
-        "rrrorrrrrrro.rroororr.rorrrrrrrrrro",
-        "rrrrrrorrrrr.rrrorrrr.rroroo.....rr",
-        "r##T###rrorr...rrrorr...rrrr.....oo",
+        "rrrorrrrrrro.rroor.rr.rorrrrrrrrrro",
+        "rrrrrrorrrrr.rrro...r.rroroo.....rr",
+        "r##T###rrorr...rr...r...rrrr.....oo",
         "r.....#rorrr...rororr...rrrr.....rr",
         "r...............rr...............rr",
         "r#....#rrrrr..r.......rroorr.....rr",
@@ -4291,6 +4480,41 @@
           "x": 22,
           "y": 9,
           "look": "schutt"
+        },
+        {
+          "id": "kartenwand_schratgruben",
+          "type": "secret",
+          "x": 18,
+          "y": 3,
+          "needs": "karte_schratgruben",
+          "hint": "Eine Wand wie jede andere – nur das Kreuz auf der Karte verrät sie."
+        },
+        {
+          "id": "chest_karte_schratgruben",
+          "type": "chest",
+          "x": 18,
+          "y": 5,
+          "loot": [
+            {
+              "gold": 155
+            },
+            {
+              "gear": {
+                "boost": 1,
+                "minQ": 1
+              }
+            },
+            {
+              "item": "potion_m",
+              "n": 2
+            },
+            {
+              "item": "zaubertrank_m",
+              "n": 1
+            }
+          ],
+          "look": "eisen",
+          "mat": "stein"
         }
       ],
       "intro": {
@@ -4315,8 +4539,8 @@
         "#.........#.......#.......#",
         "###.###.###.......m.......#",
         "##...####m#T##.##T#.......#",
-        "##...#m####.......#.......#",
-        "###T######m.......#.......T",
+        "##...#m#..........#.......#",
+        "###T####..m.......#.......T",
         "#.....#####...............#",
         "m.....##T##.......#.......#",
         "#.................m.......m",
@@ -4657,6 +4881,41 @@
           "x": 21,
           "y": 5,
           "look": "fass"
+        },
+        {
+          "id": "kartenwand_nebelturm",
+          "type": "secret",
+          "x": 10,
+          "y": 8,
+          "needs": "karte_nebelturm",
+          "hint": "Eine Wand wie jede andere – nur das Kreuz auf der Karte verrät sie."
+        },
+        {
+          "id": "chest_karte_nebelturm",
+          "type": "chest",
+          "x": 8,
+          "y": 8,
+          "loot": [
+            {
+              "gold": 180
+            },
+            {
+              "gear": {
+                "boost": 1,
+                "minQ": 1
+              }
+            },
+            {
+              "item": "potion_m",
+              "n": 2
+            },
+            {
+              "item": "zaubertrank_m",
+              "n": 1
+            }
+          ],
+          "look": "eisen",
+          "mat": "stein"
         }
       ],
       "foe": {
@@ -4685,10 +4944,10 @@
         "###T##########################T#####",
         "#.......##########.#T#########.....#",
         "#.......##.........................#",
-        "#.......m#.###################.....m",
-        "#.......##.###################.....#",
-        "#.......##.###################.....#",
-        "####.#####.################T########",
+        "#.......m#.##########.########.....m",
+        "#.......##.#########...#######.....#",
+        "#.......##.#########...#######.....#",
+        "####.#####.#########...####T########",
         "#.......#T.#############T###......##",
         "#.......#................###......##",
         "m.......#................#####.#####",
@@ -5103,6 +5362,41 @@
           "x": 21,
           "y": 11,
           "look": "fass"
+        },
+        {
+          "id": "kartenwand_festung1",
+          "type": "secret",
+          "x": 21,
+          "y": 3,
+          "needs": "karte_festung1",
+          "hint": "Eine Wand wie jede andere – nur das Kreuz auf der Karte verrät sie."
+        },
+        {
+          "id": "chest_karte_festung1",
+          "type": "chest",
+          "x": 21,
+          "y": 6,
+          "loot": [
+            {
+              "gold": 195
+            },
+            {
+              "gear": {
+                "boost": 2,
+                "minQ": 2
+              }
+            },
+            {
+              "item": "potion_g",
+              "n": 2
+            },
+            {
+              "item": "zaubertrank_g",
+              "n": 1
+            }
+          ],
+          "look": "edel",
+          "mat": "stein"
         }
       ]
     },
@@ -5138,10 +5432,10 @@
         "##########r.r.r.........r...r#r...o..o..o..o..o...o#",
         "##########r.r.r.rrrrrrr.r.rrr#r...................o#",
         "##########r...r.......r...r.r#r...................o#",
-        "##########r.rrrrr.r.r.rrr.r.r#r...................o#",
-        "##########r.......r.........r#r...................o#",
-        "##########r.rrrrrrrrrrrrrrrrr#roooooTooo.oooToooooo#",
-        "#mmmmmmmmrr.rrTrrrrrrrrrTrrrrrroooTooooo.oooToooooom",
+        "##...#####r.rrrrr.r.r.rrr.r.r#r...................o#",
+        "##...#####r.......r.........r#r...................o#",
+        "##...#####r.rrrrrrrrrrrrrrrrr#roooooTooo.oooToooooo#",
+        "#mm.mmmmmrr.rrTrrrrrrrrrTrrrrrroooTooooo.oooToooooom",
         "#m.................................................m",
         "#m.................................................m",
         "#mm.mmmm.mmmmmmm.mmmmmmm.mmmmmmm.mmmmmmm.mmmmmmm.mmm",
@@ -5794,6 +6088,41 @@
           "x": 15,
           "y": 7,
           "look": "schutt"
+        },
+        {
+          "id": "kartenwand_festung2",
+          "type": "secret",
+          "x": 3,
+          "y": 17,
+          "needs": "karte_festung2",
+          "hint": "Eine Wand wie jede andere – nur das Kreuz auf der Karte verrät sie."
+        },
+        {
+          "id": "chest_karte_festung2",
+          "type": "chest",
+          "x": 3,
+          "y": 14,
+          "loot": [
+            {
+              "gold": 225
+            },
+            {
+              "gear": {
+                "boost": 2,
+                "minQ": 2
+              }
+            },
+            {
+              "item": "potion_g",
+              "n": 2
+            },
+            {
+              "item": "zaubertrank_g",
+              "n": 1
+            }
+          ],
+          "look": "edel",
+          "mat": "stein"
         }
       ]
     },
@@ -5846,10 +6175,10 @@
         "##############...............................#...........r##",
         "##############....r...r...r...r...r...r...r..#...........r##",
         "##############...............................#...........r##",
-        "##############...............................#rrrrrrrrrrrr##",
-        "############################T.T#############################",
-        "########################m.........m#########################",
-        "##mmmmmmmmmmmmmmmmmmmmmmmmmmm.mmmmmmmmmmmmmmmmmmmmmmmmmmmmm#",
+        "####...#######...............................#rrrrrrrrrrrr##",
+        "####...#####################T.T#############################",
+        "####...#################m.........m#########################",
+        "##mmm.mmmmmmmmmmmmmmmmmmmmmmm.mmmmmmmmmmmmmmmmmmmmmmmmmmmmm#",
         "##m...m...m.............m...m.m.m...........m.............m#",
         "##m.m.m.m.m.mmmmm.mmmmmmm.m.m.m.m.m.mmmmmmm.m.mmmmmmm.mmmmm#",
         "##m.m.m.m...m...m.m.......m...m...m.m.m...m.m...m...m.....m#",
@@ -6634,6 +6963,41 @@
           "x": 57,
           "y": 35,
           "look": "schutt"
+        },
+        {
+          "id": "kartenwand_festung3",
+          "type": "secret",
+          "x": 5,
+          "y": 34,
+          "needs": "karte_festung3",
+          "hint": "Eine Wand wie jede andere – nur das Kreuz auf der Karte verrät sie."
+        },
+        {
+          "id": "chest_karte_festung3",
+          "type": "chest",
+          "x": 5,
+          "y": 31,
+          "loot": [
+            {
+              "gold": 240
+            },
+            {
+              "gear": {
+                "boost": 2,
+                "minQ": 2
+              }
+            },
+            {
+              "item": "potion_g",
+              "n": 2
+            },
+            {
+              "item": "zaubertrank_g",
+              "n": 1
+            }
+          ],
+          "look": "edel",
+          "mat": "stein"
         }
       ]
     },
@@ -7466,9 +7830,9 @@
         "rrrrrrrrrrrr.............mrrrrrrrrm...............rrrrrrrrrrm..mrrrrrrrrrrrr",
         "rrrrrrrrrrr...r...........mmrrrrmm.............r...rmmmmrrr.....rrrrrrrrrrrr",
         "rrrrrrrrrrm........................r............................rrrrrrrrrrrr",
-        "rrrrrrrrrrm.....r.........mmrrrrrr.................rrrrrmm.......rrrrrrrrrrr",
-        "rrrrrrrrrrrm.......r.....mrrrrrrrrr...............rrrrrrrrm......rrrrrrrrrrr",
-        "rrrrrrrrrrrm............mrrrrrrrrrr..........m...rrrrrrrrrm.....rrrrrrrrrrrr",
+        "rrrrrrrrrrm.....r.........mmrrrrrr.................rrrrrmm.......r...rrrrrrr",
+        "rrrrrrrrrrrm.......r.....mrrrrrrrrr...............rrrrrrrrm..........rrrrrrr",
+        "rrrrrrrrrrrm............mrrrrrrrrrr..........m...rrrrrrrrrm.....rr...rrrrrrr",
         "rrrrrrrrrrrrrr.........mrrrrrrrrrrrmm...........rrrrrrrrrrrrr.rrrrrrrrrrrrrr",
         "rrrrrrrrrrrrrrrr.r...mmrrrrrrrrrrrrrrmmmr....rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
         "rrrrrrrrrrrrrrrrrrrrmrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
@@ -7949,6 +8313,41 @@
           "x": 61,
           "y": 48,
           "look": "schutt"
+        },
+        {
+          "id": "kartenwand_festung4",
+          "type": "secret",
+          "x": 65,
+          "y": 46,
+          "needs": "karte_festung4",
+          "hint": "Eine Wand wie jede andere – nur das Kreuz auf der Karte verrät sie."
+        },
+        {
+          "id": "chest_karte_festung4",
+          "type": "chest",
+          "x": 68,
+          "y": 46,
+          "loot": [
+            {
+              "gold": 250
+            },
+            {
+              "gear": {
+                "boost": 2,
+                "minQ": 2
+              }
+            },
+            {
+              "item": "potion_g",
+              "n": 2
+            },
+            {
+              "item": "zaubertrank_g",
+              "n": 1
+            }
+          ],
+          "look": "edel",
+          "mat": "stein"
         }
       ]
     },
@@ -8205,6 +8604,17 @@
           "x": 12,
           "y": 3,
           "look": "vase"
+        },
+        {
+          "id": "sign_aushang",
+          "type": "sign",
+          "x": 1,
+          "y": 2,
+          "title": "AUS-|HANG",
+          "text": "Aushangbrett des Goldenen Eber. Steckbriefe gegen Erfahrung.",
+          "style": "wood",
+          "face": 3,
+          "board": true
         }
       ],
       "fog": 0.4
@@ -8278,10 +8688,10 @@
         "############.....#######.....#####.....................###.............####......###",
         "############.................#####.....................###...#..#..#...####......###",
         "############.................#####....#...........#....###.............####......###",
-        "############.................#####.....................###.............########T####",
-        "##########################T#######.....................#############T###############",
-        "##################################.....................#############################",
-        "########################################T###########################################",
+        "############.................#####.....................###.............#####.##T####",
+        "##########################T#######.....................#############T######...######",
+        "##################################.....................####################...######",
+        "########################################T##################################...######",
         "####################################################################################",
         "####################################################################################",
         "####################################################################################",
@@ -8915,6 +9325,41 @@
           "x": 22,
           "y": 51,
           "look": "fass"
+        },
+        {
+          "id": "kartenwand_festung5",
+          "type": "secret",
+          "x": 76,
+          "y": 51,
+          "needs": "karte_festung5",
+          "hint": "Eine Wand wie jede andere – nur das Kreuz auf der Karte verrät sie."
+        },
+        {
+          "id": "chest_karte_festung5",
+          "type": "chest",
+          "x": 76,
+          "y": 54,
+          "loot": [
+            {
+              "gold": 265
+            },
+            {
+              "gear": {
+                "boost": 2,
+                "minQ": 2
+              }
+            },
+            {
+              "item": "potion_g",
+              "n": 2
+            },
+            {
+              "item": "zaubertrank_g",
+              "n": 1
+            }
+          ],
+          "look": "edel",
+          "mat": "stein"
         }
       ]
     },
@@ -8970,10 +9415,10 @@
         "#####.##T#####..~~~~~.~~~~~m~~~~#~~~~..~~~~#~~~~m~~~~~.~~~~~..T####........##...#.#.#.#.#...#.#...T#",
         "#T........T###..~~~~~.~~~~~~~~~~~~~~~..~~~~~~~~~~~~~~~.~~~~~..###########T###.###.#.#.#.#.#.#####.##",
         "##........####..~~~~....~~~~~~~~~~~~~..~~~~~~~~~~~~~....~~~~..####T##########.....#...#...#.......##",
-        "##........####..~~~~....~~~~~~~~~~~~~..~~~~~~~~~~~~~....~~~~..##..........###T#################T####",
-        "##........####..~~~~....~~~#~~~~#~~~~..~~~~#~~~~#~~~....~~~~..##..........##########################",
-        "##........####..~~~~....~~~~~~~~~~~~~..~~~~~~~~~~~~~....~~~~..##..........##########################",
-        "##........####..~~~~~~~~~~~~~~~~~~~~~..~~~~~~~~~~~~~~~~~~~~~..............T#########################",
+        "##........####..~~~~....~~~~~~~~~~~~~..~~~~~~~~~~~~~....~~~~..##..........###T##############.##T####",
+        "##........####..~~~~....~~~#~~~~#~~~~..~~~~#~~~~#~~~....~~~~..##..........#################...######",
+        "##........####..~~~~....~~~~~~~~~~~~~..~~~~~~~~~~~~~....~~~~..##..........#################...######",
+        "##........####..~~~~~~~~~~~~~~~~~~~~~..~~~~~~~~~~~~~~~~~~~~~..............T################...######",
         "##........###T..~~~~~~~~~~~~~~~~~~~~~..~~~~~~~~~~~~~~~~~~~~~..##..........##########################",
         "##........####..~~~~~~~~~~~~~~~~~~~~~..~~~~~~~~~~~~~~~~~~~~~..##..........##########################",
         "##........####................................................T#..........##########################",
@@ -10323,6 +10768,41 @@
           "look": "edel",
           "mat": "nebel",
           "runes": true
+        },
+        {
+          "id": "kartenwand_festung6",
+          "type": "secret",
+          "x": 92,
+          "y": 34,
+          "needs": "karte_festung6",
+          "hint": "Eine Wand wie jede andere – nur das Kreuz auf der Karte verrät sie."
+        },
+        {
+          "id": "chest_karte_festung6",
+          "type": "chest",
+          "x": 92,
+          "y": 37,
+          "loot": [
+            {
+              "gold": 280
+            },
+            {
+              "gear": {
+                "boost": 2,
+                "minQ": 2
+              }
+            },
+            {
+              "item": "potion_g",
+              "n": 2
+            },
+            {
+              "item": "zaubertrank_g",
+              "n": 1
+            }
+          ],
+          "look": "edel",
+          "mat": "nebel"
         }
       ],
       "rooms": [
@@ -12940,6 +13420,14 @@
               "inn": true
             },
             {
+              "t": "Schatzkarten ansehen",
+              "maps": true
+            },
+            {
+              "t": "Aushangbrett ansehen",
+              "board": true
+            },
+            {
               "t": "Wie funktioniert das?",
               "to": "b"
             },
@@ -12949,7 +13437,7 @@
           ]
         },
         "b": {
-          "text": "„Vier Betten habe ich. Wer dort wartet, bekommt die Hälfte der Erfahrung, die ihr unterwegs sammelt. Tauschen könnt ihr jederzeit, solange ihr nicht kämpft; die Rüstung des Gehenden wandert in euren Beutel. Neue Gesichter kosten Gold – je erfahrener ihr seid, desto mehr, denn desto besser sind sie.“ Ein Zimmer für die Nacht kostet je nach Stufe etwas mehr, dafür ruht auch die Reserve, und wer bewusstlos war, steht am Morgen wieder.",
+          "text": "„Vier Betten habe ich. Wer dort wartet, bekommt die Hälfte der Erfahrung, die ihr unterwegs sammelt. Tauschen könnt ihr jederzeit, solange ihr nicht kämpft; die Rüstung des Gehenden wandert in euren Beutel. Neue Gesichter kosten Gold – je erfahrener ihr seid, desto mehr, denn desto besser sind sie.“ Ein Zimmer für die Nacht kostet je nach Stufe etwas mehr, dafür ruht auch die Reserve, und wer bewusstlos war, steht am Morgen wieder. Und wer einen Zeichenstift mag: Ich verkaufe Karten zu verborgenen Räumen in Gebieten, die ihr schon kennt. Am Brett neben der Tür hängen Steckbriefe, die Erfahrung bringen.",
           "choices": [
             {
               "t": "Gruppe verwalten",
@@ -12958,6 +13446,14 @@
             {
               "t": "Zimmer nehmen",
               "inn": true
+            },
+            {
+              "t": "Schatzkarten ansehen",
+              "maps": true
+            },
+            {
+              "t": "Aushangbrett ansehen",
+              "board": true
             },
             {
               "t": "Gehen"
@@ -13233,5 +13729,335 @@
     "recruitPerLevel": 20,
     "innBase": 15,
     "innPerLevel": 5
-  }
+  },
+  "maps": {
+    "moorpfad": {
+      "item": "karte_moorpfad",
+      "price": 150
+    },
+    "kultgruft": {
+      "item": "karte_kultgruft",
+      "price": 180
+    },
+    "schratgruben": {
+      "item": "karte_schratgruben",
+      "price": 220
+    },
+    "nebelturm": {
+      "item": "karte_nebelturm",
+      "price": 260
+    },
+    "festung1": {
+      "item": "karte_festung1",
+      "price": 280
+    },
+    "festung2": {
+      "item": "karte_festung2",
+      "price": 320
+    },
+    "festung3": {
+      "item": "karte_festung3",
+      "price": 340
+    },
+    "festung4": {
+      "item": "karte_festung4",
+      "price": 360
+    },
+    "festung5": {
+      "item": "karte_festung5",
+      "price": 380
+    },
+    "festung6": {
+      "item": "karte_festung6",
+      "price": 400
+    }
+  },
+  "bounties": [
+    {
+      "id": "b_wolf",
+      "lvl": "moorpfad",
+      "type": "kill",
+      "enemy": "wolf",
+      "n": 3,
+      "from": [
+        "moorpfad",
+        "moorsee",
+        "test1"
+      ],
+      "title": "Wölfe am Pfad",
+      "text": "Drei Sumpfwölfe reißen Vieh am Moorrand. Wer sie erlegt, bekommt Dank und Erfahrung.",
+      "xp": 90,
+      "gold": 20
+    },
+    {
+      "id": "b_wolfsfell",
+      "lvl": "moorpfad",
+      "type": "trophy",
+      "item": "wolfsfell",
+      "enemies": [
+        "wolf"
+      ],
+      "from": [
+        "moorpfad",
+        "moorsee"
+      ],
+      "chance": 60,
+      "title": "Ein Fell für den Gerber",
+      "text": "Der Gerber braucht ein ganzes Wolfsfell. Bringt es mit, solange es frisch ist.",
+      "xp": 70,
+      "gold": 15
+    },
+    {
+      "id": "b_irrlicht",
+      "lvl": "moorpfad",
+      "type": "trophy",
+      "item": "irrlichtstaub",
+      "enemies": [
+        "moorlicht"
+      ],
+      "from": [
+        "moorpfad",
+        "moorsee",
+        "schratgruben"
+      ],
+      "chance": 60,
+      "title": "Staub vom Irrlicht",
+      "text": "Ein Alchemist am Moorrand sammelt Irrlichtstaub. Er zahlt in Erfahrung, sagt er, nicht in Gold.",
+      "xp": 80,
+      "gold": 10
+    },
+    {
+      "id": "b_skelett",
+      "lvl": "kultgruft",
+      "type": "kill",
+      "enemy": "skeleton",
+      "n": 3,
+      "from": [
+        "kultgruft",
+        "schratgruben",
+        "festung1",
+        "festung2",
+        "festung3",
+        "festung6"
+      ],
+      "title": "Unruhe in der Gruft",
+      "text": "Skelette klappern wieder durch die alten Gänge. Drei davon sollen endlich Ruhe geben.",
+      "xp": 130,
+      "gold": 25
+    },
+    {
+      "id": "b_medaillon",
+      "lvl": "kultgruft",
+      "type": "trophy",
+      "item": "kultmedaillon",
+      "enemies": [
+        "kultwaechter"
+      ],
+      "from": [
+        "kultgruft",
+        "schratgruben",
+        "festung2",
+        "festung5",
+        "festung6"
+      ],
+      "chance": 50,
+      "title": "Das Zeichen der Wächter",
+      "text": "Ein Gelehrter will das Eisenmedaillon eines Kultwächters sehen. „Nur ansehen“, sagt er.",
+      "xp": 150,
+      "gold": 30
+    },
+    {
+      "id": "b_kaefer",
+      "lvl": "schratgruben",
+      "type": "trophy",
+      "item": "kaeferpanzer",
+      "enemies": [
+        "erzkaefer"
+      ],
+      "from": [
+        "schratgruben",
+        "festung1",
+        "festung2",
+        "festung5"
+      ],
+      "chance": 60,
+      "title": "Käferpanzer gesucht",
+      "text": "Der Schmied von der Straße hätte gern die Panzerplatte eines Erzkäfers.",
+      "xp": 160,
+      "gold": 35
+    },
+    {
+      "id": "b_nebelperle",
+      "lvl": "nebelturm",
+      "type": "trophy",
+      "item": "nebelperle",
+      "enemies": [
+        "nebelgeist"
+      ],
+      "from": [
+        "nebelturm",
+        "festung1",
+        "festung2",
+        "festung6"
+      ],
+      "chance": 50,
+      "title": "Eine Perle aus dem Nebel",
+      "text": "Wer eine Nebelperle bringt, bekommt von der Wirtin einen Krug und von der Gilde Ehre.",
+      "xp": 170,
+      "gold": 35
+    },
+    {
+      "id": "b_turmwache",
+      "lvl": "nebelturm",
+      "type": "kill",
+      "enemy": "turmwache",
+      "n": 3,
+      "from": [
+        "nebelturm",
+        "festung1",
+        "festung2"
+      ],
+      "title": "Wachen im Turm",
+      "text": "Die Turmwachen stehen auf Posten, als gäbe es noch jemanden, der Befehle gibt. Drei weniger wären besser.",
+      "xp": 220,
+      "gold": 40
+    },
+    {
+      "id": "b_glut",
+      "lvl": "festung1",
+      "type": "trophy",
+      "item": "glutasche",
+      "enemies": [
+        "brandmagier"
+      ],
+      "from": [
+        "festung1",
+        "festung2",
+        "festung5"
+      ],
+      "chance": 60,
+      "title": "Asche, die glimmt",
+      "text": "Ein Pyrotechniker will die Asche eines Brandmagiers. Er verspricht, sie nicht anzuzünden.",
+      "xp": 260,
+      "gold": 50
+    },
+    {
+      "id": "b_blutphiole",
+      "lvl": "festung3",
+      "type": "trophy",
+      "item": "blutphiole",
+      "enemies": [
+        "vampirbrut",
+        "blutdiener"
+      ],
+      "from": [
+        "festung3"
+      ],
+      "chance": 40,
+      "title": "Ein Fläschchen Blut",
+      "text": "Ein Heiler im Dorf behauptet, er brauche eine Phiole „für die Forschung“. Fragt nicht nach.",
+      "xp": 300,
+      "gold": 60
+    },
+    {
+      "id": "b_vampir",
+      "lvl": "festung3",
+      "type": "kill",
+      "enemy": "vampirbrut",
+      "n": 4,
+      "from": [
+        "festung3"
+      ],
+      "title": "Brut ausräuchern",
+      "text": "Vier Vampirbrut weniger, und die Nächte unter der Festung werden ruhiger.",
+      "xp": 350,
+      "gold": 70
+    },
+    {
+      "id": "b_spinnenauge",
+      "lvl": "festung4",
+      "type": "trophy",
+      "item": "spinnenauge",
+      "enemies": [
+        "riesenspinne",
+        "netzwaechter"
+      ],
+      "from": [
+        "festung4"
+      ],
+      "chance": 40,
+      "title": "Ein Spinnenauge",
+      "text": "Ein Sammler im Dorf zahlt gut für ein einziges Spinnenauge, groß und unversehrt.",
+      "xp": 380,
+      "gold": 70
+    },
+    {
+      "id": "b_netz",
+      "lvl": "festung4",
+      "type": "kill",
+      "enemy": "netzwaechter",
+      "n": 4,
+      "from": [
+        "festung4"
+      ],
+      "title": "Netzwächter lichten",
+      "text": "Die Netzwächter versperren Gänge, die früher Händler nutzten. Vier genügen für den Anfang.",
+      "xp": 400,
+      "gold": 70
+    },
+    {
+      "id": "b_schlacke",
+      "lvl": "festung5",
+      "type": "trophy",
+      "item": "schlackenkern",
+      "enemies": [
+        "schlackenwaechter"
+      ],
+      "from": [
+        "festung5",
+        "festung6"
+      ],
+      "chance": 40,
+      "title": "Schlackenkern",
+      "text": "Die Gießerei-Witwe will den Kern eines Schlackenwächters. Als Andenken, sagt sie.",
+      "xp": 450,
+      "gold": 90
+    },
+    {
+      "id": "b_priester",
+      "lvl": "festung6",
+      "type": "kill",
+      "enemy": "kultpriester",
+      "n": 4,
+      "from": [
+        "festung6"
+      ],
+      "title": "Stille in der Zisterne",
+      "text": "Vier Kultpriester flüstern unter dem Wasser. Wer sie zum Schweigen bringt, wird belohnt.",
+      "xp": 380,
+      "gold": 80
+    },
+    {
+      "id": "b_waffe",
+      "lvl": "kultgruft",
+      "type": "gear",
+      "slot": "weapon",
+      "minQ": 2,
+      "title": "Eine gute Klinge",
+      "text": "Die Gilde sucht eine Waffe von seltener Güte oder besser. Gebt sie ab, behaltet die Ehre. (Kann dauern.)",
+      "xp": 250,
+      "gold": 50
+    },
+    {
+      "id": "b_ruestung",
+      "lvl": "schratgruben",
+      "type": "gear",
+      "slot": "armor",
+      "minQ": 2,
+      "title": "Ein guter Panzer",
+      "text": "Gesucht wird eine Rüstung von seltener Güte oder besser. Die Wache will sie prüfen und behält sie. (Kann dauern.)",
+      "xp": 250,
+      "gold": 50
+    }
+  ]
 }

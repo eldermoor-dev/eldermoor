@@ -4,13 +4,13 @@ import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
   buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, pushError, formatErrorLog, itemDef, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, partyAvgLevel, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
-  activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogEnter, roomAt, floodLabel, dialogChoose, diceNew, diceRoll, diceKeep, diceNext, diceFinish, diceRoundLine, recruitHero, swapHero, dismissReserve, recruitCost, RESERVE_MAX,
+  activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogEnter, roomAt, floodLabel, dialogChoose, diceNew, diceRoll, diceKeep, diceNext, diceFinish, diceRoundLine, recruitHero, swapHero, dismissReserve, recruitCost, RESERVE_MAX, mapOffers, buyMap, boardView, boardTurnIn, boardDismiss
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.39.0';
+const VERSION = '0.40.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -31,7 +31,7 @@ const S = {
   debug: { god: false }, itemMode: false, abMode: false, spMode: false, spSel: 0, foe: 0, invUse: null, draft: null, fps: 60, frameMs: 0, lastRender: 0,
   installEvent: null, loadMs: null, hadController: false
 };
-if (new URLSearchParams(location.search).has('dev')) { window.__S = S; S.snapCam = () => snapCam(); S.fn = { openMap: () => openMap(), renderCombat: () => renderCombat(), startCombatUI: (o) => startCombatUI(o), showEvent: (a, b) => showEvent(a, b), openDice: (id) => openDice(id), openShop: (id) => openShop(id, true), openTavern: () => { S.tav = null; openTavern(); }, gotoArea: (id) => { jumpToLevel(S.game, S.data, id); S.lvl = getLevel(S.data, S.game); S.rc.setPalette(S.data.palettes[S.lvl.palette]); S.held = []; S.queued = null; snapCam(); renderAll(); } }; } // nur für automatische Tests (?dev)
+if (new URLSearchParams(location.search).has('dev')) { window.__S = S; S.snapCam = () => snapCam(); S.fn = { openMap: () => openMap(), renderCombat: () => renderCombat(), startCombatUI: (o) => startCombatUI(o), showEvent: (a, b) => showEvent(a, b), openDice: (id) => openDice(id), openShop: (id) => openShop(id, true), openTavern: () => { S.tav = null; openTavern(); }, openMaps: () => openMaps(), openBoard: () => openBoard(), gotoArea: (id) => { jumpToLevel(S.game, S.data, id); S.lvl = getLevel(S.data, S.game); S.rc.setPalette(S.data.palettes[S.lvl.palette]); S.held = []; S.queued = null; snapCam(); renderAll(); } }; } // nur für automatische Tests (?dev)
 
 // ---------------------------------------------------------------- Fehlerlog
 const ERR = { list: [], saveT: 0 };
@@ -356,6 +356,7 @@ function act(name) {
       const r = interact(g, S.data);
       if (r.encounter) { if (r.msg) say(r.msg); if (r.sfx) S.sfx.play(r.sfx); startCombatUI(r.encounter); break; } // 0.20.0: Monstertruhe erwacht
       if (r.talk) { S.held = []; openDialog(r.talk); break; } // 0.25.0: Begegnungsdialog
+      if (r.board) { S.held = []; S.sfx.play('ui'); openBoard(); break; } // 0.40.0: Aushangbrett
       if (r.shop) { if (r.msg) say(r.msg); S.shopTalk = r.msg || null; S.held = []; S.shopTab = 'buy'; S.shopSure = null; openShop(r.shop, true); break; }
       say(r.msg); if (r.sfx) S.sfx.play(r.sfx);
       if (r.moved) { S.target.x = g.player.x + 0.5; S.target.y = g.player.y + 0.5; beginTween(); toast(r.msg, 5000); } // Stein gezogen: Gruppe steht ein Feld weiter hinten
@@ -959,6 +960,8 @@ async function dialogPick(i) {
   if (r.encounter) { closeModal(); renderAll(); startCombatUI(r.encounter); return; }
   if (r.goto) { closeModal(); const t = travelTo(g, S.data, r.goto, r.msg); if (!t.ok) { say(t.msg); renderAll(); return; } S.sfx.play('door'); await afterAreaChange(t); return; } // 0.28.0: Fähre
   if (r.tavern) { S.tav = { pi: null, sure: null }; openTavern(); return; } // 0.34.0: Taverne
+  if (r.maps) { openMaps(); return; } // 0.40.0: Schatzkarten
+  if (r.board) { openBoard(); return; } // 0.40.0: Aushangbrett
   if (r.game) { closeModal(); openDice(d.id); return; } // 0.32.0: Würfelspiel mit Murmel
   if (r.next) { openDialog(d.id, r.next); renderAll(); return; }
   closeModal(); renderAll();
@@ -985,6 +988,30 @@ function openTavern() {
     <div class="row"><input type="text" id="tv-name" maxlength="${NAME_MAX}" placeholder="Name" autocomplete="off" autocapitalize="words" spellcheck="false" value="${esc(t.name || '')}"></div>
     <div class="row"><select id="tv-race">${opt(d.races, t.race || Object.keys(d.races)[0])}</select><select id="tv-cls">${opt(d.classes, t.cls || Object.keys(d.classes)[0])}</select></div>
     <div class="acts"><button class="mb primary" data-m="tav-hire" ${full || g.gold < cost ? 'disabled' : ''}>${full ? 'Reserve voll' : `Anwerben (${cost} G)`}</button>${closeBtn}</div>`, 'tavern');
+}
+// ---------- Schatzkarten und Aushangbrett (0.40.0); Logik: logic.js (mapOffers, buyMap, boardView, boardTurnIn, boardDismiss) ----------
+function openMaps() {
+  const g = S.game, offers = mapOffers(g, S.data);
+  const rows = offers.length ? offers.map((o) => `<div class="row nw"><div><b>${esc(o.name)}</b><div class="muted">${o.owned ? 'Schon gekauft – das Kreuz steht auf der Gebietskarte.' : `Führt zu einem verborgenen Raum in „${esc(o.area)}“.`}</div></div><button class="mb${o.owned ? '' : ' primary'}" data-m="map-buy:${o.id}" ${o.ok ? '' : 'disabled'}>${o.owned ? 'Gekauft' : `${o.price} G`}</button></div>`).join('') : '<p class="muted">Marga schüttelt den Kopf: „Für Gegenden, die ihr nie betreten habt, zeichne ich nichts.“</p>';
+  openModal(`<h2>Schatzkarten</h2><p>Gold: <b>${g.gold}</b></p><p class="muted">Eine Karte zeigt auf der Gebietskarte ein Kreuz an einer Wand. Nur mit der Karte im Beutel lässt sie sich öffnen. Für jedes Gebiet gibt es eine, und nur Gebiete, die ihr schon besucht habt.</p>${rows}<div class="acts">${closeBtn}</div>`, 'maps');
+}
+function openBoard() {
+  const g = S.game, list = boardView(g, S.data);
+  const icon = { kill: '⚔', trophy: '✦', gear: '⚒' };
+  const rows = list.length ? list.map((v) => `<div class="row nw"><div><b>${icon[v.type] || ''} ${esc(v.title)}</b><div>${esc(v.text)}</div><div class="muted">Belohnung: ${v.xp} EP${v.gold ? ` und ${v.gold} Gold` : ''} · ${v.type === 'kill' ? `Fortschritt ${v.have}/${v.need}` : v.have ? 'Liegt im Beutel' : 'Noch nicht beschafft'}</div></div><div style="display:flex;flex-direction:column;gap:4px"><button class="mb${v.ready ? ' primary' : ''}" data-m="bd-in:${v.id}" ${v.ready ? '' : 'disabled'}>Abgeben</button><button class="mb" data-m="bd-x:${v.id}">Abreißen</button></div></div>`).join('') : '<p class="muted">Das Brett ist leer. Ein paar Schritte weiter hängt vielleicht ein neuer Zettel – oder es gibt noch nichts, was zu euren Gebieten passt.</p>';
+  openModal(`<h2>Aushangbrett</h2><p class="muted">Steckbriefe zählen ab dem Aushang. Erfahrung gibt es für alle Helden, die noch stehen. Neue Zettel erscheinen nach etwa 60 Schritten.</p>${rows}<div class="acts">${closeBtn}</div>`, 'board');
+}
+function wirtAct(m) {
+  const g = S.game;
+  let r = null;
+  if (m.startsWith('map-buy:')) r = buyMap(g, S.data, m.slice(8));
+  else if (m.startsWith('bd-in:')) r = boardTurnIn(g, S.data, m.slice(6));
+  else if (m.startsWith('bd-x:')) r = boardDismiss(g, S.data, m.slice(5));
+  if (r) {
+    const bad = { 'in-combat': 'Im Kampf geht das nicht.', 'gold': `Dafür fehlen ${r.cost} Gold.`, 'owned': 'Diese Karte habt ihr schon.', 'not-ready': 'Dafür fehlt noch etwas.' }[r.error];
+    if (r.msg) { say(r.msg); S.sfx.play(r.sfx || 'ui'); toast(r.msg, 5000); } else toast(bad || 'Das geht nicht.', 3200);
+  }
+  const sc = $('#modal-box').scrollTop; renderAll(); (m.startsWith('map-buy:') ? openMaps : openBoard)(); $('#modal-box').scrollTop = sc;
 }
 function tavAct(m) {
   const g = S.game, t = tavSync();
@@ -1384,7 +1411,7 @@ function drawMap() {
     }
   }
   for (const o of g.objs) {
-    if (!seen(o.x, o.y)) continue;
+    if (!seen(o.x, o.y) && !(o.type === 'secret' && o.needs)) continue;
     const k = mapSymKind(o);
     if (!k) continue;
     const horiz = o.type === 'door' && cellChar(lvl, o.x - 1, o.y) !== '.' && cellChar(lvl, o.x + 1, o.y) !== '.';
@@ -1395,6 +1422,7 @@ function drawMap() {
 }
 // Kartensymbole (eine Quelle für Karte und Legende). Geheimwand und unbenutzter Schalterstein erscheinen nicht (sehen aus wie Mauer).
 function mapSymKind(o) {
+  if (o.type === 'secret' && o.needs && !o.open) return (S.game.inv[o.needs] || 0) > 0 ? 'kreuz' : null; // 0.40.0: Kreuz der Schatzkarte
   if (o.type === 'secret' || (o.type === 'lever' && o.wall && !o.used)) return null;
   if (o.type === 'door') return o.open ? 'doorOpen' : o.locked ? 'doorLocked' : 'door';
   if (o.type === 'chest') return o.open ? 'chestOpen' : 'chest';
@@ -1414,12 +1442,13 @@ const MAP_LEGEND = [
   ['door', 'Tür, geschlossen'], ['doorLocked', 'Tür, verschlossen'], ['doorOpen', 'Tür, offen'],
   ['chest', 'Truhe'], ['chestOpen', 'Truhe, geöffnet'], ['gate', 'Gitter, geschlossen'], ['gateOpen', 'Gitter, offen'],
   ['lever', 'Hebel'], ['leverUsed', 'Hebel, benutzt'], ['stairs', 'Treppe / Durchgang'], ['exit', 'Ausgang (Ende des Gebiets)'],
-  ['sign', 'Hinweistafel'], ['runestone', 'Runenstein'], ['merchant', 'Händler'], ['enemy', 'Gegner'], ['plate', 'Druckplatte'], ['plateDown', 'Druckplatte, belastet'], ['boulder', 'Beweglicher Stein'], ['trap', 'Falle, entdeckt'], ['trapUsed', 'Falle, ausgelöst'],
+  ['kreuz', 'Kreuz der Schatzkarte'], ['sign', 'Hinweistafel'], ['runestone', 'Runenstein'], ['merchant', 'Händler'], ['enemy', 'Gegner'], ['plate', 'Druckplatte'], ['plateDown', 'Druckplatte, belastet'], ['boulder', 'Beweglicher Stein'], ['trap', 'Falle, entdeckt'], ['trapUsed', 'Falle, ausgelöst'],
 ];
 function drawMapSym(c, k, x0, y0, cs, horiz = true, dir = 1) {
   const cx = x0 + cs / 2, cy = y0 + cs / 2;
   const txt = (t, col) => { c.fillStyle = col; c.font = `bold ${cs}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(t, cx, cy); };
   if (k === 'floor') { c.fillStyle = '#4a4034'; c.fillRect(x0, y0, cs, cs); }
+  else if (k === 'kreuz') { c.strokeStyle = '#e0402e'; c.lineWidth = Math.max(2, cs / 5); c.lineCap = 'round'; c.beginPath(); c.moveTo(x0 + cs * 0.15, y0 + cs * 0.15); c.lineTo(x0 + cs * 0.85, y0 + cs * 0.85); c.moveTo(x0 + cs * 0.85, y0 + cs * 0.15); c.lineTo(x0 + cs * 0.15, y0 + cs * 0.85); c.stroke(); }
   else if (k === 'tele' || k === 'teleOff') { c.strokeStyle = k === 'tele' ? '#7fd4ff' : '#6a6050'; c.lineWidth = Math.max(1, cs / 6); c.beginPath(); c.arc(cx, cy, cs * 0.34, 0, Math.PI * 2); c.stroke(); if (k === 'tele') { c.fillStyle = '#7fd4ff'; c.fillRect(cx - cs * 0.08, cy - cs * 0.08, cs * 0.16, cs * 0.16); } }
   else if (k === 'wall') { c.fillStyle = '#8a7a5e'; c.fillRect(x0, y0, cs, cs); }
   else if (k === 'unknown') { c.strokeStyle = '#4a4034'; c.lineWidth = 2; c.strokeRect(x0 + 1, y0 + 1, cs - 2, cs - 2); }
@@ -1458,7 +1487,7 @@ function drawMapSym(c, k, x0, y0, cs, horiz = true, dir = 1) {
 function mapLegendHtml() {
   const g = S.game, w = S.lvl.map[0].length;
   const have = new Set(['player', 'note', 'floor', 'wall', 'unknown']);
-  for (const o of g.objs) { const k = mapSymKind(o); if (k && g.seen[o.y * w + o.x]) have.add(k); }
+  for (const o of g.objs) { const k = mapSymKind(o); if (k && (g.seen[o.y * w + o.x] || k === 'kreuz')) have.add(k); }
   const rows = MAP_LEGEND.filter(([k]) => have.has(k));
   return `<div class="mapleg${rows.length > 10 ? ' two' : ''}">${rows.map(([k, t]) => `<div><canvas data-sym="${k}" width="40" height="40"></canvas><span>${esc(t)}</span></div>`).join('')}</div>`;
 }
@@ -1720,6 +1749,7 @@ async function onModalClick(e) {
     renderAll(); openCharacter();
   }
   else if (m.startsWith('tav-')) tavAct(m);
+  else if (m.startsWith('map-buy:') || m.startsWith('bd-')) wirtAct(m);
   else if (m === 'shopgo') { S.shopTalk = null; openShop(S.shopId, false); }
   else if (m.startsWith('dlg:')) dialogPick(+m.slice(4));
   else if (m.startsWith('dice-')) diceAction(m);

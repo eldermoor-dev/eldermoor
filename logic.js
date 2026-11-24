@@ -417,6 +417,7 @@ function blockedText(b) {
   if (b.type === 'sign') return 'Eine Hinweistafel steht im Weg.';
   if (b.type === 'runestone') return 'Ein Runenstein. Die Zeichen glimmen schwach.';
   if (b.type === 'gate') return 'Ein Fallgitter versperrt den Weg.';
+  if (b.type === 'secret' && b.needs) return 'Die Wand stimmt mit dem Kreuz auf eurer Schatzkarte überein. ◉ untersucht sie.';
   if (b.type === 'secret') return 'Eine Wand. Durch die Fugen läuft ein feiner Riss.';
   if (b.type === 'lever') return b.torch ? 'Eine Wandfackel. Ihre Halterung sitzt locker.' : b.wall ? 'Ein Stein in der Wand sitzt locker.' : 'Ein Wandhebel steht im Weg.';
   if (b.type === 'decor') return DECOR_TEXT[b.look] || 'Hier steht etwas im Weg.'; // 0.38.1: Einrichtung hieß fälschlich „Gegner“
@@ -443,6 +444,7 @@ export function tryMove(state, data, rel) {
     b = null;
   }
   if (b) {
+    if (b.type === 'secret' && b.needs && !hasMap(state, b)) return { moved: false, wall: true }; // 0.40.0: Kartenwand ohne Karte = gewöhnliche Mauer
     if (b.type === 'enemy' && rel === 'f') return { moved: false, encounter: b };
     return { moved: false, msg: blockedText(b), blocker: b };
   }
@@ -719,7 +721,7 @@ export function scanSecrets(state, data) {
   const lvl = getLevel(data, state), p = state.player, d = DIRS[p.dir];
   for (let k = 1; k <= 2; k++) {
     const x = p.x + d.dx * k, y = p.y + d.dy * k;
-    const sc = state.objs.find((o) => ((o.type === 'secret' && !o.open) || (o.type === 'illusion' && !o.found)) && o.x === x && o.y === y);
+    const sc = state.objs.find((o) => ((o.type === 'secret' && !o.open && !o.needs) || (o.type === 'illusion' && !o.found)) && o.x === x && o.y === y);
     if (sc) {
       if (sc.sensed || sc.sn) return [];
       sc.sn = true;
@@ -751,7 +753,7 @@ export function noteClue(state, id, title, text) {
   return true;
 }
 const isClueSign = (o) => o && o.type === 'sign' && o.text && !/^(dk_|deco_)/.test(o.id);
-const signClue = (state, o) => { const r = { msg: o.text, sfx: 'ui', long: true }; if (isClueSign(o) && noteClue(state, o.id, String(o.title || 'Tafel').replace(/\|/g, ' '), o.text)) r.newNote = true; return r; };
+const signClue = (state, o) => { if (o.board) return { board: true, sfx: 'ui' }; const r = { msg: o.text, sfx: 'ui', long: true }; if (isClueSign(o) && noteClue(state, o.id, String(o.title || 'Tafel').replace(/\|/g, ' '), o.text)) r.newNote = true; return r; };
 const recClue = (state, id, title, text, r) => { if (noteClue(state, id, title, text)) r.newNote = true; return r; };
 function runePlate(state, o) {
   const ch = state.objs.find((x) => x.id === o.seq.chest), plates = state.objs.filter((x) => x.type === 'lever' && x.seq && x.seq.chest === o.seq.chest);
@@ -838,6 +840,11 @@ export function interact(state, data, target = null) { // target (0.26.2): Objek
     o.open = true;
     const txt = addLoot(state, data, o.loot);
     return { msg: `${pre.length ? pre.join(' ') + ' ' : ''}Truhe geöffnet: ${txt}.`, sfx: 'chest', changed: true, long: pre.length > 0 };
+  }
+  if (o.type === 'secret' && o.needs) { // 0.40.0: Kartenwand – nur mit der passenden Schatzkarte
+    if (!hasMap(state, o)) return { msg: 'Hier gibt es nichts zu tun.' };
+    o.open = true;
+    return { msg: o.msg || 'Die Karte stimmt: Eine schmale Fuge, ein Druck – die Wand gleitet zur Seite. Dahinter liegt ein kleiner Raum.', sfx: 'unlock', changed: true, long: true };
   }
   if (o.type === 'secret') return recClue(state, o.id, 'Rissige Wand', o.hint || 'Die Wand klingt hohl. Der Riss ist zu gerade für einen Zufall.', secretHint(state, data, o));
   return { msg: 'Hier gibt es nichts zu tun.' };
@@ -960,6 +967,8 @@ export function dialogChoose(state, data, npc, nodeId, idx) {
   const view = dialogView(state, data, npc, nodeId), ch = view && view.choices.find((x) => x.i === idx);
   if (!ch || !ch.ok) return { error: 'not-possible' };
   if (c.game) return { end: true, game: c.game, npc, changed: false }; // 0.32.0: öffnet das Würfelspiel (Oberfläche)
+  if (c.maps) return { end: true, maps: true, npc, changed: false }; // 0.40.0: Schatzkarten des Wirts (Oberfläche)
+  if (c.board) return { end: true, board: true, npc, changed: false }; // 0.40.0: Aushangbrett (Oberfläche)
   if (c.tavern) return { end: true, tavern: true, npc, changed: false }; // 0.34.0: öffnet die Gruppenverwaltung der Taverne (Oberfläche)
   const msgs = [];
   if (c.cost && c.cost.gold) state.gold -= c.cost.gold;
@@ -1650,9 +1659,11 @@ function finishVictory(state, data, msgs) {
     gold += data.enemies[e.kind].gold;
     xp += data.enemies[e.kind].xp || 0;
     noteBestiary(state, e.kind, 'won');
+    state.kills = state.kills || {}; state.kills[e.kind] = (state.kills[e.kind] || 0) + 1; // 0.40.0: Abschüsse für Steckbriefe
     const obj = state.objs.find((o) => o.id === e.objId);
     if (obj) { obj.dead = true; obj.hp = 0; }
   }
+  rollTrophies(state, data, c.enemies.filter((x) => !x.fled), msgs);
   const dg = diffPct(state, data, 'gold'), dx = diffPct(state, data, 'xp');
   if (dg !== 100) gold = Math.floor((gold * dg) / 100);
   if (dx !== 100) xp = Math.floor((xp * dx) / 100);
@@ -2270,6 +2281,109 @@ export function balanceMarkdown(data) {
   return L.join('\n');
 }
 
+// ---------- Schatzkarten (0.40.0) ----------
+// data.maps = { <gebiet>: { item, price } }: Die Wirtin verkauft je besuchtem Gebiet eine Karte (Quest-Gegenstand, einmalig). Ein Extraraum
+// des Gebiets ist durch eine Kartenwand (type 'secret' mit needs = Kartengegenstand) verschlossen: ohne Karte gewöhnliche Mauer, mit Karte
+// zeigt die Karte ein Kreuz, ◉ öffnet die Wand. Beute der Truhe darin: bessere Ausrüstung.
+export const hasMap = (state, o) => !o.needs || (state.inv[o.needs] || 0) > 0;
+export function mapOffers(state, data) {
+  const seen = new Set([state.levelId, ...Object.keys(state.areas || {})]);
+  return Object.entries(data.maps || {}).filter(([id]) => seen.has(id)).map(([id, c]) => {
+    const owned = (state.inv[c.item] || 0) > 0 || !!(state.flags && state.flags['karte:' + id]);
+    return { id, item: c.item, name: data.items[c.item].name, area: data.levels[id].name, price: c.price, owned, ok: !owned && state.gold >= c.price };
+  });
+}
+export function buyMap(state, data, id) {
+  if (state.combat) return { error: 'in-combat' };
+  const o = mapOffers(state, data).find((x) => x.id === id);
+  if (!o) return { error: 'unknown' };
+  if (o.owned) return { error: 'owned' };
+  if (state.gold < o.price) return { error: 'gold', cost: o.price };
+  state.gold -= o.price; state.flags['karte:' + id] = true; state.inv[o.item] = 1; markNew(state, o.item);
+  return { msg: `${o.name} gekauft (${o.price} Gold). Auf der Gebietskarte erscheint dort ein Kreuz.`, sfx: 'chest', changed: true };
+}
+
+// ---------- Steckbriefe am Aushangbrett (0.40.0) ----------
+// data.bounties = [{ id, lvl (Gebiet, das besucht sein muss), title, text, xp, gold, type: 'kill' (enemy, n) | 'trophy' (item, enemies, chance, from) | 'gear' (slot, minQ), from: [Gebiete mit Gegnern] }]
+// state.board = { slots: [{ id, base }], done: [id], skip: [id], next }, state.kills = { <Gegnerart>: Anzahl }. Belohnung: Erfahrung für alle wachen Helden (+ wenig Gold).
+export const BOARD_SLOTS = 3, BOARD_WAIT = 60;
+const mix32 = (n) => { n = Math.imul(n ^ (n >>> 16), 0x45d9f3b); n = Math.imul(n ^ (n >>> 15), 0x45d9f3b); return (n ^ (n >>> 16)) >>> 0; }; // Würfel ohne state.rng zu verändern
+const bountyOf = (data, id) => (data.bounties || []).find((b) => b.id === id);
+const boardOf = (state) => state.board || (state.board = { slots: [], done: [], skip: [], next: 0 });
+function livingSources(state, data, b) {
+  const kinds = b.type === 'kill' ? [b.enemy] : b.enemies || [];
+  let n = 0;
+  for (const id of b.from || []) {
+    const objs = id === state.levelId ? state.objs : state.areas && state.areas[id] ? state.areas[id].objs : data.levels[id].objects;
+    for (const o of objs) if (o.type === 'enemy' && !o.dead && kinds.includes(o.kind)) n++;
+  }
+  return n;
+}
+const gearFor = (state, b) => { // unausgerüstete erzeugte Ausrüstung ab Mindestgüte (niedrigste passende zuerst)
+  const Q = ['common', 'fine', 'rare', 'epic'];
+  return Object.keys(state.inv).filter((u) => state.inv[u] > 0 && state.gear && state.gear[u] && state.gear[u].slot === b.slot && Q.indexOf(state.gear[u].q) >= b.minQ).sort((a, c) => Q.indexOf(state.gear[a].q) - Q.indexOf(state.gear[c].q))[0] || null;
+};
+export function boardRefill(state, data) {
+  const bd = boardOf(state), all = data.bounties || [];
+  const seen = new Set([state.levelId, ...Object.keys(state.areas || {})]);
+  while (bd.slots.length < BOARD_SLOTS && state.steps >= bd.next) {
+    const live = all.filter((b) => !bd.done.includes(b.id) && !bd.slots.some((s) => s.id === b.id) && seen.has(b.lvl) && (b.type === 'gear' || livingSources(state, data, b) >= (b.type === 'kill' ? b.n : 1)));
+    const fresh = live.filter((b) => !bd.skip.includes(b.id));
+    const pool = fresh.length ? fresh : live;
+    if (!pool.length) break;
+    if (!fresh.length) bd.skip = [];
+    const b = pool[mix32(state.steps * 31 + bd.done.length * 7919 + bd.slots.length * 101 + (bd.skip.length + 1) * 13) % pool.length];
+    bd.slots.push({ id: b.id, base: b.type === 'kill' ? (state.kills && state.kills[b.enemy]) || 0 : 0 });
+  }
+}
+export function boardView(state, data) {
+  boardRefill(state, data);
+  const bd = boardOf(state);
+  return bd.slots.map((s) => {
+    const b = bountyOf(data, s.id);
+    let have = 0, need = 1;
+    if (b.type === 'kill') { need = b.n; have = Math.min(need, ((state.kills && state.kills[b.enemy]) || 0) - s.base); }
+    else if (b.type === 'trophy') have = (state.inv[b.item] || 0) > 0 ? 1 : 0;
+    else have = gearFor(state, b) ? 1 : 0;
+    return { id: b.id, title: b.title, text: b.text, xp: b.xp, gold: b.gold || 0, type: b.type, have, need, ready: have >= need, item: b.item ? data.items[b.item].name : null };
+  });
+}
+export function boardTurnIn(state, data, id) {
+  if (state.combat) return { error: 'in-combat' };
+  const bd = boardOf(state), i = bd.slots.findIndex((s) => s.id === id), v = boardView(state, data).find((x) => x.id === id);
+  if (i < 0 || !v) return { error: 'unknown' };
+  if (!v.ready) return { error: 'not-ready' };
+  const b = bountyOf(data, id);
+  if (b.type === 'trophy') delete state.inv[b.item];
+  else if (b.type === 'gear') { const u = gearFor(state, b); delete state.inv[u]; if (state.gear) delete state.gear[u]; }
+  bd.slots.splice(i, 1); bd.done.push(id); bd.next = state.steps + BOARD_WAIT;
+  const msgs = [`Auftrag erledigt: ${b.title}.`];
+  if (b.gold) { state.gold += b.gold; msgs.push(`Lohn: ${b.gold} Gold.`); }
+  msgs.push(`Erfahrung: +${b.xp} EP für jeden Helden, der noch steht.`);
+  grantXp(state, data, b.xp, msgs);
+  return { msg: msgs.join(' '), sfx: 'chest', changed: true };
+}
+export function boardDismiss(state, data, id) {
+  const bd = boardOf(state), i = bd.slots.findIndex((s) => s.id === id);
+  if (i < 0) return { error: 'unknown' };
+  bd.slots.splice(i, 1); bd.skip.push(id); bd.next = state.steps + BOARD_WAIT;
+  return { msg: 'Der Zettel ist abgerissen. Später hängt vielleicht ein anderer da.', sfx: 'ui', changed: true };
+}
+function rollTrophies(state, data, enemies, msgs) { // Trophäen fallen nur, solange ein Steckbrief sie verlangt; bei den letzten Gegnern der Art sicher
+  const bd = state.board;
+  if (!bd) return;
+  enemies.forEach((e, idx) => {
+    for (const s of bd.slots) {
+      const b = bountyOf(data, s.id);
+      if (!b || b.type !== 'trophy' || !b.enemies.includes(e.kind) || (state.inv[b.item] || 0) > 0) continue;
+      const chance = livingSources(state, data, b) <= 1 ? 100 : b.chance || 50;
+      if (mix32(state.rng + idx * 977 + ((state.kills && state.kills[e.kind]) || 0) * 131) % 100 >= chance) continue;
+      state.inv[b.item] = 1; markNew(state, b.item);
+      msgs.push(`Trophäe von ${e.name}: ${data.items[b.item].name} (für den Steckbrief „${b.title}“).`);
+    }
+  });
+}
+
 // ---------- Level-Analyse (Softlock-Prüfung) ----------
 export function analyzeLevel(data, levelId) {
   const lvl = data.levels[levelId];
@@ -2296,7 +2410,7 @@ export function analyzeLevel(data, levelId) {
         const tp = lvl.objects.find((o) => o.type === 'teleport' && o.x === nx && o.y === ny && !gatesOpen.has(o.id));
         if (tp) { const tk = `${tp.to.x},${tp.to.y}`; seen.add(k); if (!seen.has(tk)) { seen.add(tk); q.push([tp.to.x, tp.to.y]); } continue; }
         if (chests.some((o) => o.x === nx && o.y === ny)) continue;
-        if (lvl.objects.some((o) => (o.type === 'lever' || ((o.type === 'gate' || o.type === 'secret') && !gatesOpen.has(o.id))) && o.x === nx && o.y === ny)) continue;
+        if (lvl.objects.some((o) => (o.type === 'lever' || ((o.type === 'gate' || (o.type === 'secret' && !o.needs)) && !gatesOpen.has(o.id))) && o.x === nx && o.y === ny)) continue;
         seen.add(k); q.push([nx, ny]);
       }
     }
