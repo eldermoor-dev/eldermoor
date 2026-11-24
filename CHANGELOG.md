@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.37.1 (24.11.2026, headless)
+- Gießmeister Harkon hat ein eigenes Bild: Gießer im silbernen Hitzeschutzanzug mit goldorangem Gesichtsschild und rotglühender Eisenstange (vorher Hauptmann-Figur mit blauem Ring). Keine Wertänderung.
+
 ## 0.37.0 (24.11.2026, headless)
 - Neues Gebiet „Die Zisterne“ (Akt 2, Keller 6, 100×64): Wasserhalle mit Stegen und vier Hüterstatuen, Pumpenhaus, Schleusen, Wächter- und Kerkerkammer, Archiv, Kanalnetz (Labyrinth) und Sickerhalle. Erreicht über die Treppe am Ende der Gießerei (ersetzt den Platzhalter-Ausgang).
 - Rätsel: vier Statuen, genau eine lügt; ihre Hand gibt den Quellschlüssel zur Quellkammer. Hebel öffnet Schleusengitter, Fackelschalter öffnet Geheimkammer, zwei Illusionswände, falsche Truhen.

@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.37.0 (24.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.37.1 (24.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1366,8 +1366,16 @@ Auftrag des Nutzers (24.11.2026, 16:20): „Aktueller Stand mit offener Artefakt
 - Kein Spoiler-Inhalt (kein Story-Ende) in Texten des neuen Gebiets.
 - Offen auf Gerät (nichts bestätigt): siehe Checkliste. Nur headless geprüft: Karte/Verbindungen, Rätselbeweis, Lösbarkeit; Optik, Spielgefühl und Kampf nicht auf Gerät getestet.
 
+## 0.37.1 (24.11.2026; headless, nicht auf Gerät getestet)
+Nutzer (18:30, Screenshot Kampf gegen Gießmeister Harkon + Foto eines Gießers im Hitzeschutzanzug): „Gießmeister sieht mit dem Ring aus wie ein alter Endgegner und hat nichts mit dem Thema gemein. Komplett anders darstellen (siehe Foto). Am Ende rotglühende Eisenstange.“
+- Befund (belegt): `giessmeister` benutzte bisher das Hauptmann-Sprite (`captain`, `genGuard(191,'haupt')`, Hörnerhelm, blauer Ring).
+- Änderung (render.js): neues Sprite `genGiessmeister(195)` (Spitzkapuze und Anzug aus silberner Folie mit Knitterfalten, goldorange spiegelndes Gesichtsschild mit dunkler Unterkante und Lichtstreifen, dicke dunkle Handschuhe, langer Schutzschurz, Stiefel, orange Feuerspiegelung am rechten Rand, lange Eisenstange mit rotglühendem, oben gelb-weißem Ende und Funken). Registrierung `sprites.giessmeister`, `spriteFor` ordnet `giessmeister` zu; `hauptmann` behält `captain`. `bossScale` (1,12) unverändert.
+- Keine Werte-, Daten- oder Speicherstandänderung: BALANCE.md/SIM.md unverändert. Tests 152 grün.
+- Vorschau nur als Einzelbild in Node erzeugt (Palette „glut“); Wirkung im Kampf (Größe, Lesbarkeit neben dem Schlackenwächter), Optik auf dem S25 und im Modus „Scharf“ **nicht auf Gerät getestet**. Das Foto wurde nicht kopiert, das Sprite ist selbst gezeichnet.
+- Testliste 0.37.0: Ergebnisse des Nutzers lagen bis jetzt nicht vor (Platzhalter unausgefüllt, Artefakt enthält die Haken nur im Browser des Handys). Nichts als „auf Gerät bestätigt“ eingetragen.
+
 ## Für den nächsten Chat (Stand 24.11.2026)
-- Offene Gerätetests (alle bisher nur headless): Zisterne (0.37.0), Gießerei (0.36.0), Notizbuch (0.35.0), Shop-Scrollposition bei Hedda (0.35.0), Treppen/Thronsaal (0.34.2), B-Talentwege (0.35.1), Taverne (0.34.0), Spinnenhöhle (0.33.0).
+- Offene Gerätetests (alle bisher nur headless): neues Gießmeister-Bild (0.37.1), Zisterne (0.37.0), Gießerei (0.36.0), Notizbuch (0.35.0), Shop-Scrollposition bei Hedda (0.35.0), Treppen/Thronsaal (0.34.2), B-Talentwege (0.35.1), Taverne (0.34.0), Spinnenhöhle (0.33.0).
 - Offen vom Nutzer: Screenshot der Wache ohne Text – nach Gebiet und Beschwerde fragen. Entscheidungen in der Checkliste (Artefakt) weiter offen.
 - Mögliche nächste Schritte nur auf Wunsch: Weiterweg hinter der Zisterne (Keller 7, Platzhalter `exit_z_tiefe`), Aushangbrett, Schmied in der Siedlung, Elementarfackeln, weitere Dialoge mit `note`, Talent-Alternativen B–F, Truhen-Option C, eigenes Statuen-Sprite.
 - Nutzer hat wenig Kontingent: neuen Chat im Projekt mit „HANDOVER.md lesen“ starten.
