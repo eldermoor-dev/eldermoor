@@ -2989,7 +2989,7 @@ export async function runTests(data, env = {}) {
     const out = tv.objects.find((o) => o.id === 'stairs_taverne_aus'); assert(L.cellChar(mo, out.to.x, out.to.y) === '.' && out.to.y === st.y - 1, 'Ausgang vor der Fassade');
     // Innen: alle Dekorationen auf Boden, ohne Doppelbelegung, Wirtin erreichbar, Sprites bekannt
     const seen = new Set(); for (const o of tv.objects) { assert(L.cellChar(tv, o.x, o.y) === '.', o.id + ' auf Boden'); const k = o.x + ',' + o.y; assert(!seen.has(k), o.id + ' doppelt belegt ' + k); seen.add(k); }
-    const looks = new Set(tv.objects.filter((o) => o.type === 'decor').map((o) => o.look)); for (const k of ['tresen', 'weinregal', 'weinfass', 'gast0', 'gast1', 'gast2', 'tisch', 'stuhl', 'kamin', 'fass']) assert(looks.has(k), 'Deko ' + k);
+    const looks = new Set(tv.objects.filter((o) => o.type === 'decor' || o.type === 'npc').map((o) => o.look)); for (const k of ['tresen', 'weinregal', 'weinfass', 'gast0', 'gast1', 'gast2', 'tisch', 'stuhl', 'kamin', 'fass']) assert(looks.has(k), 'Deko ' + k);
     assert(tv.objects.filter((o) => /^gast/.test(o.look || '')).length >= 5, 'mindestens fünf Gäste');
     const w = tv.objects.find((o) => o.id === 'npc_wirt'); assert(!seen.has('7,3') && !tv.objects.some((o) => o.x === 7 && o.y >= 3 && o.y <= 7 && o.type !== 'stairs'), 'Mittelgang zur Wirtin frei'); eq(w.y, 2, 'Wirtin im Tresen-Spalt');
     const s = L.newGame(data, 39); L.jumpToLevel(s, data, 'taverne'); s.heroes.forEach((h) => { h.hp = 1; h.mp = 0; });
@@ -3035,6 +3035,15 @@ export async function runTests(data, env = {}) {
   await test('0.46.2 Schilder liegen auf keiner Wandfackel', () => {
     const D = [[0, -1], [1, 0], [0, 1], [-1, 0]];
     for (const [id, lv] of Object.entries(data.levels)) for (const o of lv.objects) if (o.type === 'sign' && o.face != null && o.title) { const c = L.cellChar(lv, o.x + D[o.face][0], o.y + D[o.face][1]); assert(c !== 'T', id + ': ' + o.id + ' liegt auf Fackel'); }
+  });
+  await test('0.46.3 Taverne: Gäste und Kamin sind ansprechbar, Altstand wird umgestellt', () => {
+    const tv = data.levels.taverne, ids = ['d_gast1', 'd_gast2', 'd_gast3', 'd_gast4', 'd_gast5', 'd_kamin'];
+    for (const id of ids) { const o = tv.objects.find((x) => x.id === id); assert(o && o.type === 'npc' && data.dialogs[o.dialog], id + ' ist npc mit Dialog'); }
+    const s = fresh(70); L.jumpToLevel(s, data, 'taverne');
+    for (const id of ids) { const o = s.objs.find((x) => x.id === id); assert(o && o.type === 'npc', id + ' im Spielstand npc'); }
+    const old = s.objs.find((x) => x.id === 'd_gast1'); old.type = 'decor'; delete old.dialog; L.syncStatic(s, data);
+    assert(s.objs.find((x) => x.id === 'd_gast1').type === 'npc', 'Altstand: decor → npc');
+    const a = L.analyzeLevel(data, 'taverne'); assert(a.ok, 'Analyse ok ' + JSON.stringify(a));
   });
   await test('0.40.0 Schatzkarten: Daten, Kartenwand ohne/mit Karte, Kauf, Extraraum erreichbar', () => {
     const ids = Object.keys(data.maps || {}); assert(ids.length >= 10, 'mindestens zehn Gebiete mit Karte: ' + ids.length);

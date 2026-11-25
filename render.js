@@ -3242,7 +3242,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
     else if (o.type === 'rail') out.push({ x: o.x + (o.dx || 0), y: o.y + (o.dy || 0), tex: o.torch ? tex.sprites.railTorch : tex.sprites.rail, scale: o.torch ? 1.0 : 0.55, axis: o.ax === 'y' ? [1, 0] : [0, 1] }); // Brückengeländer: axis = Flächennormale; Ebene längs der Bahn steht beim Blick entlang der Bahn kantig (schmal)
     else if (o.type === 'runestone') out.push({ x: o.x, y: o.y, tex: tex.sprites.runeStone, scale: 0.9 });
     else if (o.type === 'merchant') out.push({ x: o.x, y: o.y, tex: tex.sprites[o.look] || tex.sprites.merchant, scale: o.look ? 0.95 : 0.8 });
-    else if (o.type === 'npc' && !o.gone) out.push({ x: o.x, y: o.y, tex: tex.sprites[o.look] || tex.sprites.merchant, scale: o.look === 'kultist' || o.look === 'guard' ? 0.95 : 0.85 }); // 0.25.0: Begegnungspersonen (look = Spritename)
+    else if (o.type === 'npc' && !o.gone) out.push({ x: o.x, y: o.y, tex: tex.sprites[o.look] || tex.sprites.merchant, scale: o.scale || (o.look === 'kultist' || o.look === 'guard' ? 0.95 : 0.85) }); // 0.25.0: Begegnungspersonen (look = Spritename)
     else if (o.type === 'stairs' || o.type === 'exit') {
       if (grid && passFaces((x, y) => x < 0 || y < 0 || x >= grid.gw || y >= grid.gh || grid.grid[y * grid.gw + x] !== 0, o).length) continue; // liegt an einer Wand: als Wand-Abziehbild (buildDecals)
       out.push({ x: o.x, y: o.y, tex: passTex(tex, o), scale: 0.9, axis: grid ? passAxis(grid, o) || freeAxis(grid, o) : null });

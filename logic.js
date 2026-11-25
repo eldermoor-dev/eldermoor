@@ -2290,7 +2290,7 @@ export function syncStatic(state, data) {
     for (const o of lvl.objects) {
       const i = a.objs.findIndex((x) => x && x.id === o.id);
       if (i < 0) { a.objs.push(freshObj(data, o)); n++; }
-      else if (o.type === 'barrel' && a.objs[i].type === 'decor') { a.objs[i] = freshObj(data, o); n++; } // 0.44.0: altes Dekorationsfass wird zerschlagbar
+      else if ((o.type === 'barrel' || o.type === 'npc') && a.objs[i].type === 'decor') { a.objs[i] = freshObj(data, o); n++; } // 0.46.3: Taverne – Gäste und Kamin sind ansprechbar // 0.44.0: altes Dekorationsfass wird zerschlagbar
       else if (STATIC_TYPES.has(o.type) && a.objs[i].type === o.type && JSON.stringify(a.objs[i]) !== JSON.stringify(o)) { a.objs[i] = clone(o); n++; }
       else if (o.type === 'chest' && o.lootV && a.objs[i].type === 'chest' && !a.objs[i].open && a.objs[i].lootV !== o.lootV) { a.objs[i].loot = clone(o.loot); a.objs[i].lootV = o.lootV; n++; } // 0.21.0: neue Beute (z. B. Set-Teile) auch in ungeöffneten Truhen alter Stände
       else if (o.type === 'enemy' && a.objs[i].type === 'enemy' && !a.objs[i].dead && (a.objs[i].x !== o.x || a.objs[i].y !== o.y) && !(a.id === state.levelId && state.player.x === o.x && state.player.y === o.y)) { a.objs[i].x = o.x; a.objs[i].y = o.y; n++; } // 0.23.12: Gegnerplatz (z. B. Hüter am Thron) auch in alten Ständen nachziehen

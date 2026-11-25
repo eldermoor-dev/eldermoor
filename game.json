@@ -8711,10 +8711,13 @@
         },
         {
           "id": "d_kamin",
-          "type": "decor",
+          "type": "npc",
           "x": 13,
           "y": 4,
-          "look": "kamin"
+          "look": "kamin",
+          "name": "Kamin",
+          "dialog": "kamin",
+          "scale": 0.95
         },
         {
           "id": "d_weinfass1",
@@ -8753,10 +8756,13 @@
         },
         {
           "id": "d_gast1",
-          "type": "decor",
+          "type": "npc",
           "x": 3,
           "y": 4,
-          "look": "gast0"
+          "look": "gast0",
+          "name": "Bärtiger Gast",
+          "dialog": "gast_hut",
+          "scale": 0.95
         },
         {
           "id": "d_stuhl1",
@@ -8774,17 +8780,23 @@
         },
         {
           "id": "d_gast2",
-          "type": "decor",
+          "type": "npc",
           "x": 11,
           "y": 4,
-          "look": "gast1"
+          "look": "gast1",
+          "name": "Gast mit Kapuze",
+          "dialog": "gast_kapuze",
+          "scale": 0.95
         },
         {
           "id": "d_gast3",
-          "type": "decor",
+          "type": "npc",
           "x": 9,
           "y": 4,
-          "look": "gast2"
+          "look": "gast2",
+          "name": "Gast im roten Wams",
+          "dialog": "gast_rot",
+          "scale": 0.95
         },
         {
           "id": "d_tisch3",
@@ -8802,10 +8814,13 @@
         },
         {
           "id": "d_gast4",
-          "type": "decor",
+          "type": "npc",
           "x": 5,
           "y": 6,
-          "look": "gast2"
+          "look": "gast2",
+          "name": "Gast am Tisch",
+          "dialog": "gast_dunkel",
+          "scale": 0.95
         },
         {
           "id": "d_tisch4",
@@ -8816,10 +8831,13 @@
         },
         {
           "id": "d_gast5",
-          "type": "decor",
+          "type": "npc",
           "x": 9,
           "y": 6,
-          "look": "gast0"
+          "look": "gast0",
+          "name": "Müder Gast",
+          "dialog": "gast_hut2",
+          "scale": 0.95
         },
         {
           "id": "d_stuhl3",
@@ -14020,6 +14038,90 @@
             {
               "t": "Verstanden",
               "to": "a"
+            }
+          ]
+        }
+      }
+    },
+    "kamin": {
+      "name": "Kamin",
+      "start": "a",
+      "nodes": {
+        "a": {
+          "text": "Ihr haltet die Hände ans Feuer. Das Holz knistert, die Wärme kriecht in die Knochen. Mehr als Wärme gibt der Kamin nicht her. Wer rasten will, nimmt bei Marga ein Zimmer.",
+          "choices": [
+            {
+              "t": "Zurücktreten"
+            }
+          ]
+        }
+      }
+    },
+    "gast_hut": {
+      "name": "Bärtiger Gast",
+      "start": "a",
+      "nodes": {
+        "a": {
+          "text": "Der Mann mit dem Hut hebt den Krug. „Setzt euch nicht an meinen Tisch, aber hört zu: Am Aushangbrett wechseln die Zettel. Wer oft hereinschaut, findet bessere.“",
+          "choices": [
+            {
+              "t": "Danke für den Rat"
+            }
+          ]
+        }
+      }
+    },
+    "gast_kapuze": {
+      "name": "Gast mit Kapuze",
+      "start": "a",
+      "nodes": {
+        "a": {
+          "text": "Unter der Kapuze flüstert es: „Stücke, die zu gut aussehen, sind oft verflucht. Merkt ihr es beim Anlegen, geht zur Hexe dort hinten. Sie nimmt den Fluch, aber nicht umsonst: Gold und ein Heiltrank.“",
+          "choices": [
+            {
+              "t": "Verstanden"
+            }
+          ]
+        }
+      }
+    },
+    "gast_rot": {
+      "name": "Gast im roten Wams",
+      "start": "a",
+      "nodes": {
+        "a": {
+          "text": "Der Mann im roten Wams wischt sich den Bart. „Marga zeichnet Schatzkarten. Höchstens drei je Besuch, und dann muss eine Stunde vergehen. Das Kreuz auf der Karte führt zu einer Wand, die sonst nur Mauer ist.“",
+          "choices": [
+            {
+              "t": "Gut zu wissen"
+            }
+          ]
+        }
+      }
+    },
+    "gast_dunkel": {
+      "name": "Gast am Tisch",
+      "start": "a",
+      "nodes": {
+        "a": {
+          "text": "Die Frau am Tisch dreht den Becher. „Geheimwände haben einen feinen Riss. Wer ein scharfes Auge hat, spürt sie schon im Vorbeigehen.“",
+          "choices": [
+            {
+              "t": "Danke"
+            }
+          ]
+        }
+      }
+    },
+    "gast_hut2": {
+      "name": "Müder Gast",
+      "start": "a",
+      "nodes": {
+        "a": {
+          "text": "Der Gast gähnt. „Rasten? Geht überall, wo kein Gegner in Sicht ist. Aber bei Marga schläft man besser, dort ruht sogar die Reserve.“",
+          "choices": [
+            {
+              "t": "Verstanden"
             }
           ]
         }
