@@ -1799,7 +1799,7 @@ export async function runTests(data, env = {}) {
     // Alle Tafeln der Daten sind Wandtafeln mit Bodenfeld und Wand dahinter
     for (const [id, lvl] of Object.entries(data.levels)) for (const o of lvl.objects) if (o.type === 'sign') {
       assert([0, 1, 2, 3].includes(o.face), `${id}/${o.id}: face fehlt`);
-      assert(typeof o.title === 'string' && o.title.length > 1, `${o.id}: Titel`);
+      assert(o.deco || (typeof o.title === 'string' && o.title.length > 1), `${o.id}: Titel`); // 0.42.0: Wandschmuck (deco) braucht keinen Titel
       const d = [[0, -1], [1, 0], [0, 1], [-1, 0]][o.face];
       const row = (r) => lvl.map[r] || '';
       const isWall = (x, y) => { const c = row(y)[x]; return c === undefined || c !== '.'; };

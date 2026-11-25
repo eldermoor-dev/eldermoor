@@ -8393,7 +8393,7 @@
           "x": 7,
           "y": 2,
           "name": "Wirtin Marga",
-          "look": "haendler2",
+          "look": "wirtin",
           "dialog": "wirt"
         },
         {
@@ -8611,7 +8611,8 @@
           "type": "sign",
           "x": 1,
           "y": 2,
-          "title": "AUS-|HANG",
+          "title": "",
+          "deco": "aushang",
           "text": "Aushangbrett des Goldenen Eber. Steckbriefe gegen Erfahrung.",
           "style": "wood",
           "face": 3,

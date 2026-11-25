@@ -3,6 +3,10 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.42.0 (25.11.2026, headless)
+- Aushang in der Taverne: viele verschieden große, schiefe Zettel mit Nadeln und Siegeln statt des Schriftzugs „AUS-HANG“.
+- Wirtin Marga bekommt ein eigenes Bild (Haarknoten, Schürze, Bierkrug) statt des Händlerbilds.
+
 ## 0.41.0 (25.11.2026, headless)
 - Elitegegner: etwa 12 % der normalen Gegner (nie Bosse, nie Truhenmaul) sind Elite (★ vor dem Namen) mit einer Eigenschaft: wütend, zäh, flink oder giftig. Doppelte EP und Gold. Auswahl fest je Gegnerobjekt, Weglaufen ändert nichts.
 - Bestiarium: Meisterschaft je Gegnerart (10 und 25 Siege, einmalig Bonus-EP). Neu im Menü: Erfolge (Extraräume, Karten, Steckbriefe, Elite, Meisterschaft), je drei Stufen, abgeleitet aus dem Spielstand.

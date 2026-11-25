@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.41.0 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.42.0 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1434,6 +1434,13 @@ Nutzer (18:30, Screenshot Kampf gegen Gießmeister Harkon + Foto eines Gießers 
 - **Hüterstatuen (Zisterne), Untersuchung:** Im Code nicht nachstellbar. Alle 24 Reihenfolgen der vier Statuen, je mit und ohne Speichern/Laden, ergeben denselben Ausgang: Nur die Hand der lügenden Statue (Hüter III) gibt den Schlüssel; die anderen drei lösen den Kampf mit einem Kultwächter aus. Kein anderer Weg zu `quellschluessel`. Ursache der Gerätebeobachtung unbekannt: Es fehlen Angaben, welche Statue gedrückt wurde, was geschah und die Meldung (Screenshot). Offen: Titelbild-Version auf dem Gerät prüfen (0.37.6 oder neuer erwartet).
 - Offene Gerätetests 0.40.0: siehe Testliste im Chat (Karte kaufen, Kreuz, Wand öffnen, Truhe; Aushangbrett über Tafel und Marga; Wölfe/Trophäe/Abgabe; Abreißen; alter Spielstand lädt).
 - Ideen, nicht gebaut: Kartenpreis mit Feilschen-Talent, mehrere Extraräume je große Ebene, Steckbriefe mit festen Kettenaufträgen (Geschichte), Aushang auch in der Siedlung am Weg zur Taverne.
+
+## 0.42.0 (25.11.2026; headless, nicht auf Gerät getestet)
+- Nutzer (11:58): „Aushang mit verschieden großen Zetteln an der Wand darstellen“ und „Marga sieht nicht aus wie eine Wirtin“ (Screenshot: Marga nutzte das Bild des Waffenhändlers, kahl mit Augenklappe).
+- **Aushang** (render.js `genDeco('aushang')`): zehn Zettel in verschiedenen Größen, leicht schief, mit Nadel, Schatten, Schriftzeilen (erste Zeile dick), zwei Wachssiegeln und umgeknickter Ecke direkt auf der Holzwand. `sign_aushang` (Taverne): `title` leer, `deco: "aushang"`, `board: true` bleibt (Antippen/◉ öffnet die Steckbriefe). Test „Wandtafeln“ lässt Wandschmuck ohne Titel zu.
+- **Marga** (`genWirtin`, Sprite `wirtin`, `npc_wirt.look`): Frau mit Haarknoten und Kopftuchband, kastanienrotes Haar, Lächeln, weiße Bluse mit hochgekrempelten Ärmeln, rotes Mieder, helle Schürze, Bierkrug, Schlüsselbund. Händler Valdis/Brum behalten ihr Bild.
+- Altstände: Schilder und NPC-Look werden über `syncStatic` nachgezogen. Tests 162 grün, keine Werteänderung (BALANCE.md/SIM.md unverändert). Nur im Headless-Browser gesehen.
+- Hinweis zur Palette `schenke`: Material „stone“ ist braun, deshalb wirkt Margas Bluse graubraun; Schürze nutzt „glow“ (cremefarben).
 
 ## IDEE (Nutzer, 25.11.2026, noch NICHT gebaut): lebendige Taverne
 - Wortlaut sinngemäß: Mit den Leuten in der Taverne kann man interagieren, teils bekommt man Aufträge von ihnen. Bei jedem erneuten Besuch sind einige Gäste weg oder neu dazugekommen. Viel Kreativitätspotenzial; der Nutzer kümmert sich später darum (Umfang und Zeitpunkt offen, nicht beauftragt).
