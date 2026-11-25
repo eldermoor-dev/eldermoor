@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.51.0 (25.11.2026, headless gerendert, nicht auf Gerät getestet)
+- Wasser neu (Nutzer: „immer noch langweilig“, Auswahl 1 bis 5): Ufer und Tiefe (heller am Rand, dunkler zur Mitte, dunkler Nässesaum am Land), Farbe je Gebiet statt grellem Blau (Moor: Algen und trübes Grün, Zisterne: kaltes Türkis, Schatzinsel: Meer), Schaumkante und Funkeln, Dunstschwaden, Dinge im Wasser (Schilf, Seerosen, Äste, Blasen) und schwebende Irrlichter im Moorsee und in der Zisterne. Keine neuen Palettenfarben. Gegner- und Heldenwerte unverändert. Alt-Spielstände ziehen die neuen Zierobjekte nach.
+
 ## 0.50.0 (25.11.2026, headless gerendert, nicht auf Gerät getestet)
 - Testgewölbe ausgebaut (Plan A, C, D, E): Hebel in Raum 1 öffnet das Gitter zur Truhennische (Wölfe bewachen die Truhe), Speerfalle im einzigen Gang nach Osten mit Wandhinweis, Geheimkammer hinter Riss-Wand (Schalterstein im Ostraum) mit Truhe (2 Heiltränke, 1 Gegengift, 15 Gold), drei Wandfackeln, Lager mit Tisch, Stuhl und Fass, vier Tafeln fürs Notizbuch (Lager, Kohle-Hinweis, Striche, Seite). Karte weiter 22×10. Gegnerwerte unverändert. Alt-Spielstände ziehen die Objekte nach; steht die Gruppe in einer jetzt zugemauerten Zelle, geht sie zum Start.
 

@@ -12,6 +12,25 @@ const M = { stone: 0, moss: 1, wood: 2, iron: 3, floor: 4, ceil: 5, flesh: 6, gl
 const PAL_N = MATS.length * 8, BLOOD_DEFAULT = [206, 38, 32], ICE_DEFAULT = [96, 176, 255];
 const P = (mat, shade) => M[mat] * 8 + Math.max(0, Math.min(7, Math.round(shade)));
 
+// 0.51.0 (Nutzer: Wasser „immer noch langweilig“): Wasserstile je Gebiet (Feld `water` im Level). Keine neuen Palettenmaterialien: Ufer, Mitte und Tiefe nehmen vorhandene Materialien der Gebietspalette, dadurch passt die Farbe zur Umgebung.
+// m = Material je Tiefenband (0 Ufer, 1 Mitte, 2 Tiefe), o = Helligkeitsversatz je Band, glint = Glanz (Wellenspitzen, Funkeln), foam/foam2 = Schaumkante, mist = Dunstschwaden, algae = Algenmatten
+const WSTYLES = {
+  ice: { m: ['ice', 'ice', 'ice'], o: [0.8, 0, -0.9], glint: ['ice', 7], foam: ['ice', 7], foam2: ['ice', 5.4] },
+  sea: { m: ['ice', 'ice', 'ice'], o: [1.2, 0.2, -1.0], glint: ['ice', 7], foam: ['ice', 7], foam2: ['ice', 5.6] },
+  moor: { m: ['moss', 'ceil', 'ceil'], o: [-1.5, 1.4, 0], glint: ['iron', 5.2], foam: ['stone', 6.4], foam2: ['stone', 4.4], mist: true, algae: ['moss', 3.0] },
+  cistern: { m: ['moss', 'moss', 'moss'], o: [0.2, -1.0, -2.0], glint: ['iron', 6.6], foam: ['iron', 7], foam2: ['iron', 4.8], mist: true }
+};
+const wLutCache = new Map();
+function waterLut(name) { // Tabelle: Band (3) × Helligkeit (8) → Palettenindex; dazu Schaum, Schaum 2, Glanz, Algen
+  let r = wLutCache.get(name);
+  if (r) return r;
+  const st = WSTYLES[name] || WSTYLES.ice, lut = new Uint8Array(24);
+  for (let b = 0; b < 3; b++) for (let s = 0; s < 8; s++) lut[b * 8 + s] = s === 7 ? P(st.glint[0], st.glint[1]) : P(st.m[b], s + st.o[b]);
+  r = { lut, foam: P(st.foam[0], st.foam[1]), foam2: P(st.foam2[0], st.foam2[1]), glint: P(st.glint[0], st.glint[1]), algae: st.algae ? P(st.algae[0], st.algae[1]) : -1, mist: !!st.mist };
+  wLutCache.set(name, r);
+  return r;
+}
+
 // Wandtextur-IDs im Raster: 0 = frei, 1 Stein, 2 Moos, 3 Tür, 4 verschlossene Tür
 export const WALL_STONE = 1, WALL_MOSS = 2, WALL_DOOR = 3, WALL_DOOR_LOCKED = 4, WALL_TORCH = 5, WALL_ROCK = 6, WALL_LICHEN = 7, WALL_GATE = 8, WALL_SECRET = 9, WALL_SWITCH = 10, WALL_SWITCH_ON = 11, WALL_HOUSE = 12, WALL_VEGAS = 13, WALL_WEB = 14; // 0.33.0: WALL_WEB = Spinnennetz (Gitter mit web:true)
 export const DOOR_LOOKS = ['plank', 'eisen', 'stein', 'bogen', 'gold', 'gitter', 'morsch']; // 0.32.1 (Nutzer: „mehr Türvarianten“): Aussehen der Tür (Objektfeld look); plank = klassische Holztür mit Eisenbändern (ID 3/4), übrige IDs 20 + 2·Index (+1 verschlossen)
@@ -1558,6 +1577,73 @@ function genPlate(down, seed) {
   t.noWrap = true;
   return t;
 }
+// 0.51.0: Dinge im Wasser (Typ decor). Flache Bilder ohne Umriss, 64 px, unten verankert wie die Bodenplatte.
+function genSchilf(seed) { // Schilfbüschel: Halme mit Blattspitzen, dunkle Kolben
+  const t = mk(255), set = (x, y, v) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
+  const n = 9;
+  for (let i = 0; i < n; i++) {
+    const bx = 10 + i * 5.4 + (hash(i, 1, seed) - 0.5) * 3, h = 30 + hash(i, 2, seed) * 26, lean = (hash(i, 3, seed) - 0.5) * 14, cur = (hash(i, 4, seed) - 0.5) * 6;
+    for (let y = 0; y <= h; y++) {
+      const q = y / h, x = bx + lean * q * q + cur * Math.sin(q * 3.1), yy = 62 - y, shade = 2.6 + q * 2.2 + hash(i, y >> 2, seed + 5) * 0.8 - (i % 2) * 0.5;
+      set(x, yy, P('moss', shade)); if (q < 0.7 && i % 3 !== 1) set(x + 1, yy, P('moss', shade - 1.1));
+    }
+    if (i % 3 === 1) { const x = bx + lean * 0.95 + cur * 0.05; for (let y = 0; y < 7; y++) { set(x, 62 - h + 5 - y, P('wood', 2.4 + hash(i, y, seed + 9) * 0.8)); set(x + 1, 62 - h + 5 - y, P('wood', 1.6)); } set(x, 62 - h - 3, P('wood', 3.2)); } // Rohrkolben
+  }
+  for (let x = 6; x < 60; x++) if (hash(x, 5, seed) > 0.35) set(x, 63, P('ceil', 2)); // Wasserlinie
+  t.noWrap = true;
+  return t;
+}
+function genSeerose(seed) { // Seerosenblätter (flach, mit Einschnitt) und eine gelbe Blüte
+  const t = mk(255);
+  const pad = (cx, cy, rx, ry, notch) => {
+    for (let y = Math.floor(cy - ry - 1); y <= Math.ceil(cy + ry + 1); y++) for (let x = Math.floor(cx - rx - 1); x <= Math.ceil(cx + rx + 1); x++) {
+      if (x < 0 || x >= TEX || y < 0 || y >= TEX) continue;
+      const dx = (x - cx) / rx, dy = (y - cy) / ry, d = dx * dx + dy * dy;
+      if (d > 1) continue;
+      if (notch && dx > 0.1 && Math.abs(dy) < dx * 0.22 + 0.04) continue; // Einschnitt zur Mitte
+      const edge = d > 0.8, vein = Math.abs(Math.atan2(dy, dx) * 3) % 1 < 0.1 && d > 0.12;
+      t.data[y * TEX + x] = P('moss', (edge ? 2.2 : 3.6) + hash(x >> 1, y, seed) * 0.8 - (vein ? 0.9 : 0) + (dy < -0.2 ? 0.5 : 0));
+    }
+  };
+  pad(17, 57, 12, 3.6, true); pad(44, 53, 14, 4.2, true); pad(50, 61, 9, 2.4, false); pad(28, 62, 7, 1.6, false);
+  for (let k = 0; k < 7; k++) { const a = (k - 3) * 0.5, ph = 4.8 - Math.abs(k - 3) * 0.55; for (let y = 0; y < ph; y++) t.data[Math.round(49 - y - Math.abs(k - 3) * 0.2) * TEX + Math.round(44 + Math.sin(a) * (2 + y * 0.9))] = P('glow', 5.6 + y * 0.3); } // Blüte
+  t.noWrap = true;
+  return t;
+}
+function genAst(seed) { // Ast, der schräg aus dem Wasser ragt, mit Zweigen und Ringwelle am Fuß
+  const t = mk(255), set = (x, y, v) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
+  const stroke = (x0, y0, x1, y1, w0, w1) => {
+    const len = Math.hypot(x1 - x0, y1 - y0);
+    for (let i = 0; i <= len * 1.5; i++) {
+      const q = i / (len * 1.5), x = x0 + (x1 - x0) * q + Math.sin(q * 7 + seed) * 0.8, y = y0 + (y1 - y0) * q, w = w0 + (w1 - w0) * q;
+      for (let k = -Math.ceil(w); k <= Math.ceil(w); k++) { if (Math.abs(k) > w) continue; set(x + k, y, P('wood', 2.2 + (k < 0 ? 1.0 : -0.2) + hash(i >> 1, k, seed) * 0.7 - Math.abs(k) * 0.25)); }
+    }
+  };
+  stroke(16, 61, 44, 14, 2.6, 1.0); stroke(30, 38, 52, 32, 1.4, 0.5); stroke(24, 48, 12, 34, 1.2, 0.4); stroke(37, 25, 31, 12, 1.0, 0.4);
+  for (let x = 4; x <= 34; x++) { const dx = (x - 19) / 15, y = 61 + Math.round(Math.sqrt(Math.max(0, 1 - dx * dx)) * 1.7); if (y < TEX && hash(x, 2, seed) > 0.25) set(x, y, P('iron', 4.8)); } // Ringwelle am Fuß
+  t.noWrap = true;
+  return t;
+}
+function genBlasen(seed) { // Ringwellen und Blasen an der Oberfläche
+  const t = mk(255), set = (x, y, v) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && x < TEX && y >= 0 && y < TEX) t.data[y * TEX + x] = v; };
+  for (const [cx, cy, r] of [[20, 56, 11], [44, 60, 14], [34, 52, 6]]) {
+    for (let a = 0; a < 6.283; a += 0.03) { const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r * 0.2; if (hash(Math.round(x), Math.round(y), seed) > 0.18) set(x, y, P('iron', a > 3.14 ? 4.6 : 6.2)); }
+  }
+  for (const [x, y] of [[20, 55], [23, 56], [44, 59], [41, 60], [34, 51]]) { set(x, y, P('iron', 7)); set(x + 1, y, P('iron', 5)); set(x, y - 1, P('iron', 5.6)); }
+  t.noWrap = true;
+  return t;
+}
+function genIrrlicht(seed) { // Irrlicht: kleine kalte Flamme mit Hof (Glühmaterial leuchtet im Dunkeln), ohne Gesicht – kein Gegner
+  const t = mk(255);
+  for (let y = 0; y < TEX; y++) for (let x = 0; x < TEX; x++) {
+    const dx = x - 32, dy = (y - 34) * (y < 34 ? 0.62 : 1), r = Math.hypot(dx, dy), tail = y < 34 ? 1 + (34 - y) * 0.05 : 1;
+    if (r < 2.4 * tail) t.data[y * TEX + x] = P('glow', 7);
+    else if (r < 4.2) t.data[y * TEX + x] = P('glow', 6);
+    else if (r < 10 && hash(x, y, seed) > 0.28 + (r - 4.2) * 0.1) t.data[y * TEX + x] = P('glow', r < 6.5 ? 4.8 : r < 8.5 ? 3.4 : 2.4);
+  }
+  t.noWrap = true;
+  return t;
+}
 // Beweglicher Stein: runder, zerfurchter Felsbrocken mit Licht von links oben
 function genBoulder(seed) {
   const t = mk(255);
@@ -2953,7 +3039,7 @@ export function makeTextures(detail = 1) {
     rug: genRug(64, nf),
     paving: genPaving(66, nf),
     ceil: genCeil(53, nf),
-    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), rail: genRail(441), railTorch: genRailTorch(442), palme: sm2(genPalm(461)), fass: sm2(genFurn('fass', 471)), fassKaputt: sm2(genFurn('fassKaputt', 491)), tisch: sm2(genFurn('tisch', 472)), stuhl: sm2(genFurn('stuhl', 473)), bett: sm2(genFurn('bett', 474)), regal: sm2(genFurn('regal', 475)), kamin: sm2(genFurn('kamin', 476)), tresen: sm2(genFurn('tresen', 485)), weinregal: sm2(genFurn('weinregal', 486)), weinfass: sm2(genFurn('weinfass', 487)), gast0: sm2(genGuest(488, 0)), gast1: sm2(genGuest(489, 1)), gast2: sm2(genGuest(490, 2)), kaktus: sm2(genFurn('kaktus', 477)), haengematte: sm2(genFurn('haengematte', 478)), spielautomat: sm2(genFurn('spielautomat', 479)), roulette: sm2(genFurn('roulette', 480)), vase: sm2(genFurn('vase', 483)), kueche: sm2(genFurn('kueche', 484)), kartentisch: sm2(genFurn('kartentisch', 481)), teufel: sm2(genDevil(482)), mound: sm2(genMound(463)), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)),  chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), giessmeister: sm2(genGiessmeister(195)), schlacke: sm2(genSchlacke(197)), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), fuhrmann: sm2(genFerryman(771)), boot: sm2(genBoat(772)), gnom: sm2(genGnome(773)), spinne: sm2(genSpider(774)), koenigin: sm2(genSpider(777, true)), kokon: sm2(genCocoon(778)), schutt: sm2(genFurn('schutt', 474)), diener: sm2(genVampire(741, 'diener')), brut: sm2(genVampire(742, 'brut')), graefin: sm2(genVampire(743, 'graefin')), wache: sm2(genPerson(721, 'wache')), haendler2: sm2(genVendor2(751)), wirtin: sm2(genWirtin(752)), hexe: sm2(genHexe(753)), haendler3: sm2(genVendor3(754)), gefangener: sm2(genPrisoner(761)), wund: sm2(genPerson(731, 'wund')), kaefer: sm2(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), rail: genRail(441), railTorch: genRailTorch(442), palme: sm2(genPalm(461)), fass: sm2(genFurn('fass', 471)), fassKaputt: sm2(genFurn('fassKaputt', 491)), tisch: sm2(genFurn('tisch', 472)), stuhl: sm2(genFurn('stuhl', 473)), bett: sm2(genFurn('bett', 474)), regal: sm2(genFurn('regal', 475)), kamin: sm2(genFurn('kamin', 476)), tresen: sm2(genFurn('tresen', 485)), weinregal: sm2(genFurn('weinregal', 486)), weinfass: sm2(genFurn('weinfass', 487)), gast0: sm2(genGuest(488, 0)), gast1: sm2(genGuest(489, 1)), gast2: sm2(genGuest(490, 2)), kaktus: sm2(genFurn('kaktus', 477)), haengematte: sm2(genFurn('haengematte', 478)), spielautomat: sm2(genFurn('spielautomat', 479)), roulette: sm2(genFurn('roulette', 480)), vase: sm2(genFurn('vase', 483)), kueche: sm2(genFurn('kueche', 484)), kartentisch: sm2(genFurn('kartentisch', 481)), teufel: sm2(genDevil(482)), mound: sm2(genMound(463)), schilf: sm2(genSchilf(901)), seerose: sm2(genSeerose(902)), ast: sm2(genAst(903)), blasen: sm2(genBlasen(904)), irrlicht: sm2(genIrrlicht(905)), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)),  chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), giessmeister: sm2(genGiessmeister(195)), schlacke: sm2(genSchlacke(197)), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), fuhrmann: sm2(genFerryman(771)), boot: sm2(genBoat(772)), gnom: sm2(genGnome(773)), spinne: sm2(genSpider(774)), koenigin: sm2(genSpider(777, true)), kokon: sm2(genCocoon(778)), schutt: sm2(genFurn('schutt', 474)), diener: sm2(genVampire(741, 'diener')), brut: sm2(genVampire(742, 'brut')), graefin: sm2(genVampire(743, 'graefin')), wache: sm2(genPerson(721, 'wache')), haendler2: sm2(genVendor2(751)), wirtin: sm2(genWirtin(752)), hexe: sm2(genHexe(753)), haendler3: sm2(genVendor3(754)), gefangener: sm2(genPrisoner(761)), wund: sm2(genPerson(731, 'wund')), kaefer: sm2(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 
@@ -3031,7 +3117,7 @@ export class Raycaster {
           continue;
         }
         if (fl0 && view.floorGrid && tex.water) { // 0.28.0: Wasser (1) und Bohlen (2 = quer zur x-Achse, 3 = quer zur y-Achse) je Feld
-          const fg = view.floorGrid.fg, fw = view.floorGrid.gw, fh = view.floorGrid.gh, wd = tex.water.data, pd = tex.plank.data, cd = tex.carpet ? tex.carpet.data : pd, rd = tex.rug ? tex.rug.data : pd, sd = tex.paving ? tex.paving.data : pd, wob = t * 7;
+          const fg = view.floorGrid.fg, fw = view.floorGrid.gw, fh = view.floorGrid.gh, nbm = view.floorGrid.nb || null, sdm = view.floorGrid.sd || null, wl = waterLut(view.waterStyle || 'ice'), wlut = wl.lut, wd = tex.water.data, pd = tex.plank.data, cd = tex.carpet ? tex.carpet.data : pd, rd = tex.rug ? tex.rug.data : pd, sd = tex.paving ? tex.paving.data : pd, wob = t * 7;
           for (let x = 0; x < W; x++) {
             const cx = Math.floor(fx), cy = Math.floor(fy), k = cx >= 0 && cy >= 0 && cx < fw && cy < fh ? fg[cy * fw + cx] : 0;
             let c;
@@ -3043,13 +3129,43 @@ export class Raycaster {
               const ci = (fx * 0.125) | 0, cj = (fy * 0.125) | 0, pi = (ci * 7 + cj * 13 + ((ci * cj) & 7)) & 63;
               if (pi > 30) { const u = fx * 0.125 - ci - 0.5 - wsx[pi], v = fy * 0.125 - cj - 0.5 - wsy[pi]; if (u * u * 9 + v * v * 40 < 0.5) sh -= 2; }
               if ((pi & 3) === 0) { const dx = fx - ci * 8 - 4, dy = fy - cj * 8 - 4, d2 = dx * dx + dy * dy; if (d2 < 9) { const rr = (t * 0.5 + pi * 0.43) % 3; if (Math.abs(Math.sqrt(d2) - rr) < 0.09 + rr * 0.02) sh += 3; } } // Tropfenringe: wachsen von festen Punkten aus, wie von der Decke tropfend
-              c = (c1 & ~7) | Math.max(0, Math.min(7, sh));
+              // 0.51.0: Ufer und Tiefe. d = Abstand zum nächsten Ufer (Felder): Uferfelder nach Randlage, innere Felder nach vorberechneter Tiefe
+              const ii = cy * fw + cx, uu = fx - cx, vv = fy - cy, m = nbm ? nbm[ii] : 0;
+              let d;
+              if (m) {
+                d = 9;
+                if (m & 1) d = Math.min(d, uu); if (m & 2) d = Math.min(d, 1 - uu); if (m & 4) d = Math.min(d, vv); if (m & 8) d = Math.min(d, 1 - vv);
+                if (m & 240) { if (m & 16) d = Math.min(d, Math.sqrt(uu * uu + vv * vv)); if (m & 32) d = Math.min(d, Math.sqrt((1 - uu) * (1 - uu) + vv * vv)); if (m & 64) d = Math.min(d, Math.sqrt(uu * uu + (1 - vv) * (1 - vv))); if (m & 128) d = Math.min(d, Math.sqrt((1 - uu) * (1 - uu) + (1 - vv) * (1 - vv))); }
+              } else d = (sdm ? sdm[ii] : 3) - 0.5;
+              const wv = Math.sin(fx * 19 + fy * 15 + t * 2.4) * 0.03 + Math.sin(fx * 7 - fy * 5 - t * 1.3) * 0.025; // Brandung: Saum atmet
+              if (d < 0.5) sh += (0.5 - d) * 2; // flach am Ufer: heller
+              sh -= Math.min(2.2, d * 0.75); // tief in der Mitte: dunkler
+              if (wl.mist) { const mi = Math.sin(fx * 0.8 + t * 0.23) * Math.sin(fy * 0.7 - t * 0.19) + 0.5 * Math.sin((fx - fy) * 0.35 + t * 0.12); if (mi > 0.55) sh = Math.min(6, sh + (mi - 0.55) * (1.1 + rowDist * 0.4)); } // Dunstschwaden: helle Flecken ziehen über das Wasser, in der Ferne stärker
+              const band = d < 0.55 ? 0 : d < 1.7 ? 1 : 2;
+              if (d < 0.05 + wv) c = wl.foam;
+              else if (d < 0.14 + wv * 1.6 && s2 >= 3) c = wl.foam2;
+              else {
+                const si = sh < 0 ? 0 : sh > 7 ? 7 : Math.round(sh);
+                c = wlut[band * 8 + si];
+                if (wl.algae >= 0 && band < 2 && s2 === 3 && si < 6) c = wl.algae;
+                else if (band > 0 && (((((fx * FN) | 0) * 73856093) ^ (((fy * FN) | 0) * 19349663) ^ (((t * 2.2) | 0) * 83492791)) >>> 0) % 1000 < 2) c = wl.glint; // Funkeln
+              }
             }
             else if (k === 6) { c = sd[((((fy * FN) | 0) & FM) * FN) + (((fx * FN) | 0) & FM)]; }
             else if (k === 5) { c = rd[((((fy * FN) | 0) & FM) * FN) + (((fx * FN) | 0) & FM)]; }
             else if (k === 4) { c = cd[((((fy * FN) | 0) & FM) * FN) + (((fx * FN) | 0) & FM)]; }
             else if (k >= 2) { const tx = ((fx * FN) | 0) & FM, ty = ((fy * FN) | 0) & FM; c = k === 2 ? pd[ty * FN + tx] : pd[tx * FN + ty]; }
-            else c = src[(((fy * FN) | 0) & FM) * FN + (((fx * FN) | 0) & FM)];
+            else {
+              c = src[(((fy * FN) | 0) & FM) * FN + (((fx * FN) | 0) & FM)];
+              if (k === 0 && nbm) { // 0.51.0: Nässesaum: Boden am Wasser ist dunkel und feucht
+                const m = nbm[cy * fw + cx];
+                if (m & 15) {
+                  const uu = fx - cx, vv = fy - cy; let e = 9;
+                  if (m & 1) e = Math.min(e, uu); if (m & 2) e = Math.min(e, 1 - uu); if (m & 4) e = Math.min(e, vv); if (m & 8) e = Math.min(e, 1 - vv);
+                  if (e < 0.22) c = (c & ~7) | Math.max(0, (c & 7) - (e < 0.1 ? 2 : 1));
+                }
+              }
+            }
             buf[row + x] = tbl[c];
             fx += sx; fy += sy;
           }
@@ -3175,7 +3291,7 @@ export class Raycaster {
       if (s.axis) { const len = Math.hypot(s.x + 0.5 - px, s.y + 0.5 - py) || 1; wf = Math.max(0.12, Math.min(1, Math.abs(((s.x + 0.5 - px) * s.axis[0] + (s.y + 0.5 - py) * s.axis[1]) / len))); }
       const sprH = Math.floor(focal / tY * s.scale), sprW = Math.max(1, Math.floor(sprH * wf));
       if (sprH < 2) continue;
-      const bottom = Math.floor(half + 0.5 * focal / tY), top = bottom - sprH;
+      const bottom = Math.floor(half + 0.5 * focal / tY) - (s.lift ? Math.floor(focal / tY * s.lift) : 0), top = bottom - sprH; // 0.51.0: lift = Schwebehöhe in Wandhöhen (Irrlichter)
       const x0 = screenX - (sprW >> 1);
       if (s.foe) { // 0.23.3: Bildschirmlage für die Lebensbalken über dem Gegner (main.js)
         if (s.tex.opTop == null) { let r = 0; outer: for (; r < TN; r++) for (let c = 0; c < TN; c++) if (td[r * TN + c] !== 255) break outer; s.tex.opTop = r / TN; }
@@ -3209,7 +3325,26 @@ export function buildFloorGrid(lvl) {
     const v = lvl.map[y][x] === '~' ? 1 : f === '=' ? 2 : f === '|' ? 3 : f === '+' ? 4 : f === 'r' ? 5 : f === 's' ? 6 : 0;
     if (v) { fg[y * w + x] = v; any = true; }
   }
-  const r = any ? { fg, gw: w, gh: h } : null;
+  // 0.51.0: Ufer. nb: bei Wasserfeldern Bitmaske der Nachbarn, die Land sind (1 W, 2 O, 4 N, 8 S, 16 NW, 32 NO, 64 SW, 128 SO; Karte außen = Land); bei Landfeldern Bitmaske der Wasser-Nachbarn (nur 1–8). sd: Abstand der Wasserfelder zum Ufer in Feldern (1 = berührt Land, höchstens 6)
+  const nb = new Uint8Array(w * h), sd = new Uint8Array(w * h);
+  if (any) {
+    const isW = (x, y) => x >= 0 && y >= 0 && x < w && y < h && fg[y * w + x] === 1;
+    const dirs = [[-1, 0, 1], [1, 0, 2], [0, -1, 4], [0, 1, 8], [-1, -1, 16], [1, -1, 32], [-1, 1, 64], [1, 1, 128]];
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      let m = 0;
+      if (fg[y * w + x] === 1) { for (const [dx, dy, b] of dirs) if (!isW(x + dx, y + dy)) m |= b; }
+      else for (const [dx, dy, b] of dirs) if (b <= 8 && isW(x + dx, y + dy)) m |= b;
+      nb[y * w + x] = m;
+    }
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (fg[y * w + x] === 1) sd[y * w + x] = nb[y * w + x] ? 1 : 6;
+    for (let pass = 2; pass <= 6; pass++) for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      if (fg[y * w + x] !== 1 || sd[y * w + x] !== 6) continue;
+      let near = false;
+      for (const [dx, dy] of dirs) if (isW(x + dx, y + dy) && sd[(y + dy) * w + x + dx] === pass - 1) { near = true; break; }
+      if (near) sd[y * w + x] = pass;
+    }
+  }
+  const r = any ? { fg, gw: w, gh: h, nb, sd } : null;
   floorGridCache.set(lvl, r);
   return r;
 }
@@ -3323,6 +3458,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
     }
     else if (o.type === 'buried') { if (o.sensed && !o.dug) out.push({ x: o.x, y: o.y, tex: tex.sprites.mound, scale: 0.55 }); }
     else if (o.type === 'barrel') out.push({ x: o.x, y: o.y, tex: o.broken ? tex.sprites.fassKaputt : tex.sprites.fass, scale: o.scale || 0.95 }); // 0.44.0: zerschlagbares Fass
+    else if (o.type === 'decor' && o.look === 'irrlicht') { const ph = (o.x * 7.3 + o.y * 3.1); out.push({ x: o.x + 0.3 * Math.sin(time * 0.35 + ph), y: o.y + 0.3 * Math.cos(time * 0.29 + ph * 1.7), tex: tex.sprites.irrlicht, scale: o.scale || 0.3, lift: 0.32 + 0.05 * Math.sin(time * 1.3 + ph) }); } // 0.51.0: schwebt und treibt über dem Wasser
     else if (o.type === 'decor') out.push({ x: o.x, y: o.y, tex: tex.sprites[o.look] || tex.sprites.boot, scale: o.scale || 0.95, span: o.look === 'haengematte' ? [1, 0] : undefined }); // 0.32.1: Hängematte als Strecke zwischen den Palmen (Palmen liegen links/rechts, x-Richtung): Hängematte steht fest als Ebene zwischen den Palmen (Normale nord–süd) // 0.28.0: feste Dekoration (Boot)
     else if (o.type === 'lever' && !o.wall) out.push({ x: o.x, y: o.y, tex: o.used ? tex.sprites.leverDown : tex.sprites.leverUp, scale: 0.75 });
     else if (o.type === 'sign' && o.face == null) out.push({ x: o.x, y: o.y, tex: signTex(tex, o), scale: 0.7 }); // mit face: Tafel hängt an der Wand (buildDecals)

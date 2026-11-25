@@ -564,7 +564,7 @@ export async function runTests(data, env = {}) {
     assert(f6.map.length * f6.map[0].length > f5.map.length * f5.map[0].length * 0.9, 'Zisterne ist groß');
     const dn = f5.objects.find((o) => o.id === 'stairs_g_tiefe'), up = f6.objects.find((o) => o.id === 'stairs_z_up');
     assert(dn && up && dn.to.level === 'festung6' && up.to.level === 'festung5' && f6.map[dn.to.y][dn.to.x] === '.' && f5.map[up.to.y][up.to.x] === '.', 'Treppen mit gültigem Ziel');
-    assert(f6.objects.every((o) => (o.type === 'sign' && o.face != null) || f6.map[o.y][o.x] === '.'), 'Objekte stehen auf Boden');
+    assert(f6.objects.every((o) => (o.type === 'sign' && o.face != null) || (o.type === 'decor' && f6.map[o.y][o.x] === '~') || f6.map[o.y][o.x] === '.'), 'Objekte stehen auf Boden');
     const an = L.analyzeLevel(data, 'festung6'); assert(an.ok && an.keys.includes('quellschluessel'), 'Zisterne lösbar, Schlüssel aus Statue ' + JSON.stringify(an));
     assert(L.analyzeLevel(data, 'festung5').ok, 'Gießerei weiter lösbar');
     for (const o of f6.objects) if (o.type === 'enemy') for (const k of o.kinds || [o.kind]) assert(data.enemies[k], `${o.id}: Gegner ${k}`);
@@ -3382,6 +3382,44 @@ export async function runTests(data, env = {}) {
     for (const [k, n] of Object.entries(dl.nodes)) for (const c of n.choices) assert(!c.to || dl.nodes[c.to], k + ': Ziel vorhanden');
     assert(dl.nodes.erst.choices.some((c) => c.maps), '0.47.3: Schatzkarten schon beim ersten Besuch kaufbar');
   });
+  await test('0.51.0 Wasser: Stil je Gebiet, Ufer und Tiefe vorberechnet, Dinge im Wasser, Bild bleibt in der festen Palette', () => {
+    const STYLES = ['ice', 'sea', 'moor', 'cistern'], tex = makeTextures(1), seenLooks = new Set();
+    for (const id of ['moorsee', 'schatzinsel', 'festung6', 'moorlichtung']) {
+      const lvl = data.levels[id];
+      assert(STYLES.includes(lvl.water), `${id}: Wasserstil ${lvl.water}`);
+      const fgd = buildFloorGrid(lvl), { fg, gw, gh, nb, sd } = fgd;
+      assert(nb && sd && nb.length === gw * gh && sd.length === gw * gh, `${id}: Uferdaten`);
+      let shore = 0, deep = 0;
+      for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) {
+        const i = y * gw + x;
+        if (fg[i] === 1) {
+          if (nb[i]) { assert(sd[i] === 1, `${id}: Uferfeld ${x},${y} hat Tiefe 1`); shore++; } else { assert(sd[i] >= 2, `${id}: Innenfeld ${x},${y} hat Tiefe ab 2`); deep++; }
+        } else assert(sd[i] === 0 && (nb[i] & 240) === 0, `${id}: Landfeld ${x},${y} ohne Tiefe und ohne Eckbits`);
+      }
+      assert(shore > 0, `${id}: hat Uferfelder`);
+      if (id === 'moorsee' || id === 'festung6') assert(deep > 0, `${id}: hat tiefes Wasser`);
+      for (const o of lvl.objects.filter((q) => /^wa_/.test(q.id))) {
+        assert(o.type === 'decor' && lvl.map[o.y][o.x] === '~', `${o.id}: liegt im Wasser`);
+        assert(['schilf', 'seerose', 'ast', 'blasen', 'irrlicht'].includes(o.look) && tex.sprites[o.look], `${o.id}: bekannte Optik`);
+        seenLooks.add(o.look);
+      }
+      // Bild: jede Farbe stammt aus der festen Palette (höchstens 80), alle Pixel beschrieben
+      const objs = lvl.objects.map((o) => ({ ...o })), { grid, gw: g2, gh: g3 } = buildGrid(lvl, objs), rc = new Raycaster(tex, data.palettes[lvl.palette]);
+      const wx = lvl.objects.find((o) => /^wa_/.test(o.id)) || { x: lvl.start.x, y: lvl.start.y };
+      for (const time of [0, 2.7]) {
+        rc.render({ px: lvl.start.x + 0.5, py: lvl.start.y + 0.5, angle: Math.PI / 2, grid, gw: g2, gh: g3, sprites: buildSprites(objs, tex, time, Math.PI / 2, null, { grid, gw: g2, gh: g3 }), time, floorGrid: fgd, waterStyle: lvl.water, floorTex: lvl.floorTex || null });
+        const colors = new Set(); for (let i = 0; i < rc.buf.length; i++) { assert((rc.buf[i] >>> 24) === 255, `${id}: unbeschriebenes Pixel`); colors.add(rc.buf[i]); }
+        assert(colors.size <= 80, `${id}: Farbanzahl ${colors.size} über der Palette`);
+      }
+    }
+    for (const k of ['schilf', 'seerose', 'ast', 'blasen', 'irrlicht']) assert(seenLooks.has(k), 'Optik im Spiel verwendet: ' + k);
+    const ids = Object.values(data.levels).flatMap((l) => l.objects.map((o) => o.id)); assert(ids.length === new Set(ids).size, 'Objekt-IDs global eindeutig');
+    // Altstand: neue Wasserdinge kommen per syncStatic dazu
+    const old = L.newGame(data, 5); L.jumpToLevel(old, data, 'moorsee'); const w = old.objs.filter((o) => /^wa_/.test(o.id)).length; old.objs = old.objs.filter((o) => !/^wa_/.test(o.id)); L.syncStatic(old, data);
+    assert(old.objs.filter((o) => /^wa_/.test(o.id)).length === w && w > 0, 'Altstand bekommt die Wasserdinge');
+    return `${w} Dinge im Moorsee`;
+  });
+
   await test('0.43.0 Schlafkammer: Szene zeichnet in allen Zimmern ohne Fehler, ASSETS enthält scene.js', async () => {
     const sw = env.readText ? await env.readText('sw.js') : null; if (sw) assert(sw.includes("'./scene.js'"), 'scene.js in ASSETS');
     const calls = []; const ctx = new Proxy({}, { get: (t, k) => (k in t ? t[k] : k === 'createRadialGradient' ? () => ({ addColorStop() {} }) : (...a) => { calls.push(k); } ), set: (t, k, v) => { t[k] = v; return true; } });

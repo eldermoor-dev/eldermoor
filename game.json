@@ -8297,9 +8297,226 @@
           "deco": "moos",
           "text": "Dichter Moosbelag, feucht und weich. Es riecht nach Moder.",
           "style": "dark"
+        },
+        {
+          "id": "wa_moorsee_1",
+          "type": "decor",
+          "x": 12,
+          "y": 17,
+          "look": "schilf",
+          "scale": 0.85
+        },
+        {
+          "id": "wa_moorsee_2",
+          "type": "decor",
+          "x": 22,
+          "y": 11,
+          "look": "schilf",
+          "scale": 0.85
+        },
+        {
+          "id": "wa_moorsee_3",
+          "type": "decor",
+          "x": 32,
+          "y": 4,
+          "look": "schilf",
+          "scale": 0.85
+        },
+        {
+          "id": "wa_moorsee_4",
+          "type": "decor",
+          "x": 28,
+          "y": 16,
+          "look": "schilf",
+          "scale": 0.85
+        },
+        {
+          "id": "wa_moorsee_5",
+          "type": "decor",
+          "x": 14,
+          "y": 1,
+          "look": "schilf",
+          "scale": 0.85
+        },
+        {
+          "id": "wa_moorsee_6",
+          "type": "decor",
+          "x": 14,
+          "y": 3,
+          "look": "schilf",
+          "scale": 0.85
+        },
+        {
+          "id": "wa_moorsee_7",
+          "type": "decor",
+          "x": 9,
+          "y": 13,
+          "look": "schilf",
+          "scale": 0.85
+        },
+        {
+          "id": "wa_moorsee_8",
+          "type": "decor",
+          "x": 23,
+          "y": 4,
+          "look": "schilf",
+          "scale": 0.85
+        },
+        {
+          "id": "wa_moorsee_9",
+          "type": "decor",
+          "x": 27,
+          "y": 3,
+          "look": "schilf",
+          "scale": 0.85
+        },
+        {
+          "id": "wa_moorsee_10",
+          "type": "decor",
+          "x": 13,
+          "y": 6,
+          "look": "seerose",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_moorsee_11",
+          "type": "decor",
+          "x": 11,
+          "y": 13,
+          "look": "seerose",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_moorsee_12",
+          "type": "decor",
+          "x": 25,
+          "y": 9,
+          "look": "seerose",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_moorsee_13",
+          "type": "decor",
+          "x": 31,
+          "y": 16,
+          "look": "seerose",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_moorsee_14",
+          "type": "decor",
+          "x": 32,
+          "y": 12,
+          "look": "seerose",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_moorsee_15",
+          "type": "decor",
+          "x": 24,
+          "y": 14,
+          "look": "seerose",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_moorsee_16",
+          "type": "decor",
+          "x": 26,
+          "y": 15,
+          "look": "ast",
+          "scale": 0.85
+        },
+        {
+          "id": "wa_moorsee_17",
+          "type": "decor",
+          "x": 29,
+          "y": 3,
+          "look": "ast",
+          "scale": 0.85
+        },
+        {
+          "id": "wa_moorsee_18",
+          "type": "decor",
+          "x": 26,
+          "y": 5,
+          "look": "ast",
+          "scale": 0.85
+        },
+        {
+          "id": "wa_moorsee_19",
+          "type": "decor",
+          "x": 29,
+          "y": 5,
+          "look": "blasen",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_moorsee_20",
+          "type": "decor",
+          "x": 30,
+          "y": 7,
+          "look": "blasen",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_moorsee_21",
+          "type": "decor",
+          "x": 24,
+          "y": 12,
+          "look": "blasen",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_moorsee_22",
+          "type": "decor",
+          "x": 28,
+          "y": 7,
+          "look": "blasen",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_moorsee_23",
+          "type": "decor",
+          "x": 31,
+          "y": 9,
+          "look": "blasen",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_moorsee_24",
+          "type": "decor",
+          "x": 28,
+          "y": 9,
+          "look": "irrlicht",
+          "scale": 0.3
+        },
+        {
+          "id": "wa_moorsee_25",
+          "type": "decor",
+          "x": 30,
+          "y": 13,
+          "look": "irrlicht",
+          "scale": 0.3
+        },
+        {
+          "id": "wa_moorsee_26",
+          "type": "decor",
+          "x": 23,
+          "y": 6,
+          "look": "irrlicht",
+          "scale": 0.3
+        },
+        {
+          "id": "wa_moorsee_27",
+          "type": "decor",
+          "x": 26,
+          "y": 13,
+          "look": "irrlicht",
+          "scale": 0.3
         }
       ],
-      "waterMsg": "Das Wasser ist tief und kalt. Zur Schatzinsel kommt man nicht durchs Wasser: Der Fuhrmann am Steg im Osten setzt euch über."
+      "waterMsg": "Das Wasser ist tief und kalt. Zur Schatzinsel kommt man nicht durchs Wasser: Der Fuhrmann am Steg im Osten setzt euch über.",
+      "water": "moor"
     },
     "schatzinsel": {
       "id": "schatzinsel",
@@ -8786,7 +9003,8 @@
             "scale": 0.95
           }
         ]
-      }
+      },
+      "water": "sea"
     },
     "festung4": {
       "id": "festung4",
@@ -11954,6 +12172,182 @@
           "deco": "moos",
           "text": "Dichter Moosbelag, feucht und weich. Es riecht nach Moder.",
           "style": "dark"
+        },
+        {
+          "id": "wa_festung6_1",
+          "type": "decor",
+          "x": 53,
+          "y": 13,
+          "look": "blasen",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_festung6_2",
+          "type": "decor",
+          "x": 25,
+          "y": 33,
+          "look": "blasen",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_festung6_3",
+          "type": "decor",
+          "x": 50,
+          "y": 14,
+          "look": "blasen",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_festung6_4",
+          "type": "decor",
+          "x": 40,
+          "y": 14,
+          "look": "blasen",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_festung6_5",
+          "type": "decor",
+          "x": 46,
+          "y": 23,
+          "look": "blasen",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_festung6_6",
+          "type": "decor",
+          "x": 42,
+          "y": 37,
+          "look": "blasen",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_festung6_7",
+          "type": "decor",
+          "x": 41,
+          "y": 19,
+          "look": "blasen",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_festung6_8",
+          "type": "decor",
+          "x": 34,
+          "y": 13,
+          "look": "blasen",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_festung6_9",
+          "type": "decor",
+          "x": 28,
+          "y": 23,
+          "look": "blasen",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_festung6_10",
+          "type": "decor",
+          "x": 29,
+          "y": 33,
+          "look": "blasen",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_festung6_11",
+          "type": "decor",
+          "x": 46,
+          "y": 29,
+          "look": "ast",
+          "scale": 0.85
+        },
+        {
+          "id": "wa_festung6_12",
+          "type": "decor",
+          "x": 59,
+          "y": 20,
+          "look": "ast",
+          "scale": 0.85
+        },
+        {
+          "id": "wa_festung6_13",
+          "type": "decor",
+          "x": 58,
+          "y": 18,
+          "look": "ast",
+          "scale": 0.85
+        },
+        {
+          "id": "wa_festung6_14",
+          "type": "decor",
+          "x": 43,
+          "y": 18,
+          "look": "ast",
+          "scale": 0.85
+        },
+        {
+          "id": "wa_festung6_15",
+          "type": "decor",
+          "x": 48,
+          "y": 21,
+          "look": "ast",
+          "scale": 0.85
+        },
+        {
+          "id": "wa_festung6_16",
+          "type": "decor",
+          "x": 57,
+          "y": 35,
+          "look": "irrlicht",
+          "scale": 0.3
+        },
+        {
+          "id": "wa_festung6_17",
+          "type": "decor",
+          "x": 23,
+          "y": 28,
+          "look": "irrlicht",
+          "scale": 0.3
+        },
+        {
+          "id": "wa_festung6_18",
+          "type": "decor",
+          "x": 49,
+          "y": 18,
+          "look": "irrlicht",
+          "scale": 0.3
+        },
+        {
+          "id": "wa_festung6_19",
+          "type": "decor",
+          "x": 32,
+          "y": 33,
+          "look": "irrlicht",
+          "scale": 0.3
+        },
+        {
+          "id": "wa_festung6_20",
+          "type": "decor",
+          "x": 32,
+          "y": 14,
+          "look": "irrlicht",
+          "scale": 0.3
+        },
+        {
+          "id": "wa_festung6_21",
+          "type": "decor",
+          "x": 17,
+          "y": 19,
+          "look": "irrlicht",
+          "scale": 0.3
+        },
+        {
+          "id": "wa_festung6_22",
+          "type": "decor",
+          "x": 45,
+          "y": 16,
+          "look": "irrlicht",
+          "scale": 0.3
         }
       ],
       "rooms": [
@@ -12069,7 +12463,8 @@
           "x1": 61,
           "y1": 41
         }
-      ]
+      ],
+      "water": "cistern"
     },
     "moorlichtung": {
       "id": "moorlichtung",
@@ -12274,6 +12669,54 @@
           "deco": "moos",
           "text": "Schwarzes Moos, nass und kalt.",
           "style": "dark"
+        },
+        {
+          "id": "wa_moorlichtung_1",
+          "type": "decor",
+          "x": 15,
+          "y": 8,
+          "look": "schilf",
+          "scale": 0.85
+        },
+        {
+          "id": "wa_moorlichtung_2",
+          "type": "decor",
+          "x": 17,
+          "y": 8,
+          "look": "schilf",
+          "scale": 0.85
+        },
+        {
+          "id": "wa_moorlichtung_3",
+          "type": "decor",
+          "x": 9,
+          "y": 5,
+          "look": "schilf",
+          "scale": 0.85
+        },
+        {
+          "id": "wa_moorlichtung_4",
+          "type": "decor",
+          "x": 3,
+          "y": 3,
+          "look": "seerose",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_moorlichtung_5",
+          "type": "decor",
+          "x": 3,
+          "y": 1,
+          "look": "seerose",
+          "scale": 0.95
+        },
+        {
+          "id": "wa_moorlichtung_6",
+          "type": "decor",
+          "x": 7,
+          "y": 4,
+          "look": "ast",
+          "scale": 0.85
         }
       ],
       "scene": {
@@ -12349,7 +12792,8 @@
       "foe": {
         "hp": 112,
         "atk": 107
-      }
+      },
+      "water": "moor"
     }
   },
   "spot": {
