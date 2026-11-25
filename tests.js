@@ -895,7 +895,7 @@ export async function runTests(data, env = {}) {
   await test('Ausrüstungsvergleich (0.30.0): gearCompare, Übersicht, Fluch bleibt bis zum Tragen verborgen', () => {
     const s = fresh(); s.flags = s.flags || {};
     const h = s.heroes[0];
-    const weapons = Object.entries(data.items).filter(([id, it]) => it.kind === 'equip' && it.slot === 'weapon' && !it.curse && (!it.classes || it.classes.includes(h.cls)));
+    const weapons = Object.entries(data.items).filter(([id, it]) => it.kind === 'equip' && it.slot === 'weapon' && !it.curse && L.canEquip(data, h, id, s)); // 0.45.0: auch Rassenschranke
     assert(weapons.length >= 2, 'zwei Waffen für den ersten Helden');
     weapons.sort((a, b) => (a[1].atk || 0) - (b[1].atk || 0));
     const [lowId, low] = weapons[0], [hiId, hi] = weapons[weapons.length - 1];
@@ -960,7 +960,7 @@ export async function runTests(data, env = {}) {
     assert(Object.keys(w4.gear || {}).length === 1 && w4.inv.ring_wunsch === 1, 'Wunsch Rüstzeug: erzeugte Ausrüstung + Ring');
     // Händler Valdis: besser als Hedda
     const v = f3.objects.find((o) => o.type === 'merchant'), best = (shop, slot) => Math.max(0, ...shop.stock.map((x) => data.items[x.item]).filter((i) => i.slot === slot).map((i) => (i.atk || 0) + (i.def || 0)));
-    assert(v && data.shops[v.shop] && best(data.shops[v.shop], 'weapon') > best(data.shops.moorrand, 'weapon') && best(data.shops[v.shop], 'armor') > best(data.shops.moorrand, 'armor'), 'Valdis verkauft stärkere Waffen und Rüstungen als Hedda');
+    assert(v && data.shops[v.shop] && best(data.shops[v.shop], 'weapon') > best(data.shops.moorrand, 'weapon'), 'Valdis verkauft stärkere Waffen als Hedda'); // 0.45.0: keine Rüstungen mehr bei Valdis
     assert(v.look && v.look !== 'merchant', 'eigenes Aussehen');
     // Speichern/Laden mit Ring
     const sv = fresh(48); sv.inv.ring_siegel = 1; L.equipItem(sv, data, 'ring_siegel', 1); const sv2 = L.deserialize(JSON.stringify(L.serialize(sv)), data); assert(sv2.heroes[1].equip.ring === 'ring_siegel', 'Ring überlebt Speichern/Laden');
@@ -3033,6 +3033,20 @@ export async function runTests(data, env = {}) {
     const s2 = L.deserialize(JSON.parse(JSON.stringify(L.serialize(s))), data); assert(s2.objs.find((o) => o.id === wall.id).open, 'offen nach Laden');
     const old = L.newGame(data, 41); L.jumpToLevel(old, data, 'kultgruft'); old.objs = old.objs.filter((o) => o.id !== wall.id && o.id !== chest.id); L.syncStatic(old, data);
     assert(old.objs.some((o) => o.id === wall.id && !o.open) && old.objs.some((o) => o.id === chest.id && !o.open), 'Alt-Stand: Wand und Truhe nachgetragen');
+  });
+  await test('0.45.0 Valdis Waffenkammer: wenige Spezialwaffen, je eine Rasse-Klasse-Kombination, sehr teuer', () => {
+    const sh = data.shops.blutgruft; assert(/Waffenkammer/.test(sh.name) && !/stand/i.test(sh.name), 'Name: ' + sh.name);
+    const sp = sh.stock.map((e) => e.item).filter((id) => data.items[id].q === 'meister'); eq(sp.length, 5, 'fünf Spezialwaffen'); assert(sh.stock.every((e) => data.items[e.item].slot !== 'armor' && !['stahlschwert', 'runenstab'].includes(e.item)), 'keine Alltagswaffen oder Rüstungen');
+    const normal = Math.max(...['stahlschwert', 'runenstab', 'kriegsklinge', 'arkanstab'].map((k) => data.items[k].value)), best = Math.max(...['stahlschwert', 'runenstab', 'kriegsklinge', 'arkanstab'].map((k) => data.items[k].atk));
+    const combos = new Set();
+    for (const id of sp) { const it = data.items[id]; eq(it.classes.length, 1, id + ': eine Klasse'); eq(it.races.length, 1, id + ': eine Rasse'); assert(data.classes[it.classes[0]] && data.races[it.races[0]], id + ': bekannte Rasse/Klasse'); combos.add(it.races[0] + '/' + it.classes[0]); assert(it.value >= 5 * normal, id + ' mindestens 5× so teuer wie Normalwaffen: ' + it.value); assert(it.atk >= 5 && it.atk <= best + 4, id + ' Angriff'); assert(it.desc.includes('Nur für'), id + ': Beschreibung nennt Einschränkung'); assert(L.itemWorth(null, data, id) === it.value, id + ': Preis aus value'); }
+    eq(combos.size, 5, 'fünf verschiedene Kombinationen'); assert(combos.has('ork/warrior') && combos.has('dwarf/mage'), 'Ork-Krieger und Zwerg-Magier');
+    const s = L.newGame(data, 45); const mk = (race, cls) => ({ race, cls });
+    assert(L.canEquip(data, mk('ork', 'warrior'), 'orkspalter', s), 'Ork-Krieger darf'); assert(!L.canEquip(data, mk('human', 'warrior'), 'orkspalter', s), 'Mensch-Krieger nicht'); assert(!L.canEquip(data, mk('ork', 'mage'), 'orkspalter', s), 'Ork-Magier nicht');
+    assert(L.canEquip(data, mk('dwarf', 'mage'), 'steinherzstab', s) && !L.canEquip(data, mk('elf', 'mage'), 'steinherzstab', s), 'Zwerg-Magier ja, Elf-Magier nein');
+    assert(L.canEquip(data, mk('human', 'warrior'), 'stahlschwert', s), 'Alltagswaffen weiter ohne Rassenschranke');
+    const h = s.heroes[0]; Object.assign(h, { race: 'human', cls: 'warrior' }); s.inv.orkspalter = 1; eq(L.equipItem(s, data, 'orkspalter', 0).error, 'not-allowed', 'Anlegen verweigert');
+    s.gold = 99999; assert(!L.buyItem(s, data, 'blutgruft', 'orkspalter').error, 'Kauf möglich'); assert(L.qualityOf(s, data, 'orkspalter').name === 'Meisterwerk', 'Qualitätsname');
   });
   await test('0.44.0 Fässer: zerschlagbar, alle Ausgänge, Monster/Teleport/Explosion/Wein, Altstand, Käferbild', async () => {
     const barrels = []; for (const [id, lv] of Object.entries(data.levels)) for (const o of lv.objects) if (o.type === 'barrel') barrels.push(id); assert(barrels.length >= 25, 'mindestens 25 Fässer: ' + barrels.length);

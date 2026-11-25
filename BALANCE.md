@@ -315,6 +315,11 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 | Kette der Gier | Amulett |  | gold 40 | – |
 | Ring der Esse | Ring | Vert. +1 | Krit % 4, Schaden − 1 | – |
 | Ring der Tiefe | Ring | Init +2 | Statusabwehr % 20 | – |
+| Orkspalter | Waffe | Angriff +8 | Krit % 6 | – |
+| Steinherzstab | Waffe | Angriff +6 | Fähigkeiten % 25 | – |
+| Mondsilberbogen | Waffe | Angriff +7, Init +2 | Krit % 8 | – |
+| Tüftlerstab | Waffe | Angriff +5 | potionplus 40, Fähigkeiten % 15 | – |
+| Lichtbringer | Waffe | Angriff +7 | Ressource + 2 | – |
 
 | Set | Teile | Bonus (alle Teile) |
 |---|---|---|

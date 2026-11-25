@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.44.0 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.45.0 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1435,6 +1435,23 @@ Nutzer (18:30, Screenshot Kampf gegen Gießmeister Harkon + Foto eines Gießers 
 - **Hüterstatuen (Zisterne), Untersuchung:** Im Code nicht nachstellbar. Alle 24 Reihenfolgen der vier Statuen, je mit und ohne Speichern/Laden, ergeben denselben Ausgang: Nur die Hand der lügenden Statue (Hüter III) gibt den Schlüssel; die anderen drei lösen den Kampf mit einem Kultwächter aus. Kein anderer Weg zu `quellschluessel`. Ursache der Gerätebeobachtung unbekannt: Es fehlen Angaben, welche Statue gedrückt wurde, was geschah und die Meldung (Screenshot). Offen: Titelbild-Version auf dem Gerät prüfen (0.37.6 oder neuer erwartet).
 - Offene Gerätetests 0.40.0: siehe Testliste im Chat (Karte kaufen, Kreuz, Wand öffnen, Truhe; Aushangbrett über Tafel und Marga; Wölfe/Trophäe/Abgabe; Abreißen; alter Spielstand lädt).
 - Ideen, nicht gebaut: Kartenpreis mit Feilschen-Talent, mehrere Extraräume je große Ebene, Steckbriefe mit festen Kettenaufträgen (Geschichte), Aushang auch in der Siedlung am Weg zur Taverne.
+
+## 0.45.0 (25.11.2026; headless, nicht auf Gerät getestet)
+- Nutzer (12:34, mit Screenshots): „Der Waffenstand ist kein Stand. Umbenennen. Der Verkäufer hat nur sehr wenige Waffen, dafür sehr hochwertige Spezialwaffen, die z. B. nur Orkkrieger oder Zwergenmagier tragen können. Die Waren sind sehr viel teurer als normale.“
+- **Umbenannt:** `shops.blutgruft.name` „Valdis' Waffenkammer“ (Moorfestung, `merchant_valdis`). **Entscheidung (Assistent):** „Kammer“ passt zum Ort im Keller; Begründung: „Stand“ wirkte falsch.
+- **Sortiment:** Alltagswaffen und Rüstungen (Stahlschwert, Runenstab, Schuppen-/Plattenpanzer) entfallen bei Valdis. Bleiben: Tränke, Zaubertränke, Gegengift, Proviant (sein Rat zum Gegengift steht im Gespräch). Neu: fünf Spezialwaffen mit Güte `meister` („Meisterwerk“, lila, in `qualityOf`), je eine Rasse-Klasse-Kombination, Preis 1300–1600 Gold (Alltagswaffen höchstens 210, also mindestens 6×):
+
+| Waffe | nur für | Wirkung |
+|---|---|---|
+| Orkspalter | Ork-Krieger | +8 Angriff, Krit +6 % |
+| Steinherzstab | Zwerg-Magier | +6 Angriff, Fähigkeiten und Zauber +25 % |
+| Mondsilberbogen | Elf-Waldläufer | +7 Angriff, +2 Initiative, Krit +8 % |
+| Tüftlerstab | Gnom-Alchemist | +5 Angriff, Tränke +40 %, Fähigkeiten +15 % |
+| Lichtbringer | Mensch-Kleriker | +7 Angriff, +2 Mana je Angriff/Verteidigen |
+
+- **Neue Regel:** Gegenstandsfeld `races` (Liste von Rassen) neben `classes`; `canEquip` prüft beides (logic.js). Alltagsgegenstände und erzeugte Ausrüstung ohne `races` unverändert. Verkauf: `meister` ist handelbar (Verkauf zum halben Wert, mit Feilschen kein Gewinn).
+- **Offen/Vermutung:** Zwerg-Krieger, Schurke und andere Kombinationen haben keine Spezialwaffe; weitere Kombinationen (z. B. Gnom-Schurke, Zwerg-Kleriker) oder Spezialrüstungen sind möglich. Werte der Waffen sind Schätzungen des Assistenten, nicht gegen die Simulation ausbalanciert (die Sim nutzt keine Händlerware).
+- BALANCE.md und SIM.md neu erzeugt. Tests 166 grün (einer neu, einer angepasst: Valdis ohne Rüstungsvergleich, Waffenvergleich beachtet Rassenschranke). Nur im Headless-Browser gesehen (Händlerfenster geprüft).
 
 ## 0.44.0 (25.11.2026; headless, nicht auf Gerät getestet)
 - Nutzer (12:22): „Fässer lassen sich zerschlagen, manchmal findet man darin etwas: Gegenstand, Monster, Explosion, Teleport; überleg dir weitere Möglichkeiten.“ und „Die Käfer anders darstellen, bedrohlicher.“

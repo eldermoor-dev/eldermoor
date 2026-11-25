@@ -1262,7 +1262,7 @@ export const heroDef = (data, h, state) => h.def + gearBonus(data, h, state).def
 export const heroInit = (data, h, state) => h.init + gearBonus(data, h, state).init + talentSum(data, h, 'init');
 export function canEquip(data, h, itemId, state) {
   const it = itemDef(state, data, itemId);
-  return !!it && it.kind === 'equip' && SLOTS.includes(it.slot) && (!it.classes || it.classes.includes(h.cls));
+  return !!it && it.kind === 'equip' && SLOTS.includes(it.slot) && (!it.classes || it.classes.includes(h.cls)) && (!it.races || it.races.includes(h.race)); // 0.45.0: races = nur diese Rassen (Spezialwaffen)
 }
 // 0.30.0: Vergleich „Was brächte dieser Gegenstand diesem Helden?“ gegenüber dem aktuell getragenen Stück im selben Platz.
 // Ein unerkannter Fluch fließt NICHT ein (sonst würde er verraten); erkannte Flüche zählen mit ihrem Malus.
@@ -1351,7 +1351,7 @@ export function addGear(state, data, inst) {
   return uid;
 }
 export const ownsItem = (state, id) => (state.inv[id] || 0) > 0 || state.heroes.some((h) => h.equip && SLOTS.some((s) => h.equip[s] === id));
-export const qualityOf = (state, data, id) => { const it = itemDef(state, data, id); return it && it.q ? (it.q === 'unique' ? { id: 'unique', name: 'Einzigartig', color: '#ffb347' } : it.q === 'set' ? { id: 'set', name: 'Set', color: '#6fdc8c' } : data.quality.find((q) => q.id === it.q)) : null; };
+export const qualityOf = (state, data, id) => { const it = itemDef(state, data, id); return it && it.q ? (it.q === 'unique' ? { id: 'unique', name: 'Einzigartig', color: '#ffb347' } : it.q === 'set' ? { id: 'set', name: 'Set', color: '#6fdc8c' } : it.q === 'meister' ? { id: 'meister', name: 'Meisterwerk', color: '#e8a0ff' } : data.quality.find((q) => q.id === it.q)) : null; };
 // Beute nach einem Sieg: je Gegnerart data.enemies.<id>.drops (feste Gegenstände, einmalig) und gearDrop {chance, boost, slot?}
 function rollDrops(state, data, enemies, msgs) {
   for (const e of enemies) {

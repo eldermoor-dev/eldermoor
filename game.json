@@ -692,6 +692,98 @@
       "kind": "quest",
       "noSell": true,
       "desc": "Ein glühender Klumpen aus dem Inneren eines Schlackenwächters. Er ist längst erkaltet, nur nicht ganz."
+    },
+    "orkspalter": {
+      "name": "Orkspalter",
+      "kind": "equip",
+      "slot": "weapon",
+      "atk": 8,
+      "q": "meister",
+      "classes": [
+        "warrior"
+      ],
+      "races": [
+        "ork"
+      ],
+      "fx": {
+        "crit": 6
+      },
+      "desc": "Meisterwerk. Waffe. +8 Angriff, Krit +6 %. Nur für Ork-Krieger. Eine Axt, so schwer, dass nur Orkarme sie führen.",
+      "value": 1400
+    },
+    "steinherzstab": {
+      "name": "Steinherzstab",
+      "kind": "equip",
+      "slot": "weapon",
+      "atk": 6,
+      "q": "meister",
+      "classes": [
+        "mage"
+      ],
+      "races": [
+        "dwarf"
+      ],
+      "fx": {
+        "abil": 25
+      },
+      "desc": "Meisterwerk. Waffe. +6 Angriff, Fähigkeiten und Zauber +25 % Schaden. Nur für Zwerg-Magier. Ein Stab aus Tiefenstein, den nur ein Zwerg zum Singen bringt.",
+      "value": 1500
+    },
+    "mondsilberbogen": {
+      "name": "Mondsilberbogen",
+      "kind": "equip",
+      "slot": "weapon",
+      "atk": 7,
+      "init": 2,
+      "q": "meister",
+      "classes": [
+        "ranger"
+      ],
+      "races": [
+        "elf"
+      ],
+      "fx": {
+        "crit": 8
+      },
+      "desc": "Meisterwerk. Waffe. +7 Angriff, +2 Initiative, Krit +8 %. Nur für Elf-Waldläufer. Der Bogen spannt sich nur unter Elfenhänden.",
+      "value": 1600
+    },
+    "tueftlerstab": {
+      "name": "Tüftlerstab",
+      "kind": "equip",
+      "slot": "weapon",
+      "atk": 5,
+      "q": "meister",
+      "classes": [
+        "alchemist"
+      ],
+      "races": [
+        "gnome"
+      ],
+      "fx": {
+        "potionplus": 40,
+        "abil": 15
+      },
+      "desc": "Meisterwerk. Waffe. +5 Angriff, Tränke wirken 40 % stärker, Fähigkeiten +15 % Schaden. Nur für Gnom-Alchemisten. Voller Ventile, Röhrchen und Gnomenwitz.",
+      "value": 1300
+    },
+    "lichtbringer": {
+      "name": "Lichtbringer",
+      "kind": "equip",
+      "slot": "weapon",
+      "atk": 7,
+      "q": "meister",
+      "classes": [
+        "priest"
+      ],
+      "races": [
+        "human"
+      ],
+      "fx": {
+        "regen": 2
+      },
+      "desc": "Meisterwerk. Waffe. +7 Angriff, +2 Mana je Angriff/Verteidigen. Nur für Mensch-Kleriker. Ein Streitkolben, der im Gebet warm wird.",
+      "value": 1500
     }
   },
   "races": {
@@ -11370,9 +11462,9 @@
       ]
     },
     "blutgruft": {
-      "name": "Valdis' Waffenstand",
+      "name": "Valdis' Waffenkammer",
       "owner": "Valdis",
-      "greeting": "Valdis klopft auf seinen Zweihänder. „Ich verkaufe, was die Gruft nicht verdient. Preise sind Preise.“",
+      "greeting": "Valdis klopft auf seinen Zweihänder. „Ich habe wenig, aber nichts davon passt jedem. Jede Klinge gehört in genau eine Hand. Preise sind Preise.“",
       "stock": [
         {
           "item": "potion_m"
@@ -11393,16 +11485,19 @@
           "item": "ration"
         },
         {
-          "item": "stahlschwert"
+          "item": "orkspalter"
         },
         {
-          "item": "runenstab"
+          "item": "steinherzstab"
         },
         {
-          "item": "schuppenpanzer"
+          "item": "mondsilberbogen"
         },
         {
-          "item": "plattenpanzer"
+          "item": "tueftlerstab"
+        },
+        {
+          "item": "lichtbringer"
         }
       ]
     },

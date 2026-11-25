@@ -30,7 +30,7 @@ Annahmen stehen in sim.js über `campaign`. „1. Versuch“ = Sieg ohne vorheri
 | Strategie | Kampagne geschafft | Ø Stufe am Ende | Niederlagen je Lauf |
 |---|---|---|---|
 | nur Angriff | 0 % | 5.7 | 4.4 |
-| klug | 73 % | 14.5 | 3.5 |
+| klug | 74 % | 14.5 | 3.5 |
 
 | Gebiet | Gegner | Strategie | erreicht | Ø Stufe | Sieg 1. Versuch | Runden | KO-Helden | Schaden |
 |---|---|---|---|---|---|---|---|---|
@@ -137,13 +137,13 @@ Annahmen stehen in sim.js über `campaign`. „1. Versuch“ = Sieg ohne vorheri
 | Moorfestung – Blutgruft | en_b_g5 | nur Angriff | 0 % | – | – | – | – | – |
 | Moorfestung – Blutgruft | Vampirbrut + Vampirbrut + Brandmagier | klug | 85 % | 14.7 | 92 % | 7.8 | 0.7 | 72 % |
 | Moorfestung – Blutgruft | en_b_m3 | nur Angriff | 0 % | – | – | – | – | – |
-| Moorfestung – Blutgruft | Vampirbrut + Blutdiener + Vampirbrut | klug | 85 % | 14.8 | 92 % | 7.9 | 0.8 | 75 % |
+| Moorfestung – Blutgruft | Vampirbrut + Blutdiener + Vampirbrut | klug | 85 % | 14.8 | 90 % | 7.6 | 0.8 | 74 % |
 | Moorfestung – Blutgruft | en_b_m1 | nur Angriff | 0 % | – | – | – | – | – |
 | Moorfestung – Blutgruft | Gruftskelett + Blutdiener + Gruftskelett | klug | 85 % | 14.9 | 100 % | 2.3 | 0.0 | 9 % |
 | Moorfestung – Blutgruft | en_b_m2 | nur Angriff | 0 % | – | – | – | – | – |
 | Moorfestung – Blutgruft | Vampirbrut + Nebelgeist | klug | 85 % | 14.9 | 100 % | 3.7 | 0.1 | 23 % |
 | Moorfestung – Blutgruft | en_b_boss | nur Angriff | 0 % | – | – | – | – | – |
-| Moorfestung – Blutgruft | Blutgräfin + Vampirbrut + Vampirbrut (Boss) | klug | 85 % | 15.0 | 61 % | 13.5 | 2.1 | 154 % |
+| Moorfestung – Blutgruft | Blutgräfin + Vampirbrut + Vampirbrut (Boss) | klug | 85 % | 15.0 | 59 % | 13.6 | 2.1 | 156 % |
 | Spinnenhöhle | en_s_a1 | nur Angriff | 0 % | – | – | – | – | – |
 | Spinnenhöhle | Riesenspinne + Brutspinne + Brutspinne | klug | 85 % | 15.0 | 100 % | 4.0 | 0.0 | 19 % |
 | Spinnenhöhle | en_s_a2 | nur Angriff | 0 % | – | – | – | – | – |
@@ -151,35 +151,35 @@ Annahmen stehen in sim.js über `campaign`. „1. Versuch“ = Sieg ohne vorheri
 | Spinnenhöhle | en_s_b1 | nur Angriff | 0 % | – | – | – | – | – |
 | Spinnenhöhle | Netzwächter + Brutspinne + Brutspinne | klug | 85 % | 15.0 | 100 % | 3.9 | 0.0 | 22 % |
 | Spinnenhöhle | en_s_c1 | nur Angriff | 0 % | – | – | – | – | – |
-| Spinnenhöhle | Riesenspinne + Netzwächter | klug | 85 % | 15.0 | 100 % | 5.9 | 0.1 | 35 % |
+| Spinnenhöhle | Riesenspinne + Netzwächter | klug | 85 % | 15.0 | 100 % | 5.9 | 0.1 | 36 % |
 | Spinnenhöhle | en_s_h1 | nur Angriff | 0 % | – | – | – | – | – |
-| Spinnenhöhle | Netzwächter + Netzwächter | klug | 85 % | 15.0 | 100 % | 4.6 | 0.1 | 33 % |
+| Spinnenhöhle | Netzwächter + Netzwächter | klug | 85 % | 15.0 | 100 % | 4.7 | 0.1 | 34 % |
 | Spinnenhöhle | en_s_h2 | nur Angriff | 0 % | – | – | – | – | – |
-| Spinnenhöhle | Riesenspinne + Brutspinne + Brutspinne | klug | 85 % | 15.0 | 100 % | 3.5 | 0.0 | 16 % |
+| Spinnenhöhle | Riesenspinne + Brutspinne + Brutspinne | klug | 85 % | 15.0 | 100 % | 3.4 | 0.0 | 15 % |
 | Spinnenhöhle | en_s_n1 | nur Angriff | 0 % | – | – | – | – | – |
 | Spinnenhöhle | Netzwächter + Riesenspinne | klug | 85 % | 15.0 | 100 % | 4.6 | 0.1 | 31 % |
 | Spinnenhöhle | en_s_s1 | nur Angriff | 0 % | – | – | – | – | – |
 | Spinnenhöhle | Riesenspinne + Netzwächter + Brutspinne | klug | 85 % | 15.0 | 100 % | 5.6 | 0.1 | 43 % |
 | Spinnenhöhle | en_s_k1 | nur Angriff | 0 % | – | – | – | – | – |
-| Spinnenhöhle | Netzwächter + Brutspinne | klug | 85 % | 15.0 | 100 % | 2.8 | 0.0 | 12 % |
+| Spinnenhöhle | Netzwächter + Brutspinne | klug | 85 % | 15.0 | 100 % | 2.9 | 0.0 | 13 % |
 | Spinnenhöhle | en_s_k2 | nur Angriff | 0 % | – | – | – | – | – |
-| Spinnenhöhle | Netzwächter + Riesenspinne | klug | 85 % | 15.0 | 100 % | 5.3 | 0.1 | 35 % |
+| Spinnenhöhle | Netzwächter + Riesenspinne | klug | 85 % | 15.0 | 100 % | 5.3 | 0.1 | 34 % |
 | Spinnenhöhle | en_s_l1 | nur Angriff | 0 % | – | – | – | – | – |
-| Spinnenhöhle | Netzwächter + Brutspinne | klug | 85 % | 15.0 | 100 % | 2.8 | 0.0 | 13 % |
+| Spinnenhöhle | Netzwächter + Brutspinne | klug | 85 % | 15.0 | 100 % | 2.8 | 0.0 | 12 % |
 | Spinnenhöhle | en_s_l2 | nur Angriff | 0 % | – | – | – | – | – |
-| Spinnenhöhle | Netzwächter + Brutspinne | klug | 85 % | 15.0 | 100 % | 3.0 | 0.0 | 14 % |
+| Spinnenhöhle | Netzwächter + Brutspinne | klug | 85 % | 15.0 | 100 % | 3.0 | 0.0 | 13 % |
 | Spinnenhöhle | en_s_boss | nur Angriff | 0 % | – | – | – | – | – |
 | Spinnenhöhle | Spinnenkönigin (Boss) | klug | 85 % | 15.0 | 100 % | 9.0 | 0.0 | 62 % |
 | Die Gießerei | en_g_n1a | nur Angriff | 0 % | – | – | – | – | – |
-| Die Gießerei | Erzkäfer + Erzkäfer + Brandmagier | klug | 85 % | 15.0 | 100 % | 3.0 | 0.1 | 27 % |
+| Die Gießerei | Erzkäfer + Erzkäfer + Brandmagier | klug | 85 % | 15.0 | 100 % | 2.9 | 0.0 | 25 % |
 | Die Gießerei | en_g_n1b | nur Angriff | 0 % | – | – | – | – | – |
 | Die Gießerei | Schlackenwächter + Erzkäfer + Erzkäfer | klug | 85 % | 15.0 | 100 % | 3.5 | 0.0 | 35 % |
 | Die Gießerei | en_g_n2a | nur Angriff | 0 % | – | – | – | – | – |
-| Die Gießerei | Brandmagier + Schlackenwächter + Erzkäfer | klug | 85 % | 15.0 | 99 % | 4.1 | 0.2 | 53 % |
+| Die Gießerei | Brandmagier + Schlackenwächter + Erzkäfer | klug | 85 % | 15.0 | 98 % | 4.1 | 0.3 | 54 % |
 | Die Gießerei | en_g_n2b | nur Angriff | 0 % | – | – | – | – | – |
 | Die Gießerei | Schlackenwächter + Schlackenwächter | klug | 85 % | 15.0 | 100 % | 4.6 | 0.1 | 37 % |
 | Die Gießerei | en_g_n3a | nur Angriff | 0 % | – | – | – | – | – |
-| Die Gießerei | Schlackenwächter + Erzkäfer + Schlackenwächter | klug | 85 % | 15.0 | 52 % | 8.5 | 2.3 | 128 % |
+| Die Gießerei | Schlackenwächter + Erzkäfer + Schlackenwächter | klug | 85 % | 15.0 | 53 % | 8.6 | 2.4 | 128 % |
 | Die Gießerei | en_g_n3b | nur Angriff | 0 % | – | – | – | – | – |
 | Die Gießerei | Kultwächter + Gruftskelett + Gruftskelett | klug | 75 % | 15.0 | 100 % | 2.0 | 0.0 | 4 % |
 | Die Gießerei | en_g_s1a | nur Angriff | 0 % | – | – | – | – | – |
@@ -187,15 +187,15 @@ Annahmen stehen in sim.js über `campaign`. „1. Versuch“ = Sieg ohne vorheri
 | Die Gießerei | en_g_s1b | nur Angriff | 0 % | – | – | – | – | – |
 | Die Gießerei | Schlackenwächter + Erzkäfer | klug | 75 % | 15.0 | 100 % | 3.0 | 0.0 | 19 % |
 | Die Gießerei | en_g_s2a | nur Angriff | 0 % | – | – | – | – | – |
-| Die Gießerei | Brandmagier + Schlackenwächter | klug | 75 % | 15.0 | 100 % | 3.8 | 0.1 | 39 % |
+| Die Gießerei | Brandmagier + Schlackenwächter | klug | 75 % | 15.0 | 100 % | 3.9 | 0.1 | 40 % |
 | Die Gießerei | en_g_s3a | nur Angriff | 0 % | – | – | – | – | – |
-| Die Gießerei | Kultwächter + Schlackenwächter + Erzkäfer | klug | 75 % | 15.0 | 100 % | 4.0 | 0.1 | 32 % |
+| Die Gießerei | Kultwächter + Schlackenwächter + Erzkäfer | klug | 75 % | 15.0 | 100 % | 3.9 | 0.1 | 33 % |
 | Die Gießerei | en_g_s3b | nur Angriff | 0 % | – | – | – | – | – |
-| Die Gießerei | Schlackenwächter + Brandmagier + Erzkäfer | klug | 75 % | 15.0 | 98 % | 4.4 | 0.2 | 59 % |
+| Die Gießerei | Schlackenwächter + Brandmagier + Erzkäfer | klug | 75 % | 15.0 | 98 % | 4.5 | 0.3 | 60 % |
 | Die Gießerei | en_g_boss | nur Angriff | 0 % | – | – | – | – | – |
-| Die Gießerei | Gießmeister Harkon + Schlackenwächter (Boss) | klug | 75 % | 15.0 | 78 % | 12.3 | 1.2 | 119 % |
+| Die Gießerei | Gießmeister Harkon + Schlackenwächter (Boss) | klug | 75 % | 15.0 | 79 % | 12.2 | 1.1 | 117 % |
 | Die Zisterne | en_z_h1 | nur Angriff | 0 % | – | – | – | – | – |
-| Die Zisterne | Nebelgeist + Nebelgeist + Kultpriester | klug | 75 % | 15.0 | 83 % | 8.7 | 0.9 | 95 % |
+| Die Zisterne | Nebelgeist + Nebelgeist + Kultpriester | klug | 75 % | 15.0 | 83 % | 8.7 | 0.9 | 97 % |
 | Die Zisterne | en_z_h2 | nur Angriff | 0 % | – | – | – | – | – |
 | Die Zisterne | Gruftskelett + Kultwächter + Gruftskelett | klug | 75 % | 15.0 | 100 % | 2.0 | 0.0 | 4 % |
 | Die Zisterne | en_z_h3 | nur Angriff | 0 % | – | – | – | – | – |
@@ -213,44 +213,44 @@ Annahmen stehen in sim.js über `campaign`. „1. Versuch“ = Sieg ohne vorheri
 | Die Zisterne | en_z_s2 | nur Angriff | 0 % | – | – | – | – | – |
 | Die Zisterne | Schlackenwächter + Nebelgeist | klug | 75 % | 15.0 | 99 % | 3.7 | 0.1 | 37 % |
 | Die Zisterne | en_z_wn1 | nur Angriff | 0 % | – | – | – | – | – |
-| Die Zisterne | Kultwächter + Gruftskelett + Gruftskelett | klug | 75 % | 15.0 | 100 % | 2.1 | 0.0 | 7 % |
+| Die Zisterne | Kultwächter + Gruftskelett + Gruftskelett | klug | 75 % | 15.0 | 100 % | 2.0 | 0.0 | 7 % |
 | Die Zisterne | en_z_wn2 | nur Angriff | 0 % | – | – | – | – | – |
-| Die Zisterne | Kultpriester + Nebelgeist | klug | 75 % | 15.0 | 100 % | 3.8 | 0.0 | 13 % |
+| Die Zisterne | Kultpriester + Nebelgeist | klug | 75 % | 15.0 | 100 % | 3.7 | 0.0 | 13 % |
 | Die Zisterne | en_z_ws1 | nur Angriff | 0 % | – | – | – | – | – |
 | Die Zisterne | Gruftskelett + Gruftskelett + Kultwächter | klug | 75 % | 15.0 | 100 % | 2.1 | 0.0 | 8 % |
 | Die Zisterne | en_z_ws2 | nur Angriff | 0 % | – | – | – | – | – |
-| Die Zisterne | Nebelgeist + Kultpriester + Nebelgeist | klug | 75 % | 15.0 | 100 % | 5.3 | 0.1 | 35 % |
+| Die Zisterne | Nebelgeist + Kultpriester + Nebelgeist | klug | 75 % | 15.0 | 100 % | 5.2 | 0.1 | 36 % |
 | Die Zisterne | en_z_en1 | nur Angriff | 0 % | – | – | – | – | – |
-| Die Zisterne | Kultpriester + Schlackenwächter + Nebelgeist | klug | 75 % | 15.0 | 74 % | 9.3 | 1.5 | 104 % |
+| Die Zisterne | Kultpriester + Schlackenwächter + Nebelgeist | klug | 75 % | 15.0 | 76 % | 9.4 | 1.4 | 102 % |
 | Die Zisterne | en_z_en2 | nur Angriff | 0 % | – | – | – | – | – |
-| Die Zisterne | Kultwächter + Kultpriester | klug | 73 % | 15.0 | 100 % | 2.9 | 0.0 | 9 % |
+| Die Zisterne | Kultwächter + Kultpriester | klug | 74 % | 15.0 | 100 % | 2.9 | 0.0 | 9 % |
 | Die Zisterne | en_z_es1 | nur Angriff | 0 % | – | – | – | – | – |
-| Die Zisterne | Nebelgeist + Nebelgeist + Kultwächter | klug | 73 % | 15.0 | 100 % | 3.5 | 0.1 | 35 % |
+| Die Zisterne | Nebelgeist + Nebelgeist + Kultwächter | klug | 74 % | 15.0 | 100 % | 3.4 | 0.1 | 34 % |
 | Die Zisterne | en_z_es2 | nur Angriff | 0 % | – | – | – | – | – |
-| Die Zisterne | Schlackenwächter + Gruftskelett + Kultpriester | klug | 73 % | 15.0 | 100 % | 5.6 | 0.0 | 29 % |
+| Die Zisterne | Schlackenwächter + Gruftskelett + Kultpriester | klug | 74 % | 15.0 | 100 % | 5.6 | 0.0 | 28 % |
 | Die Zisterne | en_z_k1 | nur Angriff | 0 % | – | – | – | – | – |
-| Die Zisterne | Nebelgeist + Kultpriester + Nebelgeist | klug | 73 % | 15.0 | 100 % | 5.0 | 0.1 | 31 % |
+| Die Zisterne | Nebelgeist + Kultpriester + Nebelgeist | klug | 74 % | 15.0 | 100 % | 5.0 | 0.1 | 31 % |
 | Die Zisterne | en_z_k2 | nur Angriff | 0 % | – | – | – | – | – |
-| Die Zisterne | Gruftskelett + Schlackenwächter + Kultwächter | klug | 73 % | 15.0 | 100 % | 3.9 | 0.0 | 31 % |
+| Die Zisterne | Gruftskelett + Schlackenwächter + Kultwächter | klug | 74 % | 15.0 | 100 % | 3.9 | 0.1 | 30 % |
 | Die Zisterne | en_z_k3 | nur Angriff | 0 % | – | – | – | – | – |
-| Die Zisterne | Kultwächter + Kultwächter + Nebelgeist | klug | 73 % | 15.0 | 100 % | 2.8 | 0.0 | 21 % |
+| Die Zisterne | Kultwächter + Kultwächter + Nebelgeist | klug | 74 % | 15.0 | 100 % | 2.8 | 0.0 | 21 % |
 | Die Zisterne | en_z_k4 | nur Angriff | 0 % | – | – | – | – | – |
-| Die Zisterne | Kultpriester + Gruftskelett + Schlackenwächter | klug | 73 % | 15.0 | 100 % | 5.7 | 0.0 | 28 % |
+| Die Zisterne | Kultpriester + Gruftskelett + Schlackenwächter | klug | 74 % | 15.0 | 100 % | 5.7 | 0.0 | 28 % |
 | Die Zisterne | en_z_kk1 | nur Angriff | 0 % | – | – | – | – | – |
-| Die Zisterne | Kultwächter + Kultwächter + Nebelgeist | klug | 73 % | 15.0 | 100 % | 3.6 | 0.1 | 35 % |
+| Die Zisterne | Kultwächter + Kultwächter + Nebelgeist | klug | 74 % | 15.0 | 100 % | 3.6 | 0.1 | 36 % |
 | Die Zisterne | en_z_kk2 | nur Angriff | 0 % | – | – | – | – | – |
-| Die Zisterne | Kultpriester + Gruftskelett + Schlackenwächter | klug | 73 % | 15.0 | 99 % | 7.0 | 0.2 | 45 % |
+| Die Zisterne | Kultpriester + Gruftskelett + Schlackenwächter | klug | 74 % | 15.0 | 99 % | 7.0 | 0.1 | 45 % |
 | Die Zisterne | en_z_kk3 | nur Angriff | 0 % | – | – | – | – | – |
-| Die Zisterne | Nebelgeist + Kultpriester + Nebelgeist | klug | 73 % | 15.0 | 100 % | 5.1 | 0.1 | 31 % |
+| Die Zisterne | Nebelgeist + Kultpriester + Nebelgeist | klug | 74 % | 15.0 | 100 % | 5.1 | 0.1 | 31 % |
 | Die Zisterne | en_z_h5 | nur Angriff | 0 % | – | – | – | – | – |
-| Die Zisterne | Kultwächter + Nebelgeist + Kultpriester | klug | 73 % | 15.0 | 100 % | 4.3 | 0.0 | 17 % |
+| Die Zisterne | Kultwächter + Nebelgeist + Kultpriester | klug | 74 % | 15.0 | 100 % | 4.3 | 0.0 | 18 % |
 | Die Zisterne | en_z_h6 | nur Angriff | 0 % | – | – | – | – | – |
-| Die Zisterne | Gruftskelett + Schlackenwächter + Gruftskelett | klug | 73 % | 15.0 | 100 % | 3.3 | 0.0 | 27 % |
+| Die Zisterne | Gruftskelett + Schlackenwächter + Gruftskelett | klug | 74 % | 15.0 | 100 % | 3.3 | 0.0 | 27 % |
 | Die Zisterne | en_z_h7 | nur Angriff | 0 % | – | – | – | – | – |
-| Die Zisterne | Nebelgeist + Kultpriester + Kultwächter | klug | 73 % | 15.0 | 100 % | 4.2 | 0.0 | 17 % |
+| Die Zisterne | Nebelgeist + Kultpriester + Kultwächter | klug | 74 % | 15.0 | 100 % | 4.2 | 0.0 | 17 % |
 | Die Zisterne | en_z_h8 | nur Angriff | 0 % | – | – | – | – | – |
-| Die Zisterne | Schlackenwächter + Nebelgeist | klug | 73 % | 15.0 | 100 % | 3.7 | 0.1 | 35 % |
+| Die Zisterne | Schlackenwächter + Nebelgeist | klug | 74 % | 15.0 | 100 % | 3.7 | 0.1 | 35 % |
 | Die Zisterne | en_z_boss | nur Angriff | 0 % | – | – | – | – | – |
-| Die Zisterne | Quellhüterin Maris + Nebelgeist (Boss) | klug | 73 % | 15.0 | 90 % | 12.5 | 0.7 | 118 % |
+| Die Zisterne | Quellhüterin Maris + Nebelgeist (Boss) | klug | 74 % | 15.0 | 89 % | 12.6 | 0.8 | 119 % |
 
 Hinweis: Die Simulation nutzt die echten Regeln, aber nur zwei feste Strategien. Ein echter Spieler liegt dazwischen.
