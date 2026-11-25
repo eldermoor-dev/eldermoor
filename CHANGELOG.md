@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.43.1 (25.11.2026, headless)
+- Taverne außen: keine Holzfassade im Raum mehr, nur noch eine Tür in der Wand mit Holztäfelung und Namensschild „GOLDENER EBER“.
+
 ## 0.43.0 (25.11.2026, headless)
 - Schatzkarten: höchstens 3 je Besuch; neuer Besuch erst eine Stunde (Echtzeit) nach dem ersten Kauf. Marga weist darauf hin.
 - Marga erklärt beim ersten Gespräch Rast, Zimmer, Ausgang und das Kartenlimit.

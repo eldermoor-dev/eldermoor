@@ -942,6 +942,7 @@ export function passFaces(wl, o) {
   return [faces.reduce((a, b) => (run(b) > run(a) ? b : a))];
 }
 function passTex(tex, o) {
+  if (o.type === 'stairs' && o.look === 'tuer') return cachedTex(tex, 'deco', 'tavernentuer', () => genDeco('tavernentuer', 171, true)); // 0.43.1: Taverneneingang als Holztür mit Schild
   if (o.type === 'stairs') return o.look === 'down' ? tex.sprites.stairsDown : o.look === 'up' ? tex.sprites.stairsUp : o.look === 'path' ? tex.sprites.arch : tex.sprites.portal;
   return o.look === 'down' ? tex.sprites.stairsDown : o.look === 'up' ? tex.sprites.stairsUp : o.look === 'path' ? tex.sprites.arch : tex.sprites.runeStone;
 }
@@ -1040,6 +1041,34 @@ function genDeco(kind, seed, full = true) {
       }
       set(x, y, c);
     }
+  } else if (kind === 'tavernentuer') { // 0.43.1: Tür der Taverne in einer Holztäfelung (ganze Wandfläche) mit Namensschild darüber
+    const dx0 = 60, dx1 = 132, dy0 = 74;
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      let v;
+      const inDoor = x >= dx0 && x <= dx1 && y >= dy0 && y < N - 8;
+      if (inDoor) { // Türblatt: senkrechte Bohlen, zwei Eisenbänder, Rahmen
+        const fr = x < dx0 + 4 || x > dx1 - 4 || y < dy0 + 4;
+        v = P('wood', fr ? 1.6 + hash(x >> 1, y >> 1, seed) * 0.5 : 2.5 + (((x - dx0) >> 3) % 2) * 0.5 + hash(x >> 3, y, seed + 2) * 0.5);
+        if (!fr && (x - dx0) % 8 === 0) v = P('wood', 1.2);
+        for (const by of [dy0 + 22, dy0 + 70]) if (!fr && y >= by && y < by + 5) v = P('iron', 3.2 + hash(x >> 2, y, seed + 3) * 0.6);
+      } else if (x >= dx0 - 8 && x <= dx1 + 8 && y >= dy0 - 8 && y < N - 8) { // Rahmen um die Tür
+        v = P('wood', 5.6 + hash(x >> 1, y >> 1, seed + 4) * 0.6);
+      } else if (y >= N - 8 && x >= dx0 - 10 && x <= dx1 + 10) { // Steinschwelle
+        v = P('stone', 4.4 + hash(x >> 2, y >> 2, seed + 5) * 1.2);
+      } else { // Holztäfelung
+        const rail = y < 6 || y > N - 7 || (y >= 62 && y < 68) || x < 5 || x > N - 6;
+        const lower = y >= 68;
+        const px = x % 32, py = lower ? (y - 68) % 56 : y;
+        const inset = lower ? (px > 4 && px < 28 && py > 5 && py < 50) : false;
+        v = P('wood', rail ? 2.6 + hash(x >> 1, y, seed + 6) * 0.5 : inset ? 3.0 + hash(x >> 3, y >> 1, seed + 7) * 0.6 : 4.2 + (((x >> 4) % 2) * 0.5) + hash(x >> 4, y, seed + 8) * 0.7);
+        if (lower && !rail && !inset && (px === 4 || px === 28 || py === 5 || py === 50)) v = P('wood', 1.8);
+        if (!lower && !rail && x % 16 === 0) v = P('wood', 2.8);
+      }
+      set(x, y, v);
+    }
+    for (let a = 0; a < 5; a++) for (let b2 = 0; b2 < 5; b2++) if ((a - 2) * (a - 2) + (b2 - 2) * (b2 - 2) <= 5) set(dx1 - 14 + a, 132 + b2, P('glow', 6.2 - (a + b2) * 0.1)); // Messingklinke
+    for (let y = dy0 + 18; y < dy0 + 36; y++) for (let x = dx0 + 6; x < dx0 + 11; x++) set(x, y, P('iron', 3.6)); // Scharnier
+    paintPlaque(buf, N, 'GOLDENER|EBER', 'door', 'dark', seed + 9); // Namensschild oben auf der Täfelung
   } else { // graffiti: grob geritzte Figur, Strichliste und Pfeil
     const scratch = (x0, y0, x1, y1) => { const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0)); for (let i = 0; i <= n; i++) { const x = Math.round(x0 + (x1 - x0) * i / n), y = Math.round(y0 + (y1 - y0) * i / n); set(x, y, P('stone', 6.6)); set(x + 1, y, P('stone', 6.6)); set(x, y + 1, P('stone', 0.6)); } };
     scratch(70, 60, 70, 110); scratch(70, 75, 55, 92); scratch(70, 75, 85, 92); scratch(70, 110, 58, 135); scratch(70, 110, 82, 135); // Figur

@@ -2984,8 +2984,8 @@ export async function runTests(data, env = {}) {
   await test('0.39.0 Taverne „Zum goldenen Eber“: Fassade, Einrichtung, Zimmer gegen Gold', () => {
     const tv = data.levels.taverne, mo = data.levels.moorrand;
     eq(tv.name, 'Taverne „Zum goldenen Eber“', 'Name'); assert(data.palettes[tv.palette], 'Palette vorhanden');
-    // Fassade: Holzwände (h) beidseits des Eingangs, Eingang auf Boden, Rückweg stimmt
-    const st = mo.objects.find((o) => o.id === 'stairs_taverne'); assert(L.cellChar(mo, st.x, st.y) === '.' && mo.map[st.y + 1][st.x] === 'h' && mo.map[st.y][st.x - 2] === 'h' && mo.map[st.y][st.x + 2] === 'h', 'Holzfassade um den Eingang');
+    // 0.43.1: Taverne liegt nicht im Raum, nur eine Holztür (look 'tuer') in der Südwand; Eingang auf Boden vor der Wand, Rückweg stimmt
+    const st = mo.objects.find((o) => o.id === 'stairs_taverne'); assert(L.cellChar(mo, st.x, st.y) === '.' && st.look === 'tuer' && L.cellChar(mo, st.x, st.y + 1) !== '.' && !mo.map.some((r) => r.includes('h')) && !mo.objects.some((o) => o.id === 'sign_taverne'), 'Holztür in der Wand, keine Fassade im Raum');
     const out = tv.objects.find((o) => o.id === 'stairs_taverne_aus'); assert(L.cellChar(mo, out.to.x, out.to.y) === '.' && out.to.y === st.y - 1, 'Ausgang vor der Fassade');
     // Innen: alle Dekorationen auf Boden, ohne Doppelbelegung, Wirtin erreichbar, Sprites bekannt
     const seen = new Set(); for (const o of tv.objects) { assert(L.cellChar(tv, o.x, o.y) === '.', o.id + ' auf Boden'); const k = o.x + ',' + o.y; assert(!seen.has(k), o.id + ' doppelt belegt ' + k); seen.add(k); }

@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.43.0 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.43.1 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1435,6 +1435,14 @@ Nutzer (18:30, Screenshot Kampf gegen Gießmeister Harkon + Foto eines Gießers 
 - **Hüterstatuen (Zisterne), Untersuchung:** Im Code nicht nachstellbar. Alle 24 Reihenfolgen der vier Statuen, je mit und ohne Speichern/Laden, ergeben denselben Ausgang: Nur die Hand der lügenden Statue (Hüter III) gibt den Schlüssel; die anderen drei lösen den Kampf mit einem Kultwächter aus. Kein anderer Weg zu `quellschluessel`. Ursache der Gerätebeobachtung unbekannt: Es fehlen Angaben, welche Statue gedrückt wurde, was geschah und die Meldung (Screenshot). Offen: Titelbild-Version auf dem Gerät prüfen (0.37.6 oder neuer erwartet).
 - Offene Gerätetests 0.40.0: siehe Testliste im Chat (Karte kaufen, Kreuz, Wand öffnen, Truhe; Aushangbrett über Tafel und Marga; Wölfe/Trophäe/Abgabe; Abreißen; alter Spielstand lädt).
 - Ideen, nicht gebaut: Kartenpreis mit Feilschen-Talent, mehrere Extraräume je große Ebene, Steckbriefe mit festen Kettenaufträgen (Geschichte), Aushang auch in der Siedlung am Weg zur Taverne.
+
+## 0.43.1 (25.11.2026; headless, nicht auf Gerät getestet)
+- Nutzer (12:11, mit Screenshot der Holzfassade): „Die Taverne liegt nicht im Raum, man betritt sie wie einen Raum. Nur eine Tür mit Holztäfelung und Namensschild.“
+- Moorrand (`moorrand`): Fassadenblock (`h`) und Wandtafel `sign_taverne` entfernt. Eingang `stairs_taverne` jetzt bei (4,4) vor der Südwand, neues Aussehen `look: 'tuer'` (render.js `passTex`, `genDeco('tavernentuer')`): ganze Wandfläche als Holztäfelung (Füllungen, Leisten), Plankentür mit Eisenbändern, Messingklinke, Steinschwelle, Namensschild „GOLDENER EBER“ (Stil `dark`) oben. Ausgang der Taverne setzt die Gruppe bei (4,3) mit Blick zur Tür.
+- Test 0.39.0 angepasst (Tür statt Fassade). Tests 164 grün. Nur im Headless-Browser gesehen.
+
+## IDEE (Nutzer, 25.11.2026, noch NICHT gebaut): Feuerstellen als Schnellreise
+- Nutzerfrage: Kamin der Taverne als Teleportpunkt, weitere Feuerstellen in den anderen Gebieten. Empfehlung des Assistenten: ja, als „entzündete Feuerstellen“ (erst nach Berührung freigeschaltet, Reise nur zwischen freigeschalteten, nicht im Kampf, Rastregel gilt am Ziel, Gegner kehren nicht zurück), passt zu den Abkürzungen über Runensteine. Offene Entscheidungen: kostenlos oder gegen Gold/Proviant; Anzahl je Gebiet; ob Feuerstellen auch rasten lassen. Anknüpfung: `travelTo`, Runensteine, Schatzkarten-Gebiete (`data.maps`).
 
 ## 0.43.0 (25.11.2026; headless, nicht auf Gerät getestet)
 - Nutzer (12:05): Schatzkarten nicht alle auf einmal (max. 3 je Besuch, Besuch mindestens 1 h her), Wirtin weist darauf hin; beim ersten Kontakt zählt sie Rast- und Ausgangsmöglichkeiten auf; beim Rasten ca. 5 s ein Bild der Schlafkammer mit den schlafenden Helden (Abenteuerromantik, Margas Herberge, Kamin, weitere Zimmer vom Assistenten).

@@ -3103,8 +3103,8 @@
         "####T###T###",
         "#.....m....#",
         "#..........#",
-        "#.hh.hh....#",
-        "#.hhhhh....#",
+        "#..........#",
+        "#..........#",
         "############"
       ],
       "start": {
@@ -3156,7 +3156,7 @@
           "id": "stairs_taverne",
           "type": "stairs",
           "x": 4,
-          "y": 3,
+          "y": 4,
           "msg": "Du betrittst die Taverne „Zum goldenen Eber“.",
           "to": {
             "level": "taverne",
@@ -3164,17 +3164,7 @@
             "y": 3,
             "dir": 0
           },
-          "look": "path"
-        },
-        {
-          "id": "sign_taverne",
-          "type": "sign",
-          "x": 6,
-          "y": 2,
-          "title": "GOLDENER|EBER",
-          "text": "Taverne „Zum goldenen Eber“. Warme Stube, kühler Wein, saubere Betten. Rast im Zimmer kostet Gold.",
-          "style": "wood",
-          "face": 2
+          "look": "tuer"
         }
       ]
     },
@@ -8382,7 +8372,7 @@
           "to": {
             "level": "moorrand",
             "x": 4,
-            "y": 2,
+            "y": 3,
             "dir": 2
           },
           "look": "path"
