@@ -8,6 +8,11 @@ Autor: eldermoor-dev · Stand: Version 0.47.13 (25.11.2026). Auf dem Galaxy S25 
 - Antworten telegraphisch, deutsch, Tabellen, direkte Empfehlung; keine Codeblöcke im Chat ohne Aufforderung.
 - Der Assistent sagt von sich aus, wann der beste Zeitpunkt für einen neuen Chat im Projekt ist (Kontingent knapp).
 
+## GESTALTUNGSENTSCHEIDUNGEN (verbindlich; Nutzer, eingetragen 25.11.2026)
+- Rassen: Mensch, Elf, Zwerg, Ork, Gnom. Berufe: Krieger, Schurke, Kleriker, Magier, Waldläufer; Alchemist geplant (sechs Berufe, je drei Talentzweige). Maximalstufe 15.
+- Kein Permadeath: bewusstlos statt tot, Bewusstlose bekommen keine EP. Zwei Schwierigkeitsgrade (Normal, Schwer).
+- LÜCKE: Die Eingabe des Nutzers brach bei „Drei Akte, ca. 13 Gebiete (Akt“ ab. Der Rest (Akte/Gebiete und alle weiteren Punkte) fehlt hier und wird nicht aus dem Gedächtnis ergänzt; der Nutzer liefert ihn nach. Ältere Einzelentscheidungen stehen weiter unter „Entscheidungen des Nutzers für Phase 2“, „Designentscheidungen 13.11.2026“ und „Plan ab 0.16“.
+
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
 - **getestet (Desktop-Chrome headless)**: in einem Chrome-Testlauf auf dem Entwicklungsrechner des Assistenten gesehen, nicht auf dem Galaxy S25
