@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.51.1 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.51.2 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1941,3 +1941,7 @@ Auftrag aus den Vorschlägen vom 25.11.: **A** Lehrpfad ohne Belehrung, **C** Ge
 - Tests 186 grün (neu: sichtbare Größe ≤ Skalierung, Wolf kleiner als sein Bild, Hebel ohne Leuchtmaterial). Gegner- und Heldenwerte unverändert.
 - Offen: Gerätetest 0.49.6 bis 0.51.1 (Nutzer: erstmal keine Tests, Testliste auf Zuruf). Schild „LAGER“ im Testgewölbe (Nutzerfrage 23:37 „Warum steht da jetzt Lager“): stammt aus 0.50.0, Tafel `tg_tafel_lager` bei (5,4), Entscheidung des Nutzers steht aus.
 - Rückfall: Commit 23fa5e6 (0.51.0). Tag-Push liefert 403, nicht umgangen.
+
+## 0.51.2 (25.11.2026; nicht auf Gerät getestet): Schildtitel der Falle-Tafel
+- Nutzer 23:39 (Screenshot): Die Tafel vor der Speerfalle trug den Titel „KOHLE“, der Text sagt „Mit Kohle an die Wand geschrieben …“. „Auf dem Schild soll dann nicht Kohle stehen.“ Titel jetzt „WARNUNG“ (Assistent, Vorschlag; Text unverändert). Objekt `tg_tafel_falle` in game.json `test1`. Offen: Schild „LAGER“ (siehe 0.51.1), die Titel „STRICHE“ und „SEITE“ der anderen Tafeln folgen demselben Muster, Entscheidung des Nutzers steht aus.
+- Tests 186 grün, Rückfall: Commit 4228640 (0.51.1).

@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.51.2 (25.11.2026, nicht auf Gerät getestet)
+- Testgewölbe: Die Tafel vor der Speerfalle heißt „WARNUNG“ statt „KOHLE“ (Text unverändert).
+
 ## 0.51.1 (25.11.2026, headless gerendert, nicht auf Gerät getestet)
 - Kampf: Alle Monster füllen jetzt gleich viel vom Bild (sichtbar etwa 60–65 % der Höhe). Bisher zählte das ganze Spritebild, deshalb wirkten Wolf, Nebelgeist und Spinnen kleiner (43–50 %). Schrat unverändert (Gerät: „perfekte Größe“). Werte unverändert.
 - Hebel: Leuchtring um den Sockel entfernt (Nutzer).
