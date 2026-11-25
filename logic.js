@@ -1487,6 +1487,10 @@ export function enemyOf(data, e) {
   const en = data.enemies[e.kind];
   let m = en;
   if (e.phase && en.phases) for (let i = 0; i < e.phase && i < en.phases.length; i++) m = { ...m, ...(en.phases[i].set || {}) };
+  if (e.elite && data.elites) { // 0.41.0: Elitegegner – Zuschläge aus data.elites.list
+    const el = data.elites.list.find((x) => x.id === e.elite);
+    if (el) { m = { ...m, atk: Math.round(m.atk * (100 + (el.atkPct || 0)) / 100), def: m.def + (el.def || 0), init: m.init + (el.init || 0) }; if (el.onHit && !m.onHit) m.onHit = el.onHit; }
+  }
   if (e.fx) { // 0.34.0: Wirkung von Hinweisen (en.flagFx, beim Kampfbeginn in e.fx übernommen): resist = Zuschlag je Element, callChance = Zuschlag auf die Hilferuf-Chance
     m = { ...m };
     if (e.fx.resist) { m.resist = { ...(m.resist || {}) }; for (const [el, v] of Object.entries(e.fx.resist)) m.resist[el] = Math.max(-100, Math.min(100, (m.resist[el] || 0) + v)); }
@@ -1524,11 +1528,13 @@ function noteBestiary(state, kind, what, val) {
 export function startCombat(state, data, enemyObj, opts = {}) {
   const en = group(data, enemyObj), hp = diffPct(state, data, 'hp');
   if (hp !== 100) for (const e of en) { e.hp = Math.max(1, Math.round((e.hp * hp) / 100)); e.maxHp = Math.max(1, Math.round((e.maxHp * hp) / 100)); }
+  applyElites(state, data, en, enemyObj);
   state.combat = {
     enemies: en,
     order: [], pos: 0, round: 1, defending: {}, status: {}, over: null, ambush: !!opts.ambush, startMsgs: [], struck: {}
   };
   const c0 = state.combat;
+  for (const e of en) if (e.elite) { const el = data.elites.list.find((x) => x.id === e.elite); c0.startMsgs.push(`${e.name} ist ein Elitegegner: ${el.desc}`); }
   { const lo = (getLevel(data, state).objects || []).find((q) => q.id === enemyObj.id), fl = lo && lo.flood; // 0.38.0: Flutkampf; `off` = Marke, die der Pumpenhahn setzt
     if (fl) { c0.flood = { on: !state.flags[fl.off] }; c0.startMsgs.push(c0.flood.on ? 'Die Pumpen laufen noch: das Wasser steigt mit jeder Runde. Wer lange kämpft, steht bald bis zur Brust im Wasser.' : 'Die Pumpen stehen still. Das Wasser bleibt unten.'); } }
   for (const e of c0.enemies) for (const fx of data.enemies[e.kind].flagFx || []) if (state.flags[fx.flag]) { // 0.34.0: z. B. Alders Rat (spinne:schwaeche)
@@ -1656,10 +1662,13 @@ function finishVictory(state, data, msgs) {
   let gold = 0, xp = 0;
   for (const e of c.enemies) {
     if (e.fled) { const o = state.objs.find((q) => q.id === e.objId); if (o) { o.dead = true; o.hp = 0; } continue; } // Geflohene: keine Beute, keine EP
-    gold += data.enemies[e.kind].gold;
-    xp += data.enemies[e.kind].xp || 0;
+    const eli = e.elite && data.elites ? data.elites.list.find((x) => x.id === e.elite) : null, em = eli ? data.elites.rewardPct / 100 : 1; // 0.41.0: Elite zahlen mehr
+    gold += Math.round(data.enemies[e.kind].gold * em);
+    xp += Math.round((data.enemies[e.kind].xp || 0) * em);
+    if (eli) state.eliteKills = (state.eliteKills || 0) + 1;
     noteBestiary(state, e.kind, 'won');
     state.kills = state.kills || {}; state.kills[e.kind] = (state.kills[e.kind] || 0) + 1; // 0.40.0: Abschüsse für Steckbriefe
+    { const ms = masteryStep(state, data, e.kind); if (ms) { xp += ms.xp; msgs.push(ms.msg); } } // 0.41.0: Meisterschaft im Bestiarium
     const obj = state.objs.find((o) => o.id === e.objId);
     if (obj) { obj.dead = true; obj.hp = 0; }
   }
@@ -2279,6 +2288,48 @@ export function balanceMarkdown(data) {
     L.push('');
   }
   return L.join('\n');
+}
+
+// ---------- Elitegegner (0.41.0) ----------
+// data.elites = { chance (Prozent je Gegner), rewardPct (EP/Gold in Prozent), list: [{ id, name, desc, hpPct, atkPct, def, init, onHit }] }.
+// Auswahl deterministisch aus Objektkennung (kein state.rng): Weglaufen und Wiederkommen ändert nichts. Keine Bosse, keine Truhenmäuler.
+const strHash = (t) => { let h = 2166136261; for (let i = 0; i < t.length; i++) h = Math.imul(h ^ t.charCodeAt(i), 16777619); return h >>> 0; };
+function applyElites(state, data, en, obj) {
+  const cfg = data.elites;
+  if (!cfg || !cfg.list || !cfg.list.length) return;
+  en.forEach((e, i) => {
+    const d = data.enemies[e.kind];
+    if (d.boss || d.noElite) return;
+    const h = mix32(strHash(obj.id) + i * 7919 + (state.eliteSalt || 0));
+    if (h % 100 >= cfg.chance) return;
+    const el = cfg.list[(h >>> 8) % cfg.list.length];
+    e.elite = el.id; e.name = `★ ${e.name}`;
+    e.maxHp = Math.round((e.maxHp * el.hpPct) / 100); e.hp = Math.min(e.maxHp, Math.round((e.hp * el.hpPct) / 100));
+  });
+}
+// Meisterschaft: bei data.mastery.at[i] Siegen über eine Art (keine Bosse) einmalig EP = Art-EP × data.mastery.xpMult[i]
+export const masteryLevel = (state, data, kind) => { const n = (state.kills && state.kills[kind]) || 0; return (data.mastery ? data.mastery.at : []).filter((t) => n >= t).length; };
+function masteryStep(state, data, kind) { // nach dem Zählen aufrufen
+  const m = data.mastery, d = data.enemies[kind];
+  if (!m || d.boss) return null;
+  const n = state.kills[kind], i = m.at.indexOf(n);
+  if (i < 0) return null;
+  return { xp: Math.round((d.xp || 0) * m.xpMult[i]), msg: `Meisterschaft ${'I'.repeat(i + 1)} gegen ${d.name}: ${m.names[i]}! Bonus-EP.` };
+}
+// Erfolge: abgeleitet aus dem Spielstand (kein eigener Speicher)
+export function achievements(state, data) {
+  const areas = [state.objs, ...Object.values(state.areas || {}).map((a) => a.objs)];
+  const rooms = areas.reduce((n, os) => n + os.filter((o) => o.type === 'secret' && o.needs && o.open).length, 0);
+  const masters = Object.keys(data.enemies).filter((k) => masteryLevel(state, data, k) >= 1).length;
+  const maps = Object.entries(data.maps || {}).filter(([id, m]) => (state.inv[m.item] || 0) > 0 || (state.flags && state.flags['karte:' + id])).length;
+  const list = [
+    ['rooms', 'Schatzsucher', 'Extraräume geöffnet', rooms, [1, 5, 10]],
+    ['maps', 'Kartenzeichner', 'Schatzkarten gekauft', maps, [1, 5, 10]],
+    ['bounties', 'Gildenheld', 'Steckbriefe erledigt', (state.board && state.board.done.length) || 0, [1, 5, 12]],
+    ['elite', 'Eliteschlächter', 'Elitegegner besiegt', state.eliteKills || 0, [1, 5, 15]],
+    ['masters', 'Bestiarium-Meister', 'Arten mit Meisterschaft', masters, [1, 5, 12]]
+  ];
+  return list.map(([id, name, what, n, steps]) => ({ id, name, what, n, steps, tier: steps.filter((t) => n >= t).length, next: steps.find((t) => n < t) || null }));
 }
 
 // ---------- Schatzkarten (0.40.0) ----------

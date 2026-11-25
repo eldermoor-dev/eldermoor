@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.40.0 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.41.0 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
@@ -1399,6 +1399,21 @@ Nutzer (18:30, Screenshot Kampf gegen Gießmeister Harkon + Foto eines Gießers 
 - **Zimmer gegen Gold:** Wirtin-Dialog, Wahl `inn: true`. Preis `innCost` = `data.tavern.innBase` (15) + `innPerLevel` (5) × Durchschnittsstufe. Wirkung: LP und MP von Gruppe **und Reserve** voll, Bewusstlose stehen auf, verklemmte Truhenschlösser lösen sich; kein Proviant nötig; gesperrt bei zu wenig Gold oder wenn alle ausgeruht sind. Begründung des Preises (Assistent, delegiert): teurer als eigene Rast, dafür auch Reserve und Bewusstlose.
 - Tests 159 grün; Probebilder mit Raycaster-Rendering in Node (nicht auf Gerät). Keine Werteänderung bei Gegnern/Helden.
 - **Vorschläge für die Taverne (noch nicht gebaut):** (1) Aushangbrett mit Steckbriefen (siehe unten, Nutzerwunsch). (2) Schatzkarten beim Wirt (Nutzerwunsch). (3) Gerüchte gegen eine Runde Bier: ein Hinweis auf ein Rätsel im aktuellen Gebiet (gegen Gold, steht auf der Liste „Rätselhinweis gegen Gold“). (4) Gäste ansprechbar machen: je Akt 2–3 Stammgäste mit eigenen Sätzen und kleinen Folgen. (5) Würfelspiel am Tisch (Murmel-Spiel existiert, Gnom). (6) Verpflegung kaufen (Proviant, Eintopf = Zusatz-LP für den nächsten Kampf). (7) Taverne wächst mit: neue Gäste und Regale nach Ereignissen. (8) Eigener Sprite für Wirtin Marga (jetzt Händler-Sprite). (9) Musikalischer Barde: Gefährte-Talent D (Lehrer in der Taverne, zurückgestellt).
+
+## 0.41.0 (25.11.2026; headless, nicht auf Gerät getestet)
+- Nutzerwunsch: „Alle Vorschläge umsetzen“ plus bessere, schärfere, abwechslungsreichere, höher aufgelöste Grafik für das ganze Spiel. Das ist zu groß für eine Version; Reihenfolge (Entscheidung des Assistenten: erst Daten und Logik, Grafik gesondert, weil sie auf dem Gerät Leistung kostet und ich sie nicht messen kann):
+  | Version | Inhalt | Stand |
+  |---|---|---|
+  | 0.41.0 | Elitegegner, Bestiarium-Meisterschaft, Erfolge | gebaut |
+  | 0.42.0 | Gegnerrollen (Beschwörer, Fernkämpfer, Wechsler), gemischte Gruppen, Mini-Boss-Mechaniken | offen |
+  | 0.43.0 | Kampf: Umgebungseffekte, Wiederbeleben im Kampf, mehr Kombinationen, Fluchtchance/Ziel-Vorschau | offen |
+  | 0.44.0 | Siedlung: Schmied (Trophäen/Veredeln), Alchemistenküche, Steckbrief-Ketten, seltene Schatzkarten als Beute | offen |
+  | 0.45.0+ | Grafik (siehe unten), neue Ebenen mit eigener Mechanik, Elementarfackeln, Akt 3 | offen |
+- **Grafik (nicht gebaut):** Die Auflösung „Scharf“ (960×540, Einstellungen) gibt es seit früher. Mögliche Schritte, einzeln zu entscheiden und auf dem Gerät zu messen: Texturen 64→128 (`TEX`), feinere Sprites (zuerst Gegner und Helden), je Gebiet mehr Wandvarianten und Bodenmuster, Nebel/Licht weicher, optional 3× (1440×810, Leistung unsicher). Vorschlag: Gegner-Sprites zuerst, weil jeder Kampf sie zeigt.
+- **Elite:** `data.elites` = `{ chance 12, rewardPct 200, list: wuetend | zaeh | flink | giftig }`. `applyElites` in `startCombat` (deterministisch über Objektkennung, `state.eliteSalt` optional), `enemyOf` wendet Zuschläge an, `finishVictory` zahlt `rewardPct`, `state.eliteKills`. Gegnerfeld `noElite` (belegt: `truhenmaul`; Bosse sind über `boss` ausgenommen).
+- **Meisterschaft:** `data.mastery` = `{ at [10,25], xpMult [3,6], names }`, einmalig Bonus-EP bei genau der Siegzahl (`masteryStep`), Anzeige im Bestiarium. **Erfolge:** `achievements()` leitet fünf Erfolge je drei Stufen aus dem Stand ab (kein Speicherfeld), Menü → Erfolge.
+- SIM.md neu erzeugt (3000 Läufe), BALANCE.md unverändert. Tests 162 grün (Node), Fenster im Desktop-Chrome gesehen, nicht auf Gerät getestet.
+- Offene Gerätetests 0.41.0: Elitegegner begegnen (★, Startmeldung), Belohnung, Bestiarium „Meisterschaft“, Menü → Erfolge.
 
 ## 0.40.0 (25.11.2026; headless, nicht auf Gerät getestet)
 - Aufgabe aus „GEPLANT 0.40.0“ (Nutzerwunsch: Schatzkarten beim Wirt mit Extraräumen; wechselnde Steckbriefe, Belohnung Erfahrung). Die offenen Fragen hat der Assistent entschieden:

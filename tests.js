@@ -3072,6 +3072,30 @@ export async function runTests(data, env = {}) {
     const ts = L.newGame(data, 45); L.jumpToLevel(ts, data, 'taverne'); ts.player = { x: sign.x, y: sign.y, dir: sign.face }; const ri = L.interact(ts, data); assert(ri.board, 'Tafel öffnet das Aushangbrett');
     const rs = L.deserialize(JSON.parse(JSON.stringify(L.serialize(s))), data); eq(JSON.stringify(rs.board), JSON.stringify(s.board), 'Aushang übersteht Speichern'); eq(rs.kills.wolf, s.kills.wolf, 'Abschüsse überstehen Speichern');
   });
+  await test('0.41.0 Elitegegner, Meisterschaft, Erfolge', () => {
+    const E = data.elites; assert(E && E.chance > 0 && E.chance <= 25 && E.rewardPct >= 150 && E.list.length >= 4, 'Daten');
+    for (const el of E.list) assert(el.id && el.name && el.desc && el.hpPct >= 100, el.id + ': Felder');
+    // Auswahl: deterministisch, nie bei Bossen, Anteil etwa wie eingestellt
+    let n = 0, el = 0; const s0 = L.newGame(data, 41);
+    for (const id of Object.keys(data.levels)) for (const o of data.levels[id].objects) if (o.type === 'enemy' && !data.enemies[o.kind].boss) { n++; const c = L.startCombat(L.newGame(data, 41), data, { ...o, hp: data.enemies[o.kind].hp }); if (c.enemies[0].elite) el++; }
+    assert(el / n > 0.04 && el / n < 0.25, `Elite-Anteil ${el}/${n}`);
+    for (const id of Object.keys(data.levels)) for (const o of data.levels[id].objects) if (o.type === 'enemy' && data.enemies[o.kind].boss) { const c = L.startCombat(L.newGame(data, 41), data, { ...o, hp: data.enemies[o.kind].hp }); assert(!c.enemies.some((e) => e.elite && data.enemies[e.kind].boss), o.id + ': Boss nie Elite'); }
+    const pick = (() => { for (const id of Object.keys(data.levels)) for (const o of data.levels[id].objects) if (o.type === 'enemy' && !data.enemies[o.kind].boss) { const c = L.startCombat(L.newGame(data, 41), data, { ...o, hp: data.enemies[o.kind].hp }); if (c.enemies[0].elite) return o; } })();
+    const mk = () => L.startCombat(L.newGame(data, 41), data, { ...pick, hp: data.enemies[pick.kind].hp }).enemies[0];
+    const e1 = mk(), e2 = mk(); eq(e1.elite, e2.elite, 'deterministisch'); assert(/^★ /.test(e1.name) && e1.maxHp > data.enemies[pick.kind].hp, 'Name und LP');
+    const base = data.enemies[pick.kind], em = L.enemyOf(data, e1); const def = E.list.find((x) => x.id === e1.elite); eq(em.atk, Math.round(base.atk * (100 + (def.atkPct || 0)) / 100), 'Angriff'); eq(em.def, base.def + (def.def || 0), 'Verteidigung');
+    // Belohnung ×2 und Zähler
+    const s = L.newGame(data, 41); L.jumpToLevel(s, data, 'kultgruft'); s.heroes.forEach((h) => { h.maxHp = h.hp = 9999; });
+    const o = s.objs.find((q) => q.type === 'enemy' && !(data.enemies[q.kind].tactic && data.enemies[q.kind].tactic.flee) && !(q.kinds && q.kinds.length > 1));
+    L.startCombat(s, data, o); const ens = s.combat.enemies.map((e) => e.kind); s.combat.enemies.forEach((e) => { e.elite = null; }); s.combat.enemies[0].elite = E.list[0].id; const gold0 = s.gold;
+    assert(playOut(s) === 'victory', 'Sieg'); const exp = ens.reduce((a, k, i2) => a + Math.round(data.enemies[k].gold * (i2 === 0 ? E.rewardPct / 100 : 1)), 0); eq(s.gold - gold0, exp, 'Gold: Elite zahlt doppelt'); eq(s.eliteKills, 1, 'Elite-Zähler');
+    // Meisterschaft: Schwelle löst genau einmal aus
+    const m = data.mastery; assert(m.at.length === 2 && m.xpMult.length === 2 && m.names.length === 2, 'Meisterschaftsdaten');
+    const ms = L.newGame(data, 42); ms.kills = { wolf: 9 }; eq(L.masteryLevel(ms, data, 'wolf'), 0, 'Stufe 0'); ms.kills.wolf = 10; eq(L.masteryLevel(ms, data, 'wolf'), 1, 'Stufe I'); ms.kills.wolf = 25; eq(L.masteryLevel(ms, data, 'wolf'), 2, 'Stufe II');
+    // Erfolge
+    const a = L.achievements(ms, data); assert(a.length === 5 && a.every((x) => x.tier === 0 || x.id === 'masters'), 'Erfolge abgeleitet'); eq(a.find((x) => x.id === 'masters').tier, 1, 'Meister zählt');
+    ms.eliteKills = 5; eq(L.achievements(ms, data).find((x) => x.id === 'elite').tier, 2, 'Elite Stufe 2');
+  });
   const failed = results.filter((r) => !r.ok).length; // 0.23.0: erst am Ende zählen (vorher fehlten spätere Tests in der Summe)
   return { results, passed: results.length - failed, failed };
 }

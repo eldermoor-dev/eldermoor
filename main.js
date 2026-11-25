@@ -4,13 +4,13 @@ import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
   buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, pushError, formatErrorLog, itemDef, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, partyAvgLevel, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
-  activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogEnter, roomAt, floodLabel, dialogChoose, diceNew, diceRoll, diceKeep, diceNext, diceFinish, diceRoundLine, recruitHero, swapHero, dismissReserve, recruitCost, RESERVE_MAX, mapOffers, buyMap, boardView, boardTurnIn, boardDismiss
+  activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogEnter, roomAt, floodLabel, dialogChoose, diceNew, diceRoll, diceKeep, diceNext, diceFinish, diceRoundLine, recruitHero, swapHero, dismissReserve, recruitCost, RESERVE_MAX, mapOffers, buyMap, boardView, boardTurnIn, boardDismiss, achievements, masteryLevel
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
 import { Sfx } from './audio.js';
 import { store } from './store.js';
 
-const VERSION = '0.40.0';
+const VERSION = '0.41.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -1093,7 +1093,7 @@ function openMenu() {
     <button class="mb" data-m="export">Spielstand exportieren (Datei)</button>
     <button class="mb" data-m="import">Spielstand importieren (Datei)</button>
     <button class="mb" data-m="journal">Notizbuch (${S.game && S.game.journal ? S.game.journal.length : 0})</button>
-    <button class="mb" data-m="bestiary">Bestiarium</button>
+    <button class="mb" data-m="bestiary">Bestiarium</button><button class="mb" data-m="achv">Erfolge</button>
     <button class="mb" data-m="help">Steuerung &amp; Info</button>
     <button class="mb" data-m="title">Zum Titelbild</button>
     <button class="mb" data-m="quit">Spiel beenden</button>${S.settings.debug ? '<button class="mb" data-m="debug">Debug</button>' : ''}</div>`, 'menu');
@@ -1159,6 +1159,11 @@ function openShop(shopId, greet) {
   html += `<div class="acts">${closeBtn}</div>`;
   openModal(html, 'shop');
 }
+function openAchievements() { // 0.41.0: Erfolge, abgeleitet aus dem Spielstand
+  const g = S.game, list = achievements(g, S.data);
+  const rows = list.map((a) => `<div style="border:1px solid #5a4a30;border-radius:5px;padding:8px;margin:6px 0"><b>${esc(a.name)}</b> ${'★'.repeat(a.tier)}${'☆'.repeat(a.steps.length - a.tier)}<div class="muted">${esc(a.what)}: ${a.n}${a.next ? ` (nächste Stufe bei ${a.next})` : ' – alle Stufen erreicht'}</div></div>`).join('');
+  openModal(`<h2>Erfolge</h2><p class="muted">Sie ergeben sich aus dem Spielstand. Eine Belohnung gibt es nur in Ehren.</p>${rows}<div class="acts"><button class="mb" data-m="menu">Zurück</button></div>`, 'achv');
+}
 function openBestiary() {
   const g = S.game, d = S.data, b = g.bestiary || {};
   const ids = Object.keys(d.enemies), known = ids.filter((k) => b[k] && b[k].seen > 0);
@@ -1177,6 +1182,7 @@ function openBestiary() {
     const rs = Object.keys(r.resist || {}).map((el) => { const v = (e.resist || {})[el] || 0; return v >= 100 ? `immun gegen ${esc(d.elements[el].name)}` : `${v > 0 ? 'resistent gegen' : 'anfällig für'} ${esc(d.elements[el].name)} (${v > 0 ? '−' : '+'}${Math.abs(v)} % Schaden)`; });
     if (rs.length) L.push('Elemente: ' + rs.join(', '));
     if (e.phases) L.push(`Phasen erreicht: ${r.phase || 0} von ${e.phases.length}${(r.phase || 0) > 0 ? ' – ' + e.phases.slice(0, r.phase).map((p) => esc(p.name)).join(', ') : ''}`);
+    if (d.mastery && !e.boss) { const ml = masteryLevel(g, d, k), nx = d.mastery.at[ml]; L.push(`Meisterschaft: ${ml ? 'I'.repeat(ml) : '–'}${nx ? ` (nächste bei ${nx} Siegen, jetzt ${(g.kills && g.kills[k]) || 0})` : ' (höchste Stufe)'}`); }
     return `<div style="${BX}"><b>${esc(e.name)}${e.boss ? ' · Boss' : ''}</b>${L.map((t) => `<div class="muted">${t}</div>`).join('')}</div>`;
   }).join('');
   openModal(`<h2>Bestiarium</h2><p class="muted">Entdeckt: ${known.length} von ${ids.length}. Werte, Elemente und Besonderheiten werden im Kampf aufgedeckt.</p>${cards}<div class="acts"><button class="mb" data-m="menu">Zurück</button></div>`, 'bestiary');
@@ -1650,6 +1656,7 @@ async function onModalClick(e) {
   else if (m === 'settings') openSettings();
   else if (m === 'help') openHelp();
   else if (m === 'bestiary') openBestiary();
+  else if (m === 'achv') openAchievements();
   else if (m === 'journal') openJournal();
   else if (m === 'errlog') openErrorLog();
   else if (m === 'errcopy') copyErrorLog();

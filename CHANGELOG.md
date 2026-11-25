@@ -3,6 +3,11 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.41.0 (25.11.2026, headless)
+- Elitegegner: etwa 12 % der normalen Gegner (nie Bosse, nie Truhenmaul) sind Elite (★ vor dem Namen) mit einer Eigenschaft: wütend, zäh, flink oder giftig. Doppelte EP und Gold. Auswahl fest je Gegnerobjekt, Weglaufen ändert nichts.
+- Bestiarium: Meisterschaft je Gegnerart (10 und 25 Siege, einmalig Bonus-EP). Neu im Menü: Erfolge (Extraräume, Karten, Steckbriefe, Elite, Meisterschaft), je drei Stufen, abgeleitet aus dem Spielstand.
+- SIM.md neu erzeugt (Elite fließen in die Simulation ein).
+
 ## 0.40.0 (25.11.2026, headless)
 - Schatzkarten: Wirtin Marga verkauft je besuchtem Gebiet eine Karte (150–400 Gold, zehn Gebiete: Moorpfad bis Festung 6). Mit Karte zeigt die Gebietskarte ein rotes Kreuz an einer Wand; ◉ öffnet sie. Dahinter liegt ein Extraraum mit Truhe (bessere Ausrüstung, Tränke, Gold). Ohne Karte ist die Wand eine gewöhnliche Mauer.
 - Steckbriefe: Aushangbrett in der Taverne (Tafel an der Westwand und Wahl bei Marga). Drei Zettel gleichzeitig, 17 Aufträge (Gegner erlegen, Trophäe beschaffen, seltene Waffe/Rüstung abgeben). Belohnung: Erfahrung für alle wachen Helden, dazu etwas Gold. Neue Zettel nach etwa 60 Schritten; Abreißen möglich.

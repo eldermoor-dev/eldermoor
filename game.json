@@ -1672,7 +1672,8 @@
       },
       "immune": [
         "bleed"
-      ]
+      ],
+      "noElite": true
     },
     "brandmagier": {
       "name": "Brandmagier",
@@ -14059,5 +14060,61 @@
       "xp": 250,
       "gold": 50
     }
-  ]
+  ],
+  "elites": {
+    "chance": 12,
+    "rewardPct": 200,
+    "list": [
+      {
+        "id": "wuetend",
+        "name": "wütend",
+        "desc": "schlägt härter zu (+30 % Angriff), hält aber nur etwas mehr aus.",
+        "hpPct": 125,
+        "atkPct": 30
+      },
+      {
+        "id": "zaeh",
+        "name": "zäh",
+        "desc": "hat deutlich mehr Leben (+60 %) und eine dickere Haut.",
+        "hpPct": 160,
+        "atkPct": 0,
+        "def": 2
+      },
+      {
+        "id": "flink",
+        "name": "flink",
+        "desc": "handelt früher (+4 Initiative) und trifft öfter (+15 % Angriff).",
+        "hpPct": 115,
+        "atkPct": 15,
+        "init": 4
+      },
+      {
+        "id": "giftig",
+        "name": "giftig",
+        "desc": "vergiftet bei Treffern (35 %), wenn ihm das Gift nicht ohnehin fremd ist.",
+        "hpPct": 120,
+        "atkPct": 10,
+        "onHit": {
+          "status": "poison",
+          "chance": 35,
+          "turns": 3,
+          "power": 2
+        }
+      }
+    ]
+  },
+  "mastery": {
+    "at": [
+      10,
+      25
+    ],
+    "xpMult": [
+      3,
+      6
+    ],
+    "names": [
+      "Ihr kennt ihre Eigenheiten",
+      "Ihr schlagt sie im Schlaf"
+    ]
+  }
 }
