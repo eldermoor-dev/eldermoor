@@ -104,6 +104,15 @@ export class Sfx {
         this._tone({ t: 0.05, dur: 1.6, type: 'triangle', f: 62, fTo: 41, gain: 0.2 });
         this._noise({ dur: 1.2, type: 'lowpass', f: 300, fTo: 900, gain: 0.12 });
         break;
+      case 'slam': // 0.48.1: Tür fällt mit lautem Knall zu
+        this._noise({ dur: 0.35, type: 'lowpass', f: 1400, fTo: 120, gain: 0.9 });
+        this._tone({ dur: 0.45, f: 95, fTo: 32, gain: 0.7 });
+        this._noise({ t: 0.18, dur: 0.6, type: 'lowpass', f: 260, fTo: 80, gain: 0.25 });
+        break;
+      case 'thunder': // 0.48.1: Donner nach dem Blitz
+        this._noise({ dur: 1.6, type: 'lowpass', f: 380, fTo: 70, gain: 0.5 });
+        this._tone({ t: 0.05, dur: 1.4, type: 'triangle', f: 55, fTo: 30, gain: 0.22 });
+        break;
       case 'defeat': this._tone({ dur: 1.0, f: 120, fTo: 38, gain: 0.3 }); break;
       case 'ui': this._noise({ dur: 0.025, type: 'highpass', f: 2500, gain: 0.15 }); break;
       default: break;

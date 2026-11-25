@@ -9,6 +9,9 @@ Autor: eldermoor-dev · Stand: Version 0.47.16 (25.11.2026). Auf dem Galaxy S25 
 - Der Assistent sagt von sich aus, wann der beste Zeitpunkt für einen neuen Chat im Projekt ist (Kontingent knapp).
 
 ## GESTALTUNGSENTSCHEIDUNGEN (verbindlich; Nutzer, vollständig eingetragen 25.11.2026)
+
+- **Moorschrat-Raum (Nutzer 25.11.2026 22:23, verbindlich):** Der Schrat bleibt in dem Raum, in dem er vorher stand (Moorlichtung, Nordosten), Raum mit Tür davor. Beim Betreten Meldung, dass die Tür mit lautem Knall zufällt; dann werden die Wände blutrot. Der Schrat wirkt noch monströser, groß und unheimlich. Enger, bedrückender Raum, schwarze moosbedeckte Steine, Tropfen an der Wand, Blitze.
+- **Rast im Dungeon (Nutzer 25.11.2026 22:26, NICHT gebaut):** Nachtlager wirkt zu gemütlich. Dunkler, Fackel/Fackelschein, Schlafen auf Decken, rote Augen im Dunkel lassen Monster ahnen, kein gemütlicher Schlaf.
 - Rassen: Mensch, Elf, Zwerg, Ork, Gnom. Berufe: Krieger, Schurke, Kleriker, Magier, Waldläufer; Alchemist geplant (sechs Berufe, je drei Talentzweige). Maximalstufe 15.
 - Kein Permadeath: bewusstlos statt tot, Bewusstlose bekommen keine EP. Zwei Schwierigkeitsgrade (Normal, Schwer).
 - Drei Akte, ca. 13 Gebiete (Akt 1 Moor, Akt 2 Moorfestung mit 4–5 Kellerebenen, Akt 3 Schlussabschnitt). Neue Ebenen deutlich größer und in der Bauart verschieden. Besiegte Gegner kehren nur nach Ereignissen zurück (stärker).
@@ -1813,3 +1816,12 @@ Nächste: 0.47.4 (7–9), 0.47.5 (10–13 + BALANCE/SIM), 0.48.0 (14–17), spä
 - Geprüft (alle 82 geraden Anläufe auf Treppen/Ausgänge in allen Gebieten, `tryMove` vor): Wechsel löst jedes Mal sofort aus, 0 Fehlschläge. Der Fehler ist so NICHT nachgestellt.
 - Einziger gefundener Mechanismus (Vermutung): Treppenfeld quer/seitlich betreten (löst gewollt nichts aus), dann zur Treppenwand drehen und „Vor“ = nur Wand (Sonderfall seit 0.47.6 entfernt). Zweiter Anlauf (zurück, gerade hinein) funktioniert.
 - Fix-Idee, NICHT gebaut (würde bestätigte 0.47.6-Entscheidung berühren): auf dem Treppenfeld mit Blick in erlaubte Eintrittsrichtung „Vor“ = Wechsel. Erst nach Rückmeldung des Nutzers (steht er beim Drücken schon auf dem Feld mit dem Treppenbild?).
+
+## 0.48.1 (25.11.2026; headless, nicht auf Gerät getestet): Schrat-Kammer mit Tür, Knall, Blitze
+- Moorlichtung (game.json): Kammer x14–17, y1–3, Tür `door_kammer` (13,2, Look „stein“), Zugang über (12,4)→(12,3)→(12,2) nach Norden, dann Osten zur Tür. Schrat `en_schrat` bleibt verborgen (lurk) auf (16,2), Truhe auf (17,1), Fackelwand T auf (11,1). Moos mit Tropfen innen (`dk_kammer_moos1–4`).
+- `levels.moorlichtung.scene`: neu `spot` (fester Platz), `door` (fällt zu, `sealed`, bis zum Sieg), `room` (Zone x11–17, y1–3 für die Marke `kammer`). `alt` ist jetzt eine Liste (logic.js `levelFor` unterstützt Listen, spätere gewinnen): `kammer` → Palette `schwarzmoos` (schwarze Steine, dunkles Moos), `alp_licht` → Palette `alptraum` (jetzt blutrote Wände, Decke, Boden) + Blutspuren `dk_kammer_blut1–3`.
+- Ablauf: Tür öffnen (◉ oder dagegenlaufen), Schritt auf (14,2) löst aus: Knall (`slam`), Tür zu und versiegelt, Wände blutrot, Meldung, Kampf. Sieg: Palette zurück auf schwarzmoos, Tür offen.
+- Blitze (main.js `bolt`, index.html `#view.bolt`, audio.js `thunder`): nur solange die Marke `alp_licht` gesetzt ist (Kampf), alle ca. 3,5–9 s.
+- Schrat: Sprite mit größeren Augen und glühenden Brustrissen, Größe 1.4 (vorher 1.2). Headless betrachtet (Raum schwarz, Albtraum blutrot mit Schrat), nicht auf Gerät.
+- Tests: `node tests.js` 183 bestanden, 0 fehlgeschlagen. VERSION 0.48.1 in main.js und sw.js, keine neuen Dateien. Alte Stände: Tür, Truhe, Schrat-Platz werden per syncStatic nachgezogen (Vermutung: nicht mit altem Stand auf Gerät geprüft).
+- Offen: Gerätetest Kammer (Tür, Knall, Farben, Blitze, Schrat-Größe im engen Raum); Rast-Optik (siehe Entscheidung 22:26); Treppe „erst beim zweiten Mal“ (Rückfrage offen).

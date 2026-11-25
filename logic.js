@@ -30,9 +30,13 @@ export function randInt(state, a, b) {
 const altCache = new WeakMap();
 export function levelFor(data, id, flags) {
   const lvl = data.levels[id];
-  if (!lvl || !lvl.alt || !flags || !flags[lvl.alt.flag]) return lvl;
-  let m = altCache.get(lvl);
-  if (!m) { const rm = new Set(lvl.alt.remove || []); m = Object.assign({}, lvl, lvl.alt.patch || {}, { objects: lvl.objects.filter((o) => !rm.has(o.id)).concat(lvl.alt.objects || []) }); altCache.set(lvl, m); }
+  if (!lvl || !lvl.alt || !flags) return lvl;
+  const alts = (Array.isArray(lvl.alt) ? lvl.alt : [lvl.alt]).filter((a) => flags[a.flag]); // 0.48.1: auch mehrere Umbauten (Liste, spätere gewinnen)
+  if (!alts.length) return lvl;
+  const key = alts.map((a) => a.flag).join('|');
+  let c = altCache.get(lvl); if (!c) { c = new Map(); altCache.set(lvl, c); }
+  let m = c.get(key);
+  if (!m) { m = lvl; for (const a of alts) { const rm = new Set(a.remove || []); m = Object.assign({}, m, a.patch || {}, { objects: m.objects.filter((o) => !rm.has(o.id)).concat(a.objects || []) }); } c.set(key, m); }
   return m;
 }
 export function getLevel(data, state) { return levelFor(data, state.levelId, state.flags); }
@@ -511,14 +515,22 @@ export function tryMove(state, data, rel) {
   } else if (ex) res.events.push({ type: 'exitAgain', id: ex.id }); // 0.16.4: erneutes Betreten zeigt einen kurzen Hinweis
   const stairs = state.objs.find((o) => o.type === 'stairs' && o.x === nx && o.y === ny);
   if (stairs && rel === 'f' && passEntryDirs(lvl, stairs).includes(d)) { res.events.push({ type: 'stairs', id: stairs.id }); return res; } // 0.46.0: nur frontales Betreten löst den Gebietswechsel aus, seitliches Vorbeigehen nicht
+  roomMark(state, data);
   const scn = sceneCheck(state, data);
-  if (scn) { res.events.push({ type: 'scene', id: scn.id, title: scn.title, text: scn.text }); res.encounter = scn.enemy; res.ambush = false; return res; }
+  if (scn) { res.events.push({ type: 'scene', id: scn.id, title: scn.title, text: scn.text, slam: scn.slam }); res.encounter = scn.enemy; res.ambush = false; return res; }
   res.encounter = enemyInFront(state);
   if (!res.encounter) { const sp = spottedEnemy(state, data); if (sp) { res.encounter = sp.enemy; res.ambush = sp.ambush; } }
   if (!res.encounter) { const notes = [...scanTraps(state, data), ...scanSecrets(state, data), ...scanBuried(state, data), ...scanLuck(state, data)]; if (notes.length) res.notes = notes; }
   return res;
 }
 
+// 0.48.1: Marke `kammer` solange die Gruppe in/vor dem Raum der Szene steht (Palette „schwarzmoos“ über lvl.alt); erweiterte Zone = Szenenzone + 2 Felder davor
+function roomMark(state, data) {
+  const sc = getLevel(data, state).scene, p = state.player;
+  if (!sc || !sc.door || !sc.room) return;
+  const z = sc.room, on = p.x >= z.x1 && p.x <= z.x2 && p.y >= z.y1 && p.y <= z.y2;
+  if (!!state.flags.kammer !== on) state.flags.kammer = on;
+}
 // ---------- Auftritt in einem Gebiet (0.47.17) ----------
 // levels.<id>.scene = { id, enemy: <Objekt-ID>, zone: {x1,y1,x2,y2}, title, text, endMsg }; der Gegner trägt in game.json `lurk: true` (unsichtbar, nicht entdeckbar, versperrt nichts).
 // Betritt die Gruppe die Zone, erscheint er 2 (sonst 3, 1) Felder vor ihr (sonst seitlich/hinten), Marke state.flags[scene.id] = true (Gebietsumbau `alt` mit dieser Marke), dann beginnt der Kampf.
@@ -533,12 +545,14 @@ export function sceneCheck(state, data) {
   if (p.x < z.x1 || p.x > z.x2 || p.y < z.y1 || p.y > z.y2) return null;
   const clearLine = (d, k) => { for (let j = 1; j <= k; j++) { const x = p.x + SC_DIRS[d][0] * j, y = p.y + SC_DIRS[d][1] * j; if (cellChar(lvl, x, y) !== '.' || (j < k && blockerAt(state, x, y)) || (j === k && !freeFor(state, data, x, y))) return false; } return true; };
   let spot = null;
-  for (const d of [p.dir, (p.dir + 1) % 4, (p.dir + 3) % 4, (p.dir + 2) % 4]) { for (const k of [2, 3, 1]) if (clearLine(d, k)) { spot = { x: p.x + SC_DIRS[d][0] * k, y: p.y + SC_DIRS[d][1] * k }; break; } if (spot) break; }
+  if (sc.spot && freeFor(state, data, sc.spot.x, sc.spot.y)) spot = { x: sc.spot.x, y: sc.spot.y }; // 0.48.1: fester Platz im Raum (der Schrat bleibt, wo er war)
+  if (!spot) for (const d of [p.dir, (p.dir + 1) % 4, (p.dir + 3) % 4, (p.dir + 2) % 4]) { for (const k of [2, 3, 1]) if (clearLine(d, k)) { spot = { x: p.x + SC_DIRS[d][0] * k, y: p.y + SC_DIRS[d][1] * k }; break; } if (spot) break; }
   if (!spot) return null;
   en.x = spot.x; en.y = spot.y; en.lurk = false;
+  if (sc.door) { const dr = state.objs.find((o) => o.id === sc.door && o.type === 'door'); if (dr) { dr.open = false; dr.locked = true; dr.sealed = true; dr.bolt = null; } } // 0.48.1: Tür fällt zu und bleibt zu, bis der Albtraum endet
   state.flags[sc.id] = true;
   state.flags['intro:' + en.id] = true; // der Auftritt ersetzt die Boss-Ansage
-  return { type: 'scene', id: sc.id, title: sc.title, text: sc.text, enemy: en };
+  return { type: 'scene', id: sc.id, title: sc.title, text: sc.text, enemy: en, slam: !!sc.door };
 }
 
 // ---------- Druckplatten und bewegliche Steine (0.19.0) ----------
@@ -943,6 +957,7 @@ export function interact(state, data, target = null) { // target (0.26.2): Objek
       o.locked = false; o.open = true;
       return { msg: 'Ihr schiebt den schweren Riegel zurück. Die Tür bleibt nun offen – ein kurzer Weg zurück.', sfx: 'unlock', changed: true };
     }
+    if (o.sealed) return { msg: 'Die Tür sitzt fest. Kein Schloss, kein Griff – sie rührt sich nicht.', sfx: 'bump' }; // 0.48.1: zugefallen, bis der Albtraum endet
     if (o.locked) {
       if ((state.inv[o.key] || 0) > 0) {
         o.locked = false; o.open = true;
@@ -1891,7 +1906,7 @@ function finishVictory(state, data, msgs) {
     state.kills = state.kills || {}; state.kills[e.kind] = (state.kills[e.kind] || 0) + 1; // 0.40.0: Abschüsse für Steckbriefe
     { const ms = masteryStep(state, data, e.kind); if (ms) { xp += ms.xp; msgs.push(ms.msg); } } // 0.41.0: Meisterschaft im Bestiarium
     const obj = state.objs.find((o) => o.id === e.objId);
-    if (obj) { obj.dead = true; obj.hp = 0; const sc = getLevel(data, state).scene; if (sc && sc.enemy === obj.id && state.flags[sc.id]) { state.flags[sc.id] = false; if (sc.endMsg) msgs.push(sc.endMsg); } } // 0.47.17: Albtraum endet mit dem Sieg
+    if (obj) { obj.dead = true; obj.hp = 0; const sc = getLevel(data, state).scene; if (sc && sc.enemy === obj.id && state.flags[sc.id]) { state.flags[sc.id] = false; if (sc.door) { const dr = state.objs.find((o) => o.id === sc.door && o.type === 'door'); if (dr) { dr.locked = false; dr.sealed = false; dr.open = true; } } if (sc.endMsg) msgs.push(sc.endMsg); } } // 0.47.17: Albtraum endet mit dem Sieg
   }
   rollTrophies(state, data, c.enemies.filter((x) => !x.fled), msgs);
   const dg = diffPct(state, data, 'gold'), dx = diffPct(state, data, 'xp');

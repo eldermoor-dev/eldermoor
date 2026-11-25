@@ -11,7 +11,7 @@ import { Sfx } from './audio.js';
 import { startSleepScene } from './scene.js';
 import { store } from './store.js';
 
-const VERSION = '0.48.0';
+const VERSION = '0.48.1';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -441,7 +441,7 @@ async function onEvent(ev) {
     return;
   }
   if (ev.type === 'teleport') { S.held = []; S.queued = null; snapCam(); if (!ev.hidden) { say(ev.msg); toast(ev.msg, 3000); S.sfx.play('sting'); flash(); vib(40); } renderAll(); return; } // 0.23.0: versteckte Teleporter ohne Meldung – nur die Umgebung und der Kompass verraten es
-  if (ev.type === 'scene') { S.held = []; S.queued = null; syncLook(); flash(); S.sfx.play('sting'); vib([90, 50, 90]); say(ev.text); showEvent(ev.title, ev.text, 4600); renderAll(); return; } // 0.47.17: Auftritt (Albtraum)
+  if (ev.type === 'scene') { S.held = []; S.queued = null; syncLook(); flash(); if (ev.slam) { S.sfx.play('slam'); setTimeout(() => S.sfx.play('sting'), 450); } else S.sfx.play('sting'); vib(ev.slam ? [160, 40, 90, 50, 90] : [90, 50, 90]); say(ev.text); showEvent(ev.title, ev.text, 4600); renderAll(); return; } // 0.47.17: Auftritt (Albtraum)
   if (ev.type === 'illusion') { say(ev.msg); toast(ev.msg, 4000); S.sfx.play('sting'); vib(30); renderAll(); return; } // 0.22.0: Illusionswand durchschritten
   if (ev.type === 'mech') { // Stein geschoben / Druckplatte
     S.held = []; S.nextAllowed = performance.now() + 350;
@@ -750,6 +750,16 @@ function nearestTurns(prev, dir) { const base = Math.round(prev / 4) * 4; let be
 // 0.47.13: Lesefeld mit echter Schrift für Schild/Türtitel in Blickrichtung (unabhängig von Rasterauflösung und Blickwinkel)
 function updateReadHint() { const el = $('#readhint'); if (!el || !S.game) return; const r = S.game.combat || (S.settings && S.settings.readHint === false) ? null : readHint(S.game, S.data); if (!r) { if (!el.hidden) el.hidden = true; return; } if (el.textContent !== r.text) el.textContent = r.text; if (el.hidden) el.hidden = false; }
 function syncLook() { const l = getLevel(S.data, S.game); if (l !== S.lvl) { S.lvl = l; S.rc.setPalette(S.data.palettes[l.palette]); } } // 0.47.17: Gebietsumbau (Albtraum-Palette) folgt der Marke im Spielstand
+// 0.48.1: Blitze im Albtraum (solange die Marke der Szene gesetzt ist): helles Aufflackern, kurz darauf Donner
+let boltAt = 0;
+function bolt() { const v = $('#view'); v.classList.remove('bolt'); void v.offsetWidth; v.classList.add('bolt'); setTimeout(() => { if (S.sfx) S.sfx.play('thunder'); }, 250 + Math.random() * 500); }
+setInterval(() => {
+  const g = S.game, sc = g && S.data && getLevel(S.data, g).scene;
+  if (!S.started || !g || !sc || !sc.door || !g.flags[sc.id]) { boltAt = 0; return; }
+  const now = performance.now();
+  if (!boltAt) boltAt = now + 1500 + Math.random() * 2500;
+  if (now >= boltAt) { bolt(); boltAt = now + 3500 + Math.random() * 5500; }
+}, 400);
 function renderAll() { syncLook(); updateReadHint(); renderCompass(); announceTurn(); renderParty(); renderCombat(); renderLog(); updateInvBadge(); updateTalBadge(); }
 // 0.22.1: Punkt am Inventar-Knopf, solange etwas Neues drin ist
 function updateInvBadge() { const b = document.querySelector('[data-a="inv"]'); if (b && S.game) b.classList.toggle('hasnew', Object.keys(S.game.inv).some((k) => isNew(S.game, k))); }

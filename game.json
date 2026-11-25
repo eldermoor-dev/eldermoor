@@ -3121,44 +3121,86 @@
     },
     "alptraum": {
       "stone": [
-        92,
-        66,
-        84
+        150,
+        22,
+        28
       ],
       "moss": [
-        100,
-        104,
-        44
+        96,
+        112,
+        40
       ],
       "wood": [
-        92,
-        52,
-        50
+        110,
+        40,
+        36
       ],
       "iron": [
-        104,
-        90,
-        116
+        120,
+        70,
+        80
       ],
       "floor": [
-        66,
-        42,
-        54
+        78,
+        26,
+        30
       ],
       "ceil": [
-        130,
-        34,
-        48
+        104,
+        10,
+        18
       ],
       "flesh": [
         150,
-        96,
+        110,
         70
       ],
       "glow": [
         255,
-        96,
-        70
+        70,
+        50
+      ]
+    },
+    "schwarzmoos": {
+      "stone": [
+        40,
+        40,
+        48
+      ],
+      "moss": [
+        40,
+        74,
+        36
+      ],
+      "wood": [
+        70,
+        46,
+        34
+      ],
+      "iron": [
+        70,
+        74,
+        86
+      ],
+      "floor": [
+        28,
+        26,
+        32
+      ],
+      "ceil": [
+        16,
+        14,
+        20
+      ],
+      "flesh": [
+        110,
+        130,
+        90
+      ],
+      "glow": [
+        200,
+        170,
+        110
       ]
     }
   },
@@ -11819,10 +11861,10 @@
       "palette": "moor",
       "map": [
         "###################",
-        "#m~~~.mm...m..T..m#",
+        "#m~~~.mm...T.m....#",
         "#~~~~.....mm......#",
-        "#~~~~......m......#",
-        "#......~~~.mmm.mmm#",
+        "#~~~~......m.m....#",
+        "#......~~~.m.mmmmm#",
         "#......~~~........#",
         "#..m..............#",
         "#...............~~#",
@@ -11881,7 +11923,7 @@
         {
           "id": "en_schrat",
           "type": "enemy",
-          "x": 14,
+          "x": 16,
           "y": 2,
           "kind": "schrat",
           "lurk": true
@@ -11889,8 +11931,8 @@
         {
           "id": "chest_licht",
           "type": "chest",
-          "x": 16,
-          "y": 2,
+          "x": 17,
+          "y": 1,
           "loot": [
             {
               "gold": 12
@@ -11965,27 +12007,126 @@
           "deco": "kratzer",
           "text": "Drei tiefe Kratzer im Stein, nebeneinander. Krallen.",
           "style": "dark"
+        },
+        {
+          "id": "door_kammer",
+          "type": "door",
+          "x": 13,
+          "y": 2,
+          "locked": false,
+          "look": "stein"
+        },
+        {
+          "id": "dk_kammer_moos1",
+          "type": "sign",
+          "x": 15,
+          "y": 1,
+          "face": 0,
+          "deco": "moos",
+          "text": "Schwarzes Moos, nass und kalt.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_kammer_moos2",
+          "type": "sign",
+          "x": 17,
+          "y": 3,
+          "face": 2,
+          "deco": "moos",
+          "text": "Schwarzes Moos, nass und kalt.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_kammer_moos3",
+          "type": "sign",
+          "x": 14,
+          "y": 3,
+          "face": 2,
+          "deco": "moos",
+          "text": "Schwarzes Moos, nass und kalt.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_kammer_moos4",
+          "type": "sign",
+          "x": 17,
+          "y": 2,
+          "face": 1,
+          "deco": "moos",
+          "text": "Schwarzes Moos, nass und kalt.",
+          "style": "dark"
         }
       ],
       "scene": {
         "id": "alp_licht",
         "enemy": "en_schrat",
         "zone": {
-          "x1": 4,
+          "x1": 14,
           "y1": 1,
-          "x2": 16,
-          "y2": 9
+          "x2": 17,
+          "y2": 3
         },
-        "title": "Alptraum",
-        "text": "Der Himmel blutet, das Moor atmet aus. Aus dem Nebel steigt der Moorschrat.",
-        "endMsg": "Der Alptraum zerfällt. Über der Lichtung liegt wieder bleiches Moorlicht."
-      },
-      "alt": {
-        "flag": "alp_licht",
-        "patch": {
-          "palette": "alptraum"
+        "spot": {
+          "x": 16,
+          "y": 2
+        },
+        "door": "door_kammer",
+        "title": "Die Tür fällt zu",
+        "text": "Die Tür fällt mit einem lauten Knall zu. Die Wände laufen blutrot an, aus dem Dunkel hebt sich der Moorschrat.",
+        "endMsg": "Der Albtraum zerfällt. Die Wände werden wieder schwarz, die Tür schwingt auf.",
+        "room": {
+          "x1": 11,
+          "y1": 1,
+          "x2": 17,
+          "y2": 3
         }
       },
+      "alt": [
+        {
+          "flag": "kammer",
+          "patch": {
+            "palette": "schwarzmoos"
+          }
+        },
+        {
+          "flag": "alp_licht",
+          "patch": {
+            "palette": "alptraum"
+          },
+          "objects": [
+            {
+              "id": "dk_kammer_blut1",
+              "type": "sign",
+              "x": 16,
+              "y": 1,
+              "face": 0,
+              "deco": "blut",
+              "text": "Dunkle Spritzer. Frisch.",
+              "style": "dark"
+            },
+            {
+              "id": "dk_kammer_blut2",
+              "type": "sign",
+              "x": 15,
+              "y": 3,
+              "face": 2,
+              "deco": "blut",
+              "text": "Dunkle Spritzer. Frisch.",
+              "style": "dark"
+            },
+            {
+              "id": "dk_kammer_blut3",
+              "type": "sign",
+              "x": 17,
+              "y": 2,
+              "face": 1,
+              "deco": "blut",
+              "text": "Dunkle Spritzer. Frisch.",
+              "style": "dark"
+            }
+          ]
+        }
+      ],
       "foe": {
         "hp": 112,
         "atk": 107

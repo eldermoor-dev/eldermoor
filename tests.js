@@ -1319,7 +1319,7 @@ export async function runTests(data, env = {}) {
   await test('Gebiete (Phase 3): Treppen-Daten, Gegenstück, Zielfeld begehbar, Objekt-IDs über alle Gebiete eindeutig', () => {
     const ids = new Set();
     let n = 0;
-    const allObjs = (l) => [...l.objects, ...((l.alt && l.alt.objects) || [])]; // 0.47.9: auch nachträglich eingebaute Objekte (Taverne)
+    const allObjs = (l) => [...l.objects, ...[].concat(l.alt || []).flatMap((a) => a.objects || [])]; // 0.47.9: auch nachträglich eingebaute Objekte (Taverne)
     for (const [lid, lvl] of Object.entries(data.levels)) for (const o of allObjs(lvl)) {
       assert(!ids.has(o.id), `Objekt-ID ${o.id} kommt in mehreren Gebieten vor (Flags sind global)`); ids.add(o.id);
       if (o.type !== 'stairs') continue;
@@ -2983,7 +2983,7 @@ export async function runTests(data, env = {}) {
   });
   await test('0.47.17 Moorschrat-Auftritt: verborgen, erscheint beim Betreten der Lichtung 1–3 Felder vor der Gruppe, Albtraum-Palette, endet nach dem Sieg', () => {
     assert(data.palettes.alptraum && Object.keys(data.palettes.alptraum).length === Object.keys(data.palettes.moor).length, 'Palette alptraum wie moor');
-    const lv0 = data.levels.moorlichtung, sc = lv0.scene; assert(sc && lv0.alt && lv0.alt.flag === sc.id && lv0.alt.patch.palette === 'alptraum', 'scene/alt in game.json');
+    const lv0 = data.levels.moorlichtung, sc = lv0.scene; const alts = [].concat(lv0.alt || []); assert(sc && sc.door && sc.spot && alts.some((a) => a.flag === sc.id && a.patch.palette === 'alptraum') && alts.some((a) => a.flag === 'kammer' && a.patch.palette === 'schwarzmoos') && data.palettes.schwarzmoos, 'scene/alt in game.json (0.48.1: Kammer mit Tür)');
     const base = () => { const s = L.newGame(data, 91); L.jumpToLevel(s, data, 'moorlichtung'); return s; };
     { // verborgen: kein Gegner sichtbar, nicht entdeckbar, versperrt nichts, keine Rast-Sperre
       const s = base(), en = s.objs.find((o) => o.id === 'en_schrat'); assert(en && en.lurk === true && !en.dead, 'Schrat verborgen');
@@ -2992,27 +2992,31 @@ export async function runTests(data, env = {}) {
       assert(L.getLevel(data, s).palette === 'moor', 'Palette vorher moor');
     }
     let n = 0;
-    for (let y = sc.zone.y1; y <= sc.zone.y2; y++) for (let x = sc.zone.x1; x <= sc.zone.x2; x++) for (let d = 0; d < 4; d++) { // jede Zonenzelle, jede Blickrichtung
-      const s = base(), lv = L.getLevel(data, s); if (L.cellChar(lv, x, y) !== '.' || s.objs.some((o) => o.x === x && o.y === y && o.type !== 'sign')) continue;
+    for (let y = sc.zone.y1; y <= sc.zone.y2; y++) for (let x = sc.zone.x1; x <= sc.zone.x2; x++) for (let d = 0; d < 4; d++) { // jede Zonenzelle, jede Blickrichtung: Schrat steht immer auf seinem Platz, Tür fällt zu
+      const s = base(), lv = L.getLevel(data, s); if (L.cellChar(lv, x, y) !== '.' || s.objs.some((o) => o.x === x && o.y === y && o.type !== 'sign') || (x === sc.spot.x && y === sc.spot.y)) continue;
       s.player = { x, y, dir: d }; const ev = L.sceneCheck(s, data); n++;
-      assert(ev && ev.type === 'scene' && ev.title && ev.text, `Auftritt bei ${x},${y} dir ${d}`);
-      const en = ev.enemy, dist = Math.abs(en.x - x) + Math.abs(en.y - y); assert(dist >= 1 && dist <= 3 && (en.x === x || en.y === y), `Abstand ${dist} bei ${x},${y}`);
+      assert(ev && ev.type === 'scene' && ev.title && ev.text && ev.slam, `Auftritt bei ${x},${y} dir ${d}`);
+      const en = ev.enemy; assert(en.x === sc.spot.x && en.y === sc.spot.y, 'Schrat bleibt auf seinem Platz');
+      const dr = s.objs.find((o) => o.id === sc.door); assert(dr && !dr.open && dr.locked && dr.sealed, 'Tür zu und versiegelt');
       assert(!en.lurk && s.flags[sc.id] === true && L.getLevel(data, s).palette === 'alptraum', 'sichtbar, Marke, Palette');
-      assert(L.cellChar(lv, en.x, en.y) === '.' && !s.objs.some((o) => o !== en && o.x === en.x && o.y === en.y && ['stairs', 'chest', 'exit'].includes(o.type)), 'Erscheinungsfeld frei');
       assert(!L.sceneCheck(s, data), 'nur einmal');
     }
-    assert(n > 60, 'Zonenzellen geprüft: ' + n);
-    { // über tryMove von Westen: Auftritt + Kampf (ohne Hinterhalt), Sieg beendet den Albtraum
-      const s = base(); s.player = { x: 2, y: 7, dir: 1 }; let r = null;
-      for (let i = 0; i < 6 && !(r && r.encounter); i++) r = L.tryMove(s, data, 'f');
-      assert(r && r.encounter && r.encounter.id === 'en_schrat' && r.ambush === false && r.events.some((e) => e.type === 'scene'), 'tryMove löst Auftritt aus');
+    assert(n >= 8, 'Zonenzellen geprüft: ' + n);
+    { // Weg: durch die Tür in den Raum, Palette schwarzmoos vor dem Knall, dann Auftritt + Kampf, Sieg öffnet die Tür wieder
+      const s = base(); s.player = { x: 12, y: 3, dir: 0 }; L.tryMove(s, data, 'f'); L.turn(s, data, 1);
+      assert(L.getLevel(data, s).palette === 'schwarzmoos', 'Palette vor dem Raum schwarzmoos');
+      const dr = s.objs.find((o) => o.id === sc.door); const b0 = L.tryMove(s, data, 'f'); assert(!b0.moved && b0.blocker === dr, 'Tür ist zu');
+      L.interact(s, data); assert(dr.open, 'Tür lässt sich öffnen');
+      let r = L.tryMove(s, data, 'f'); assert(r.moved && !r.encounter, 'Türfeld ohne Auftritt'); r = L.tryMove(s, data, 'f');
+      assert(r && r.encounter && r.encounter.id === 'en_schrat' && r.ambush === false && r.events.some((e) => e.type === 'scene' && e.slam), 'tryMove löst Auftritt aus');
+      assert(!dr.open && dr.locked && L.interact(s, data).msg !== undefined, 'Tür zugefallen');
       assert(s.flags['intro:en_schrat'] === true, 'Boss-Ansage ersetzt');
       L.startCombat(s, data, r.encounter, { ambush: false }); assert(playOut(s) === 'victory', 'Sieg');
-      assert(s.flags[sc.id] === false && L.getLevel(data, s).palette === 'moor', 'Albtraum endet');
+      assert(s.flags[sc.id] === false && !dr.locked && dr.open && L.getLevel(data, s).palette === 'schwarzmoos', 'Albtraum endet, Tür offen');
     }
     { // alter Stand: lebender, sichtbarer Schrat wird verborgen; toter bleibt tot; ausgelöster Auftritt wird nicht erneut verborgen
       const s = base(), en = s.objs.find((o) => o.id === 'en_schrat'); delete en.lurk; en.x = 9; en.y = 9;
-      L.syncStatic(s, data); assert(en.lurk === true && en.x === 14 && en.y === 2, 'alter Stand: verborgen');
+      L.syncStatic(s, data); assert(en.lurk === true && en.x === 16 && en.y === 2, 'alter Stand: verborgen');
       const t = base(), e2 = t.objs.find((o) => o.id === 'en_schrat'); delete e2.lurk; e2.dead = true; L.syncStatic(t, data); assert(!e2.lurk, 'toter bleibt');
     }
   });
