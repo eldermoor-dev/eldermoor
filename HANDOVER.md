@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.47.1 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.47.2 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1624,3 +1624,5 @@ Vorgehen je Punkt: erst nachstellen (Regel 8), Ursache belegen, dann bauen. Nich
 | 0.48.0 | Hintergrundgeräusche überarbeiten (Fiepen, Tropfen schlecht; Erzkäfer gut lassen) | audio.js |
 | später | Zauber „Tote erwecken“ sehr spät im Spiel | Kleriker, hohe Stufe |
 **Unklar (Rückfrage nötig):** „Moorschrat im Testlevel noch zu früh; taucht erst im zweiten Level richtigerweise auf; im Raum nur der Runenstein“ – widersprüchlich lesbar: (a) Schrat in der Moorlichtung (2. Gebiet) ist noch zu früh/zu stark im Spielverlauf, oder (b) im Testgewölbe steht er noch (laut Code nicht, geprüft: kein Schrat in `test1`).
+
+## 0.47.2 (25.11.2026; headless): Taverne-Ankunft (moorrand `stairs_taverne` → taverne 7,6 dir 0). Ursache nicht auf Gerät nachgestellt; Vermutung: Ankunft bei (5,3) blickte auf Tresen, Stuhl (5,4) direkt dahinter. Backlog-Nummerierung oben verschiebt sich: Rest = 0.47.3ff.

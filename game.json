@@ -3353,8 +3353,8 @@
           "msg": "Du betrittst die Taverne „Zum goldenen Eber“.",
           "to": {
             "level": "taverne",
-            "x": 5,
-            "y": 3,
+            "x": 7,
+            "y": 6,
             "dir": 0
           },
           "look": "tuer"

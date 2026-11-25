@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.47.2 (25.11.2026, headless, nicht auf Gerät getestet)
+- Taverne: Ankunft von der Siedlung jetzt bei (7,6) mit Blick durch den freien Mittelgang zur Wirtin (vorher (5,3) mit Blick auf Tresen/Stühle).
+
 ## 0.47.1 (25.11.2026, headless, nicht auf Gerät getestet)
 - Kampf: Der ≡-Knopf in der Mitte ist entfernt (mehr Bild). Das Kampfprotokoll steht jetzt im Menü („Kampfprotokoll“).
 
