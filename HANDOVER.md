@@ -8,10 +8,18 @@ Autor: eldermoor-dev · Stand: Version 0.47.13 (25.11.2026). Auf dem Galaxy S25 
 - Antworten telegraphisch, deutsch, Tabellen, direkte Empfehlung; keine Codeblöcke im Chat ohne Aufforderung.
 - Der Assistent sagt von sich aus, wann der beste Zeitpunkt für einen neuen Chat im Projekt ist (Kontingent knapp).
 
-## GESTALTUNGSENTSCHEIDUNGEN (verbindlich; Nutzer, eingetragen 25.11.2026)
+## GESTALTUNGSENTSCHEIDUNGEN (verbindlich; Nutzer, vollständig eingetragen 25.11.2026)
 - Rassen: Mensch, Elf, Zwerg, Ork, Gnom. Berufe: Krieger, Schurke, Kleriker, Magier, Waldläufer; Alchemist geplant (sechs Berufe, je drei Talentzweige). Maximalstufe 15.
 - Kein Permadeath: bewusstlos statt tot, Bewusstlose bekommen keine EP. Zwei Schwierigkeitsgrade (Normal, Schwer).
-- LÜCKE: Die Eingabe des Nutzers brach bei „Drei Akte, ca. 13 Gebiete (Akt“ ab. Der Rest (Akte/Gebiete und alle weiteren Punkte) fehlt hier und wird nicht aus dem Gedächtnis ergänzt; der Nutzer liefert ihn nach. Ältere Einzelentscheidungen stehen weiter unter „Entscheidungen des Nutzers für Phase 2“, „Designentscheidungen 13.11.2026“ und „Plan ab 0.16“.
+- Drei Akte, ca. 13 Gebiete (Akt 1 Moor, Akt 2 Moorfestung mit 4–5 Kellerebenen, Akt 3 Schlussabschnitt). Neue Ebenen deutlich größer und in der Bauart verschieden. Besiegte Gegner kehren nur nach Ereignissen zurück (stärker).
+- Siedlung wächst mit (Schmied, Taverne, Alchemistenküche); bis zu vier Reservehelden in der Taverne; Heldentausch in der Siedlung; Aushangbrett mit wenigen guten Nebenaufgaben.
+- Kampf: nur große Gegnerzauber werden angekündigt; Kombinationsangriffe automatisch; Platztausch kostet den Zug; Gegenstände im Kampf nur für den aktiven Helden (Ausnahme Alchemist: Tränke an andere).
+- Rätsel/Welt: Geheimtüren mit feinem Riss plus Hinweis; falscher Schatzraum (Truhe ist Monster); vier Statuen; verfluchte Waffe (kostet LP je Angriff); sechs Siegel über alle Gebiete; Elementarfackeln; Dialoge mit spürbaren Folgen; Fallen (Hinweise an Boden, Wand, Schild oder durch Charaktere; Helden mit Talent erkennen sie eher); Abkürzungen über Runensteine und rückseitig entriegelbare Türen; Rätselhinweis gegen Gold.
+- Ringe/Amulette extrem selten (nur Boss/schwere Rätsel), je Held 1 Ring + 1 Amulett. Neue NPCs optisch klar voneinander und von der Händlerin Hedda unterscheiden.
+- Steuerung nur Touch, Vollbild; Controller nur als zuschaltbare Option. Schrittgeräusche standardmäßig aus.
+- Rastregel: keine Rast, wenn ein lebender Gegner mit Sichtlinie innerhalb von 10 Pfadzellen ist.
+- NICHT weiterverfolgen: neuer Titel/zwölf neue Ebenen, drehbare Räume, Wassersteuerung, echte APK.
+- Audioaufnahmen des Nutzers nie verwenden.
 
 ## Statuslegende
 - **getestet (Node)**: durch `node tests.js` bzw. Selbsttest im Spiel geprüft
