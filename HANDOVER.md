@@ -1893,3 +1893,11 @@ Auftrag aus den Vorschlägen vom 25.11.: **A** Lehrpfad ohne Belehrung, **C** Ge
 ## 0.49.8 (25.11.2026; Bild headless gerendert, nicht auf Gerät getestet): Siedlung Licht und Wandschmuck
 - Nutzer 23:04 „Weiter“; Vorschlag aus dem Chat (Licht, Wandschmuck) umgesetzt, Gestaltung vom Assistenten (delegiert). Daten (game.json `moorrand`): Karte Zeile 0 `####T###T#T#` (Fackel bei x=10 neben Hedda), Wandschilder `w_m_banner1` (2/1, „MARKT|AM MOOR“) und `w_m_banner2` (7/1, „HEDDAS|WAREN“), Stil banner, face 0. Schildtext zu Heddas Sortiment mit game.json geprüft (Tränke, Ration, Ausrüstung). Tests 183 grün. Banner sind Schilder (`text` Pflicht), daher mit Titel statt Symbol.
 - Offen: Schrat im Kampfbild (Screenshot nötig, Befund bei 0.49.6), Plan 0.50.0 Testgewölbe (neuer Chat), Siedlung wächst (Schmied, Aushangbrett, Alchemistenküche).
+
+## 0.49.9 (25.11.2026; nicht auf Gerät getestet): Schrat im Kampfbild größer
+- Nutzer 23:10 (zwei Screenshots, Kampf und Auftrittsbild): „Unterschied bleibt. Im Kampf größer machen.“ Zustimmung zum Eingriff gegeben.
+- Befund korrigiert (belegt am Screenshot und Code): Die Annahme „Untergrenze 0,5 bindet bei Abstand 1“ war unvollständig. Der Schrat steht im Kampf etwa zwei Felder entfernt (Figurhöhe im Screenshot rund 197 von 540 Bildpunkten; Rechnung mit Brennweite 600 ergibt Abstand etwa 2,3, Vermutung wegen Rundung). `viewTarget` rechnete fest mit Abstand 1: Einpassung zu klein, Fußpunkt zu hoch (leerer Boden unter der Figur).
+- Geändert (main.js `viewTarget`): Abstand des nächsten lebenden Gegners entlang der Blickrichtung (min. 1, max. 4) statt fester 1. Rechnung für Abstand 2: Einpassung etwa 0,8, Figurhöhe etwa 358 statt 197 Bildpunkte, Kopf bleibt im Bild (Entscheidung 0.17.0 unberührt, kein Anschneiden nötig). Bei Abstand 1 identisch zu vorher. Betrifft alle Kämpfe mit Gegnern in Abstand über 1. Messung am Gerät offen.
+- Tests 183 grün, VERSION 0.49.9 in main.js und sw.js. Kein Headless-Bild gerendert (nur Rechnung).
+- Rückfall: Commit a644af7 (0.49.8). Tag-Push liefert 403, nicht umgangen.
+

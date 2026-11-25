@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.49.9 (25.11.2026, technisch geprüft, nicht auf Gerät getestet)
+- Kampfbild: Einpassung und Fußpunkt (main.js `viewTarget`) rechnen mit dem echten Abstand des nächsten lebenden Gegners (mindestens 1, höchstens 4) statt fest mit 1. Der Schrat steht zwei Felder entfernt; er wurde doppelt verkleinert. Bei Abstand 1 unverändert. Werte unverändert.
+
 ## 0.49.8 (25.11.2026, headless, nicht auf Gerät getestet)
 - Siedlung: eine dritte Wandfackel (rechts von Hedda), zwei Wandbanner „MARKT AM MOOR“ und „HEDDAS WAREN“ an der Rückwand. Werte unverändert.
 

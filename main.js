@@ -11,7 +11,7 @@ import { Sfx } from './audio.js';
 import { startSleepScene } from './scene.js';
 import { store } from './store.js';
 
-const VERSION = '0.49.8';
+const VERSION = '0.49.9';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -221,7 +221,15 @@ function viewTarget(now) {
   if (!g || !S.started) return { back: 0, hz: 0.5 };
   const c = g.combat;
   if (c && !c.over) {
-    const hud = hudTopPx(now), tY = 1 + VIEW_BACK, floor = 0.5 * f / tY;
+    // 0.49.9 (Nutzer: Schrat im Kampf „zu klein“, Screenshot): Die Einpassung rechnete mit Abstand 1, der Schrat steht aber zwei Felder entfernt. Folge: Figur doppelt verkleinert (Untergrenze 0,5 griff) und Fußpunkt zu hoch. Jetzt zählt der echte Abstand des nächsten lebenden Gegners entlang der Blickrichtung (mindestens 1, dort unverändert).
+    const pl = g.player, dv = [[0, -1], [1, 0], [0, 1], [-1, 0]][pl.dir];
+    let near = Infinity;
+    for (const e of c.enemies) {
+      if (e.hp <= 0) continue;
+      const eo = g.objs.find((o) => o.id === e.objId && o.type === 'enemy');
+      if (eo) near = Math.min(near, (eo.x - pl.x) * dv[0] + (eo.y - pl.y) * dv[1]);
+    }
+    const hud = hudTopPx(now), tY = Math.max(1, Number.isFinite(near) ? Math.min(4, near) : 1) + VIEW_BACK, floor = 0.5 * f / tY;
     // 0.17.0: auch Bosse werden ganz ins Bild gesetzt (Kopf war oben abgeschnitten); sie bleiben dank Skalierung 1,0–1,2 trotzdem die größten Figuren
     const groups = {};
     c.enemies.forEach((e) => { if (e.hp > 0) (groups[e.objId] = groups[e.objId] || []).push(e.kind); });
