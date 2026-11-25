@@ -1118,6 +1118,7 @@ function genDeco(kind, seed, full = true) {
   }
   return { w: N, h: N, data: buf, noWrap: true };
 }
+const DEST_TITLES = { test1: 'GEWÖLBE', test2: 'UNTERE|GRUFT', moorlichtung: 'MOOR-|LICHTUNG', moorrand: 'MOOR-|RAND', moorpfad: 'MOOR-|PFAD', moorsee: 'MOOR-|SEE', kultgruft: 'KULT-|GRUFT', schratgruben: 'SCHRAT-|GRUBEN', nebelturm: 'NEBEL-|TURM', festung1: 'VORBURG', festung2: 'KELLER', festung3: 'BLUT-|GRUFT', festung4: 'SPINNEN-|HÖHLE', festung5: 'GIESS-|EREI', festung6: 'ZISTERNE', taverne: 'TAVERNE' }; // 0.49.2: Kurznamen der Treppenziele (höchstens 2 Zeilen à 8 Zeichen)
 export function buildDecals(lvl, objs, tex) {
   const w = lvl.map[0].length, h = lvl.map.length, out = new Map();
   const wallAt = (x, y) => x < 0 || y < 0 || x >= w || y >= h || lvl.map[y][x] !== '.';
@@ -1139,6 +1140,21 @@ export function buildDecals(lvl, objs, tex) {
       const t = cachedTex(tex, 'plaques', 'd:' + styleFor(o) + (o.font || '') + (o.sym || '') + (o.textless ? '#' : o.title), () => genPlaque(o.textless ? '' : o.title, 'door', styleFor(o), 133, PLQ, o.sym, o.font)); // 0.32.1: Tür nur mit Symbol (Würfeltür)
       const ns = wallAt(o.x - 1, o.y) && wallAt(o.x + 1, o.y); // Durchgang Nord–Süd
       for (const f of ns ? [0, 2] : [1, 3]) out.set((o.y * w + o.x) * 4 + f, t);
+    }
+  }
+  // 0.49.2 (Nutzer: „Hier auch Schilder, wohin es geht“): Wegweiser neben jeder Treppe mit Ziel, auf der Wand seitlich vom Bogen (nur wo dort noch nichts hängt)
+  for (const o of objs) {
+    const ttl = o.type === 'stairs' && o.look !== 'tuer' && o.to ? DEST_TITLES[o.to.level] : null;
+    if (!ttl) continue;
+    for (const f of passFaces(wallAt, o)) {
+      let done = false;
+      for (const sd of [(f + 1) % 4, (f + 3) % 4]) {
+        if (done) break;
+        const sx = o.x + DX[sd], sy = o.y + DY[sd], wx = sx + DX[f], wy = sy + DY[f], key = (wy * w + wx) * 4 + (f + 2) % 4;
+        if (sx < 0 || sy < 0 || sx >= w || sy >= h || wallAt(sx, sy) || !wallAt(wx, wy) || wx < 0 || wy < 0 || wx >= w || wy >= h || out.has(key)) continue;
+        out.set(key, cachedTex(tex, 'plaques', 'w:dark' + ttl, () => genPlaque(ttl, 'wall', 'dark', 131, PLQ, null, null)));
+        done = true;
+      }
     }
   }
   return out;

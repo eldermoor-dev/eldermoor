@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.49.2 (25.11.2026, headless, nicht auf Gerät getestet)
+- Wegweiser: neben jedem Treppenbogen ein Wandschild mit dem Ziel (z. B. KULT-|GRUFT). Werte unverändert.
+
 ## 0.49.1 (25.11.2026, headless, nicht auf Gerät getestet)
 - Moorschrat: Knochendornen, Blutschmiere, Blut am Maul, Darstellung 1,5 statt 1,4. Tür zur Schrat-Kammer trägt einen Totenkopf. Werte unverändert. Wandmoos der Kammer vom Nutzer bestätigt (unverändert).
 

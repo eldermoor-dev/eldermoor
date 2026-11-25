@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.49.1 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.49.2 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1844,4 +1844,11 @@ Auslöser: Nutzerfoto des Schrat-Kampfs (Moorschrat in der blutroten Kammer) und
 - Grenze: „Bosse ganz im Bild“ (0.17.0) begrenzt die Größe; 1,5 ist vorsichtig gewählt. Optik wurde nicht gerendert (nur Tests: 183 grün), nicht auf Gerät getestet.
 - Offene Frage an den Nutzer: Soll „gefährlicher“ auch Werte betreffen (mehr HP/Schaden, zusätzlicher Angriff)? Bis zur Antwort keine Werteänderung (Regel: Werte erst nach Gerätedaten).
 - Offene Geräteprüfung: Schrat größer und brutaler, noch ganz im Bild; Totenkopf auf der Tür von außen sichtbar.
+
+## 0.49.2 (25.11.2026; headless, nicht auf Gerät getestet): Wegweiser an Treppen
+- Nutzerwunsch 22:40 (Foto: Gang mit zwei Treppenbögen, nur Bögen, keine Beschriftung): „Hier auch Schilder, wohin es geht.“ Das ersetzt für Treppen die frühere Linie „Schilder unnötig“ (0.16.17); gilt nur für Treppen mit Ziel.
+- Gebaut: `buildDecals` setzt neben jedem Treppenbogen (Objekt `stairs`, nicht `look: tuer`) ein Wandschild (Stil `dark`) mit dem Kurznamen des Ziels (Tabelle `DEST_TITLES` in render.js, höchstens 2 Zeilen à 8 Zeichen, z. B. MOOR-|PFAD, KULT-|GRUFT). Platz: Wand seitlich neben dem Bogen, nur wenn das Nachbarfeld frei ist und dort noch kein Bild hängt. Runenstein-Ausgang ohne Ziel (`exit_z_tiefe`) bekommt keines.
+- Nicht gerendert, Lage und Lesbarkeit nur durch Code und Tests (183 grün) abgesichert. Möglich: kein freies Nachbarfeld, dann kein Schild (nicht geprüft, wie viele Treppen das betrifft).
+- Offene Geräteprüfung: Schild neben dem Bogen sichtbar und lesbar? Stimmt der Name?
+- Nutzerfrage 22:41: Vorschläge für das Testgewölbe (Beginn der Reise, 22×10, drei Räume, zwei Wölfe, eine Truhe, Runenstein). Vorschläge im Chat gemacht, noch keine Entscheidung.
 
