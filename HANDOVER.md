@@ -1698,3 +1698,4 @@ Nächste: 0.47.4 (7–9), 0.47.5 (10–13 + BALANCE/SIM), 0.48.0 (14–17), spä
 - „Schrat zu früh“: Nutzer meldet erledigt.
 - Offene Tests (Gerät): Siedlung ohne Taverne-Tür vor den Schratgruben; Tür erscheint nach Betreten der Schratgruben (auch bei laufendem Spiel, nach Rückkehr in die Siedlung); Moorlicht im Gang mit Wölfen innerhalb der Wände.
 - Nummerierung: 0.47.11 = Schrift, 0.47.12 = Balance (10–13), 0.48.0 = Rest Lesbarkeit/Stimmung, später „Tote erwecken“.
+- **Gerät bestätigt (Nutzer 25.11.2026 18:42):** Treppen-Problem (0.47.6, „Hereinziehen“) ist behoben, „läuft jetzt ohne Probleme“. Damit ist die Vermutung aus 0.47.6 bestätigt; Punkt erledigt.
