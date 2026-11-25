@@ -1913,3 +1913,8 @@ Auftrag aus den Vorschlägen vom 25.11.: **A** Lehrpfad ohne Belehrung, **C** Ge
 - Offen: Gerätetest 0.49.6 bis 0.50.0 (Nutzer: erstmal keine Tests, Testliste auf Zuruf), Schrat im Kampf (0.49.9) messen.
 - Rückfall: Commit d62a4c3 (0.49.9). Tag-Push liefert 403, nicht umgangen.
 
+## Offen: Wasserflächen (Nutzer 25.11.2026 23:20, Screenshot): „sehen immer noch langweilig aus, Vorschläge?“
+- Befund am Bild: einfarbig grelles Blau mit feiner Wellenstruktur, harte Kante zum Boden, keine Tiefe, kein Bezug zur dunklen Umgebung. Ob 0.49.3 (zweite Wellenschicht, Schatten, Tropfenringe) im Bild schon aktiv war, ist unbekannt (Version nicht sichtbar).
+- Vorschläge (Aufwand geschätzt, nicht gemessen): 1 Ufer und Tiefe (Abstand zum Ufer je Feld vorberechnet, am Rand heller mit Nässesaum, zur Mitte dunkler); 2 Farbe an die Umgebung (weniger grelles Blau, je Gebiet getönt, Palettengrenze beachten); 3 Schaumkante und Glanz; 4 Dinge im Wasser (Schilf, Seerosenblätter, Äste, Blasen als Sprites aus game.json, nur Moor und Zisterne); 5 Dunst und Irrlichter; 6 Spiegelung (teuer, erst nach Zeitmessung).
+- Empfehlung des Assistenten: 1 + 2 + 4 als ein Paket, mit Bild zum Ansehen. Entscheidung des Nutzers steht aus.
+
