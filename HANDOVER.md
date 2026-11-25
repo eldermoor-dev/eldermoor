@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.47.16 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.49.0 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -11,7 +11,7 @@ Autor: eldermoor-dev · Stand: Version 0.47.16 (25.11.2026). Auf dem Galaxy S25 
 ## GESTALTUNGSENTSCHEIDUNGEN (verbindlich; Nutzer, vollständig eingetragen 25.11.2026)
 
 - **Moorschrat-Raum (Nutzer 25.11.2026 22:23, verbindlich):** Der Schrat bleibt in dem Raum, in dem er vorher stand (Moorlichtung, Nordosten), Raum mit Tür davor. Beim Betreten Meldung, dass die Tür mit lautem Knall zufällt; dann werden die Wände blutrot. Der Schrat wirkt noch monströser, groß und unheimlich. Enger, bedrückender Raum, schwarze moosbedeckte Steine, Tropfen an der Wand, Blitze.
-- **Rast im Dungeon (Nutzer 25.11.2026 22:26, NICHT gebaut):** Nachtlager wirkt zu gemütlich. Dunkler, Fackel/Fackelschein, Schlafen auf Decken, rote Augen im Dunkel lassen Monster ahnen, kein gemütlicher Schlaf.
+- **Rast im Dungeon (Nutzer 25.11.2026 22:26, gebaut in 0.49.0, nicht auf Gerät getestet):** Nachtlager wirkt zu gemütlich. Dunkler, Fackel/Fackelschein, Schlafen auf Decken, rote Augen im Dunkel lassen Monster ahnen, kein gemütlicher Schlaf.
 - Rassen: Mensch, Elf, Zwerg, Ork, Gnom. Berufe: Krieger, Schurke, Kleriker, Magier, Waldläufer; Alchemist geplant (sechs Berufe, je drei Talentzweige). Maximalstufe 15.
 - Kein Permadeath: bewusstlos statt tot, Bewusstlose bekommen keine EP. Zwei Schwierigkeitsgrade (Normal, Schwer).
 - Drei Akte, ca. 13 Gebiete (Akt 1 Moor, Akt 2 Moorfestung mit 4–5 Kellerebenen, Akt 3 Schlussabschnitt). Neue Ebenen deutlich größer und in der Bauart verschieden. Besiegte Gegner kehren nur nach Ereignissen zurück (stärker).
@@ -1825,3 +1825,13 @@ Nächste: 0.47.4 (7–9), 0.47.5 (10–13 + BALANCE/SIM), 0.48.0 (14–17), spä
 - Schrat: Sprite mit größeren Augen und glühenden Brustrissen, Größe 1.4 (vorher 1.2). Headless betrachtet (Raum schwarz, Albtraum blutrot mit Schrat), nicht auf Gerät.
 - Tests: `node tests.js` 183 bestanden, 0 fehlgeschlagen. VERSION 0.48.1 in main.js und sw.js, keine neuen Dateien. Alte Stände: Tür, Truhe, Schrat-Platz werden per syncStatic nachgezogen (Vermutung: nicht mit altem Stand auf Gerät geprüft).
 - Offen: Gerätetest Kammer (Tür, Knall, Farben, Blitze, Schrat-Größe im engen Raum); Rast-Optik (siehe Entscheidung 22:26); Treppe „erst beim zweiten Mal“ (Rückfrage offen).
+
+## 0.49.0 (25.11.2026; headless, nicht auf Gerät getestet): Rast im Dungeon unheimlich
+- Nutzer 22:30: „Weiter ohne Schrat-Test“ → Gerätetest 0.48.1 (Schrat-Kammer) bleibt **offen/ungetestet**; keine Fehlernachstellung dazu möglich.
+- Umbau `scene.js` (nur Nachtlager im Gang, `drawCampScene`; Taverne/Margas Herberge unverändert): Gang deutlich dunkler (dunklere Steinpalette, schwarzer Mitteldurchgang, schwarze Nischen links/rechts), keine Bodenlaterne mehr, stattdessen **Wandfackel** am linken Pfeiler mit unregelmäßig flackerndem Schein (Flamme + Glow, kleiner Radius, Helden am Rand im Halbdunkel); Dunkelschicht 0,58, stärkere Vignette; **rote Augenpaare** (`EYES`, 5 Plätze im Durchgang und in den Nischen, erscheinen je 1,8–2,6 s in langen Abständen, blinzeln, pendeln leicht, leuchten über der Dunkelheit); Helden **auf Decken** mit unruhigem Schlaf (schnellere, flachere Atmung, gelegentliches Zucken); „z“-Symbole entfernt; Bildunterschrift „Nachtlager im Gang – etwas atmet im Dunkel …“.
+- Entscheidungen des Assistenten (delegiert, begründet): Augen nur andeutend (keine Gegnerfigur, kein Angriff), damit die Rast ihre Spielwirkung (Regeln unverändert) behält und nur die Stimmung ändert; Taverne bleibt gemütlich, weil dort Betten und Wirtin sind.
+- Nicht geändert: Rastregeln, Werte, Speicherstand. BALANCE.md/SIM.md unverändert (keine Werte). Keine neuen Dateien. VERSION 0.49.0 in main.js und sw.js. Test ergänzt (rote Augen erscheinen zeitweise); `node tests.js` 183 bestanden, 0 fehlgeschlagen.
+- **Nicht gesehen:** Optik nicht gerendert (Vorschau-Lauf wurde blockiert); Helligkeit/Lesbarkeit der Helden im Dunkel und Wirkung der Augen sind **nicht gesichert**. Tuning-Hebel in `scene.js`: Dunkelschicht in `drawCampScene` (0,58), `EYES`-Tabelle, Fackel-`a` in `corridor` (0,5).
+- Offen (Gerät): Rast im Gang auslösen: Szene dunkel genug und trotzdem erkennbar? Fackel flackert? Augen sichtbar, nicht aufdringlich? Szene läuft ca. 5 s, Tippen überspringt.
+- **Offene Rückfragen an den Nutzer:** (1) Treppe „erst beim zweiten Mal“: Fix wäre „Vor“ auf dem Treppenfeld mit Blick zur Treppenwand löst den Wechsel aus; berührt bestätigte 0.47.6-Entscheidung, daher nicht gebaut. Frage: Stand die Gruppe beim Drücken schon auf dem Feld mit dem Treppenbild? (2) Schwierigkeitsgrade: laut GESTALTUNGSENTSCHEIDUNGEN bleiben es zwei (Normal, Schwer); Bestätigung steht aus.
+- Später (Plan): Wanddeko 0.48.0, Balance 0.47.18, Hebelring testen; „Tote erwecken“ (Kleriker, spät).

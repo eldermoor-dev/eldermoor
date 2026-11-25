@@ -136,7 +136,9 @@ function room(c, v, t) {
 function lying(c, x0, hero, i, t) {
   const race = hero.race || 'human', cls = hero.cls || 'warrior', hs = hash(hero.name || i);
   const skin = SKIN[race] || SKIN.human, hair = HAIR[hs % HAIR.length], bl = BLANKET[cls] || BLANKET.warrior;
-  const br = Math.sin(t * 1.7 + i * 1.3) * 1.0, y0 = 128 + (i % 2) * 6, w = 66;
+  // 0.49.0: unruhig – schnellere, flachere Atmung und gelegentliches Zucken (je Held eigener Takt)
+  const tw = Math.max(0, Math.sin(t * 0.9 + i * 2.1) - 0.82) * 5.5;
+  const br = Math.sin(t * 2.6 + i * 1.3) * 0.7 + tw * Math.sin(t * 31 + i), y0 = 128 + (i % 2) * 6, w = 66;
   c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(x0 + w / 2, y0 + 30, w / 2 + 3, 6, 0, 0, 6.2832); c.fill(); // Schatten
   rect(c, x0 + 2, y0 + 18, 14, 10, '#6a5238'); rect(c, x0 + 2, y0 + 18, 14, 2, '#8a6c48'); // Rucksack als Kopfstütze
   const hx = x0 + 12, hy = y0 + 14;
@@ -156,27 +158,50 @@ function lying(c, x0, hero, i, t) {
   else if (cls === 'priest') { rect(c, gx, y0 + 33, 40, 2, '#8a6a30'); rect(c, gx + 40, y0 + 31, 6, 6, '#d9b44a'); }
   else if (cls === 'rogue') { rect(c, gx + 4, y0 + 33, 24, 2, '#c8ccd4'); rect(c, gx, y0 + 32, 5, 4, '#2a1a10'); }
   else { rect(c, gx + 4, y0 + 32, 6, 5, '#9fd4c4'); rect(c, gx + 5, y0 + 30, 4, 3, '#6a4628'); }
-  for (let k = 0; k < 2; k++) { const p = ((t * 0.45 + i * 0.31 + k * 0.5) % 1); c.fillStyle = `rgba(230,225,255,${0.85 * (1 - p)})`; c.font = `${7 + k * 2}px sans-serif`; c.fillText('z', hx + 10 + p * 8 + k * 4, hy - 10 - p * 22 - k * 5); }
+  // 0.49.0: kein gemütliches „z“; der Schlaf ist unruhig (siehe drawCampScene: Zucken, flache Atmung)
 }
 function corridor(c, t) {
-  stones(c, 0, 0, W, 108, '#46423c', '#2a2723', 311);
-  rect(c, 0, 0, W, 10, '#2a2723'); // Deckenbalken
-  c.fillStyle = '#1a1814'; c.beginPath(); c.moveTo(126, 108); c.lineTo(126, 40); c.quadraticCurveTo(160, 14, 194, 40); c.lineTo(194, 108); c.fill(); // dunkler Durchgang
-  rect(c, 126, 36, 68, 3, '#5a554c');
-  floor(c, 104, '#3a352d', '#25211b');
-  for (const x of [20, 86, 236, 296]) { rect(c, x, 0, 8, 108, '#34302a'); rect(c, x + 8, 0, 1, 108, 'rgba(0,0,0,.4)'); } // Pfeiler
-  rect(c, 156, 100, 8, 6, '#2a1c10'); // Laterne am Boden
-  rect(c, 154, 92, 12, 10, '#5a4630'); rect(c, 156, 94, 8, 6, `rgba(255,${190 + 30 * Math.sin(t * 9)},90,.95)`); rect(c, 157, 89, 6, 3, '#3a2c1c');
-  return { x: 160, y: 96, r: 170, rgb: '255,170,80', a: 0.32 * (0.85 + 0.15 * Math.sin(t * 9)) };
+  // 0.49.0 (Nutzer 25.11.2026 22:26): dunkler Gang, eine Wandfackel statt Laterne, offene dunkle Durchgänge links/rechts/Mitte
+  stones(c, 0, 0, W, 108, '#38352f', '#1e1c19', 311);
+  rect(c, 0, 0, W, 10, '#1e1c19'); // Deckenbalken
+  c.fillStyle = '#050405'; c.beginPath(); c.moveTo(126, 108); c.lineTo(126, 40); c.quadraticCurveTo(160, 14, 194, 40); c.lineTo(194, 108); c.fill(); // schwarzer Durchgang
+  rect(c, 126, 36, 68, 3, '#46423a');
+  c.fillStyle = '#050405'; rect(c, 0, 52, 14, 56, '#050405'); rect(c, W - 14, 52, 14, 56, '#050405'); // dunkle Nischen am Rand
+  floor(c, 104, '#2c2924', '#1a1713');
+  for (const x of [20, 86, 236, 296]) { rect(c, x, 0, 8, 108, '#2a2723'); rect(c, x + 8, 0, 1, 108, 'rgba(0,0,0,.5)'); } // Pfeiler
+  // Wandfackel am linken Pfeiler (x 86), Flamme flackert unregelmäßig
+  const fl = 0.78 + 0.12 * Math.sin(t * 11) + 0.07 * Math.sin(t * 17.3 + 1) + 0.04 * Math.sin(t * 29 + 2);
+  rect(c, 88, 52, 4, 14, '#2a1c10'); rect(c, 85, 48, 10, 5, '#4a3826'); // Halterung
+  c.fillStyle = `rgba(255,${150 + 60 * fl},60,.95)`; c.beginPath(); c.moveTo(87, 49); c.quadraticCurveTo(90 + Math.sin(t * 9), 34 - 4 * fl, 93, 49); c.fill();
+  c.fillStyle = 'rgba(255,230,150,.9)'; c.beginPath(); c.moveTo(89, 49); c.quadraticCurveTo(90.5 + Math.sin(t * 9), 40 - 2 * fl, 91.5, 49); c.fill();
+  return { x: 90, y: 46, r: 150, rgb: '255,140,50', a: 0.5 * fl };
+}
+// Rote Augenpaare im Dunkel: erscheinen für 1–3 s, blinzeln, verschwinden (feste Plätze, deterministisch nach t)
+const EYES = [ // x, y, Abstand, Periode, Phase, Dauer
+  { x: 160, y: 70, d: 9, p: 11.0, ph: 1.5, du: 2.6 }, { x: 160, y: 92, d: 6, p: 15.0, ph: 8.0, du: 2.0 },
+  { x: 7, y: 78, d: 5, p: 9.0, ph: 4.0, du: 2.2 }, { x: W - 7, y: 70, d: 5, p: 13.0, ph: 6.5, du: 2.4 },
+  { x: 150, y: 58, d: 4, p: 17.0, ph: 12.0, du: 1.8 },
+];
+function eyes(c, t) {
+  c.globalCompositeOperation = 'lighter';
+  for (const e of EYES) {
+    const u = (t + e.ph) % e.p; if (u > e.du) continue;
+    let a = Math.min(1, u / 0.5, (e.du - u) / 0.5); // sanftes Ein-/Ausblenden
+    const blink = ((t * 1.3 + e.ph) % 4) < 0.18; if (blink) a *= 0.1;
+    const dx = Math.sin(t * 0.7 + e.ph) * 1.2; // leichtes Pendeln
+    for (const s of [-1, 1]) { const x = e.x + dx + s * e.d / 2; glow(c, x, e.y, 7, '255,30,20', 0.55 * a); disc(c, x, e.y, 1.6, `rgba(255,60,40,${a})`); disc(c, x, e.y, 0.7, `rgba(255,220,180,${a})`); }
+  }
+  c.globalCompositeOperation = 'source-over';
 }
 export function drawCampScene(c, heroes, t) {
   c.imageSmoothingEnabled = false; c.clearRect(0, 0, W, H);
   const L = corridor(c, t);
   const n = Math.min(4, heroes.length), bw = 66, gap = 10, x00 = Math.round((W - (n * bw + (n - 1) * gap)) / 2);
   heroes.slice(0, n).forEach((h, i) => lying(c, x00 + i * (bw + gap), h, i, t));
-  c.fillStyle = 'rgba(12,8,24,.35)'; c.fillRect(0, 0, W, H);
+  c.fillStyle = 'rgba(4,2,10,.58)'; c.fillRect(0, 0, W, H); // tiefe Dunkelheit
   c.globalCompositeOperation = 'lighter'; glow(c, L.x, L.y, L.r, L.rgb, L.a); c.globalCompositeOperation = 'source-over';
-  const g = c.createRadialGradient(W / 2, H / 2, 60, W / 2, H / 2, 210); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.6)'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+  eyes(c, t); // über der Dunkelheit, damit sie leuchten
+  const g = c.createRadialGradient(W / 2, H / 2, 50, W / 2, H / 2, 200); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.78)'); c.fillStyle = g; c.fillRect(0, 0, W, H);
 }
 
 export function drawSleepScene(c, heroes, v, t) {
@@ -199,7 +224,7 @@ export function startSleepScene(heroes, seed, onDone, ms = 5000, camp = false) {
   cv.style.cssText = 'width:min(100vw,calc(100vh*16/9));aspect-ratio:16/9;image-rendering:pixelated;max-height:80vh;';
   const cap = document.createElement('div');
   cap.style.cssText = 'color:#e8d6a8;font:italic 1rem Georgia,serif;margin-top:10px;text-align:center;padding:0 12px;';
-  cap.textContent = camp ? 'Nachtlager im Gang – die Nacht vergeht …' : `Margas Herberge · ${SLEEP_ROOMS[v]} – die Nacht vergeht …`;
+  cap.textContent = camp ? 'Nachtlager im Gang – etwas atmet im Dunkel …' : `Margas Herberge · ${SLEEP_ROOMS[v]} – die Nacht vergeht …`;
   const hint = document.createElement('div'); hint.style.cssText = 'color:#8a7a5a;font:.8rem system-ui;margin-top:4px;'; hint.textContent = 'Tippen überspringt';
   el.append(cv, cap, hint); document.body.append(el);
   const c = cv.getContext('2d'); let raf = 0, done = false; const t0 = performance.now();

@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.49.0 (25.11.2026, headless, nicht auf Gerät getestet)
+- Rast im Dungeon unheimlich: dunkler Gang, Wandfackel mit Flackerschein, Helden unruhig auf Decken, rote Augen im Dunkel. Taverne unverändert. Details in HANDOVER.md.
+
 ## 0.47.13 (25.11.2026, headless, nicht auf Gerät getestet)
 - Lesbarkeit der Schriften, abschließende Lösung (Nutzer 18:59, Screenshot Türtitel „KAPELLE“: „letzte Chance, optimale Lösung für alle Fälle“): Schrift auf Schildern und Türen bleibt im 480×270-Raster bei Abstand/schrägem Blick prinzipiell begrenzt. Neu: **Lesefeld** oben in der Mitte mit echter Schrift (fett, helle Schrift auf dunkler Platte) für das nächste Schild oder den nächsten Türtitel in Blickrichtung (bis 4 Felder voraus, Seitenwände und Stirnwand). Unabhängig von Winkel, Abstand und Auflösung. Im Kampf ausgeblendet.
 - **Pfeile im Lesefeld aus Sicht der Gruppe** (↑ voraus, ↓ zurück, ← links, → rechts), damit „SEE → INSEL“ nie mehr in die falsche Richtung zeigt, egal wie man das Schild passiert.
