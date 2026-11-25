@@ -3,6 +3,12 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.47.8 (25.11.2026, headless, nicht auf Gerät getestet)
+- Schriften auf Wänden und Türen: Ursachen belegt am Screenshot „MOORPFAD → GRUFT“ aus der Nähe: (1) Striche waren breiter als das Raster und verschmolzen (M wirkte wie H), (2) dunkle Schrift auf grauem Stein ohne Abhebung, (3) 192-Bild grob vergrößert.
+- Jetzt: Wandschilder in 384×384 (statt 192), Strichbreite genau ein Rasterpunkt, helle Schrift (Bernstein oder Eisweiß je Stil) mit dunkler 3-Punkt-Kontur auf dunkler Platte mit hellem Rand und runden Ecken. Türtitel: helle Schrift mit dunkler Kontur (ohne Platte, bleibt auf dem Türsturz). Als Bilder gerendert und angesehen (fünf Stile), nicht auf Gerät.
+- Noch offen aus Punkt 14/15/16/17: Schilder von der Decke / am Boden / auf Holzpfosten, Treppenschilder mit Zielebene, Wanddeko, Hebel, Hintergrundgeräusche → 0.48.0.
+- Nummerierung: Struktur (7–9) = 0.47.9, Balance (10–13) = 0.47.10, Rest Lesbarkeit/Stimmung = 0.48.0.
+
 ## 0.47.7 (25.11.2026, headless, nicht auf Gerät getestet)
 - Sumpfwolf: kleiner (Faktor 1,65 → 1,3) und wolfähnlicher neu gezeichnet. Vorher Block-Rumpf, Stelzenbeine und Kamm-Zacken an den Schultern, die wie Hände wirkten (Nutzer: „zu groß und unfertig, wolfähnlicher gestalten“). Jetzt schmale Brust, zottige Halskrause, dünnere Vorderläufe, Hinterkeulen seitlich. Als Bild gerendert und angesehen (Moorpalette), nicht auf Gerät. Werte unverändert.
 - Nummerierung: Struktur (7–9) = 0.47.8, Balance (10–13) = 0.47.9, Lesbarkeit (14–17) = 0.48.0.

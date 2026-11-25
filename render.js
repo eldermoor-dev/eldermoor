@@ -808,11 +808,11 @@ function paintPlaque(buf, N, title, kind, styleName, seed) {
 // 0.16.17 (Nutzer: „Undeutlich, besser wieder nur Schriftzug, Schilder unnötig“): nur Schrift direkt auf Wand/Tür, ohne Tafel.
 // Helle Buchstaben mit dunkler Kontur, damit sie auf Holz und Stein lesbar bleiben.
 // 0.31.6 (Nutzer: „Schriftzüge unterschiedlich, bei Brücke z. B. mit Symbol“): Farbe/Art der Schrift je nach Schildstil (INKS), optionales Symbol über dem Text (o.sym)
+// 0.47.8 (Nutzer: „alle Schriften kontrastarm“): immer helle Schrift mit dunkler Kontur (auf Wänden zusätzlich dunkle Platte), Farbton je Stil
 const INKS = { // fill: [Material, Stufe], edge: [Material, Stufe] (Kontur)
-  kohle: { fill: ['ceil', 0], edge: ['stone', 6] }, rot: { fill: ['blood', 3.2], edge: ['stone', 6.5] }, kreide: { fill: ['stone', 7], edge: ['ceil', 0] },
-  gold: { fill: ['glow', 6.2], edge: ['ceil', 0] }, meissel: { fill: ['stone', 1.2], edge: ['stone', 6] }, moos: { fill: ['moss', 1.2], edge: ['stone', 6.5] }
+  kreide: { fill: ['ice', 7], edge: ['ceil', 0] }, gold: { fill: ['glow', 6.4], edge: ['ceil', 0] }
 };
-const INK_OF = { wood: 'kohle', dark: 'rot', stone: 'meissel', iron: 'kreide', moss: 'moos', arrow: 'kohle', arch: 'meissel', banner: 'gold', small: 'kreide' };
+const INK_OF = { wood: 'gold', dark: 'gold', stone: 'kreide', iron: 'kreide', moss: 'kreide', arrow: 'gold', arch: 'kreide', banner: 'gold', small: 'kreide' };
 const SYMS = {
   bruecke: ['11111111111', '11100000111', '11000000011', '10000000001', '10000000001', '01010101010'],
   faehre: ['00000100000', '00001110000', '00011111000', '00111111100', '00000100000', '11111111111', '01111111110', '00111111100'],
@@ -823,12 +823,12 @@ const SYMS = {
 // 0.32.1 (Nutzer: „unterschiedliche Schriftarten im Spiel“): Schriftarten der Wand- und Türtitel (FONTMODES): rad = Strichdicke, xs/ys = Breite/Höhe der Buchstaben, shear = Schräge, wave = Wackeln der Zeile; Objektfeld font überschreibt die Schrift des Schildstils
 export const FONTMODES = { block: { rad: 0.6 }, bold: { rad: 0.85 }, thin: { rad: 0.5 }, slant: { rad: 0.62, shear: -0.3 }, wide: { rad: 0.62, xs: 1.3 }, tall: { rad: 0.6, ys: 1.3 }, wavy: { rad: 0.62, wave: 0.5 }, shadow: { rad: 0.62 } };
 function genPlaque(title, kind, styleName, seed, clipY = PLQ, sym = null, fontName = null) { // clipY (0.22.1): nichts unterhalb zeichnen (Türsturz: Schrift läuft nicht ins Leere)
-  const N = PLQ, buf = new Uint8Array(N * N).fill(255);
+  const K = kind === 'wall' ? 2 : 1, N = PLQ * K, buf = new Uint8Array(N * N).fill(255); // 0.47.8 (Nutzer: Schriften unscharf): Wandschilder in doppelter Auflösung (384²); der Raycaster liest die Größe aus dec.w
   const lines = String(title || '').toUpperCase().split('|').slice(0, 2).filter(Boolean);
   const fm = FONTMODES[fontName] || FONTMODES[(PLAQUE_STYLES[styleName] || {}).font] || FONTMODES.block, fxs = fm.xs || 1, fys = fm.ys || 1;
   const maxC = Math.max(1, ...lines.map((l) => [...l].slice(0, 8).length)), cw = 6 * fxs;
   // 0.23.4 (Nutzer: aus der Nähe zu groß, unlesbar): Textblock höchstens ca. die halbe Wandbreite (vorher bis 75 %); Stil (Blutschmiere) bleibt
-  const s = kind === 'door' ? Math.max(1.8, Math.min(2.6, 100 / (cw * maxC))) : Math.max(1.7, Math.min(2.9, 112 / (cw * maxC))); // 0.32.1: kurze Wandtitel (BRÜCKE) größer, Nutzer: kaum lesbar // Türsturz (0.23.6): Schrift liegt innerhalb des Türschilds
+  const s = (kind === 'door' ? Math.max(1.8, Math.min(2.6, 100 / (cw * maxC))) : Math.max(1.7, Math.min(2.9, 112 / (cw * maxC)))) * K; // 0.32.1: kurze Wandtitel (BRÜCKE) größer, Nutzer: kaum lesbar // Türsturz (0.23.6): Schrift liegt innerhalb des Türschilds
   const lh = Math.round(9 * s * fys), th = lines.length ? Math.round(lines.length * lh - 2 * s) : 0;
   const SG = sym && SYMS[sym] ? SYMS[sym] : null, ss = lines.length ? s * 1.3 : s * 2.2, symH = SG ? Math.round(SG.length * ss + (lines.length ? 5 * s : 0)) : 0; // ohne Text: Symbol allein, größer und mittig
   const ty0 = kind === 'door' ? 14 + symH : Math.round(N / 2 - th / 2 + symH / 2);
@@ -856,7 +856,7 @@ function genPlaque(title, kind, styleName, seed, clipY = PLQ, sym = null, fontNa
         ox += shear * oy;
         const jx = 0, jy = 0;
         const cx = gcx + ox * cr - oy * sr + jx, cy = gcy + ox * sr + oy * cr + dy0 + jy;
-        stamp(cx, cy, s * fm.rad);
+        stamp(cx, cy, s * (kind === 'wall' ? Math.min(fm.rad, 0.56) : fm.rad)); // 0.47.8: auf Wandschildern höchstens ein Rasterpunkt Strichbreite – M, A, R verschmolzen vorher zu Klumpen
       }
     });
   });
@@ -871,9 +871,23 @@ function genPlaque(title, kind, styleName, seed, clipY = PLQ, sym = null, fontNa
     for (let yy = -1; yy <= 1; yy++) for (let xx = -1; xx <= 1 + wd; xx++) { const X = x + xx, Y = y + len + 1 + yy; if (X >= 0 && X < N && Y >= 0 && Y < N && !mask[Y * N + X]) drip[Y * N + X] = 3; }
   }
   for (let i = 0; i < N * N; i++) if (drip[i]) mask[i] = 1;
-  if (clipY < N) for (let i = clipY * N; i < N * N; i++) { mask[i] = 0; drip[i] = 0; }
-  const ink = sym === 'wuerfel' && !lines.length ? { fill: ['glow', 6.3], edge: ['ceil', 0] } : INKS[INK_OF[styleName]] || INKS.kohle; // Würfel: Elfenbein
-  const ol = 1; // Kontur: hebt die rote Schrift von grauem Stein ab
+  if (clipY < PLQ) for (let i = clipY * N; i < N * N; i++) { mask[i] = 0; drip[i] = 0; }
+  const ink = sym === 'wuerfel' && !lines.length ? { fill: ['glow', 6.3], edge: ['ceil', 0] } : INKS[INK_OF[styleName]] || INKS.kreide; // Würfel: Elfenbein
+  const ol = kind === 'wall' ? 3 : 2; // Kontur: dunkel, hebt die helle Schrift ab
+  if (kind === 'wall' && (lines.length || SG)) { // dunkle Platte mit hellem Rand hinter Schrift und Symbol
+    let bx0 = N, by0 = N, bx1 = -1, by1 = -1;
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (mask[y * N + x]) { if (x < bx0) bx0 = x; if (x > bx1) bx1 = x; if (y < by0) by0 = y; if (y > by1) by1 = y; }
+    if (bx1 >= 0) {
+      const padX = 7 * K + Math.round(s), padY = 5 * K + Math.round(s * 0.8), rr = 6 * K, bw = 2 * K;
+      const px0 = Math.max(0, bx0 - padX), px1 = Math.min(N - 1, bx1 + padX), py0 = Math.max(0, by0 - padY), py1 = Math.min(N - 1, by1 + padY);
+      for (let y = py0; y <= py1; y++) for (let x = px0; x <= px1; x++) {
+        const cx0 = x < px0 + rr ? px0 + rr - x : x > px1 - rr ? x - (px1 - rr) : 0, cy0 = y < py0 + rr ? py0 + rr - y : y > py1 - rr ? y - (py1 - rr) : 0;
+        if (cx0 && cy0 && Math.hypot(cx0, cy0) > rr) continue; // runde Ecken
+        const edge = x < px0 + bw || x > px1 - bw || y < py0 + bw || y > py1 - bw || (cx0 && cy0 && Math.hypot(cx0, cy0) > rr - bw);
+        buf[y * N + x] = edge ? P('stone', 3.6 + hash(x >> 2, y >> 2, seed + 21) * 0.6) : P('ceil', 0.9 + hash(x >> 3, y >> 3, seed + 22) * 0.5);
+      }
+    }
+  }
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     if (mask[y * N + x]) continue;
     let near = false;

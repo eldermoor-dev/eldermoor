@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.47.7 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.47.8 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1670,3 +1670,12 @@ Nächste: 0.47.4 (7–9), 0.47.5 (10–13 + BALANCE/SIM), 0.48.0 (14–17), spä
 - Offen/unklar: Die zweite Figur im Screenshot (grünlich, rechts, vom Bildrand angeschnitten) ist nicht geklärt (Moorlicht oder Kultist?); ob die Gruppenaufstellung dort aus dem Bild ragt, nicht nachgestellt. Rückfrage an Nutzer, falls es stört.
 - Tests 175 grün (Werte unverändert, BALANCE.md/SIM.md unverändert).
 - Nummerierung neu: 0.47.8 = Struktur (7–9), 0.47.9 = Balance (10–13), 0.48.0 = Lesbarkeit/Stimmung (14–17).
+
+## 0.47.8 (25.11.2026; headless, nicht auf Gerät getestet): Schriften lesbar (Backlog 14, erster Teil)
+- Nutzer (25.11.2026 18:10, Screenshot Wandschild „MOORPFAD → GRUFT“ aus der Nähe): „Schriften besteht weiterhin. Lösungsvorschläge?“ → Vorschläge A (Kontrast) + B (schärfer), Nutzer: „Weiter“ (Empfehlung A+B, nicht C Systemschrift, D Lesefenster nur Notnagel).
+- Befund am Bild: Buchstaben verschmolzen (M wie H), Schrift und Wand gleicher Ton, grobe Pixel.
+- render.js `genPlaque`: `kind==='wall'` → K=2 (N=384, Raycaster nimmt `dec.w` als Größe, Decals dürfen also unterschiedlich groß sein); Strich = `min(fm.rad, 0.56)·s`; Kontur 3 (Tür 2); dunkle Platte (ceil 0,9..1,4) mit hellem Rand (stone 3,6) und runden Ecken hinter Schrift/Symbol (nur Wand). `INKS` jetzt `kreide` (ice 7) und `gold` (glow 6,4), je Stil per `INK_OF` (wood/dark/arrow/banner = gold, übrige = kreide). Türen (K=1): nur helle Schrift + Kontur, keine Platte.
+- Nicht geändert: Schildformen (Decke/Boden/Pfosten), Treppenschilder mit Zielebene, Wanddeko, Hebel, Geräusche → 0.48.0.
+- Tests 175 grün (keine Werteänderung, BALANCE.md/SIM.md unverändert).
+- Offene Tests (Gerät): Schilder im Moorpfad/Kultgruft/Festung aus der Nähe und aus 3–4 Feldern, Türtitel (Lesbarkeit auf Holz-/Steintür), Blick auf Schilder in Hallen (Performance).
+- Nummerierung neu: 0.47.9 = Struktur (7–9), 0.47.10 = Balance (10–13), 0.48.0 = Rest Lesbarkeit/Stimmung (Schildformen, Treppenschilder, Wanddeko, Hebel, Geräusche), später „Tote erwecken“.
