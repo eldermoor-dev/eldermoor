@@ -2252,6 +2252,34 @@ export async function runTests(data, env = {}) {
     assert(/Wette/.test(data.levels.moorrand.objects.find((o) => o.id === 'merchant_hedda').talk.text), 'Hedda greift die Wette auf');
   });
 
+  await test('0.50.0 Testgewölbe: Hebel öffnet Gitter, Geheimkammer, Falle im Gang, Tafeln im Notizbuch, Altstand', () => {
+    const lvl = data.levels.test1;
+    assert(L.analyzeLevel(data, 'test1').ok, 'Lösbarkeit');
+    const s = fresh(11);
+    assert(s.levelId === 'test1', 'Start im Testgewölbe');
+    // Gitter vor der Truhennische: zu, bis der Hebel in Raum 1 umgelegt ist
+    put(s, 10, 1, 1); assert(!L.tryMove(s, data, 'f').moved, 'Gitter versperrt die Nische');
+    put(s, 5, 3, 0); const r = L.interact(s, data); assert(r && r.msg && s.objs.find((o) => o.id === 'tg_hebel').used, 'Hebel umgelegt');
+    assert(s.objs.find((o) => o.id === 'tg_gitter').open, 'Gitter offen');
+    put(s, 10, 1, 1); assert(L.tryMove(s, data, 'f').moved, 'Nische jetzt begehbar');
+    // Falle steht im einzigen Gang nach Osten, Hinweistafel davor
+    const tr = lvl.objects.find((o) => o.id === 'tg_falle'), tf = lvl.objects.find((o) => o.id === 'tg_tafel_falle');
+    assert(tr && tr.kind === 'spikes' && tf && tf.y === tr.y - 1 && tf.x === tr.x, 'Falle mit Wandhinweis davor');
+    // Geheimkammer: Wand zu, bis der Schalterstein gedrückt ist
+    put(s, 17, 6, 0); assert(!L.tryMove(s, data, 'f').moved, 'Geheimwand zu');
+    put(s, 18, 8, 1); L.interact(s, data); assert(s.objs.find((o) => o.id === 'tg_geheim').open, 'Schalterstein öffnet die Wand');
+    put(s, 17, 6, 0); assert(L.tryMove(s, data, 'f').moved, 'Wand offen');
+    const ch = s.objs.find((o) => o.id === 'tg_truhe_geheim'); assert(ch && ch.hidden && !ch.guard, 'Truhe in der Kammer, ohne Wache');
+    assert(ch.loot.every((l) => !l.item || data.items[l.item]), 'Beute nur aus vorhandenen Gegenständen');
+    // Tafel: Notizbuch
+    put(s, 11, 7, 0); const rt = L.interact(s, data); assert(rt && rt.newNote && s.journal.some((e) => e.id === 'tg_tafel_zaehler'), 'Tafel trägt ins Notizbuch ein');
+    // Altstand: ohne die neuen Objekte geladen, Gruppe steht in der jetzt zugemauerten Zelle (12,2)
+    const old = fresh(12); old.objs = old.objs.filter((o) => !/^(tg_|dk_tg_)/.test(o.id)); put(old, 12, 2, 1);
+    assert(L.syncStatic(old, data) > 0, 'Altstand wird ergänzt');
+    assert(old.objs.some((o) => o.id === 'tg_hebel') && old.objs.some((o) => o.id === 'tg_tafel_lager'), 'Objekte nachgezogen');
+    assert(old.player.x === lvl.start.x && old.player.y === lvl.start.y, 'Gruppe in der Wand zurück zum Start');
+  });
+
   await test('Schwerer Schlag (0.15.14): trifft nur die Vorderreihe, solange dort jemand steht', () => {
     let ran = 0;
     for (let seed = 1; seed <= 30; seed++) {

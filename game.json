@@ -3210,16 +3210,16 @@
       "name": "Testgewölbe (Phase 1)",
       "palette": "keller",
       "map": [
-        "######################",
+        "###T######T###########",
         "#.....#.......########",
-        "#.....m.......m#######",
-        "#.............m#######",
-        "#.....#.......########",
-        "#######.##############",
+        "#.....m.....##m#######",
+        "#.............m#...###",
+        "#.....#.......##...###",
+        "#######.#########.####",
         "#######.#####.......m#",
         "#######.............m#",
         "#############.......m#",
-        "######################"
+        "################T#####"
       ],
       "start": {
         "x": 3,
@@ -3336,6 +3336,146 @@
             "dir": 1
           },
           "look": "up"
+        },
+        {
+          "id": "tg_hebel",
+          "type": "lever",
+          "x": 5,
+          "y": 2,
+          "gate": "tg_gitter",
+          "msg": "Der Hebel rastet ein. Im Osten rasselt eine Kette."
+        },
+        {
+          "id": "tg_gitter",
+          "type": "gate",
+          "x": 11,
+          "y": 1,
+          "hint": "Ein Gitter versperrt die Nische. Die Stäbe sind kalt und sitzen fest."
+        },
+        {
+          "id": "tg_falle",
+          "type": "trap",
+          "x": 7,
+          "y": 6,
+          "kind": "spikes"
+        },
+        {
+          "id": "tg_tafel_falle",
+          "type": "sign",
+          "x": 7,
+          "y": 5,
+          "face": 3,
+          "title": "KOHLE",
+          "style": "dark",
+          "text": "Mit Kohle an die Wand geschrieben: „Der Boden hier ist nicht, was er scheint. Schaut genau hin, bevor ihr geht.“"
+        },
+        {
+          "id": "tg_geheim",
+          "type": "secret",
+          "x": 17,
+          "y": 5,
+          "hint": "Die Wand klingt hohl. Der Riss läuft zu gerade, um Zufall zu sein."
+        },
+        {
+          "id": "tg_schalter",
+          "type": "lever",
+          "wall": true,
+          "x": 19,
+          "y": 8,
+          "gate": "tg_geheim",
+          "msg": "Der Stein gibt nach. Weiter nördlich schabt Stein über Stein."
+        },
+        {
+          "id": "tg_truhe_geheim",
+          "type": "chest",
+          "x": 17,
+          "y": 3,
+          "loot": [
+            {
+              "item": "potion",
+              "n": 2
+            },
+            {
+              "item": "gegengift",
+              "n": 1
+            },
+            {
+              "gold": 15
+            }
+          ],
+          "mat": "stein",
+          "hidden": true
+        },
+        {
+          "id": "tg_d_stuhl",
+          "type": "decor",
+          "x": 3,
+          "y": 4,
+          "look": "stuhl"
+        },
+        {
+          "id": "tg_d_tisch",
+          "type": "decor",
+          "x": 4,
+          "y": 4,
+          "look": "tisch"
+        },
+        {
+          "id": "tg_d_fass",
+          "type": "decor",
+          "x": 5,
+          "y": 1,
+          "look": "fass"
+        },
+        {
+          "id": "dk_tg_kratzer1",
+          "type": "sign",
+          "x": 9,
+          "y": 1,
+          "face": 0,
+          "deco": "kratzer",
+          "style": "dark",
+          "text": "Drei tiefe Kratzer im Stein, nebeneinander. Krallen."
+        },
+        {
+          "id": "dk_tg_moos1",
+          "type": "sign",
+          "x": 13,
+          "y": 8,
+          "face": 2,
+          "deco": "moos",
+          "style": "dark",
+          "text": "Dichter Moosbelag, feucht und weich. Es riecht nach Moder."
+        },
+        {
+          "id": "tg_tafel_lager",
+          "type": "sign",
+          "x": 5,
+          "y": 4,
+          "face": 2,
+          "title": "LAGER",
+          "style": "dark",
+          "text": "Ein verlassenes Lager. Unter einem Becher liegt ein Zettel: „Tag neun. Das Licht reicht nur noch bis zur Tür. Wer nach uns kommt: Zählt eure Schritte.“"
+        },
+        {
+          "id": "tg_tafel_zaehler",
+          "type": "sign",
+          "x": 11,
+          "y": 7,
+          "face": 0,
+          "title": "STRICHE",
+          "style": "stone",
+          "text": "Strich um Strich in den Stein geritzt, Hunderte. Die letzten sind schief, als hätte die Hand gezittert."
+        },
+        {
+          "id": "tg_tafel_seite",
+          "type": "sign",
+          "x": 16,
+          "y": 3,
+          "face": 0,
+          "title": "SEITE",
+          "style": "dark",
+          "text": "Eine lose Seite, vom Feuchten gewellt: „Ich fand diese Kammer, weil ich dem Riss folgte. Wer das liest: Nehmt, was ihr braucht, und lasst den Rest.“"
         }
       ]
     },

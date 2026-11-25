@@ -12,6 +12,7 @@ Autor: eldermoor-dev · Stand: Version 0.49.8 (25.11.2026). Auf dem Galaxy S25 v
 
 - **Moorschrat-Raum (Nutzer 25.11.2026 22:23, verbindlich):** Der Schrat bleibt in dem Raum, in dem er vorher stand (Moorlichtung, Nordosten), Raum mit Tür davor. Beim Betreten Meldung, dass die Tür mit lautem Knall zufällt; dann werden die Wände blutrot. Der Schrat wirkt noch monströser, groß und unheimlich. Enger, bedrückender Raum, schwarze moosbedeckte Steine, Tropfen an der Wand, Blitze.
 - **Rast im Dungeon (Nutzer 25.11.2026 22:26, gebaut in 0.49.0, nicht auf Gerät getestet):** Nachtlager wirkt zu gemütlich. Dunkler, Fackel/Fackelschein, Schlafen auf Decken, rote Augen im Dunkel lassen Monster ahnen, kein gemütlicher Schlaf.
+- **Testgewölbe (Nutzer 25.11.2026 22:44 und 23:14, gebaut in 0.50.0, nicht auf Gerät getestet):** Gewählt A Lehrpfad ohne Belehrung, C Geheimraum, D Atmosphäre, E Geschichte; nicht gewählt B (Plattenrätsel) und F (Wanderer). Grundriss vom Nutzer mit „Ja“ freigegeben. Die Moorlichtung bleibt vor dem Testgewölbe (Assistent, Begründung: Treppe 1/4 und Tests hängen daran).
 - Rassen: Mensch, Elf, Zwerg, Ork, Gnom. Berufe: Krieger, Schurke, Kleriker, Magier, Waldläufer; Alchemist geplant (sechs Berufe, je drei Talentzweige). Maximalstufe 15.
 - Kein Permadeath: bewusstlos statt tot, Bewusstlose bekommen keine EP. Zwei Schwierigkeitsgrade (Normal, Schwer).
 - Drei Akte, ca. 13 Gebiete (Akt 1 Moor, Akt 2 Moorfestung mit 4–5 Kellerebenen, Akt 3 Schlussabschnitt). Neue Ebenen deutlich größer und in der Bauart verschieden. Besiegte Gegner kehren nur nach Ereignissen zurück (stärker).
@@ -1858,7 +1859,7 @@ Auslöser: Nutzerfoto des Schrat-Kampfs (Moorschrat in der blutroten Kammer) und
 - Geprüft: Testbild der Zisterne ohne Browser gerendert (alt gegen neu verglichen, ein Ring sichtbar), Tests 183 grün. Renderzeit auf dem Gerät nicht gemessen (zusätzliche Rechnung je Wasserpixel). Wirkung auf dem Gerät offen.
 - Stellschrauben: Glanz (s2-Schwellen), Schattenradius 0,5 und Anteil `pi > 30`, Ringe `(pi & 3) === 0`.
 
-## PLAN 0.50.0 Testgewölbe (Nutzer 22:44: „A, C, D und E“) – nicht gebaut, in neuem Chat bauen
+## PLAN 0.50.0 Testgewölbe (Nutzer 22:44: „A, C, D und E“) – gebaut in 0.50.0 (25.11.2026, siehe unten)
 Auftrag aus den Vorschlägen vom 25.11.: **A** Lehrpfad ohne Belehrung, **C** Geheimraum, **D** Atmosphäre, **E** Geschichte (Notizbuch/Inschriften, ohne das Ende zu verraten). Nicht gewählt: B (Plattenrätsel), F (Wanderer).
 - Ausgangslage (aus game.json gelesen): Gebiet `test1` „Testgewölbe (Phase 1)“, 22×10, drei Räume, `door_a` (6/3), `door_b` (12/7), Truhe (12/1), Wölfe `en2` (10/3) und `en3` (9/7), Runenstein `rune_t1` (19/7) mit Inschrift (Sechs Siegel, „merkt euch, wo das Licht ist“), Treppen hinab (1/1 Untere Gruft) und hinauf (1/4 Moorlichtung).
 - A: Raum 1 Hebel öffnet Gitter zur Truhe; Raum 2 Falle mit Wandhinweis; Ostflügel Wölfe als erster Kampf; Runenstein bleibt der Schluss. C: Geheimwand mit kleiner nützlicher Beute (Beute vorher festlegen, nicht aus dem Gedächtnis). D: Fackeln, Wanddeko, Rastplatz (Nachtlager-Szene 0.49.0), eventuell größere Karte. E: Notizbuch-Einträge und Inschriften.
@@ -1900,4 +1901,15 @@ Auftrag aus den Vorschlägen vom 25.11.: **A** Lehrpfad ohne Belehrung, **C** Ge
 - Geändert (main.js `viewTarget`): Abstand des nächsten lebenden Gegners entlang der Blickrichtung (min. 1, max. 4) statt fester 1. Rechnung für Abstand 2: Einpassung etwa 0,8, Figurhöhe etwa 358 statt 197 Bildpunkte, Kopf bleibt im Bild (Entscheidung 0.17.0 unberührt, kein Anschneiden nötig). Bei Abstand 1 identisch zu vorher. Betrifft alle Kämpfe mit Gegnern in Abstand über 1. Messung am Gerät offen.
 - Tests 183 grün, VERSION 0.49.9 in main.js und sw.js. Kein Headless-Bild gerendert (nur Rechnung).
 - Rückfall: Commit a644af7 (0.49.8). Tag-Push liefert 403, nicht umgangen.
+
+## 0.50.0 (25.11.2026; Bilder headless gerendert, nicht auf Gerät getestet): Testgewölbe ausgebaut
+- Nutzer 23:14: „Ja“ zum Grundriss. Gebaut in game.json `test1` (Karte 22×10, nur Wände/Boden geändert). IDs mit Präfix `tg_` (Nebelturm nutzt `lever_t1`, `gate_t1`, `switch_t1`, `secret_t1`; IDs müssen global eindeutig sein).
+- A Lehrpfad: Hebel `tg_hebel` (5,2) in Raum 1 öffnet Gitter `tg_gitter` (11,1) vor der Truhennische (12,1; Wände (12,2) und (13,2) neu). Wölfe `en2` bewachen die Truhe wie vorher. Speerfalle `tg_falle` (7,6) im einzigen Gang nach Osten, Wandhinweis `tg_tafel_falle` (7,5). `en3` und Eisentür `door_b` unverändert. Runenstein bleibt der Schluss.
+- C Geheimraum: Kammer x16–18, y3–4, Geheimwand `tg_geheim` (17,5), Schalterstein `tg_schalter` (19,8; liegt auf Boden, wird zum Wandstein, Zugang von (18,8)). Truhe `tg_truhe_geheim` (17,3), `hidden`, ohne Wache, Beute: 2× `potion`, 1× `gegengift`, 15 Gold (IDs gegen game.json geprüft).
+- D Atmosphäre: Fackelwände (3,0), (10,0), (16,9). Lager in Raum 1: Stuhl (3,4), Tisch (4,4), Fass (5,1). Deko-Abziehbilder `dk_tg_kratzer1`, `dk_tg_moos1`.
+- E Geschichte: Tafeln `tg_tafel_lager` (5,4), `tg_tafel_zaehler` (11,7), `tg_tafel_seite` (16,3) und die Falle-Tafel tragen sich im Notizbuch ein. Nur Stimmung und Spuren früherer Sucher, nichts zum Ende der Geschichte.
+- Abweichung vom gezeigten Plan: Hebel steht bei (5,2) statt (1,2), weil er vom Startfeld aus im Blickfeld liegt; Schalterstein bei (19,8) statt (15,9), weil Wandsteine auf einer Bodenzelle liegen müssen (Test). Lager nach Süden verlegt, weil (2,1) und (2,4) Treppenziele sind.
+- Technisch geprüft: Tests 184 grün (neu: Hebel/Gitter, Geheimwand, Tafel-Notizbuch, Altstand mit zugemauerter Zelle). Vier Ansichten headless gerendert und angesehen (Raum 1, Lager, Gang mit Tafel, Kammer). SIM.md/BALANCE.md nicht neu erzeugt: keine Gegner- oder Heldenwerte geändert (Beute der Kammer nicht simuliert).
+- Offen: Gerätetest 0.49.6 bis 0.50.0 (Nutzer: erstmal keine Tests, Testliste auf Zuruf), Schrat im Kampf (0.49.9) messen.
+- Rückfall: Commit d62a4c3 (0.49.9). Tag-Push liefert 403, nicht umgangen.
 

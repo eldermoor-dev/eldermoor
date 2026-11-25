@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.50.0 (25.11.2026, headless gerendert, nicht auf Gerät getestet)
+- Testgewölbe ausgebaut (Plan A, C, D, E): Hebel in Raum 1 öffnet das Gitter zur Truhennische (Wölfe bewachen die Truhe), Speerfalle im einzigen Gang nach Osten mit Wandhinweis, Geheimkammer hinter Riss-Wand (Schalterstein im Ostraum) mit Truhe (2 Heiltränke, 1 Gegengift, 15 Gold), drei Wandfackeln, Lager mit Tisch, Stuhl und Fass, vier Tafeln fürs Notizbuch (Lager, Kohle-Hinweis, Striche, Seite). Karte weiter 22×10. Gegnerwerte unverändert. Alt-Spielstände ziehen die Objekte nach; steht die Gruppe in einer jetzt zugemauerten Zelle, geht sie zum Start.
+
 ## 0.49.9 (25.11.2026, technisch geprüft, nicht auf Gerät getestet)
 - Kampfbild: Einpassung und Fußpunkt (main.js `viewTarget`) rechnen mit dem echten Abstand des nächsten lebenden Gegners (mindestens 1, höchstens 4) statt fest mit 1. Der Schrat steht zwei Felder entfernt; er wurde doppelt verkleinert. Bei Abstand 1 unverändert. Werte unverändert.
 
