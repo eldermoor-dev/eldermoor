@@ -3,6 +3,11 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.54.0 (26.11.2026, nicht auf Gerät getestet)
+- Gegenmittel (statt Gegengift) nimmt Gift und Blutung.
+- Neue Kampftränke: Stärke, Eisenhaut, Flinkheit, Feuerschutz, Frostschutz; Klartrank nimmt Fluch.
+- Alchemistenküche in der Siedlung (nach dem Nebelturm) verkauft sie in kleinen Mengen mit Nachschub nach einer Stunde.
+
 ## 0.53.1 (26.11.2026, nicht auf Gerät getestet)
 - Schmied Brann schon nach der Kultgruft statt nach dem Nebelturm.
 - Körperteile (5 Stück) fallen extrem selten (1,5 % je Sieg), nicht verkäuflich; Brann schmiedet daraus einzigartige Waffen und Rüstungen.

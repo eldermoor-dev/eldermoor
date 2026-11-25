@@ -214,11 +214,14 @@
       "value": 12
     },
     "gegengift": {
-      "name": "Gegengift",
+      "name": "Gegenmittel",
       "kind": "consumable",
-      "cure": "poison",
-      "desc": "Nur im Kampf: nimmt einem Helden das Gift.",
-      "value": 8
+      "cure": [
+        "poison",
+        "bleed"
+      ],
+      "desc": "Nur im Kampf: nimmt einem Helden Gift und Blutung.",
+      "value": 10
     },
     "turm_schluessel": {
       "name": "Turmschlüssel",
@@ -1035,6 +1038,69 @@
         "heal": 3
       },
       "desc": "Einzigartige Rüstung, vom Schmied aus einem Priesterauge geschmiedet. +2 Verteidigung, Statusabwehr 25 %, Heilzauber +3 LP. Für Magier, Kleriker, Alchemisten."
+    },
+    "staerketrank": {
+      "name": "Stärketrank",
+      "kind": "consumable",
+      "buff": {
+        "status": "might",
+        "turns": 6
+      },
+      "icon": "💪",
+      "desc": "Nur im Kampf: Angriff +25 % für 6 eigene Züge.",
+      "value": 30
+    },
+    "eisenhauttrank": {
+      "name": "Eisenhauttrank",
+      "kind": "consumable",
+      "buff": {
+        "status": "iron",
+        "turns": 6
+      },
+      "icon": "🛡",
+      "desc": "Nur im Kampf: Verteidigung +30 % und +1 für 6 eigene Züge.",
+      "value": 30
+    },
+    "flinkheitstrank": {
+      "name": "Flinkheitstrank",
+      "kind": "consumable",
+      "buff": {
+        "status": "swift",
+        "turns": 8
+      },
+      "icon": "💨",
+      "desc": "Nur im Kampf: der Trinker handelt in jeder Runde früher, 8 eigene Züge.",
+      "value": 26
+    },
+    "feuerschutz": {
+      "name": "Feuerschutztrank",
+      "kind": "consumable",
+      "buff": {
+        "status": "fireward",
+        "turns": 6
+      },
+      "icon": "🔥",
+      "desc": "Nur im Kampf: halber Schaden durch Feuerzauber (Brandmagier, Teufel, Gießmeister), 6 eigene Züge.",
+      "value": 28
+    },
+    "frostschutz": {
+      "name": "Frostschutztrank",
+      "kind": "consumable",
+      "buff": {
+        "status": "frostward",
+        "turns": 6
+      },
+      "icon": "❄",
+      "desc": "Nur im Kampf: halber Schaden durch Eiszauber (Nebelgeist, Quellhüterin), 6 eigene Züge.",
+      "value": 28
+    },
+    "klartrank": {
+      "name": "Klartrank",
+      "kind": "consumable",
+      "cure": "curse",
+      "icon": "✨",
+      "desc": "Nur im Kampf: nimmt einem Helden den Fluch (Verteidigung −30 %).",
+      "value": 45
     }
   },
   "races": {
@@ -1377,6 +1443,31 @@
       "name": "Verflucht",
       "icon": "☽",
       "desc": "Verteidigung −30 %."
+    },
+    "might": {
+      "name": "Stärke",
+      "icon": "▲",
+      "desc": "Angriff +25 %."
+    },
+    "iron": {
+      "name": "Eisenhaut",
+      "icon": "◆",
+      "desc": "Verteidigung +30 % und +1."
+    },
+    "swift": {
+      "name": "Flinkheit",
+      "icon": "»",
+      "desc": "Handelt in jeder Runde früher."
+    },
+    "fireward": {
+      "name": "Feuerschutz",
+      "icon": "❖",
+      "desc": "Halber Schaden durch Feuerzauber."
+    },
+    "frostward": {
+      "name": "Frostschutz",
+      "icon": "❄",
+      "desc": "Halber Schaden durch Eiszauber."
     }
   },
   "progression": {
@@ -3991,6 +4082,26 @@
               "x": 5,
               "y": 3,
               "look": "feuerschale"
+            }
+          ]
+        },
+        {
+          "flag": "kueche_offen",
+          "objects": [
+            {
+              "id": "merchant_kueche",
+              "type": "merchant",
+              "x": 5,
+              "y": 4,
+              "shop": "kueche",
+              "look": "haendler2"
+            },
+            {
+              "id": "d_m_kessel",
+              "type": "decor",
+              "x": 6,
+              "y": 4,
+              "look": "kueche"
             }
           ]
         }
@@ -13654,6 +13765,41 @@
         },
         {
           "item": "plattenpanzer",
+          "n": 1
+        }
+      ]
+    },
+    "kueche": {
+      "name": "Alchemistenküche",
+      "owner": "Odile",
+      "greeting": "Odile rührt in einem Kessel, der nach Kräutern und Schwefel riecht. „Alles frisch, aber nie viel. Wer mehr will, wartet.“",
+      "stock": [
+        {
+          "item": "gegengift",
+          "n": 3
+        },
+        {
+          "item": "staerketrank",
+          "n": 2
+        },
+        {
+          "item": "eisenhauttrank",
+          "n": 2
+        },
+        {
+          "item": "flinkheitstrank",
+          "n": 2
+        },
+        {
+          "item": "feuerschutz",
+          "n": 1
+        },
+        {
+          "item": "frostschutz",
+          "n": 1
+        },
+        {
+          "item": "klartrank",
           "n": 1
         }
       ]

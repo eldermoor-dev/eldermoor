@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.53.1 (26.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.54.0 (26.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1976,6 +1976,15 @@ Auftrag aus den Vorschlägen vom 25.11.: **A** Lehrpfad ohne Belehrung, **C** Ge
 - **Schilder** (Muster WARNUNG: Titel nennt die Funktion, nicht das Schreibmittel): `deco_g1` KRATZER → TAGE GEZÄHLT, `sign_trap_t1` RUNEN → NICHT BLIND. Alle 124 Schildtitel im Spiel durchgesehen; alle anderen nennen Ort, Warnung oder Inhalt. Nicht geändert (Entscheidung offen): AUGE (`sign_secret_g1`, Motiv eines Geheimhinweises, kein Schreibmittel).
 - Tests: 189 grün (neu: Schmied, Tote erwecken). VERSION 0.53.0 in main.js und sw.js, keine neuen Dateien (ASSETS unverändert). Gegner- und Heldenwerte unverändert (neuer Zauber ausgenommen).
 - Rückfall: Commit 1ee530c (0.52.1). Tag-Push liefert 403, nicht umgangen.
+
+## 0.54.0 (26.11.2026; nicht auf Gerät getestet; Tests 192 grün, nur Node): Tränke, Alchemistenküche
+- Nutzer 00:31/00:34: Gegengift praktisch nie gebraucht → „Empfehlungen oben alle umsetzen, bei den Tränken entscheidet der Assistent“; **Bedingung: nicht wieder schnell zu viel Gold.**
+- Belegt: Kleriker nimmt Gift/Blutung schon mit „Heilende Hand“ (Stufe 1), Fluch mit „Große Heilung“/„Reinigendes Licht“. Heiltränke heilen nur LP. Status gelten nur im Kampf (state.combat).
+- **Gegenmittel** (alte ID `gegengift` bleibt, Spielstände/Truhen unverändert): nimmt Gift **und Blutung** (`cure` jetzt Liste). Wert 10.
+- **Neue Kampftränke** (`buff`, nur im Kampf, wirken für eigene Züge, Status in `state.combat.status`): Stärketrank (Angriff +25 %, 6 Züge), Eisenhauttrank (Verteidigung +30 % und +1, 6), Flinkheitstrank (handelt früher, +4 in der Zugreihenfolge, 8), Feuerschutz und Frostschutz (halber Schaden durch Gegnerzauber mit `element` fire bzw. ice, 6). **Klartrank** nimmt Fluch.
+- **Alchemistenküche** (Händlerin Odile, Siedlung, nach dem Betreten des Nebelturms, Flag `kueche_offen`, `alt`-Liste moorrand, Shop `kueche`): Gegenmittel 3, Stärke 2, Eisenhaut 2, Flinkheit 2, Feuerschutz 1, Frostschutz 1, Klartrank 1; Nachschub erst 1 h Echtzeit nach dem ersten Verkauf (vorhandene Shop-Regel). Kampftränke nur hier, nicht bei Hedda, nicht in Truhen. Werte 26–45 Gold × Akt-Aufschlag; Rückverkauf höchstens halber Wert. **Gold-Bremse (Entscheidung des Assistenten), nicht simuliert.**
+- Kampfmenü: eine Zeile je Trank (`use:<id>:<held>`), Alchemist gibt Tränke an alle.
+- Nicht gebaut/offen: Ysolde-Aufträge, Rastereignisse, Simulation der neuen Mechanik, Monsterbuch (Bestiarium gibt es seit 0.9.0, wird geprüft). Offen auf Gerät: alles oben.
 
 ## 0.53.1 (26.11.2026; nicht auf Gerät getestet; Tests 191 grün, nur Node): Körperteile, Schmied früher, Sets vollenden
 - Nutzer 00:22 (verbindlich): Körperteile sind nicht verkäuflich und fallen extrem selten; der Schmied gibt einen Hinweis, dass er daraus etwas Besonderes macht; Hedda gibt einen Hinweis darauf und ist die Schwester von Brann; Schmied ab Stufe 9 wäre viel zu spät; Sets (Waffe, Rüstung, Ring) werden nur mit Hilfe des Schmieds fertig, das erklärt er.

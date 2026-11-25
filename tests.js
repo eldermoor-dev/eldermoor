@@ -2313,7 +2313,7 @@ export async function runTests(data, env = {}) {
     assert(L.heroAction(s, data, { type: 'item', item: 'gegengift', hero: other }).error === 'bad-target' && s.inv.gegengift === 1, 'Gegenstand nur an sich selbst, nicht an andere Helden');
     s.combat.status['h' + me] = { poison: { t: 3, p: 2 } };
     r = L.heroAction(s, data, { type: 'item', item: 'gegengift', hero: me });
-    assert(!r.error && s.inv.gegengift === 0 && !L.statusOf(s, 'h', me).poison, 'Gift genommen');
+    assert(!r.error && !s.inv.gegengift && !L.statusOf(s, 'h', me).poison, 'Gift genommen');
     assert(L.useItemOutside(s, data, 'oelflasche', 0).error, 'außerhalb des Kampfes nicht benutzbar');
     assert(data.shops.moorrand.stock.some((x) => x.item === 'oelflasche') && data.shops.moorrand.stock.some((x) => x.item === 'gegengift'), 'Hedda verkauft beides');
   });
@@ -3589,6 +3589,39 @@ export async function runTests(data, env = {}) {
     eq(L.smithFinishSet(s, data, h.name, 'moorwaechter').error, 'gold', 'zu wenig Gold');
     const alt = L.newGame(data, 13); const ah = alt.heroes[0]; ah.equip = { weapon: 'moorklinge', armor: 'moorpanzer', ring: 'ring_moorwaechter' }; delete ah.setFin; L.syncStatic(alt, data);
     eq(L.activeSets(data, ah).length, 1, 'Alt-Stand: vollständiges Set wirkt weiter');
+  });
+  await test('0.54.0 Tränke: Gegenmittel (Gift und Blutung), Klartrank, Kampftränke, Schutz, Küche mit Vorrat', () => {
+    const s = fresh(21); put(s, 15, 7, 1); L.startCombat(s, data, L.enemyInFront(s));
+    const me = L.currentActor(s).side === 'h' ? L.currentActor(s).idx : 0;
+    let g = 0; while (L.currentActor(s).side !== 'h' && g++ < 9) L.enemyStep(s, data);
+    const a = L.currentActor(s).idx;
+    const force2 = (n) => { s.combat.status['h' + a] = s.combat.status['h' + a] || {}; s.combat.status['h' + a][n] = { t: 3, p: 2 }; };
+    s.inv.gegengift = 2; force2('poison'); force2('bleed');
+    let r = L.heroAction(s, data, { type: 'item', item: 'gegengift', hero: a });
+    assert(!r.error && !L.statusOf(s, 'h', a).poison && !L.statusOf(s, 'h', a).bleed && s.inv.gegengift === 1, 'Gegenmittel nimmt Gift und Blutung: ' + JSON.stringify(r.error || r.msgs));
+    // Kampftrank: wirkt nur im Kampf, einmal je Dauer, Vorrat sinkt
+    const f = fresh(22); f.inv.staerketrank = 1; eq(L.useItemOutside(f, data, 'staerketrank', 0).error !== undefined, true, 'Kampftrank nicht außerhalb des Kampfes');
+    let k = 0; while (L.currentActor(s).side !== 'h' && k++ < 9) L.enemyStep(s, data);
+    if (s.combat && !s.combat.over) {
+      const b = L.currentActor(s).idx; s.inv.eisenhauttrank = 1; s.inv.klartrank = 1;
+      const base = L.heroDef ? L.heroDef(data, s.heroes[b], s) : 0;
+      const r2 = L.heroAction(s, data, { type: 'item', item: 'eisenhauttrank', hero: b });
+      assert(!r2.error && L.statusOf(s, 'h', b).iron && !s.inv.eisenhauttrank, 'Eisenhaut gesetzt: ' + JSON.stringify(r2.error || r2.msgs));
+    }
+    // Klartrank nimmt Fluch, nichts anderes
+    const z = fresh(23); put(z, 15, 7, 1); L.startCombat(z, data, L.enemyInFront(z)); let q = 0; while (L.currentActor(z).side !== 'h' && q++ < 9) L.enemyStep(z, data);
+    const za = L.currentActor(z).idx; z.combat.status['h' + za] = { curse: { t: 3, p: 0 }, poison: { t: 3, p: 1 } }; z.inv.klartrank = 1;
+    const rz = L.heroAction(z, data, { type: 'item', item: 'klartrank', hero: za });
+    assert(!rz.error && !L.statusOf(z, 'h', za).curse && L.statusOf(z, 'h', za).poison, 'Klartrank nimmt nur den Fluch');
+    // Werte der neuen Tränke und Küche
+    for (const id of ['staerketrank', 'eisenhauttrank', 'flinkheitstrank', 'feuerschutz', 'frostschutz']) { const it = data.items[id]; assert(it.buff && data.statuses[it.buff.status] && it.value >= 25, 'Kampftrank ' + id); }
+    const sh = data.shops.kueche; assert(sh && sh.stock.every((x) => x.n <= 3), 'Küche: kleiner Vorrat');
+    assert(!data.shops.moorrand.stock.some((x) => data.items[x.item].buff), 'Hedda verkauft keine Kampftränke');
+    const ob = [].concat(data.levels.moorrand.alt).find((al) => al.flag === 'kueche_offen'); assert(ob && ob.objects.some((o) => o.id === 'merchant_kueche' && o.shop === 'kueche'), 'Küche in der Siedlung');
+    const kk = L.newGame(data, 24); kk.areas = { nebelturm: { objs: [], seen: [], notes: [] } }; L.syncStatic(kk, data); assert(kk.flags.kueche_offen, 'Küche offen nach Nebelturm');
+    const k0 = L.newGame(data, 25); L.syncStatic(k0, data); assert(!k0.flags.kueche_offen, 'Küche zu am Anfang');
+    // Verkauf: Rückkaufpreis höchstens die Hälfte (kein Gewinn durch Kaufen und Verkaufen)
+    const x = fresh(26); x.inv.staerketrank = 1; assert(L.sellPrice(x, data, 'staerketrank') <= data.items.staerketrank.value / 2 + 1, 'Rückverkauf höchstens halber Wert');
   });
   await test('0.53.0 Tote erwecken: Kleriker ab Stufe 12, im Kampf, einmal je Kampf, nur Bewusstlose, Erweckter handelt ab nächster Runde', () => {
     const sp = data.spells.awaken; assert(sp && sp.kind === 'revive' && sp.cost > 0 && sp.pct > 0 && sp.pct <= 100, 'Zauberdaten');

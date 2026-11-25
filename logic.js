@@ -317,12 +317,14 @@ export function passEntryDirs(lvl, o) {
 export const TAVERN_FLAG = 'taverne_offen', TAVERN_AREA = 'schratgruben';
 // 0.53.0: Der Schmied zieht in die Siedlung, sobald die Kultgruft betreten wurde (Marke 'schmied_offen', moorrand.alt fügt ihn hinzu). 0.53.1: früher (vorher Nebelturm; Nutzer: „viel zu spät“).
 export const SMITH_FLAG = 'schmied_offen', SMITH_AREA = 'kultgruft';
+export const KITCHEN_FLAG = 'kueche_offen', KITCHEN_AREA = 'nebelturm'; // 0.54.0: Alchemistenküche in der Siedlung
 function unlockWorld(state) {
   state.flags = state.flags || {};
   const seen = (id) => state.levelId === id || !!(state.areas && state.areas[id]);
   let changed = false;
   if (!state.flags[TAVERN_FLAG] && (seen(TAVERN_AREA) || seen('taverne'))) { state.flags[TAVERN_FLAG] = true; changed = true; }
   if (!state.flags[SMITH_FLAG] && seen(SMITH_AREA)) { state.flags[SMITH_FLAG] = true; changed = true; }
+  if (!state.flags[KITCHEN_FLAG] && seen(KITCHEN_AREA)) { state.flags[KITCHEN_FLAG] = true; changed = true; }
   return changed;
 }
 export function changeArea(state, data, stairsId) {
@@ -1811,7 +1813,7 @@ function buildOrder(state, data) {
   const c = state.combat;
   const list = [];
   const slowed = (side, i) => (c.status[side + i] && c.status[side + i].slow ? -100 : 0);
-  state.heroes.forEach((h, i) => { if (h.hp > 0) list.push({ side: 'h', idx: i, key: heroInit(data, h, state) + rand(state) * 4 + 0.5 + slowed('h', i) }); });
+  state.heroes.forEach((h, i) => { if (h.hp > 0) list.push({ side: 'h', idx: i, key: heroInit(data, h, state) + rand(state) * 4 + 0.5 + slowed('h', i) + (c.status['h' + i] && c.status['h' + i].swift ? 4 : 0) }); });
   c.enemies.forEach((e, i) => { if (e.hp > 0) list.push({ side: 'e', idx: i, key: enemyOf(data, e).init + rand(state) * 4 + slowed('e', i) + (c.ambush && c.round === 1 ? 1000 : 0) }); });
   list.sort((a, b) => b.key - a.key);
   c.order = list.map(({ side, idx }) => ({ side, idx }));
@@ -1974,8 +1976,8 @@ export const diffPct = (state, data, key) => {
 const rageAtk = (e, atk) => (e && e.rage ? Math.round((atk * RAGE_PCT) / 100) : atk);
 const foeAtk = (state, data, atk) => { const p = diffPct(state, data, 'atk'); return p === 100 ? atk : Math.max(1, Math.round((atk * p) / 100)); };
 const pierceDef = (data, h, def) => { const p = fxSum(data, h, 'pierce'); return p > 0 ? Math.floor((def * (100 - Math.min(90, p))) / 100) : def; }; // Scharfschütze (0.22.0)
-const effDef = (state, side, idx, def) => (statusOf(state, side, idx).curse ? Math.floor((def * 7) / 10) : def); // Fluch: Verteidigung −30 %
-const effAtk = (state, side, idx, atk) => (statusOf(state, side, idx).weak ? Math.max(1, Math.floor((atk * 3) / 4)) : atk);
+const effDef = (state, side, idx, def) => { const st = statusOf(state, side, idx); let d = st.curse ? Math.floor((def * 7) / 10) : def; if (st.iron) d = Math.ceil((d * 13) / 10) + 1; return d; }; // Fluch: Verteidigung −30 %; 0.54.0 Eisenhauttrank: +30 % und +1
+const effAtk = (state, side, idx, atk) => { const st = statusOf(state, side, idx); let a = st.weak ? Math.max(1, Math.floor((atk * 3) / 4)) : atk; if (st.might) a = Math.ceil((a * 5) / 4); return a; }; // 0.54.0 Stärketrank: Angriff +25 %
 
 // Ende des eigenen Zugs: Gift wirkt, Dauer sinkt. Rückgabe: true, wenn danach alle Gegner besiegt sind.
 function endOfTurn(state, data, side, idx, msgs) {
@@ -1991,7 +1993,7 @@ function endOfTurn(state, data, side, idx, msgs) {
       if (side === 'e' && tgt.hp === 0) msgs.push(`${tgt.name} bricht zusammen.`);
     }
   }
-  for (const n of ['poison', 'burn', 'bleed', 'weak', 'slow', 'curse']) if (st[n] && --st[n].t <= 0) { delete st[n]; msgs.push(`${tgt.name}: ${data.statuses[n].name} klingt ab.`); }
+  for (const n of ['poison', 'burn', 'bleed', 'weak', 'slow', 'curse', 'might', 'iron', 'swift', 'fireward', 'frostward']) if (st[n] && --st[n].t <= 0) { delete st[n]; msgs.push(`${tgt.name}: ${data.statuses[n].name} klingt ab.`); }
   return c.enemies.every((e) => e.hp <= 0);
 }
 
@@ -2212,11 +2214,21 @@ export function heroAction(state, data, act) {
   } else if (act.type === 'item') {
     const iid = act.item || 'potion', it = data.items[iid];
     if (it && !it.throw && act.hero !== a.idx && !data.classes[h.cls].potionGiver) return { error: 'bad-target' }; // Gegenstände nutzt nur der Held, der gerade dran ist, an sich selbst
-    if (it && it.cure) { // Gegengift: nimmt einen Status von einem Helden
-      const t = state.heroes[act.hero], st = statusOf(state, 'h', act.hero);
-      if (!(state.inv[iid] > 0) || !t || t.hp <= 0 || !st[it.cure]) return { error: 'bad-target' };
-      delete st[it.cure]; state.inv[iid]--;
-      msgs.push(`${t.name} nimmt ${it.name}: ${data.statuses[it.cure].name} wird genommen.`);
+    if (it && it.cure) { // Gegenmittel/Klartrank: nimmt Status von einem Helden (cure = Name oder Liste)
+      const t = state.heroes[act.hero], st = statusOf(state, 'h', act.hero), cures = [].concat(it.cure).filter((n) => st[n]);
+      if (!(state.inv[iid] > 0) || !t || t.hp <= 0 || !cures.length) return { error: 'bad-target' };
+      for (const n of cures) delete st[n];
+      state.inv[iid]--; if (state.inv[iid] <= 0) delete state.inv[iid];
+      msgs.push(`${t.name} nimmt ${it.name}: ${cures.map((n) => data.statuses[n].name).join(' und ')} wird genommen.`);
+      sfx = 'heal';
+    } else if (it && it.buff) { // 0.54.0: Kampftränke (Stärke, Eisenhaut, Flinkheit, Feuer-/Frostschutz) wirken auf einen Helden bis zum Ende des Kampfes (turns eigene Züge)
+      const t = state.heroes[act.hero];
+      if (!(state.inv[iid] > 0) || !t || t.hp <= 0) return { error: 'bad-target' };
+      const k = skey('h', act.hero), stt = c.status[k] || (c.status[k] = {});
+      if (stt[it.buff.status] && stt[it.buff.status].t >= it.buff.turns) return { error: 'bad-target' };
+      stt[it.buff.status] = { t: it.buff.turns, p: 0 };
+      state.inv[iid]--; if (state.inv[iid] <= 0) delete state.inv[iid];
+      msgs.push(`${t.name} trinkt ${it.name}: ${data.statuses[it.buff.status].name} (${it.buff.turns} Züge).`);
       sfx = 'heal';
     } else if (it && it.throw) { // Wurfgegenstand: trifft immer, Elementfaktor wie bei Zaubern
       const ti = act.target, e = c.enemies[ti];
@@ -2303,6 +2315,7 @@ function enemyCast(state, data, ei, e, en, sp, msgs, opts) {
       let d = calcDamage(state, effAtk(state, 'e', ei, rageAtk(e, foeAtk(state, data, en.atk))), sp.kind === 'drain' ? effDef(state, 'h', ti, heroDef(data, t, state)) : Math.floor(heroDef(data, t, state) / 2), { sure: true, defending: !!c.defending[ti], mult: sp.mult, trace: tr });
       const cap = Math.max(1, Math.ceil(t.maxHp * (sp.all ? 0.4 : 0.5))); // ein Zauber nimmt höchstens die Hälfte der Max-LP (schützt den Magier)
       if (d > cap) { d = cap; tr.total = d; tr.cap = cap; }
+      { const ws = statusOf(state, 'h', ti); if (sp.element === 'fire' && ws.fireward || sp.element === 'ice' && ws.frostward) { d = Math.max(1, Math.floor(d / 2)); msgs.push(`${t.name}: Schutztrank halbiert den Schaden.`); } } // 0.54.0
       d = manaShield(data, t, d, msgs);
       t.hp = Math.max(0, t.hp - d);
       if (sp.kind === 'drain') {
