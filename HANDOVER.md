@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.49.4 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.49.5 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1871,3 +1871,10 @@ Auftrag aus den Vorschlägen vom 25.11.: **A** Lehrpfad ohne Belehrung, **C** Ge
 - Das Foto zeigt das handgesetzte Schild MOOR-PFAD neben dem Bogen (Gerät). Ob die automatischen Wegweiser von 0.49.2 an anderen Treppen erscheinen, ist weiter unbestätigt.
 - Idee offen (Plan „Siedlung wächst mit“): Schmied, Aushangbrett, Alchemistenküche; Siedlung vergrößern.
 
+## 0.49.5 (25.11.2026; Bild headless gerendert, nicht auf Gerät getestet): Rast im Dungeon als Gang
+- Auswertung Testliste 0.49 (Nutzer, Gerät): ✓ Update, Fackel, Augen, Überspringen, Taverne unverändert, Treppen-Rückfrage (stand schon auf dem Feld), zwei Schwierigkeitsgrade bleiben. ✗ Rast dunkel/Schlaf (Foto: „Sieht nicht nach Gang aus“, „bunte Decken“, „kleines Lagerfeuer in der Mitte“), Totenkopf auf der Tür nicht gesehen, Schrat „zu klein“. Schrat-Werte: nur Optik, Werte bleiben (LE 80, Angriff 13).
+- Nutzer 22:48: „Viel friedlich. Anweisungen zum Aussehen habe ich bereits genannt. Umsetzen.“
+- Gebaut (scene.js `corridor`, neu `campfire`): Perspektivgang mit Fluchtpunkt, Steinfugen, Bodenplatten, dunklen Seitenöffnungen; Wandfackel mit Zugluft-Einbrüchen; Lagerfeuer als niedriges Feuer mit Steinring (Deutung von „Kleines Lagerfeuer in der Mitte“, Vermutung); Decken gedämpft (Priesterdecke nicht mehr hell). Augenpositionen auf Seitenöffnungen/Gangende gelegt.
+- Schrat: Im Kampf passt die Figur schon jetzt fast die ganze Bildhöhe (headless gerendert, Leiste bei 70 %: Kopf am oberen Rand). Weiter vergrößern würde den Kopf abschneiden, daher keine Änderung. Offen: Nutzer fragen, welche Version im Titelbild stand (Vermutung: veralteter Cache, 0.49.1 kam erst nach dem Foto).
+- Tür-Totenkopf: im Code und Render belegt (0.49.1); Nutzer soll nach Neuladen von der Moorlichtung aus erneut schauen.
+- Offen: Treppen „erst beim zweiten Mal“ (Änderung würde Entscheidung 0.47.6 berühren, Zustimmung nötig); Plan 0.50.0 Testgewölbe in neuem Chat.

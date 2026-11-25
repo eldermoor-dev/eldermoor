@@ -5,7 +5,7 @@ const W = 320, H = 180;
 export const SLEEP_ROOMS = ['Kaminzimmer', 'Dachkammer', 'Eckzimmer am Fenster', 'Gewölbestube'];
 const SKIN = { human: '#e0b48c', elf: '#f0d2b0', dwarf: '#d49a74', ork: '#7f9a5a', gnome: '#e8b898' };
 const HAIR = ['#3a2616', '#6a4224', '#b8863c', '#1c1612', '#9a3a1c', '#c9c2b0'];
-const BLANKET = { warrior: ['#7a2a2a', '#9a3c3c'], rogue: ['#2f4a33', '#42654a'], priest: ['#d8d0b8', '#efe8d4'], mage: ['#2c3e7a', '#4457a0'], ranger: ['#5a4a2a', '#7a6638'], alchemist: ['#3f6b5e', '#58887a'] };
+const BLANKET = { warrior: ['#7a2a2a', '#9a3c3c'], rogue: ['#2f4a33', '#42654a'], priest: ['#8c8571', '#a29b85'], mage: ['#2c3e7a', '#4457a0'], ranger: ['#5a4a2a', '#7a6638'], alchemist: ['#3f6b5e', '#58887a'] };
 const hash = (s) => { let h = 2166136261; for (const c of String(s)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
 
 function rect(c, x, y, w, h, col) { c.fillStyle = col; c.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); }
@@ -140,6 +140,9 @@ function lying(c, x0, hero, i, t) {
   const tw = Math.max(0, Math.sin(t * 0.9 + i * 2.1) - 0.82) * 5.5;
   const br = Math.sin(t * 2.6 + i * 1.3) * 0.7 + tw * Math.sin(t * 31 + i), y0 = 128 + (i % 2) * 6, w = 66;
   c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(x0 + w / 2, y0 + 30, w / 2 + 3, 6, 0, 0, 6.2832); c.fill(); // Schatten
+  rect(c, x0 - 4, y0 + 27, w + 10, 6, '#2e281f'); rect(c, x0 - 4, y0 + 27, w + 10, 1, '#41372b'); for (let k = 0; k < 6; k++) rect(c, x0 - 4 + k * 13 + (i % 3), y0 + 33, 3, 2, '#2e281f'); // 0.49.5: dünne, abgewetzte Decke auf dem Steinboden
+  const dull = (hex) => { const n = parseInt(hex.slice(1), 16), m = [0x3a, 0x34, 0x2c]; return '#' + [16, 8, 0].map((sh, q) => Math.round(((n >> sh) & 255) * 0.32 + m[q] * 0.68).toString(16).padStart(2, '0')).join(''); };
+  const cov = dull(bl[0]), cov2 = dull(bl[1]);
   rect(c, x0 + 2, y0 + 18, 14, 10, '#6a5238'); rect(c, x0 + 2, y0 + 18, 14, 2, '#8a6c48'); // Rucksack als Kopfstütze
   const hx = x0 + 12, hy = y0 + 14;
   disc(c, hx, hy, race === 'gnome' ? 7 : 9, skin);
@@ -147,10 +150,11 @@ function lying(c, x0, hero, i, t) {
   if (race === 'elf') rect(c, hx + 8, hy - 6, 6, 2, skin);
   if (race === 'gnome') { c.fillStyle = '#b8402a'; c.beginPath(); c.moveTo(hx - 6, hy - 4); c.lineTo(hx - 17, hy - 11 + Math.sin(t * 1.2)); c.lineTo(hx + 2, hy - 6); c.fill(); }
   if (race === 'dwarf') { c.fillStyle = '#8a4a1c'; rect(c, hx - 2, hy + 3, 12, 6, '#8a4a1c'); }
-  rect(c, hx + 1, hy - 1, 3, 1, '#2a1a10'); rect(c, hx + 6, hy - 1, 3, 1, '#2a1a10');
-  rect(c, x0 + 20, y0 + 10 - br, w - 20, 22 + br, bl[0]); rect(c, x0 + 20, y0 + 10 - br, w - 20, 3, bl[1]); // Decke über dem Körper
-  c.fillStyle = bl[0]; c.beginPath(); c.ellipse(x0 + w - 1, y0 + 21, 4, 11 + br / 2, 0, 0, 6.2832); c.fill();
-  for (let k = 0; k < 3; k++) rect(c, x0 + 26 + k * 12, y0 + 16 - br, 8, 1, 'rgba(255,255,255,.12)');
+  if (tw > 1.2) { for (const ex of [hx + 1, hx + 6]) { rect(c, ex, hy - 2, 3, 3, '#e8e0d0'); rect(c, ex + 1, hy - 1, 1, 1, '#1a1008'); } } // zuckt: Augen springen kurz auf
+  else { rect(c, hx + 1, hy - 1, 3, 1, '#2a1a10'); rect(c, hx + 6, hy - 1, 3, 1, '#2a1a10'); }
+  rect(c, x0 + 20, y0 + 15 - br, w - 20, 15 + br, cov); rect(c, x0 + 20, y0 + 15 - br, w - 20, 2, cov2); // Mantel über dem Körper, flach und gedämpft
+  c.fillStyle = cov; c.beginPath(); c.ellipse(x0 + w - 1, y0 + 23, 3, 7 + br / 2, 0, 0, 6.2832); c.fill();
+  for (let k = 0; k < 3; k++) rect(c, x0 + 26 + k * 12, y0 + 20 - br, 8, 1, 'rgba(255,255,255,.07)');
   const gx = x0 + 20;
   if (cls === 'warrior') { rect(c, gx, y0 + 33, 40, 2, '#c8ccd4'); rect(c, gx - 2, y0 + 31, 3, 6, '#8a6a30'); }
   else if (cls === 'mage') { rect(c, gx, y0 + 33, 44, 2, '#6a4628'); disc(c, gx - 1, y0 + 34, 3, '#7ab8ff'); }
@@ -161,45 +165,70 @@ function lying(c, x0, hero, i, t) {
   // 0.49.0: kein gemütliches „z“; der Schlaf ist unruhig (siehe drawCampScene: Zucken, flache Atmung)
 }
 function corridor(c, t) {
-  // 0.49.0 (Nutzer 25.11.2026 22:26): dunkler Gang, eine Wandfackel statt Laterne, offene dunkle Durchgänge links/rechts/Mitte
-  stones(c, 0, 0, W, 108, '#38352f', '#1e1c19', 311);
-  rect(c, 0, 0, W, 10, '#1e1c19'); // Deckenbalken
-  c.fillStyle = '#050405'; c.beginPath(); c.moveTo(126, 108); c.lineTo(126, 40); c.quadraticCurveTo(160, 14, 194, 40); c.lineTo(194, 108); c.fill(); // schwarzer Durchgang
-  rect(c, 126, 36, 68, 3, '#46423a');
-  c.fillStyle = '#050405'; rect(c, 0, 52, 14, 56, '#050405'); rect(c, W - 14, 52, 14, 56, '#050405'); // dunkle Nischen am Rand
-  floor(c, 104, '#2c2924', '#1a1713');
-  for (const x of [20, 86, 236, 296]) { rect(c, x, 0, 8, 108, '#2a2723'); rect(c, x + 8, 0, 1, 108, 'rgba(0,0,0,.5)'); } // Pfeiler
-  // Wandfackel am linken Pfeiler (x 86), Flamme flackert unregelmäßig
-  const fl = 0.78 + 0.12 * Math.sin(t * 11) + 0.07 * Math.sin(t * 17.3 + 1) + 0.04 * Math.sin(t * 29 + 2);
-  rect(c, 88, 52, 4, 14, '#2a1c10'); rect(c, 85, 48, 10, 5, '#4a3826'); // Halterung
-  c.fillStyle = `rgba(255,${150 + 60 * fl},60,.95)`; c.beginPath(); c.moveTo(87, 49); c.quadraticCurveTo(90 + Math.sin(t * 9), 34 - 4 * fl, 93, 49); c.fill();
-  c.fillStyle = 'rgba(255,230,150,.9)'; c.beginPath(); c.moveTo(89, 49); c.quadraticCurveTo(90.5 + Math.sin(t * 9), 40 - 2 * fl, 91.5, 49); c.fill();
-  return { x: 90, y: 46, r: 150, rgb: '255,140,50', a: 0.5 * fl };
+  // 0.49.5 (Nutzer: „Sieht nicht nach Gang aus“): Gang in Perspektive – Seitenwände, Decke und Boden laufen auf ein dunkles Ende zu, dunkle Seitenöffnungen, Wandfackel links
+  const poly = (pts, col) => { c.fillStyle = col; c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (let k = 1; k < pts.length; k++) c.lineTo(pts[k][0], pts[k][1]); c.closePath(); c.fill(); };
+  const VX0 = 118, VX1 = 202, VY0 = 46, VY1 = 104, wy = (x, v, left) => { const s = (left ? x : W - x) / VX0, top = VY0 * s, bot = 160 + (VY1 - 160) * s; return top + (bot - top) * v; };
+  rect(c, 0, 0, W, H, '#0a0908');
+  poly([[0, 0], [VX0, VY0], [VX0, VY1], [0, 160]], '#34312b'); poly([[W, 0], [VX1, VY0], [VX1, VY1], [W, 160]], '#2e2b26');
+  poly([[0, 0], [W, 0], [VX1, VY0], [VX0, VY0]], '#1f1d1a'); poly([[0, 160], [VX0, VY1], [VX1, VY1], [W, 160], [W, H], [0, H]], '#2a2722');
+  rect(c, VX0, VY0, VX1 - VX0, VY1 - VY0, '#050405');
+  c.strokeStyle = 'rgba(0,0,0,.55)'; c.lineWidth = 1;
+  for (const left of [true, false]) {
+    const ex = left ? 0 : W, fx = left ? VX0 : VX1;
+    for (let r = 1; r < 8; r++) { const v = r / 8; c.beginPath(); c.moveTo(ex, 160 * v); c.lineTo(fx, VY0 + (VY1 - VY0) * v); c.stroke(); } // Steinlagen
+    for (let k = 1; k <= 7; k++) { const sf = Math.min(1, (1 - 1 / (1 + 0.5 * k)) / 0.78), x = ex + (fx - ex) * sf; c.beginPath(); c.moveTo(x, VY0 * sf); c.lineTo(x, 160 + (VY1 - 160) * sf); c.stroke(); } // Fugen rücken zusammen
+  }
+  for (let k = -3; k <= 3; k++) { c.beginPath(); c.moveTo(160 + k * 14, VY1); c.lineTo(160 + k * 70, H); c.stroke(); } // Bodenplatten
+  for (const dy of [112, 124, 142, 164]) { c.beginPath(); c.moveTo(0, dy + 8); c.lineTo(W, dy + 8); c.stroke(); }
+  for (const left of [true, false]) { // dunkle Seitenöffnungen
+    const a = left ? 22 : W - 22, b = left ? 40 : W - 40;
+    poly([[a, wy(a, 0.18, left)], [b, wy(b, 0.18, left)], [b, wy(b, 1, left)], [a, wy(a, 1, left)]], '#050405');
+  }
+  // Wandfackel an der linken Wand, Flamme flackert unregelmäßig
+  let fl = 0.78 + 0.12 * Math.sin(t * 11) + 0.07 * Math.sin(t * 17.3 + 1) + 0.04 * Math.sin(t * 29 + 2);
+  fl = Math.max(0.32, fl - Math.max(0, Math.sin(t * 2.3) * Math.sin(t * 3.7 + 1) - 0.5) * 1.5); // Flamme sackt zeitweise fast ein (Zugluft)
+  rect(c, 74, 68, 4, 12, '#2a1c10'); rect(c, 71, 64, 10, 5, '#4a3826');
+  c.fillStyle = `rgba(255,${150 + 60 * fl},60,.95)`; c.beginPath(); c.moveTo(73, 65); c.quadraticCurveTo(76 + Math.sin(t * 9), 50 - 4 * fl, 79, 65); c.fill();
+  c.fillStyle = 'rgba(255,230,150,.9)'; c.beginPath(); c.moveTo(75, 65); c.quadraticCurveTo(76.5 + Math.sin(t * 9), 56 - 2 * fl, 77.5, 65); c.fill();
+  return { x: 76, y: 62, r: 100, rgb: '255,130,45', a: 0.36 * fl };
 }
-// Rote Augenpaare im Dunkel: erscheinen für 1–3 s, blinzeln, verschwinden (feste Plätze, deterministisch nach t)
-const EYES = [ // x, y, Abstand, Periode, Phase, Dauer
-  { x: 160, y: 70, d: 9, p: 11.0, ph: 1.5, du: 2.6 }, { x: 160, y: 92, d: 6, p: 15.0, ph: 8.0, du: 2.0 },
-  { x: 7, y: 78, d: 5, p: 9.0, ph: 4.0, du: 2.2 }, { x: W - 7, y: 70, d: 5, p: 13.0, ph: 6.5, du: 2.4 },
-  { x: 150, y: 58, d: 4, p: 17.0, ph: 12.0, du: 1.8 },
+// 0.49.5 (Nutzer: „Kleines Lagerfeuer in der Mitte“): niedriges Feuer zwischen den Schlafenden, fast heruntergebrannt
+function campfire(c, t) {
+  const cx = 160, cy = 126, f = 0.7 + 0.18 * Math.sin(t * 13) + 0.1 * Math.sin(t * 21 + 1) + 0.05 * Math.sin(t * 34);
+  c.fillStyle = 'rgba(0,0,0,.4)'; c.beginPath(); c.ellipse(cx, cy + 3, 16, 5, 0, 0, 6.2832); c.fill();
+  for (let k = 0; k < 9; k++) { const a = k / 9 * 6.2832; disc(c, cx + Math.cos(a) * 12, cy + 1 + Math.sin(a) * 3.4, 2.6, k % 2 ? '#4a463f' : '#37342e'); } // Steinring
+  rect(c, cx - 9, cy - 2, 18, 3, '#3a2616'); rect(c, cx - 6, cy - 4, 12, 3, '#4a301c'); // Holz
+  for (const [dx, h, w] of [[-4, 9, 4], [0, 14, 5], [4, 8, 3.6]]) { c.fillStyle = `rgba(255,${110 + 70 * f},40,.95)`; c.beginPath(); c.moveTo(cx + dx - w, cy - 3); c.quadraticCurveTo(cx + dx + Math.sin(t * 8 + dx), cy - 3 - h * f, cx + dx + w, cy - 3); c.fill(); }
+  c.fillStyle = 'rgba(255,225,150,.9)'; c.beginPath(); c.moveTo(cx - 2, cy - 3); c.quadraticCurveTo(cx + Math.sin(t * 8), cy - 3 - 7 * f, cx + 2, cy - 3); c.fill();
+  return { x: cx, y: cy - 4, r: 85, rgb: '255,120,40', a: 0.4 * f };
+}
+// Rote Augenpaare im Dunkel (0.49.5: Zeitfenster passen in die 5 s der Szene, vorher kam fast nie eines vor): erscheinen, blinzeln, das letzte Paar kommt näher
+const EYES = [ // x, y, Abstand, Start, Ende, Annäherung (1 = wird größer)
+  { x: 160, y: 78, d: 7, s: 0.9, e: 2.9, g: 0 }, { x: 31, y: 85, d: 5, s: 1.6, e: 3.8, g: 0 },
+  { x: W - 31, y: 85, d: 5, s: 2.2, e: 4.3, g: 0 }, { x: 150, y: 62, d: 4, s: 2.8, e: 4.7, g: 0 },
+  { x: 164, y: 86, d: 12, s: 3.3, e: 5.4, g: 1 },
 ];
 function eyes(c, t) {
   c.globalCompositeOperation = 'lighter';
   for (const e of EYES) {
-    const u = (t + e.ph) % e.p; if (u > e.du) continue;
-    let a = Math.min(1, u / 0.5, (e.du - u) / 0.5); // sanftes Ein-/Ausblenden
-    const blink = ((t * 1.3 + e.ph) % 4) < 0.18; if (blink) a *= 0.1;
-    const dx = Math.sin(t * 0.7 + e.ph) * 1.2; // leichtes Pendeln
-    for (const s of [-1, 1]) { const x = e.x + dx + s * e.d / 2; glow(c, x, e.y, 7, '255,30,20', 0.55 * a); disc(c, x, e.y, 1.6, `rgba(255,60,40,${a})`); disc(c, x, e.y, 0.7, `rgba(255,220,180,${a})`); }
+    const du = e.e - e.s, u = t - e.s; if (u < 0 || u > du) continue;
+    let a = Math.min(1, u / 0.4, (du - u) / 0.5); // sanftes Ein-/Ausblenden
+    if (((t * 1.3 + e.s * 3) % 3.2) < 0.16) a *= 0.1; // blinzeln
+    const k = 1 + e.g * 0.9 * (u / du), dx = Math.sin(t * 0.7 + e.s) * 1.2, d = e.d * k; // Annäherung: größer
+    for (const sg of [-1, 1]) { const x = e.x + dx + sg * d / 2; glow(c, x, e.y, 9 * k, '255,30,20', 0.7 * a); disc(c, x, e.y, 1.9 * k, `rgba(255,60,40,${a})`); disc(c, x, e.y, 0.8 * k, `rgba(255,230,190,${a})`); }
   }
   c.globalCompositeOperation = 'source-over';
 }
 export function drawCampScene(c, heroes, t) {
   c.imageSmoothingEnabled = false; c.clearRect(0, 0, W, H);
-  const L = corridor(c, t);
+  const L = corridor(c, t), L2 = campfire(c, t);
   const n = Math.min(4, heroes.length), bw = 66, gap = 10, x00 = Math.round((W - (n * bw + (n - 1) * gap)) / 2);
   heroes.slice(0, n).forEach((h, i) => lying(c, x00 + i * (bw + gap), h, i, t));
-  c.fillStyle = 'rgba(4,2,10,.58)'; c.fillRect(0, 0, W, H); // tiefe Dunkelheit
-  c.globalCompositeOperation = 'lighter'; glow(c, L.x, L.y, L.r, L.rgb, L.a); c.globalCompositeOperation = 'source-over';
+  const beat = Math.max(0, Math.sin(t * 5.4)) ** 6 + Math.max(0, Math.sin(t * 5.4 - 0.9)) ** 6 * 0.6; // Herzschlag: doppelter Puls
+  c.fillStyle = `rgba(3,2,9,${0.72 + 0.05 * beat})`; c.fillRect(0, 0, W, H); // tiefe Dunkelheit (0.49.5: .72 statt .58)
+  c.globalCompositeOperation = 'lighter'; glow(c, L.x, L.y, L.r, L.rgb, L.a); glow(c, L2.x, L2.y, L2.r, L2.rgb, L2.a); c.globalCompositeOperation = 'source-over';
+  c.fillStyle = 'rgba(8,16,38,.16)'; c.fillRect(0, 0, W, H); // kalter Ton
+  for (let k = 0; k < 7; k++) { c.fillStyle = `rgba(70,84,110,${(0.03 + 0.012 * Math.sin(t * 0.8)) * (k + 1) / 2})`; c.fillRect(0, H - 70 + k * 10, W, 10); } // Bodennebel, nach unten dichter
   eyes(c, t); // über der Dunkelheit, damit sie leuchten
   const g = c.createRadialGradient(W / 2, H / 2, 50, W / 2, H / 2, 200); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.78)'); c.fillStyle = g; c.fillRect(0, 0, W, H);
 }

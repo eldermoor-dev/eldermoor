@@ -3363,8 +3363,8 @@ export async function runTests(data, env = {}) {
     for (const t of [0, 1.7, 4.9]) { calls.length = 0; M.drawCampScene(ctx, heroes, t); assert(calls.length > 150, '0.47.3 Nachtlager im Gang zeichnet'); }
     { // 0.49.0: Nachtlager dunkel mit Fackelschein und roten Augen (Augenpaare erscheinen nur zeitweise)
       const rec = []; const c2 = new Proxy({}, { get: (t, k) => (k in t ? t[k] : k === 'createRadialGradient' ? () => ({ addColorStop(_, col) { rec.push(String(col)); } }) : () => {}), set: (t, k, v) => { t[k] = v; return true; } });
-      const seen = []; for (const t of [0.2, 3.0, 12.2, 20.0, 30.0]) { rec.length = 0; M.drawCampScene(c2, heroes, t); seen.push(rec.filter((x) => x.startsWith('rgba(255,30,20')).length > 0); }
-      assert(seen.some((x) => x) && seen.some((x) => !x), '0.49.0 rote Augen erscheinen zeitweise (nicht dauernd)');
+      const seen = []; for (const t of [0.2, 3.0, 4.6]) { rec.length = 0; M.drawCampScene(c2, heroes, t); seen.push(rec.filter((x) => x.startsWith('rgba(255,30,20')).length > 0); }
+      assert(!seen[0] && seen[1], '0.49.5 rote Augen: nicht am Anfang, aber mitten in der 5-s-Szene sichtbar');
     }
   });
   await test('0.40.0 Steckbriefe: Daten, Aushang nur für besuchte Gebiete, Abschüsse, Trophäen, Abgabe, Nachrücken, Abreißen', () => {
