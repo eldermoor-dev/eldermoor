@@ -7,7 +7,7 @@ Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ 
 - Ysolde vergibt Aufträge (8 Stück, ein Auftrag zugleich): Lohn Trank und Erfahrung, kein Gold.
 - Rastereignisse im Dungeon (22 % je Rast): kleine Funde, wahre Hinweise, Stimmungstexte.
 - Bestiarium zeigt seltene Körperteile, sobald eines gefallen ist.
-- Simulation um Schmied erweitert: Kampagne 31 % → 38 % geschafft.
+- Simulation um Schmied erweitert: Kampagne 32 % → 38 % geschafft.
 
 ## 0.54.0 (26.11.2026, nicht auf Gerät getestet)
 - Gegenmittel (statt Gegengift) nimmt Gift und Blutung.
