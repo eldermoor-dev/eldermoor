@@ -3221,9 +3221,9 @@ export async function runTests(data, env = {}) {
       }
     }
     assert(checked >= 60, 'genug Eintritte geprüft: ' + checked);
-    // 0.47.6: auf dem Treppenfeld gegen die Treppenwand laufen löst NICHTS aus (nur der gerade Schritt vom Zugangsfeld aus)
+    // 0.47.6/0.49.7: auf dem Treppenfeld gegen die Treppenwand laufen meldet `stairsHere` (Nutzer-Freigabe); seitlich/zurück bleibt Wand
     const t1 = data.levels.test1, st = t1.objects.find((o) => o.id === 'stairs_down'); const s = fresh(4); put(s, st.x, st.y, L.passEntryDirs(t1, st)[0]);
-    const r = L.tryMove(s, data, 'f'); assert(r.wall && !(r.events || []).length, 'vom Treppenfeld gegen die Wand: nur Wand');
+    const r = L.tryMove(s, data, 'f'); assert(r.wall && r.stairsHere === st.id, 'vom Treppenfeld gegen die Treppenwand: Wechsel'); const s2 = fresh(4); put(s2, st.x, st.y, L.passEntryDirs(t1, st)[0]); assert(!L.tryMove(s2, data, 'b').stairsHere, 'zurück löst nichts aus');
   });
   await test('0.47.3 Gefangener Tilo sitzt in einer 1×1-Zelle (Gittertür „ZELLE“), Steinhaufen sind weg', () => {
     const k = data.levels.kultgruft, npc = k.objects.find((o) => o.id === 'npc_zelle'), door = k.objects.find((o) => o.id === 'door_zelle_t');

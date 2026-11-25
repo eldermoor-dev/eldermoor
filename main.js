@@ -11,7 +11,7 @@ import { Sfx } from './audio.js';
 import { startSleepScene } from './scene.js';
 import { store } from './store.js';
 
-const VERSION = '0.49.6';
+const VERSION = '0.49.7';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -399,6 +399,7 @@ function doMove(rel) {
       setTimeout(() => { S.lock = false; if (S.game && !S.game.combat) startCombatUI(enc, false); }, 1700);
     } else if (r.encounter) startCombatUI(r.encounter, r.ambush);
   } else if (r.encounter) startCombatUI(r.encounter);
+  else if (r.stairsHere) { S.held = []; S.queued = null; S.nextAllowed = performance.now() + 400; onEvent({ type: 'stairs', id: r.stairsHere }); } // 0.49.7: „Vor“ auf dem Treppenfeld gegen die Treppenwand
   else if (r.trapWarn) { S.held = []; S.queued = null; S.nextAllowed = performance.now() + 700; say(r.msg); toast(r.msg, 5000); S.sfx.play('warn'); }
   else if (rel === 'f' && r.blocker && ['door', 'chest', 'lever', 'gate', 'secret'].includes(r.blocker.type) && !r.msg) { // gegen Tür, Truhe, Hebel laufen = benutzen
     S.held = []; S.nextAllowed = performance.now() + 350;

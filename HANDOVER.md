@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.49.6 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.49.7 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1884,3 +1884,8 @@ Auftrag aus den Vorschlägen vom 25.11.: **A** Lehrpfad ohne Belehrung, **C** Ge
 - Schrat-Befund (belegt am Code, main.js `viewTarget`): Die Einpassung `fit` schrumpft Figuren auf die Fläche über der Leiste; Untergrenze 0,5. Beim Schrat (Skalierung 1,5 × Brennweite) greift die Untergrenze, daher entspricht die Höhe immer 0,5 × Figurhöhe, egal wie hoch die Leiste steht. Das erklärt „erst groß, dann kleiner“ (Auftrittsbild vor dem Einpassen). Vergrößern der Skalierung ändert nichts, solange die Untergrenze bindet. Ein Versuch, die Füße hinter die Leiste zu senken, wäre wirkungslos und wurde verworfen.
 - Offen, braucht Entscheidung/Screenshot: Kampfbild des Schrats mit sichtbarer Leiste (0.49.6). Möglicher Hebel: Untergrenze für Bosse senken oder Kopf teilweise abschneiden lassen; Kopf im Bild bleibt Entscheidung 0.17.0.
 - Offen: Treppenfix umsetzen (freigegeben), Siedlung: Licht und Wandschmuck hinter Hedda (Vorschlag), Plan 0.50.0 Testgewölbe.
+
+## 0.49.7 (25.11.2026; nicht auf Gerät getestet): Treppenfix
+- Nutzer 22:59 (Testliste, q-stairs-fix ✓): Umsetzen. `tryMove` (logic.js): Wand voraus + `rel==='f'` + Treppe auf dem eigenen Feld + Richtung in `passEntryDirs` → Ergebnis `stairsHere`, main.js `doMove` löst das Stairs-Ereignis aus. Entscheidung 0.47.6 damit auf Wunsch des Nutzers erweitert (Wechsel auch vom Treppenfeld aus, nur beim geraden „Vor“ zur Treppenwand). Tests 183 grün (Test zu 0.47.6 angepasst).
+- Nutzer 23:00: „Weiter bauen. Erstmal keine weiteren Tests.“ → keine neue Testliste zu 0.49.6/0.49.7.
+- Offen: Schrat im Kampfbild (siehe 0.49.6, Screenshot nötig), Siedlung Licht/Wandschmuck, Plan 0.50.0.
