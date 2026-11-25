@@ -3055,6 +3055,12 @@ export async function runTests(data, env = {}) {
     tk('d_gast4', 'b', 0); tk('d_gast5', 'c', 0); assert(s.journal.length >= 4, 'vier Notizen');
     const texts = new Set(['d_gast1', 'd_gast2', 'd_gast3', 'd_gast4', 'd_gast5'].map((id) => data.dialogs[data.levels.taverne.objects.find((o) => o.id === id).dialog].nodes.a.text)); eq(texts.size, 5, 'alle Gäste verschieden');
   });
+  await test('0.46.5 Taverne: Kamin und jeder Gast von der Tür aus erreichbar', () => {
+    const lvl = data.levels.taverne, solid = new Set(lvl.objects.filter((o) => ['decor', 'npc'].includes(o.type)).map((o) => o.x + ',' + o.y));
+    const seen = new Set([lvl.start.x + ',' + lvl.start.y]), q = [[lvl.start.x, lvl.start.y]];
+    while (q.length) { const [x, y] = q.shift(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const k = (x + dx) + ',' + (y + dy); if (!seen.has(k) && !L.isWallChar(L.cellChar(lvl, x + dx, y + dy)) && !solid.has(k)) { seen.add(k); q.push([x + dx, y + dy]); } } }
+    for (const id of ['d_kamin', 'npc_hexe', 'npc_wirt', 'd_gast1', 'd_gast2', 'd_gast3', 'd_gast4', 'd_gast5']) { const o = lvl.objects.find((x) => x.id === id); assert([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => seen.has((o.x + dx) + ',' + (o.y + dy))), id + ' nicht erreichbar'); }
+  });
   await test('0.40.0 Schatzkarten: Daten, Kartenwand ohne/mit Karte, Kauf, Extraraum erreichbar', () => {
     const ids = Object.keys(data.maps || {}); assert(ids.length >= 10, 'mindestens zehn Gebiete mit Karte: ' + ids.length);
     for (const id of ids) {

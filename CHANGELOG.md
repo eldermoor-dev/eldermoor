@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.46.5 (25.11.2026, headless)
+- Taverne: Der Kamin war eingemauert (Vase bei 12,3 plus Hexe bei 12,5 versperrten alle Zugänge). Vase nach 12,2 versetzt; Kamin und alle Gäste sind jetzt von der Tür aus erreichbar. Neuer Test prüft die Erreichbarkeit.
+
 ## 0.46.4 (25.11.2026, headless)
 - Taverne-Gäste neu geschrieben: Fuhrmann Jorn, Schwester Ilka, Händler Dorn, Alchemistin Brisa, Söldner Karn. Eigene Geschichten, Kosten (Krug, Rat), Gegengift-Geschenk, Einträge ins Notizbuch mit Spielhinweisen, die Marga nicht nennt. Jeder Gast erinnert sich (zweites Gespräch kürzer).
 

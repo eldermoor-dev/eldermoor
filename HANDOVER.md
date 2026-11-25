@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.46.4 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.46.5 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1508,6 +1508,9 @@ Nutzer (18:30, Screenshot Kampf gegen Gießmeister Harkon + Foto eines Gießers 
 - **Marga** (`genWirtin`, Sprite `wirtin`, `npc_wirt.look`): Frau mit Haarknoten und Kopftuchband, kastanienrotes Haar, Lächeln, weiße Bluse mit hochgekrempelten Ärmeln, rotes Mieder, helle Schürze, Bierkrug, Schlüsselbund. Händler Valdis/Brum behalten ihr Bild.
 - Altstände: Schilder und NPC-Look werden über `syncStatic` nachgezogen. Tests 162 grün, keine Werteänderung (BALANCE.md/SIM.md unverändert). Nur im Headless-Browser gesehen.
 - Hinweis zur Palette `schenke`: Material „stone“ ist braun, deshalb wirkt Margas Bluse graubraun; Schürze nutzt „glow“ (cremefarben).
+
+## 0.46.5 (25.11.2026; headless, nicht auf Gerät getestet)
+- Nutzer (13:38, Screenshot Vase): „Diesen Gegenstand verschieben, dann wäre der Zugang zum Kamin frei.“ Ursache (selbst verschuldet, 0.46.0/0.46.3): Kamin (13,4) hatte nur Nachbarfelder (12,4), (13,3), (13,5); alle waren Inseln, die durch Vase (12,3), Weinfass (13,2), Hexe (12,5), Bett (13,6) und Gast (11,4) abgeriegelt waren. Fix: `d_vase` 12,3 → 12,2. Test prüft BFS von der Tür aus für Kamin, Wirtin, Hexe, Gäste. **Merke:** neue Objekte in der Taverne nie so stellen, dass Felder abgeriegelt werden.
 
 ## KONZEPT „Lebendige Taverne“ (25.11.2026, Plan, NICHTS davon gebaut außer 0.46.3/0.46.4-Gästen)
 Quelle: Entwicklungsauftrag (ChatGPT-Vorschläge, Anhang des Nutzers 13:26); Nutzer: „auf Realisierbarkeit prüfen, ggf. Nachfragen, anschließend einbauen“. Antworten des Nutzers: **Feuer = Schnellreise zu Feuerstellen; Start = Gäste wechseln + Vertrauen; erstes Minispiel = Armdrücken.**
