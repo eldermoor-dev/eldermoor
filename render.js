@@ -1412,17 +1412,22 @@ function genTrap(mode, seed, kind = 'spikes') { // kind (0.22.1, Nutzer: „Stah
     // 0.19.9: sichtbare Platte; 0.19.18 (Nutzer: „Stein bei der Giftfalle jetzt zu deutlich“): dezenter – kleiner, kaum dunkler als der Boden, schmale feine Risse, wenig Staub
     // 0.23.4 (Nutzer: ohne Schurken nicht erkennbar): etwas höher und kontrastreicher – helle Kante oben, dunkle Fuge, deutlichere Risse; weiter dezenter als die entdeckte (rote) Falle
     // 0.26.3 (Nutzer: „Fallen viel zu offensichtlich“): wieder schmaler und kontrastärmer – Kante und Fuge nur noch leicht, Platte kaum heller als Boden
-    for (let y = 57; y <= 63; y++) for (let x = 20; x <= 44; x++) {
-      const edge = x === 20 || x === 44 || y === 57, lit = y === 58 && x > 20 && x < 44;
-      set(x, y, edge ? P('stone', 1.7) : lit ? P('stone', 3.6) : P('stone', 2.7 + hash(x >> 1, y, seed) * 0.7));
+    for (let y = 57; y <= 63; y++) for (let x = 19; x <= 45; x++) {
+      const edge = x === 19 || x === 45 || y === 57, lit = y === 58 && x > 19 && x < 45;
+      set(x, y, edge ? P('stone', 1.3) : lit ? P('stone', 4.2) : P('stone', 2.5 + hash(x >> 1, y, seed) * 1.0));
     }
     for (const cx of [26, 38]) { let x = cx + Math.floor(hash(cx, 5, seed) * 3) - 1; for (let y = 58; y <= 63; y++) { set(x, y, P('stone', 1.5)); if (hash(x, y, seed + 2) > 0.55) x += hash(y, x, seed + 3) > 0.5 ? 1 : -1; } }
     for (let x = 12; x <= 52; x++) for (let y = 55; y <= 56; y++) if (hash(x, y, seed + 7) > 0.97) set(x, y, P('stone', 3.8));
   } else if (mode === 'seen') {
-    // 0.32.2 (Nutzer: Zeichen zu groß, rot, Querbalken weg): kleineres rotes Ausrufezeichen ohne Warnstreifen
-    for (let y = 42; y <= 53; y++) for (let x = 29; x <= 35; x++) { const w = 2 - Math.floor((y - 42) / 6); if (Math.abs(x - 32) <= Math.max(1, w)) set(x, y, P('blood', 6.5)); }
-    for (let y = 56; y <= 59; y++) for (let x = 30; x <= 34; x++) set(x, y, P('blood', 6.5));
-    for (let y = 40; y <= 61; y++) for (let x = 27; x <= 37; x++) if (t.data[y * TEX + x] === 255 && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => { const v = t.data[(y + b) * TEX + x + a]; return v !== 255 && v !== P('stone', 0); })) set(x, y, P('stone', 0));
+    // 0.47.3 (Nutzer: „Ausrufezeichen mittig im Bild“): flache Bodenmarkierung – roter Ring und liegendes Ausrufezeichen auf dem Boden, nichts schwebt mehr in Bildmitte
+    for (let y = 52; y <= 63; y++) for (let x = 8; x <= 56; x++) {
+      const r = Math.hypot((x - 32) / 24, (y - 58) / 5.6);
+      if (r > 1.02) continue;
+      if (r > 0.8) set(x, y, P('blood', 6.2 + hash(x, y, seed) * 0.5));
+      else if (hash(x >> 1, y, seed + 5) > 0.55) set(x, y, P('blood', 1.6));
+    }
+    for (let y = 54; y <= 60; y++) for (let x = 30; x <= 33; x++) set(x, y, P('blood', 7));
+    for (let y = 61; y <= 62; y++) for (let x = 30; x <= 33; x++) set(x, y, P('blood', 7));
   } else if (kind === 'gas') { // Giftnebel: Düsen im Boden, grüne Schwaden
     for (let x = 12; x <= 52; x++) set(x, 63, P('stone', 0.5));
     for (const cx of [20, 32, 44]) for (let x = cx - 2; x <= cx + 2; x++) set(x, 62, P('stone', 0.2));

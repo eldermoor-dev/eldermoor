@@ -289,6 +289,26 @@ export function arrivalDir(target, to) {
   for (let d = 0; d < 4; d++) { const n = run(d); if (n > bn) { bn = n; best = d; } }
   return best;
 }
+// 0.47.3 (Nutzer: Seitliches Hereinziehen an Treppen/Durchgängen „weiterhin nicht gelöst“). Ursache (nachgestellt, 45 von 82 Eintritten): 0.46.0 sperrte nur Seitwärtsgehen;
+// wer VORWÄRTS parallel zur Wand mit dem Treppenbild über das Treppenfeld lief, löste den Wechsel trotzdem aus. Jetzt zählt die Bewegungsrichtung:
+// Treppe/Ausgang an einer Wand → nur Richtung dieser Wand (Ecke: Wand am Ende des längsten freien Gangs, wie render.js passFaces); Durchgang zwischen zwei gegenüberliegenden
+// Wänden → nur entlang des Gangs; frei stehend → entlang der Spriteachse (wie render.js freeAxis). Optional `enter: [Richtungen]` am Objekt überschreibt.
+export function passEntryDirs(lvl, o) {
+  if (Array.isArray(o.enter)) return o.enter;
+  const w = (x, y) => isWallChar(cellChar(lvl, x, y));
+  const W = [0, 1, 2, 3].map((d) => w(o.x + DIRS[d].dx, o.y + DIRS[d].dy));
+  if (W[1] && W[3]) return [0, 2];
+  if (W[0] && W[2]) return [1, 3];
+  const faces = [0, 1, 2, 3].filter((d) => W[d]);
+  if (faces.length === 1) return faces;
+  if (faces.length > 1) { // Ecke
+    const run = (d) => { let n = 0; while (n < 40 && !w(o.x - DIRS[d].dx * (n + 1), o.y - DIRS[d].dy * (n + 1))) n++; return n; };
+    return [faces.reduce((a, b) => (run(b) > run(a) ? b : a))];
+  }
+  const run = (dx, dy) => { let n = 0; while (n < 12 && !w(o.x + dx * (n + 1), o.y + dy * (n + 1))) n++; return n; }; // frei stehend
+  const ns = Math.min(run(0, -1), run(0, 1)), ew = Math.min(run(-1, 0), run(1, 0));
+  return ns <= ew ? [0, 2] : [1, 3];
+}
 export function changeArea(state, data, stairsId) {
   const st = state.objs.find((o) => o.id === stairsId && o.type === 'stairs');
   if (!st || !st.to) return { ok: false, msg: 'Hier führt nichts weiter.' };
@@ -434,7 +454,11 @@ export function tryMove(state, data, rel) {
   const p = state.player;
   const d = rel === 'f' ? p.dir : rel === 'b' ? (p.dir + 2) % 4 : rel === 'l' ? (p.dir + 3) % 4 : (p.dir + 1) % 4;
   const nx = p.x + DIRS[d].dx, ny = p.y + DIRS[d].dy;
-  { const cc = cellChar(lvl, nx, ny); if (cc === '~') return { moved: false, wall: true, msg: lvl.waterMsg || 'Das Wasser ist tief und kalt. Hier kommt ihr nicht durch.' }; if (isWallChar(cc)) return { moved: false, wall: true }; }
+  { const cc = cellChar(lvl, nx, ny); if (cc === '~') return { moved: false, wall: true, msg: lvl.waterMsg || 'Das Wasser ist tief und kalt. Hier kommt ihr nicht durch.' };
+    if (isWallChar(cc)) { // 0.47.3: steht die Gruppe schon auf dem Treppenfeld (z. B. seitlich hineingegangen), führt der Schritt gegen die Treppenwand hindurch
+      const on = rel === 'f' && state.objs.find((o) => o.type === 'stairs' && o.x === p.x && o.y === p.y);
+      if (on && passEntryDirs(lvl, on).includes(d)) return { moved: false, events: [{ type: 'stairs', id: on.id }] };
+      return { moved: false, wall: true }; } }
   let b = blockerAt(state, nx, ny);
   const pushNotes = [];
   if (b && b.type === 'boulder') {
@@ -472,13 +496,14 @@ export function tryMove(state, data, rel) {
   if (tr0) res.events.push({ type: 'trap', id: tr0.id, msgs: springTrap(state, data, tr0) });
   const pm = [...pushNotes, ...updatePlates(state, data), ...closeMsgs];
   if (pushNotes.length || pm.length) res.events.push({ type: 'mech', msgs: pm, push: true });
-  const ex = state.objs.find((o) => o.type === 'exit' && o.x === nx && o.y === ny);
+  const exAny = state.objs.find((o) => o.type === 'exit' && o.x === nx && o.y === ny);
+  const ex = exAny && passEntryDirs(lvl, exAny).includes(d) ? exAny : null; // 0.47.3: auch Ausgänge nur beim Betreten in Durchgangsrichtung
   if (ex && !state.flags[ex.id]) {
     state.flags[ex.id] = true;
     res.events.push({ type: 'exit', id: ex.id });
   } else if (ex) res.events.push({ type: 'exitAgain', id: ex.id }); // 0.16.4: erneutes Betreten zeigt einen kurzen Hinweis
   const stairs = state.objs.find((o) => o.type === 'stairs' && o.x === nx && o.y === ny);
-  if (stairs && rel === 'f') { res.events.push({ type: 'stairs', id: stairs.id }); return res; } // 0.46.0: nur frontales Betreten löst den Gebietswechsel aus, seitliches Vorbeigehen nicht
+  if (stairs && rel === 'f' && passEntryDirs(lvl, stairs).includes(d)) { res.events.push({ type: 'stairs', id: stairs.id }); return res; } // 0.46.0: nur frontales Betreten löst den Gebietswechsel aus, seitliches Vorbeigehen nicht
   res.encounter = enemyInFront(state);
   if (!res.encounter) { const sp = spottedEnemy(state, data); if (sp) { res.encounter = sp.enemy; res.ambush = sp.ambush; } }
   if (!res.encounter) { const notes = [...scanTraps(state, data), ...scanSecrets(state, data), ...scanBuried(state, data), ...scanLuck(state, data)]; if (notes.length) res.notes = notes; }

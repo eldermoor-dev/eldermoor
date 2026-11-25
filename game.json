@@ -3597,13 +3597,6 @@
           }
         },
         {
-          "id": "dk_moorpfad_s1",
-          "type": "decor",
-          "x": 8,
-          "y": 1,
-          "look": "schutt"
-        },
-        {
           "id": "kartenwand_moorpfad",
           "type": "secret",
           "x": 19,
@@ -3663,7 +3656,7 @@
         "m.....###m......m##m#.##..#",
         "#.....####......####...#..#",
         "##.Tm#######.#T#####...##m#",
-        "#.....#.##......m###...####",
+        "#.....#.####....m###...####",
         "#.......#m......###########",
         "#############Tm############"
       ],
@@ -4095,6 +4088,17 @@
           "name": "Verwundeter Kultist",
           "look": "wund",
           "dialog": "wundkultist"
+        },
+        {
+          "id": "door_zelle_t",
+          "type": "door",
+          "x": 11,
+          "y": 11,
+          "locked": false,
+          "title": "ZELLE",
+          "style": "iron",
+          "look": "gitter",
+          "font": "tall"
         },
         {
           "id": "npc_zelle",
@@ -4666,13 +4670,6 @@
           "title": "NISCHE",
           "text": "Eine kleine Nische in der Wand. Sie ist leer, nur Staub und ein Wachsrest.",
           "style": "dark"
-        },
-        {
-          "id": "dk_schratgruben_s1",
-          "type": "decor",
-          "x": 22,
-          "y": 9,
-          "look": "schutt"
         },
         {
           "id": "kartenwand_schratgruben",
@@ -6260,34 +6257,6 @@
           "look": "fass"
         },
         {
-          "id": "dk_festung2_s1",
-          "type": "decor",
-          "x": 11,
-          "y": 1,
-          "look": "schutt"
-        },
-        {
-          "id": "dk_festung2_s2",
-          "type": "decor",
-          "x": 17,
-          "y": 1,
-          "look": "schutt"
-        },
-        {
-          "id": "dk_festung2_s3",
-          "type": "decor",
-          "x": 23,
-          "y": 5,
-          "look": "schutt"
-        },
-        {
-          "id": "dk_festung2_s4",
-          "type": "decor",
-          "x": 15,
-          "y": 7,
-          "look": "schutt"
-        },
-        {
           "id": "kartenwand_festung2",
           "type": "secret",
           "x": 3,
@@ -7135,34 +7104,6 @@
           "look": "fass"
         },
         {
-          "id": "dk_festung3_s1",
-          "type": "decor",
-          "x": 33,
-          "y": 33,
-          "look": "schutt"
-        },
-        {
-          "id": "dk_festung3_s2",
-          "type": "decor",
-          "x": 23,
-          "y": 35,
-          "look": "schutt"
-        },
-        {
-          "id": "dk_festung3_s3",
-          "type": "decor",
-          "x": 31,
-          "y": 35,
-          "look": "schutt"
-        },
-        {
-          "id": "dk_festung3_s4",
-          "type": "decor",
-          "x": 57,
-          "y": 35,
-          "look": "schutt"
-        },
-        {
           "id": "kartenwand_festung3",
           "type": "secret",
           "x": 5,
@@ -7503,13 +7444,6 @@
           "x": 6,
           "y": 3,
           "look": "fass"
-        },
-        {
-          "id": "dk_moorsee_s1",
-          "type": "decor",
-          "x": 32,
-          "y": 17,
-          "look": "schutt"
         }
       ],
       "waterMsg": "Das Wasser ist tief und kalt. Zur Schatzinsel kommt man nicht durchs Wasser: Der Fuhrmann am Steg im Osten setzt euch über."
@@ -8531,27 +8465,6 @@
           "title": "NETZ",
           "text": "Das Netz ist so dick wie ein Seil. Mit einer Klinge lässt es sich durchtrennen.",
           "style": "dark"
-        },
-        {
-          "id": "dk_festung4_s1",
-          "type": "decor",
-          "x": 61,
-          "y": 6,
-          "look": "schutt"
-        },
-        {
-          "id": "dk_festung4_s2",
-          "type": "decor",
-          "x": 39,
-          "y": 39,
-          "look": "schutt"
-        },
-        {
-          "id": "dk_festung4_s3",
-          "type": "decor",
-          "x": 61,
-          "y": 48,
-          "look": "schutt"
         },
         {
           "id": "kartenwand_festung4",
@@ -9578,20 +9491,6 @@
           "look": "fass"
         },
         {
-          "id": "dk_festung5_s1",
-          "type": "decor",
-          "x": 70,
-          "y": 32,
-          "look": "schutt"
-        },
-        {
-          "id": "dk_festung5_s2",
-          "type": "decor",
-          "x": 3,
-          "y": 32,
-          "look": "schutt"
-        },
-        {
           "id": "dk_festung5_f3",
           "type": "barrel",
           "x": 22,
@@ -10522,20 +10421,6 @@
           "x": 7,
           "y": 28,
           "look": "fass"
-        },
-        {
-          "id": "dk_festung6_s1",
-          "type": "decor",
-          "x": 22,
-          "y": 41,
-          "look": "schutt"
-        },
-        {
-          "id": "dk_festung6_s2",
-          "type": "decor",
-          "x": 58,
-          "y": 10,
-          "look": "schutt"
         },
         {
           "id": "dk_festung6_f2",
@@ -13791,6 +13676,10 @@
         "erst": {
           "text": "Eine Frau mit Haarknoten und Schürze stellt den Krug ab und mustert euch. „Neue Gesichter. Ich bin Marga, der Goldene Eber gehört mir. Drei Dinge, damit ihr euch nicht verlauft: Rasten könnt ihr überall, wo kein Gegner in Sicht ist und keiner näher als zehn Schritte steht. Menü, dann Rasten, oder im Beutel beim Proviant. Mit Proviant erholt sich jeder, auch die Bewusstlosen; ohne nur zu knapp einem Drittel. Wer lieber unter einem Dach schläft, nimmt bei mir ein Zimmer: kostet Gold, dafür ruht auch die Reserve. Und hinaus geht es über die Treppe an der Wand gegenüber vom Tresen. Karten zeichne ich übrigens nur drei je Besuch.“",
           "choices": [
+            {
+              "t": "Schatzkarten ansehen",
+              "maps": true
+            },
             {
               "t": "Danke, das hilft",
               "to": "a",

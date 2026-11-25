@@ -3,6 +3,14 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.47.3 (25.11.2026, headless, nicht auf Gerät getestet)
+- Treppen/Ausgänge: Ursache des seitlichen Hereinziehens nachgestellt (Vorwärtsgang parallel zur Wand durch das Treppenfeld; 45 von 82 Zugängen, jetzt 0). Betreten nur noch frontal (`passEntryDirs`); seitlich/parallel gilt als Wand.
+- Gefangener Tilo sitzt in eigener 1×1-Zelle (Gittertür, Schild „ZELLE“).
+- Alle Steinhaufen („schutt“) ersatzlos entfernt.
+- Fallen: entdeckte Falle = flache rote Bodenmarkierung (Ring + liegendes „!“) statt hohem Zeichen in Bildmitte; unentdeckte Platte etwas sichtbarer.
+- Rast im Dungeon: neues Bild „Nachtlager im Gang“ (Decken auf dem Boden, Laterne, keine Betten); Taverne behält ihre Zimmerbilder.
+- Schatzkarten bei Marga schon im Erstgespräch kaufbar.
+
 ## 0.47.2 (25.11.2026, headless, nicht auf Gerät getestet)
 - Taverne: Ankunft von der Siedlung jetzt bei (7,6) mit Blick durch den freien Mittelgang zur Wirtin (vorher (5,3) mit Blick auf Tresen/Stühle).
 

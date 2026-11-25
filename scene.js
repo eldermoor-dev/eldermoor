@@ -132,6 +132,53 @@ function room(c, v, t) {
   return { x: 160, y: 24, r: 190, rgb: '255,170,80', a: 0.22 * f };
 }
 
+// 0.47.3 (Nutzer: Rast außerhalb der Taverne ohne Betten): Gang im Dungeon, Helden schlafen in Decken auf dem Steinboden, eine Laterne in der Mitte
+function lying(c, x0, hero, i, t) {
+  const race = hero.race || 'human', cls = hero.cls || 'warrior', hs = hash(hero.name || i);
+  const skin = SKIN[race] || SKIN.human, hair = HAIR[hs % HAIR.length], bl = BLANKET[cls] || BLANKET.warrior;
+  const br = Math.sin(t * 1.7 + i * 1.3) * 1.0, y0 = 128 + (i % 2) * 6, w = 66;
+  c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(x0 + w / 2, y0 + 30, w / 2 + 3, 6, 0, 0, 6.2832); c.fill(); // Schatten
+  rect(c, x0 + 2, y0 + 18, 14, 10, '#6a5238'); rect(c, x0 + 2, y0 + 18, 14, 2, '#8a6c48'); // Rucksack als Kopfstütze
+  const hx = x0 + 12, hy = y0 + 14;
+  disc(c, hx, hy, race === 'gnome' ? 7 : 9, skin);
+  c.fillStyle = race === 'elf' ? '#e8dcb0' : race === 'dwarf' ? '#8a4a1c' : hair; c.beginPath(); c.arc(hx, hy - 1, 9.5, 2.9, 5.9); c.fill();
+  if (race === 'elf') rect(c, hx + 8, hy - 6, 6, 2, skin);
+  if (race === 'gnome') { c.fillStyle = '#b8402a'; c.beginPath(); c.moveTo(hx - 6, hy - 4); c.lineTo(hx - 17, hy - 11 + Math.sin(t * 1.2)); c.lineTo(hx + 2, hy - 6); c.fill(); }
+  if (race === 'dwarf') { c.fillStyle = '#8a4a1c'; rect(c, hx - 2, hy + 3, 12, 6, '#8a4a1c'); }
+  rect(c, hx + 1, hy - 1, 3, 1, '#2a1a10'); rect(c, hx + 6, hy - 1, 3, 1, '#2a1a10');
+  rect(c, x0 + 20, y0 + 10 - br, w - 20, 22 + br, bl[0]); rect(c, x0 + 20, y0 + 10 - br, w - 20, 3, bl[1]); // Decke über dem Körper
+  c.fillStyle = bl[0]; c.beginPath(); c.ellipse(x0 + w - 1, y0 + 21, 4, 11 + br / 2, 0, 0, 6.2832); c.fill();
+  for (let k = 0; k < 3; k++) rect(c, x0 + 26 + k * 12, y0 + 16 - br, 8, 1, 'rgba(255,255,255,.12)');
+  const gx = x0 + 20;
+  if (cls === 'warrior') { rect(c, gx, y0 + 33, 40, 2, '#c8ccd4'); rect(c, gx - 2, y0 + 31, 3, 6, '#8a6a30'); }
+  else if (cls === 'mage') { rect(c, gx, y0 + 33, 44, 2, '#6a4628'); disc(c, gx - 1, y0 + 34, 3, '#7ab8ff'); }
+  else if (cls === 'ranger') { c.strokeStyle = '#8a6a30'; c.lineWidth = 2; c.beginPath(); c.ellipse(gx + 20, y0 + 34, 22, 3, 0, 0, 6.2832); c.stroke(); }
+  else if (cls === 'priest') { rect(c, gx, y0 + 33, 40, 2, '#8a6a30'); rect(c, gx + 40, y0 + 31, 6, 6, '#d9b44a'); }
+  else if (cls === 'rogue') { rect(c, gx + 4, y0 + 33, 24, 2, '#c8ccd4'); rect(c, gx, y0 + 32, 5, 4, '#2a1a10'); }
+  else { rect(c, gx + 4, y0 + 32, 6, 5, '#9fd4c4'); rect(c, gx + 5, y0 + 30, 4, 3, '#6a4628'); }
+  for (let k = 0; k < 2; k++) { const p = ((t * 0.45 + i * 0.31 + k * 0.5) % 1); c.fillStyle = `rgba(230,225,255,${0.85 * (1 - p)})`; c.font = `${7 + k * 2}px sans-serif`; c.fillText('z', hx + 10 + p * 8 + k * 4, hy - 10 - p * 22 - k * 5); }
+}
+function corridor(c, t) {
+  stones(c, 0, 0, W, 108, '#46423c', '#2a2723', 311);
+  rect(c, 0, 0, W, 10, '#2a2723'); // Deckenbalken
+  c.fillStyle = '#1a1814'; c.beginPath(); c.moveTo(126, 108); c.lineTo(126, 40); c.quadraticCurveTo(160, 14, 194, 40); c.lineTo(194, 108); c.fill(); // dunkler Durchgang
+  rect(c, 126, 36, 68, 3, '#5a554c');
+  floor(c, 104, '#3a352d', '#25211b');
+  for (const x of [20, 86, 236, 296]) { rect(c, x, 0, 8, 108, '#34302a'); rect(c, x + 8, 0, 1, 108, 'rgba(0,0,0,.4)'); } // Pfeiler
+  rect(c, 156, 100, 8, 6, '#2a1c10'); // Laterne am Boden
+  rect(c, 154, 92, 12, 10, '#5a4630'); rect(c, 156, 94, 8, 6, `rgba(255,${190 + 30 * Math.sin(t * 9)},90,.95)`); rect(c, 157, 89, 6, 3, '#3a2c1c');
+  return { x: 160, y: 96, r: 170, rgb: '255,170,80', a: 0.32 * (0.85 + 0.15 * Math.sin(t * 9)) };
+}
+export function drawCampScene(c, heroes, t) {
+  c.imageSmoothingEnabled = false; c.clearRect(0, 0, W, H);
+  const L = corridor(c, t);
+  const n = Math.min(4, heroes.length), bw = 66, gap = 10, x00 = Math.round((W - (n * bw + (n - 1) * gap)) / 2);
+  heroes.slice(0, n).forEach((h, i) => lying(c, x00 + i * (bw + gap), h, i, t));
+  c.fillStyle = 'rgba(12,8,24,.35)'; c.fillRect(0, 0, W, H);
+  c.globalCompositeOperation = 'lighter'; glow(c, L.x, L.y, L.r, L.rgb, L.a); c.globalCompositeOperation = 'source-over';
+  const g = c.createRadialGradient(W / 2, H / 2, 60, W / 2, H / 2, 210); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.6)'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+}
+
 export function drawSleepScene(c, heroes, v, t) {
   c.imageSmoothingEnabled = false; c.clearRect(0, 0, W, H);
   const L = room(c, v, t);
@@ -143,8 +190,8 @@ export function drawSleepScene(c, heroes, v, t) {
 }
 
 // Zeigt die Szene als Vollbild-Überlage. heroes: state.heroes. seed: Zahl (wählt das Zimmer). onDone: nach Ende oder Tippen.
-export function startSleepScene(heroes, seed, onDone, ms = 5000) {
-  const v = (seed >>> 0) % SLEEP_ROOMS.length;
+export function startSleepScene(heroes, seed, onDone, ms = 5000, camp = false) {
+  const v = camp ? -1 : (seed >>> 0) % SLEEP_ROOMS.length;
   const el = document.createElement('div');
   el.id = 'sleepscene';
   el.style.cssText = 'position:fixed;inset:0;z-index:60;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity .6s;touch-action:none;';
@@ -152,13 +199,13 @@ export function startSleepScene(heroes, seed, onDone, ms = 5000) {
   cv.style.cssText = 'width:min(100vw,calc(100vh*16/9));aspect-ratio:16/9;image-rendering:pixelated;max-height:80vh;';
   const cap = document.createElement('div');
   cap.style.cssText = 'color:#e8d6a8;font:italic 1rem Georgia,serif;margin-top:10px;text-align:center;padding:0 12px;';
-  cap.textContent = `Margas Herberge · ${SLEEP_ROOMS[v]} – die Nacht vergeht …`;
+  cap.textContent = camp ? 'Nachtlager im Gang – die Nacht vergeht …' : `Margas Herberge · ${SLEEP_ROOMS[v]} – die Nacht vergeht …`;
   const hint = document.createElement('div'); hint.style.cssText = 'color:#8a7a5a;font:.8rem system-ui;margin-top:4px;'; hint.textContent = 'Tippen überspringt';
   el.append(cv, cap, hint); document.body.append(el);
   const c = cv.getContext('2d'); let raf = 0, done = false; const t0 = performance.now();
   const end = () => { if (done) return; done = true; cancelAnimationFrame(raf); el.style.opacity = '0'; setTimeout(() => { el.remove(); onDone && onDone(); }, 450); };
   el.addEventListener('pointerdown', () => { if (performance.now() - t0 > 1500) end(); });
-  const loop = () => { const t = (performance.now() - t0) / 1000; drawSleepScene(c, heroes, v, t); if (t * 1000 >= ms) { end(); return; } raf = requestAnimationFrame(loop); };
+  const loop = () => { const t = (performance.now() - t0) / 1000; (camp ? drawCampScene(c, heroes, t) : drawSleepScene(c, heroes, v, t)); if (t * 1000 >= ms) { end(); return; } raf = requestAnimationFrame(loop); };
   requestAnimationFrame(() => { el.style.opacity = '1'; });
   loop();
   return { room: v, end };

@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.47.2 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.47.3 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1626,3 +1626,14 @@ Vorgehen je Punkt: erst nachstellen (Regel 8), Ursache belegen, dann bauen. Nich
 **Unklar (Rückfrage nötig):** „Moorschrat im Testlevel noch zu früh; taucht erst im zweiten Level richtigerweise auf; im Raum nur der Runenstein“ – widersprüchlich lesbar: (a) Schrat in der Moorlichtung (2. Gebiet) ist noch zu früh/zu stark im Spielverlauf, oder (b) im Testgewölbe steht er noch (laut Code nicht, geprüft: kein Schrat in `test1`).
 
 ## 0.47.2 (25.11.2026; headless): Taverne-Ankunft (moorrand `stairs_taverne` → taverne 7,6 dir 0). Ursache nicht auf Gerät nachgestellt; Vermutung: Ankunft bei (5,3) blickte auf Tresen, Stuhl (5,4) direkt dahinter. Backlog-Nummerierung oben verschiebt sich: Rest = 0.47.3ff.
+
+## 0.47.3 (25.11.2026; headless, nicht auf Gerät getestet)
+Erledigt: Backlog-Punkte 1–6 (siehe CHANGELOG.md). Details:
+- `logic.js` `passEntryDirs(lvl, o)`: erlaubte Eintrittsrichtungen für Treppen/Ausgänge (Feld `enter` überschreibt; sonst aus Wandlage). `tryMove`: Treppe/Ausgang nur bei `rel==='f'` und Blick in erlaubter Richtung; Treppenfeld mit Wand voraus löst `stairs`-Ereignis aus (main.js `doMove` verarbeitet `r.events` auch ohne `moved`).
+- game.json: kultgruft Zeile 10 angepasst, `door_zelle_t` (Gitter, Titel ZELLE); alle `decor` mit look „schutt“ entfernt.
+- render.js `genTrap`: 'seen' flach am Boden (y52–63), 'faint' etwas kontrastreicher.
+- scene.js `drawCampScene`, `startSleepScene(..., camp)`; main.js `sleepScene(true)` bei Menü-Rast; Taverne (`r.inn`) unverändert.
+- Marga „erst“: Choice `maps`.
+Offene Tests (Gerät): Treppen seitlich betreten, Zelle, Fallenbild, Rastbild, Karten im Erstgespräch.
+Offene Rückfragen an den Nutzer: a) „Moorschrat im Testlevel“ (siehe Backlog), b) Annahmen zu 7 (Fluch-Bonus ×0,5) und 9 (Händler-Nachschub 5 Stunden Echtzeit).
+Nächste: 0.47.4 (7–9), 0.47.5 (10–13 + BALANCE/SIM), 0.48.0 (14–17), später „Tote erwecken“.

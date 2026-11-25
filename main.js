@@ -11,7 +11,7 @@ import { Sfx } from './audio.js';
 import { startSleepScene } from './scene.js';
 import { store } from './store.js';
 
-const VERSION = '0.47.2';
+const VERSION = '0.47.3';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -394,7 +394,8 @@ function doMove(rel) {
     if (r.luck) { say(r.luck); toast(r.luck, 4500); S.sfx.play('chest'); vib(20); } // Glücksamulett (0.28.0)
     if (r.notes) { S.held = []; r.notes.forEach((t) => { say(t); toast(t, 5000); }); S.sfx.play('warn'); vib([40, 40, 40]); S.nextAllowed = performance.now() + 500; }
     if (r.encounter) startCombatUI(r.encounter, r.ambush);
-  } else if (r.encounter) startCombatUI(r.encounter);
+  } else if (r.events && r.events.length) { S.held = []; r.events.forEach(onEvent); } // 0.47.3: Schritt gegen die Treppenwand vom Treppenfeld aus
+  else if (r.encounter) startCombatUI(r.encounter);
   else if (r.trapWarn) { S.held = []; S.queued = null; S.nextAllowed = performance.now() + 700; say(r.msg); toast(r.msg, 5000); S.sfx.play('warn'); }
   else if (rel === 'f' && r.blocker && ['door', 'chest', 'lever', 'gate', 'secret'].includes(r.blocker.type) && !r.msg) { // gegen Tür, Truhe, Hebel laufen = benutzen
     S.held = []; S.nextAllowed = performance.now() + 350;
@@ -954,9 +955,9 @@ function openDialog(id, node) {
   openModal(`<h2>${esc(v.name)}</h2><p style="font-style:italic;line-height:1.45;margin:6px 0 10px">${esc(v.text)}</p>${noted}<div class="acts" style="flex-direction:column;align-items:stretch">${v.choices.map((c) => `<button class="mb" data-m="dlg:${c.i}" ${c.ok ? '' : 'disabled'}>${esc(c.t)}</button>`).join('')}</div>`, 'dialog');
 }
 // 0.43.0: Schlafkammer-Bild (scene.js) bei jeder Rast, ca. 5 s; Zimmer wechselt je Rast
-function sleepScene() {
+function sleepScene(camp = false) { // 0.47.3: camp = Rast im Dungeon (Gang ohne Betten); Taverne behält das Zimmerbild
   const g = S.game; g.restN = (g.restN || 0) + 1;
-  return new Promise((res) => startSleepScene(g.heroes, g.restN * 7 + (g.steps || 0), res));
+  return new Promise((res) => startSleepScene(g.heroes, g.restN * 7 + (g.steps || 0), res, 5000, camp));
 }
 async function dialogPick(i) {
   const g = S.game, d = S.dlg, npc = d && g.objs.find((o) => o.id === d.id);
@@ -1739,7 +1740,7 @@ async function onModalClick(e) {
     const r = restParty(g, S.data);
     const t = { 'in-combat': 'Im Kampf kann niemand rasten.', 'enemy-near': `Ein Gegner ist zu nah (${r.dist} Schritte, nötig sind ${(S.data.rest || {}).enemyDistance || 10}). So kann die Gruppe nicht rasten.`, 'enemy-seen': 'Ein Gegner ist in Sichtweite. So kann die Gruppe nicht rasten.', 'nothing-to-do': 'Alle sind bereits bei Kräften.' }[r.error];
     if (t) { say(t); toast(t, 3200); if (S.modal === 'inventory') openInventory(); else closeModal(); } // 0.30.1: Inventar bleibt bei gesperrter Rast offen (Meldung nur beim Tippen auf „Rasten“)
-    else { say(r.msg); S.sfx.play(r.sfx); closeModal(); renderAll(); await sleepScene(); toast(r.msg, 3200); renderAll(); } // 0.43.0: Schlafkammer-Bild
+    else { say(r.msg); S.sfx.play(r.sfx); closeModal(); renderAll(); await sleepScene(true); toast(r.msg, 3200); renderAll(); } // 0.43.0: Schlafkammer-Bild
   }
   else if (m === 'shopbuy' || m === 'shopsellTab') { S.shopTab = m === 'shopbuy' ? 'buy' : 'sell'; S.shopSure = null; openShop(S.shopId); }
   else if (m.startsWith('buy:')) {

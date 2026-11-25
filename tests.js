@@ -73,7 +73,7 @@ export async function runTests(data, env = {}) {
     put(s, 5, 3, 1);
     const r = L.tryMove(s, data, 'f');
     assert(!r.moved && /geschlossen/.test(r.msg), 'geschlossene Tür blockiert');
-    put(s, 1, 1, 3);
+    put(s, 1, 2, 3);
     assert(L.tryMove(s, data, 'f').wall, 'Wand blockiert');
   });
 
@@ -516,9 +516,9 @@ export async function runTests(data, env = {}) {
 
   await test('Ausgang (0.16.4, seit 0.37.0 am Ende der Zisterne): erstes Betreten = Abschluss, danach kurzer Hinweis', () => {
     const s = fresh(9); L.jumpToLevel(s, data, 'festung6'); s.objs.forEach((o) => { if (o.type === 'enemy') o.dead = true; });
-    put(s, 74, 29, 2);
+    put(s, 73, 30, 1); // 0.47.3: der Ausgang liegt an der Ostwand, Eintritt nur in Richtung der Wand
     const a = L.tryMove(s, data, 'f'); assert(a.events.some((e) => e.type === 'exit'), 'erstes Mal: exit ' + JSON.stringify(a));
-    put(s, 74, 29, 2);
+    put(s, 73, 30, 1);
     const b = L.tryMove(s, data, 'f'); assert(b.events.some((e) => e.type === 'exitAgain') && !b.events.some((e) => e.type === 'exit'), 'danach: exitAgain ' + JSON.stringify(b));
     const t = data.levels.festung6.objects.find((o) => o.id === 'exit_z_tiefe');
     assert(t && /späteren Version/.test(t.again), 'Ausgang hat Hinweistext');
@@ -718,8 +718,8 @@ export async function runTests(data, env = {}) {
       }
       assert(L.analyzeLevel(data, id).ok, `${id} bleibt lösbar`);
     }
-    assert(wall >= 10 && barrels >= 10 && rubble >= 8, `Deko vorhanden (${wall}/${barrels}/${rubble})`);
-    for (const id of ['kultgruft', 'schratgruben', 'nebelturm', 'festung1', 'festung2', 'festung3', 'moorpfad', 'moorsee', 'festung4']) assert(data.levels[id].objects.some((o) => String(o.id).startsWith('dk_')), `${id}: Deko`);
+    assert(wall >= 10 && barrels >= 10 && rubble === 0, `Deko vorhanden, Steinhaufen entfernt (${wall}/${barrels}/${rubble})`); // 0.47.3: Steinhaufen ersatzlos gestrichen
+    for (const id of ['kultgruft', 'schratgruben', 'nebelturm', 'festung1', 'festung2', 'festung3', 'moorsee']) assert(data.levels[id].objects.some((o) => String(o.id).startsWith('dk_')), `${id}: Deko`); // 0.47.3: Moorpfad hatte nur Steinhaufen als Deko (entfernt)
   });
 
   await test('Blutgruft (0.27.0): Treppe aus dem Keller, rote Palette, Vampire, Blutbiss heilt den Gegner, Schlüssel erreichbar', () => {
@@ -3071,9 +3071,38 @@ export async function runTests(data, env = {}) {
     w.player.x = 51; w.player.y = 14; w.player.dir = 0; const r2 = L.interact(w, data); assert(sw.open, 'Wand öffnet mit Skizze: ' + JSON.stringify(r2));
     // Treppen: seitlich vorbei löst nichts aus, frontal schon
     const s = fresh(64); L.jumpToLevel(s, data, 'festung3'); const st = s.objs.find((o) => o.type === 'stairs');
-    s.player.x = st.x - 1; s.player.y = st.y; s.player.dir = 0; const side = L.tryMove(s, data, 'r');
+    s.player.x = st.x; s.player.y = st.y + 1; s.player.dir = 1; const side = L.tryMove(s, data, 'l');
     assert(side.moved && !(side.events || []).some((e) => e.type === 'stairs'), 'seitlich: keine Treppe');
-    s.player.x = st.x - 1; s.player.y = st.y; s.player.dir = 1; const fr = L.tryMove(s, data, 'f'); assert((fr.events || []).some((e) => e.type === 'stairs'), 'frontal: Treppe');
+    s.player.x = st.x + 1; s.player.y = st.y; s.player.dir = 3; const fr = L.tryMove(s, data, 'f'); assert((fr.events || []).some((e) => e.type === 'stairs'), 'frontal: Treppe');
+  });
+  await test('0.47.3 Treppen/Ausgänge: nur frontal (auch vorwärts parallel zur Wand löst nichts aus), jede hat frontalen Zugang', () => {
+    const D = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+    let checked = 0;
+    for (const [id, lvl] of Object.entries(data.levels)) for (const o of lvl.objects.filter((q) => q.type === 'stairs' || q.type === 'exit')) {
+      const dirs = L.passEntryDirs(lvl, o);
+      assert(dirs.length >= 1, `${id}/${o.id}: Eintrittsrichtung`);
+      assert(dirs.some((k) => L.cellChar(lvl, o.x - D[k][0], o.y - D[k][1]) === '.'), `${id}/${o.id}: kein frontaler Zugang`);
+      for (let d = 0; d < 4; d++) {
+        const sx = o.x - D[d][0], sy = o.y - D[d][1]; if (L.cellChar(lvl, sx, sy) !== '.') continue;
+        const s = L.newGame(data, 3); s.levelId = id; s.objs = lvl.objects.map((q) => ({ ...q, dead: q.type === 'enemy' ? true : q.dead })); put(s, sx, sy, d);
+        const r = L.tryMove(s, data, 'f'); const hit = (r.events || []).some((e) => e.type === (o.type === 'stairs' ? 'stairs' : 'exit'));
+        assert(hit === dirs.includes(d), `${id}/${o.id}: Richtung ${d} ${hit ? 'löst' : 'löst nicht'} aus, erwartet ${dirs.includes(d)}`); checked++;
+      }
+    }
+    assert(checked >= 60, 'genug Eintritte geprüft: ' + checked);
+    // auf dem Treppenfeld gegen die Treppenwand laufen = hindurchgehen (seitlich hineingegangen, dann frontal)
+    const t1 = data.levels.test1, st = t1.objects.find((o) => o.id === 'stairs_down'); const s = fresh(4); put(s, st.x, st.y, L.passEntryDirs(t1, st)[0]);
+    const r = L.tryMove(s, data, 'f'); assert((r.events || []).some((e) => e.type === 'stairs'), 'vom Treppenfeld gegen die Wand: Treppe');
+  });
+  await test('0.47.3 Gefangener Tilo sitzt in einer 1×1-Zelle (Gittertür „ZELLE“), Steinhaufen sind weg', () => {
+    const k = data.levels.kultgruft, npc = k.objects.find((o) => o.id === 'npc_zelle'), door = k.objects.find((o) => o.id === 'door_zelle_t');
+    assert(npc && door && door.title === 'ZELLE' && door.look === 'gitter', 'Zelltür');
+    const w = (x, y) => L.isWallChar(L.cellChar(k, x, y));
+    assert(w(npc.x, npc.y - 1) && w(npc.x, npc.y + 1) && w(npc.x - 1, npc.y), 'Zelle ist an drei Seiten Wand');
+    assert(door.x === npc.x + 1 && door.y === npc.y, 'Gittertür davor');
+    assert(w(door.x, door.y - 1) && w(door.x, door.y + 1), 'Zelle samt Tür ist ein Nischengang');
+    assert(L.analyzeLevel(data, 'kultgruft').ok, 'Kultgruft bleibt lösbar');
+    for (const lvl of Object.values(data.levels)) assert(!lvl.objects.some((o) => o.type === 'decor' && o.look === 'schutt'), 'Steinhaufen entfernt');
   });
   await test('0.46.2 Schilder liegen auf keiner Wandfackel', () => {
     const D = [[0, -1], [1, 0], [0, 1], [-1, 0]];
@@ -3192,6 +3221,7 @@ export async function runTests(data, env = {}) {
     const npc = s.objs.find((o) => o.type === 'npc' && o.dialog === 'wirt') || { id: 'npc_wirt', dialog: 'wirt' };
     eq(L.dialogStartNode(s, data, npc), 'erst', 'erster Kontakt'); s.flags['d:' + npc.id] = true; eq(L.dialogStartNode(s, data, npc), 'a', 'danach normales Gespräch');
     for (const [k, n] of Object.entries(dl.nodes)) for (const c of n.choices) assert(!c.to || dl.nodes[c.to], k + ': Ziel vorhanden');
+    assert(dl.nodes.erst.choices.some((c) => c.maps), '0.47.3: Schatzkarten schon beim ersten Besuch kaufbar');
   });
   await test('0.43.0 Schlafkammer: Szene zeichnet in allen Zimmern ohne Fehler, ASSETS enthält scene.js', async () => {
     const sw = env.readText ? await env.readText('sw.js') : null; if (sw) assert(sw.includes("'./scene.js'"), 'scene.js in ASSETS');
@@ -3199,6 +3229,7 @@ export async function runTests(data, env = {}) {
     const M = await import('./scene.js'); assert(M.SLEEP_ROOMS.length >= 4, 'mindestens vier Zimmer');
     const heroes = ['human', 'elf', 'dwarf', 'ork', 'gnome'].map((race, i) => ({ name: 'H' + i, race, cls: ['warrior', 'rogue', 'priest', 'mage', 'ranger', 'alchemist'][i] }));
     for (let v = 0; v < M.SLEEP_ROOMS.length; v++) for (const t of [0, 1.7, 4.9]) { calls.length = 0; M.drawSleepScene(ctx, heroes, v, t); assert(calls.length > 150, 'Zimmer ' + v + ' zeichnet'); }
+    for (const t of [0, 1.7, 4.9]) { calls.length = 0; M.drawCampScene(ctx, heroes, t); assert(calls.length > 150, '0.47.3 Nachtlager im Gang zeichnet'); }
   });
   await test('0.40.0 Steckbriefe: Daten, Aushang nur für besuchte Gebiete, Abschüsse, Trophäen, Abgabe, Nachrücken, Abreißen', () => {
     const B = data.bounties; assert(B.length >= 15, 'mindestens 15 Steckbriefe'); const kinds = new Set(B.map((b) => b.type)); for (const k of ['kill', 'trophy', 'gear']) assert(kinds.has(k), 'Art ' + k);
