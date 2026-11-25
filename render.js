@@ -1412,11 +1412,9 @@ function genTrap(mode, seed, kind = 'spikes') { // kind (0.22.1, Nutzer: „Stah
     // 0.19.9: sichtbare Platte; 0.19.18 (Nutzer: „Stein bei der Giftfalle jetzt zu deutlich“): dezenter – kleiner, kaum dunkler als der Boden, schmale feine Risse, wenig Staub
     // 0.23.4 (Nutzer: ohne Schurken nicht erkennbar): etwas höher und kontrastreicher – helle Kante oben, dunkle Fuge, deutlichere Risse; weiter dezenter als die entdeckte (rote) Falle
     // 0.26.3 (Nutzer: „Fallen viel zu offensichtlich“): wieder schmaler und kontrastärmer – Kante und Fuge nur noch leicht, Platte kaum heller als Boden
-    // 0.47.4 (Nutzer: „Fallen weiterhin viel zu deutlich sichtbar“; 0.47.3 hatte die Platte sichtbarer gemacht = Fehler): keine gefüllte Platte und keine Lichtkante mehr – nur noch feine, unterbrochene Fugen und wenige Risse auf dem Boden, Fläche transparent
-    for (let x = 22; x <= 42; x++) for (const y of [60, 63]) if (hash(x, y, seed + 11) > 0.38) set(x, y, P('stone', 1.9));
-    for (let y = 60; y <= 63; y++) for (const x of [22, 42]) if (hash(x, y, seed + 12) > 0.35) set(x, y, P('stone', 1.9));
-    for (const cx of [28, 36]) { let x = cx + Math.floor(hash(cx, 5, seed) * 3) - 1; for (let y = 61; y <= 63; y++) { if (hash(x, y, seed + 13) > 0.3) set(x, y, P('stone', 1.7)); if (hash(x, y, seed + 2) > 0.55) x += hash(y, x, seed + 3) > 0.5 ? 1 : -1; } }
-    for (let x = 18; x <= 46; x++) for (let y = 59; y <= 63; y++) if (hash(x, y, seed + 7) > 0.975) set(x, y, P('stone', 3.0));
+    // 0.47.5 (Nutzer: „Immer noch zu leicht erkennbar“): Spur nur noch im Material des Bodens (Stein-Töne stachen heraus), kein Rechteck mehr (wirkte wie eine Platte) – zwei kurze, unregelmäßige Haarrisse und wenige Staubpunkte, kaum dunkler als die Bodenmaserung
+    for (const [cx, w] of [[26, 9], [37, 7]]) { let x = cx + Math.floor(hash(cx, 5, seed) * 3) - 1; for (let y = 60; y <= 63; y++) { for (let k = 0; k < w - (y - 60) * 2; k++) if (hash(x + k, y, seed + 13) > 0.25) set(x + k, y, P('floor', 2)); x += hash(y, x, seed + 3) > 0.5 ? 1 : -1; } }
+    for (let x = 20; x <= 44; x++) for (let y = 61; y <= 63; y++) if (hash(x, y, seed + 7) > 0.965) set(x, y, P('floor', 4));
   } else if (mode === 'seen') {
     // 0.47.3 (Nutzer: „Ausrufezeichen mittig im Bild“): flache Bodenmarkierung – roter Ring und liegendes Ausrufezeichen auf dem Boden, nichts schwebt mehr in Bildmitte
     for (let y = 52; y <= 63; y++) for (let x = 8; x <= 56; x++) {

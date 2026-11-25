@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.47.4 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.47.5 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1646,3 +1646,11 @@ Nächste: 0.47.4 (7–9), 0.47.5 (10–13 + BALANCE/SIM), 0.48.0 (14–17), spä
 - Nummerierung neu: 0.47.5 = Struktur (Backlog 7–9: entfluchte Gegenstände halbe Boni, Taverne erst im 3. Gebiet, Händlerbestand mit Nachschub nach 1 Stunde Echtzeit); 0.47.6 = Balance (10–13) mit BALANCE.md/SIM.md; 0.48.0 = Lesbarkeit/Stimmung (14–17); später „Tote erwecken“.
 - Entscheidungen des Nutzers (25.11.2026): Entfluchte Gegenstände: positive Boni halbieren (Kopie der itemDef, atk/def/init und fx-Zahlen ×0,5 gerundet, mindestens 1, Beschreibung anpassen). Händler: Nachschub nach 1 Stunde Echtzeit (Zeitstempel im Spielstand); ersetzt die frühere Annahme „5 Stunden“.
 - Offen: Gerätetest 0.47.3 (Ergebnisse stehen aus), „Schrat im Testgewölbe“ (laut `game.json` kein Schrat in test1; Schrat nur in moorlichtung `en_schrat` 14,2 und schratgruben `en_sboss` 30,7; Levelname vom Nutzer steht aus).
+
+## 0.47.5 (25.11.2026; headless, nicht auf Gerät getestet): Fallenbild nochmals unauffälliger
+- Gerätetest 0.47.4 (Nutzer 17:48): unentdeckte Falle „✗ immer noch zu leicht erkennbar“; entdeckte Falle (rot) ✓; Punkte „Falle trotzdem erkennbar“ und „Offene Punkte aus 0.47.3“ nicht geprüft.
+- Ursache (nachgestellt per Render: makeTextures + Palette „keller“ über Bodentextur, nicht auf Gerät): Spur im Material `stone` (anderer Farbton als Boden `floor`) und als Rechteck; als stehendes Sprite wirkt das wie eine Platte.
+- Änderung render.js `genTrap('faint')`: Material `floor` (Schatten 2 für Risse, 4 für Staub), kein Rechteck, zwei kurze unregelmäßige Haarrisse (x≈26 und 37, y60–63), wenige Staubpunkte; 36 Bildpunkte. 'seen' und 'sprung' unverändert.
+- Entscheidung: Entdeckung bleibt über die Würfe (2 und 1 Feld Abstand) und Hinweise (Wand/Schild/Talent); das Bild ist nur noch ein feiner Zusatzhinweis. Falls es auf dem Gerät zu unsichtbar ist, Schatten 2 → 1 oder Risse länger.
+- Nummerierung neu: 0.47.6 = Struktur (7–9), 0.47.7 = Balance (10–13, mit BALANCE.md/SIM.md), 0.48.0 = Lesbarkeit/Stimmung (14–17), später „Tote erwecken“.
+- Offen: Gerätetest 0.47.3 (Treppen seitlich, Zelle, Rastbild, Marga-Karten, Steinhaufen), „Schrat im Testgewölbe“ (Levelname/Screenshot vom Nutzer).
