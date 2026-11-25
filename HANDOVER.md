@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.47.6 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.47.7 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1662,3 +1662,11 @@ Nächste: 0.47.4 (7–9), 0.47.5 (10–13 + BALANCE/SIM), 0.48.0 (14–17), spä
 - Test 0.47.3 angepasst (Treppenfeld gegen Wand = nur Wand). Tests 175 grün. Keine Werteänderung.
 - Offene Rückfrage an den Nutzer: genaue Tastenfolge (Vor/Seitwärts/Drehen/Antippen der Treppe?), Gebiet und Treppe, Meldung oder Bild nach dem Hereinziehen. Verdacht dann: Antippen des Treppenbildes oder Halten der Vor-Taste (`S.held`).
 - Nummerierung neu: 0.47.7 = Struktur (7–9), 0.47.8 = Balance (10–13), 0.48.0 = Lesbarkeit (14–17).
+
+## 0.47.7 (25.11.2026; headless, nicht auf Gerät getestet): Sumpfwolf kleiner und wolfähnlicher
+- Nutzer (25.11.2026 18:01, Screenshot Kampf im Moor, Wolf + grünliche Figur rechts am Bildrand): „Monster zu groß und unfertig. Wolfähnlicher gestalten.“ Deutung (Vermutung): „Gestalten“ = zeichnen.
+- Nachgestellt per Render (makeTextures + Palette moorpfad): Block-Rumpf, Stelzenbeine, Kamm-Zacken an den Schultern wirkten wie erhobene Hände.
+- Änderung render.js: `genWolf` Rumpfteil neu (Vorderpfoten/-läufe, schmale Brust, zottige Halskrause mit gezackter Kontur, Hinterkeulen, Rumpf dahinter); Kopf unverändert. `spriteScale` Wolf 1,65 → 1,3 (frühere Nutzerwünsche: 0.19.3/0.19.5 „größer“, jetzt „zu groß“; aktueller Wunsch gilt).
+- Offen/unklar: Die zweite Figur im Screenshot (grünlich, rechts, vom Bildrand angeschnitten) ist nicht geklärt (Moorlicht oder Kultist?); ob die Gruppenaufstellung dort aus dem Bild ragt, nicht nachgestellt. Rückfrage an Nutzer, falls es stört.
+- Tests 175 grün (Werte unverändert, BALANCE.md/SIM.md unverändert).
+- Nummerierung neu: 0.47.8 = Struktur (7–9), 0.47.9 = Balance (10–13), 0.48.0 = Lesbarkeit/Stimmung (14–17).

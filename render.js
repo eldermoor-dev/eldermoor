@@ -2368,18 +2368,15 @@ function genWolf(seed) { // 0.19.2: Sumpfwolf von vorn (Nutzer: Gegner „sehen 
     if (ell(px, py, 32, 47.6, 4.2, 1.8) <= 1) return F(1.8); // Unterkiefer
     if (ell(px, py, 32, 34.8, 9.2, 6.8) <= 1) return F(2.3); // Schädel
     if (cap(px, py, sx(6.4), 30.4, sx(10.8), 22.2, 3.0, 0.4)) return cap(px, py, sx(6.9), 29.6, sx(10.2), 24.2, 1.2, 0.2) ? ['flesh', 1.2] : F(1.7); // Ohren mit dunklem Innenohr
-    // Vorderläufe und Pfoten mit Krallen
-    if (ell(px, py, sx(7.6), 62, 3.3, 1.5) <= 1) return ['ceil', 1.2 + fur * 0.3];
-    if (py > 62.4 && py < 63.8 && (Math.abs(ax - 5.6) < 0.45 || Math.abs(ax - 7.6) < 0.45 || Math.abs(ax - 9.6) < 0.45)) return ['stone', 6.5];
-    if (cap(px, py, sx(7.2), 49, sx(7.7), 61.4, 3.2, 2.1)) return F(1.9);
-    // Brust, Halskrause, gesträubter Rücken
-    if (ell(px, py, 32, 50.5, 10.5, 7.5) <= 1) return py > 53 && ax < 5 ? ['ceil', 2.8 + fur * 0.5] : F(2.1);
-    if (ell(px, py, 32, 43.5, 13.5, 8.2) <= 1) return F(1.8);
-    for (let i = 0; i < 5; i++) { const bx = 9.5 + i * 1.7, top = 33.2 - (i % 2) * 1.6 - (i === 2 ? 1 : 0); if (cap(px, py, sx(bx), 39.5, sx(bx + 0.9), top, 1.4, 0.2)) return F(1.3); }
-    // Hinterläufe und Rumpf (weiter hinten, dunkler)
-    if (ell(px, py, sx(15.4), 62, 2.8, 1.3) <= 1) return ['ceil', 0.8 + fur * 0.3];
-    if (cap(px, py, sx(14.6), 50, sx(15.6), 61.5, 2.8, 1.8)) return F(1.1);
-    if (ell(px, py, 32, 46.5, 15, 7) <= 1) return F(1.2);
+    // 0.47.7 (Nutzer: „Monster zu groß und unfertig, wolfähnlicher“): Rumpf neu – schmale Brust statt Block, dünnere Vorderläufe nah beieinander, zottige Halskrause statt der Kamm-Zacken (sahen wie Hände aus), Hinterläufe seitlich hinter der Brust
+    if (ell(px, py, sx(5.9), 62.2, 2.9, 1.3) <= 1) return ['ceil', 1.2 + fur * 0.3]; // Vorderpfoten
+    if (py > 62.6 && py < 63.9 && (Math.abs(ax - 4.5) < 0.4 || Math.abs(ax - 5.9) < 0.4 || Math.abs(ax - 7.3) < 0.4)) return ['stone', 6.5]; // Krallen
+    if (cap(px, py, sx(5.0), 52, sx(5.6), 61.6, 2.5, 1.8)) return F(1.9); // Vorderläufe
+    if (ell(px, py, 32, 52.5, 8.6, 7.8) <= 1) return py > 54.5 && ax < 3.6 ? ['ceil', 2.8 + fur * 0.5] : F(2.1); // Brust mit hellerem Bauchfell
+    { const dx = (px - 32) / 12.8, dy = (py - 44.8) / 7.4, ang = Math.atan2(dy, dx), lim = 1 + 0.11 * Math.sin(ang * 11 + seed) + 0.07 * Math.sin(ang * 23 + seed * 2); if (Math.hypot(dx, dy) <= lim && py > 38) return F(1.9 + (Math.hypot(dx, dy) < 0.6 ? 0.2 : -0.2)); } // zottige Halskrause
+    if (ell(px, py, sx(11.4), 62.2, 3.0, 1.2) <= 1) return ['ceil', 0.8 + fur * 0.3]; // Hinterpfoten
+    if (cap(px, py, sx(11.0), 53, sx(11.6), 61.5, 3.4, 1.8)) return F(1.0); // Hinterläufe (Keulen)
+    if (ell(px, py, 32, 51.5, 13, 8.2) <= 1) return F(1.1); // Rumpf dahinter
     return null;
   });
 }
@@ -3144,7 +3141,7 @@ export const setCombatFit = (v) => { combatFit = v; };
 // 0.19.2: Gruppen je nach Größe kleiner, damit sich die Gestalten nicht überschneiden (Nutzer: „Gegner überschneiden sich“)
 export const GROUP_SIZE = { 2: 0.84, 3: 0.72 }; // 0.22.1 (Nutzer: „Gegner wirken zu klein“): vorher 0.72 / 0.6
 export const spriteScale = (k, n) => bossScale(k) * // 0.22.1 (Nutzer: „alle gleich groß, wie auf offener Fläche“): Gruppengröße ändert die Figurengröße nicht mehr
-   (k === 'wolf' ? 1.65 : 1); // Wolf ist niedrig gebaut: größer ansetzen (0.19.3: 1,25 → 1,45; 0.19.5: 1,65, Nutzer: „noch etwas größer“)
+   (k === 'wolf' ? 1.3 : 1); // Wolf ist niedrig gebaut: größer ansetzen (0.19.3: 1,25 → 1,45; 0.19.5: 1,65, Nutzer: „noch etwas größer“; 0.47.7 Nutzer: „Monster zu groß“ → 1,3)
 // Aufstellung einer Gruppe (0.16.4b): lat = seitlich (rechts +), dep = Tiefe (vom Betrachter weg). Im engen Gang (links und rechts Wand)
 // stehen die Gegner gestaffelt hintereinander statt nebeneinander, sonst ragen sie in die Wände (Nutzer-Screenshot 0.16.4).
 // 0.22.1: Alle Figuren in voller Größe. Offen: nebeneinander. Enger Gang (1 Feld): eine vorn, die anderen leicht versetzt dahinter;

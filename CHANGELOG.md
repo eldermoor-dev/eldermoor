@@ -3,6 +3,10 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.47.7 (25.11.2026, headless, nicht auf Gerät getestet)
+- Sumpfwolf: kleiner (Faktor 1,65 → 1,3) und wolfähnlicher neu gezeichnet. Vorher Block-Rumpf, Stelzenbeine und Kamm-Zacken an den Schultern, die wie Hände wirkten (Nutzer: „zu groß und unfertig, wolfähnlicher gestalten“). Jetzt schmale Brust, zottige Halskrause, dünnere Vorderläufe, Hinterkeulen seitlich. Als Bild gerendert und angesehen (Moorpalette), nicht auf Gerät. Werte unverändert.
+- Nummerierung: Struktur (7–9) = 0.47.8, Balance (10–13) = 0.47.9, Lesbarkeit (14–17) = 0.48.0.
+
 ## 0.47.6 (25.11.2026, headless, nicht auf Gerät getestet)
 - Treppen/Ausgänge: Der Gebietswechsel entsteht ausschließlich beim geraden Schritt vom Zugangsfeld auf das Treppenfeld in Eintrittsrichtung. Entfernt: Wechsel durch „Vor“ gegen die Treppenwand, wenn die Gruppe schon (z. B. seitlich) auf dem Treppenfeld steht (aus 0.47.3). Das ist eine VERMUTETE Ursache für das gemeldete „seitliche Hereinziehen“ (Nutzer: besteht weiter bei allen Aufgängen); ein anderer Auslöser ließ sich in der Logik nicht finden (Tests: alle 82 Zugänge × 4 Richtungen).
 - Nummerierung: Struktur (7–9) = 0.47.7, Balance (10–13) = 0.47.8, Lesbarkeit (14–17) = 0.48.0.
