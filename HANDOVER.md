@@ -1765,3 +1765,14 @@ Nächste: 0.47.4 (7–9), 0.47.5 (10–13 + BALANCE/SIM), 0.48.0 (14–17), spä
 - Prüfung: `node tests.js` 182 bestanden, 0 fehlgeschlagen (2 neue Tests); Render-Vergleich an der Treppe Moorpfad→Kultgruft (Schild neben dem Bogen, Pfeil ab + Name, lesbar). Kein BALANCE-/SIM-Lauf nötig. VERSION 0.47.16 in main.js und sw.js.
 - Offen (Gerät): Schild „SÜDEN ←“ in den Schratgruben; Wegweiser an mehreren Treppen (hinab/hinauf/Weg) sichtbar neben dem Bogen, nicht auf Fackeln, Pfeil passt zur Richtung; Lesefeld-Text beim Anlaufen.
 - Nummerierung: 0.47.17 = Balance (10–13), 0.48.0 = Schrats Vorgarten, Schildformen, Wanddeko, Hebel, Geräusche; später „Tote erwecken“. (Treppenschilder sind mit 0.47.16 erledigt, sobald auf dem Gerät bestätigt.)
+
+## Gerätetest 0.47.16 (Nutzer, Galaxy S25, 25.11.2026 21:32) – alle 7 Punkte ✓
+- **Bestätigt auf Gerät (✓):** (1) Erzkäfer-Kampfbild (0.47.15); (2) Siedlung vor den Schratgruben ohne Taverne-Tür; (3) Taverne-Tür erscheint nach Betreten der Schratgruben; (4) Moorlicht im Wolfkampf innerhalb der Wände; (5) Ysolde entflucht (halbe Werte); (6) Händler-Vorrat (sinkt, „Ausverkauft“, Nachschub); (7) alter Spielstand aus 0.47.8 lädt ohne Fehler.
+- **Nicht getestet (vom Nutzer ausgenommen):** Wegweiser an Treppen, Schild „SÜDEN ←“, Lesefeld mit Zielgebiet (Schilder und Schriftzüge prüft der Nutzer später, wenn er will).
+- Weiterhin offen/ungeklärt: Treppe „erst beim zweiten Mal“ (braucht Treppe + Anlaufrichtung); zweite Figur im Schrat-Screenshot (Moorlicht oder Kultist?).
+
+## BACKLOG Nutzer 25.11.2026 20:53 (NICHT gebaut): Moorschrat-Auftritt in der Moorlichtung (ersetzt „Schrats Vorgarten“)
+- Wunsch (Screenshot Moorschrat im Gang, Moorlichtung `en_schrat` 14,2): „Soll nicht direkt sichtbar sein. Erscheint plötzlich beim Betreten des Raums, in dem er sich jetzt befindet. Dann wurde der Raum zur Alptraum-Moorlandschaft. Dann Kampf.“
+- Ablauf: Schrat unsichtbar und nicht entdeckbar → Auslöser beim Betreten der Lichtung → er erscheint plötzlich → Raum wechselt in eine Alptraum-Optik → Kampf.
+- Technischer Ansatz (Vermutung, nicht umgesetzt): Gebietsumbau `levels.moorlichtung.alt` (Marke, `patch.palette` = neue Palette „alptraum“, `levelFor`/`getLevel` unterstützen das bereits); Gegner-Merkmal „verborgen bis Marke“ (in `spottedEnemy`, `buildSprites`, Rastregel, Karte beachten); Zone-Auslöser in `tryMove`; Ereignis `scene` in main.js (Palette setzen, Blitz, `sting`, `showEvent`); Boss-Intro `intro:en_schrat` dabei unterdrücken. Offene Entwurfsfragen (Entscheidung beim Bau, vom Assistenten zu begründen): Auslösefeld/Zone, Erscheinungsort, ob die Alptraum-Optik nach dem Sieg endet.
+- Nummerierung: 0.47.17 = Moorschrat-Auftritt, 0.47.18 = Balance (10–13), 0.48.0 = Schildformen, Wanddeko, Hebel, Geräusche; später „Tote erwecken“.
