@@ -3007,6 +3007,8 @@ export class Raycaster {
         for (let x = 0; x < W; x++) buf[row + x] = c;
       }
     } else {
+      const wsx = this._wsx || (this._wsx = new Float32Array(64)), wsy = this._wsy || (this._wsy = new Float32Array(64)); // 0.49.3: Bahn der Wasserschatten je Zelle, einmal je Bild
+      for (let i = 0; i < 64; i++) { wsx[i] = 0.22 * Math.sin((view.time || 0) * 0.13 + i * 0.5); wsy[i] = 0.22 * Math.cos((view.time || 0) * 0.11 + i * 0.37); }
       const ftex = (view.floorTex === 'sand' && tex.sand ? tex.sand : tex.floor).data, ctex = tex.ceil.data, FN = tex.floor.w, FM = FN - 1;
       const rdx0 = dirX - planeX, rdy0 = dirY - planeY, rdx1 = dirX + planeX, rdy1 = dirY + planeY;
       for (let y = 0; y < H; y++) {
@@ -3033,7 +3035,16 @@ export class Raycaster {
           for (let x = 0; x < W; x++) {
             const cx = Math.floor(fx), cy = Math.floor(fy), k = cx >= 0 && cy >= 0 && cx < fw && cy < fh ? fg[cy * fw + cx] : 0;
             let c;
-            if (k === 1) c = wd[((((fy * FN + Math.sin(fx * 2.3 + t) * 2) | 0) & FM) * FN) + (((fx * FN + wob) | 0) & FM)];
+            if (k === 1) { // 0.49.3 (Nutzer: Wasser zu langweilig): zweite Wellenschicht in Gegenrichtung (Überlagerung, wandernde Glanzlichter) und langsam ziehende dunkle Schatten unter der Oberfläche
+              const c1 = wd[((((fy * FN + Math.sin(fx * 2.3 + t) * 2) | 0) & FM) * FN) + (((fx * FN + wob) | 0) & FM)];
+              const c2 = wd[((((fy * FN * 0.65 + t * 3) | 0) & FM) * FN) + (((fx * FN * 0.65 - t * 4) | 0) & FM)];
+              let sh = c1 & 7; const s2 = c2 & 7;
+              if (s2 >= 6 && sh >= 3) sh = 7; else if (s2 >= 5) sh += 1; else if (s2 <= 1) sh -= 1;
+              const ci = (fx * 0.125) | 0, cj = (fy * 0.125) | 0, pi = (ci * 7 + cj * 13 + ((ci * cj) & 7)) & 63;
+              if (pi > 30) { const u = fx * 0.125 - ci - 0.5 - wsx[pi], v = fy * 0.125 - cj - 0.5 - wsy[pi]; if (u * u * 9 + v * v * 40 < 0.5) sh -= 2; }
+              if ((pi & 3) === 0) { const dx = fx - ci * 8 - 4, dy = fy - cj * 8 - 4, d2 = dx * dx + dy * dy; if (d2 < 9) { const rr = (t * 0.5 + pi * 0.43) % 3; if (Math.abs(Math.sqrt(d2) - rr) < 0.09 + rr * 0.02) sh += 3; } } // Tropfenringe: wachsen von festen Punkten aus, wie von der Decke tropfend
+              c = (c1 & ~7) | Math.max(0, Math.min(7, sh));
+            }
             else if (k === 6) { c = sd[((((fy * FN) | 0) & FM) * FN) + (((fx * FN) | 0) & FM)]; }
             else if (k === 5) { c = rd[((((fy * FN) | 0) & FM) * FN) + (((fx * FN) | 0) & FM)]; }
             else if (k === 4) { c = cd[((((fy * FN) | 0) & FM) * FN) + (((fx * FN) | 0) & FM)]; }

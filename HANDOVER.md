@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.49.2 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.49.3 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1851,4 +1851,16 @@ Auslöser: Nutzerfoto des Schrat-Kampfs (Moorschrat in der blutroten Kammer) und
 - Nicht gerendert, Lage und Lesbarkeit nur durch Code und Tests (183 grün) abgesichert. Möglich: kein freies Nachbarfeld, dann kein Schild (nicht geprüft, wie viele Treppen das betrifft).
 - Offene Geräteprüfung: Schild neben dem Bogen sichtbar und lesbar? Stimmt der Name?
 - Nutzerfrage 22:41: Vorschläge für das Testgewölbe (Beginn der Reise, 22×10, drei Räume, zwei Wölfe, eine Truhe, Runenstein). Vorschläge im Chat gemacht, noch keine Entscheidung.
+
+## 0.49.3 (25.11.2026; Bild headless gerendert, nicht auf Gerät getestet): lebendigeres Wasser
+- Nutzer 22:42 (Foto Zisterne): „Irgendwas mit dem Wasser machen. Wirkt zu langweilig.“ Gestaltung vom Assistenten gewählt (delegiert).
+- Gebaut (render.js, Bodenzeichnung `k === 1`): (1) zweite Wellenschicht in Gegenrichtung, dadurch Überlagerung und wandernde Glanzlichter; (2) langsam ziehende dunkle Schatten unter der Oberfläche (Bahn je 8×8-Feld, tabelliert einmal je Bild); (3) Tropfenringe, die von festen Punkten aus wachsen. Gilt für alle Gebiete mit Wasser (Zisterne, Moorsee, Schatzinsel, Moorlichtung).
+- Geprüft: Testbild der Zisterne ohne Browser gerendert (alt gegen neu verglichen, ein Ring sichtbar), Tests 183 grün. Renderzeit auf dem Gerät nicht gemessen (zusätzliche Rechnung je Wasserpixel). Wirkung auf dem Gerät offen.
+- Stellschrauben: Glanz (s2-Schwellen), Schattenradius 0,5 und Anteil `pi > 30`, Ringe `(pi & 3) === 0`.
+
+## PLAN 0.50.0 Testgewölbe (Nutzer 22:44: „A, C, D und E“) – nicht gebaut, in neuem Chat bauen
+Auftrag aus den Vorschlägen vom 25.11.: **A** Lehrpfad ohne Belehrung, **C** Geheimraum, **D** Atmosphäre, **E** Geschichte (Notizbuch/Inschriften, ohne das Ende zu verraten). Nicht gewählt: B (Plattenrätsel), F (Wanderer).
+- Ausgangslage (aus game.json gelesen): Gebiet `test1` „Testgewölbe (Phase 1)“, 22×10, drei Räume, `door_a` (6/3), `door_b` (12/7), Truhe (12/1), Wölfe `en2` (10/3) und `en3` (9/7), Runenstein `rune_t1` (19/7) mit Inschrift (Sechs Siegel, „merkt euch, wo das Licht ist“), Treppen hinab (1/1 Untere Gruft) und hinauf (1/4 Moorlichtung).
+- A: Raum 1 Hebel öffnet Gitter zur Truhe; Raum 2 Falle mit Wandhinweis; Ostflügel Wölfe als erster Kampf; Runenstein bleibt der Schluss. C: Geheimwand mit kleiner nützlicher Beute (Beute vorher festlegen, nicht aus dem Gedächtnis). D: Fackeln, Wanddeko, Rastplatz (Nachtlager-Szene 0.49.0), eventuell größere Karte. E: Notizbuch-Einträge und Inschriften.
+- Vor dem Bau: Raumaufteilung (Karte) dem Nutzer zeigen. Alt-Spielstände müssen laden (syncStatic, neue Objekte nachziehen), Tests und sim.js (Gegnerwerte nur bei Änderung) beachten. Offene Frage: Soll die Moorlichtung vor dem Testgewölbe bleiben (Treppe hinauf 1/4)?
 
