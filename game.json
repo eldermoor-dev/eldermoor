@@ -3774,6 +3774,46 @@
           "style": "stone",
           "go": "weg",
           "text": "Wegweiser: Der Weg führt: Moorsee."
+        },
+        {
+          "id": "dk_moorpfad_moos1",
+          "type": "sign",
+          "x": 17,
+          "y": 6,
+          "face": 3,
+          "deco": "moos",
+          "text": "Dichter Moosbelag, feucht und weich. Es riecht nach Moder.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_moorpfad_moos2",
+          "type": "sign",
+          "x": 5,
+          "y": 2,
+          "face": 2,
+          "deco": "moos",
+          "text": "Dichter Moosbelag, feucht und weich. Es riecht nach Moder.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_moorpfad_moos3",
+          "type": "sign",
+          "x": 14,
+          "y": 1,
+          "face": 1,
+          "deco": "moos",
+          "text": "Dichter Moosbelag, feucht und weich. Es riecht nach Moder.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_moorpfad_kratzer1",
+          "type": "sign",
+          "x": 4,
+          "y": 7,
+          "face": 2,
+          "deco": "kratzer",
+          "text": "Drei tiefe Kratzer im Stein, nebeneinander. Krallen.",
+          "style": "dark"
         }
       ],
       "intro": {
@@ -4328,6 +4368,26 @@
           "go": "hinab",
           "text": "Wegweiser: Der Weg führt hinab: Schratgruben.",
           "sym": "ab"
+        },
+        {
+          "id": "dk_kultgruft_blut1",
+          "type": "sign",
+          "x": 15,
+          "y": 8,
+          "face": 2,
+          "deco": "blut",
+          "text": "Eingetrocknetes Blut, eine Schleifspur zieht sich nach unten.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_kultgruft_blut2",
+          "type": "sign",
+          "x": 10,
+          "y": 4,
+          "face": 0,
+          "deco": "blut",
+          "text": "Eingetrocknetes Blut, eine Schleifspur zieht sich nach unten.",
+          "style": "dark"
         }
       ],
       "intro": {
@@ -4888,6 +4948,56 @@
           "go": "hinauf",
           "text": "Wegweiser: Der Weg führt hinauf: Nebelturm.",
           "sym": "auf"
+        },
+        {
+          "id": "dk_schratgruben_moos1",
+          "type": "sign",
+          "x": 20,
+          "y": 12,
+          "face": 2,
+          "deco": "moos",
+          "text": "Dichter Moosbelag, feucht und weich. Es riecht nach Moder.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_schratgruben_moos2",
+          "type": "sign",
+          "x": 13,
+          "y": 11,
+          "face": 0,
+          "deco": "moos",
+          "text": "Dichter Moosbelag, feucht und weich. Es riecht nach Moder.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_schratgruben_moos3",
+          "type": "sign",
+          "x": 11,
+          "y": 2,
+          "face": 0,
+          "deco": "moos",
+          "text": "Dichter Moosbelag, feucht und weich. Es riecht nach Moder.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_schratgruben_kratzer1",
+          "type": "sign",
+          "x": 19,
+          "y": 7,
+          "face": 0,
+          "deco": "kratzer",
+          "text": "Drei tiefe Kratzer im Stein, nebeneinander. Krallen.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_schratgruben_kratzer2",
+          "type": "sign",
+          "x": 5,
+          "y": 6,
+          "face": 0,
+          "deco": "kratzer",
+          "text": "Drei tiefe Kratzer im Stein, nebeneinander. Krallen.",
+          "style": "dark"
         }
       ],
       "intro": {
@@ -5318,6 +5428,16 @@
           "go": "hinab",
           "text": "Wegweiser: Der Weg führt hinab: Moorfestung – Vorburg.",
           "sym": "ab"
+        },
+        {
+          "id": "dk_nebelturm_painting1",
+          "type": "sign",
+          "x": 15,
+          "y": 1,
+          "face": 0,
+          "deco": "painting",
+          "text": "Ein altes Gemälde: ein Turm im Nebel. Der Rahmen ist vergoldet, die Farben sind dunkel geworden.",
+          "style": "dark"
         }
       ],
       "foe": {
@@ -5823,6 +5943,36 @@
           "go": "hinab",
           "text": "Wegweiser: Der Weg führt hinab: Moorfestung – Kellergewölbe.",
           "sym": "ab"
+        },
+        {
+          "id": "dk_festung1_blut1",
+          "type": "sign",
+          "x": 34,
+          "y": 17,
+          "face": 1,
+          "deco": "blut",
+          "text": "Eingetrocknetes Blut, eine Schleifspur zieht sich nach unten.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung1_blut2",
+          "type": "sign",
+          "x": 12,
+          "y": 10,
+          "face": 2,
+          "deco": "blut",
+          "text": "Eingetrocknetes Blut, eine Schleifspur zieht sich nach unten.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung1_painting1",
+          "type": "sign",
+          "x": 6,
+          "y": 1,
+          "face": 0,
+          "deco": "painting",
+          "text": "Ein altes Gemälde: ein Turm im Nebel. Der Rahmen ist vergoldet, die Farben sind dunkel geworden.",
+          "style": "dark"
         }
       ]
     },
@@ -6555,6 +6705,56 @@
           "go": "hinab",
           "text": "Wegweiser: Der Weg führt hinab: Moorfestung – Blutgruft.",
           "sym": "ab"
+        },
+        {
+          "id": "dk_festung2_blut1",
+          "type": "sign",
+          "x": 27,
+          "y": 30,
+          "face": 2,
+          "deco": "blut",
+          "text": "Eingetrocknetes Blut, eine Schleifspur zieht sich nach unten.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung2_blut2",
+          "type": "sign",
+          "x": 49,
+          "y": 15,
+          "face": 2,
+          "deco": "blut",
+          "text": "Eingetrocknetes Blut, eine Schleifspur zieht sich nach unten.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung2_blut3",
+          "type": "sign",
+          "x": 22,
+          "y": 22,
+          "face": 0,
+          "deco": "blut",
+          "text": "Eingetrocknetes Blut, eine Schleifspur zieht sich nach unten.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung2_moos1",
+          "type": "sign",
+          "x": 25,
+          "y": 12,
+          "face": 1,
+          "deco": "moos",
+          "text": "Dichter Moosbelag, feucht und weich. Es riecht nach Moder.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung2_moos2",
+          "type": "sign",
+          "x": 16,
+          "y": 18,
+          "face": 0,
+          "deco": "moos",
+          "text": "Dichter Moosbelag, feucht und weich. Es riecht nach Moder.",
+          "style": "dark"
         }
       ]
     },
@@ -7467,6 +7667,66 @@
           "go": "hinab",
           "text": "Wegweiser: Der Weg führt hinab: Spinnenhöhle.",
           "sym": "ab"
+        },
+        {
+          "id": "dk_festung3_blut1",
+          "type": "sign",
+          "x": 41,
+          "y": 39,
+          "face": 3,
+          "deco": "blut",
+          "text": "Eingetrocknetes Blut, eine Schleifspur zieht sich nach unten.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung3_blut2",
+          "type": "sign",
+          "x": 20,
+          "y": 37,
+          "face": 0,
+          "deco": "blut",
+          "text": "Eingetrocknetes Blut, eine Schleifspur zieht sich nach unten.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung3_blut3",
+          "type": "sign",
+          "x": 56,
+          "y": 28,
+          "face": 1,
+          "deco": "blut",
+          "text": "Eingetrocknetes Blut, eine Schleifspur zieht sich nach unten.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung3_blut4",
+          "type": "sign",
+          "x": 34,
+          "y": 31,
+          "face": 2,
+          "deco": "blut",
+          "text": "Eingetrocknetes Blut, eine Schleifspur zieht sich nach unten.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung3_blut5",
+          "type": "sign",
+          "x": 42,
+          "y": 18,
+          "face": 2,
+          "deco": "blut",
+          "text": "Eingetrocknetes Blut, eine Schleifspur zieht sich nach unten.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung3_painting1",
+          "type": "sign",
+          "x": 40,
+          "y": 31,
+          "face": 2,
+          "deco": "painting",
+          "text": "Ein altes Gemälde: ein Turm im Nebel. Der Rahmen ist vergoldet, die Farben sind dunkel geworden.",
+          "style": "dark"
         }
       ]
     },
@@ -7749,6 +8009,36 @@
           "style": "stone",
           "go": "weg",
           "text": "Wegweiser: Der Weg führt: Moorpfad."
+        },
+        {
+          "id": "dk_moorsee_moos1",
+          "type": "sign",
+          "x": 15,
+          "y": 17,
+          "face": 2,
+          "deco": "moos",
+          "text": "Dichter Moosbelag, feucht und weich. Es riecht nach Moder.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_moorsee_moos2",
+          "type": "sign",
+          "x": 25,
+          "y": 1,
+          "face": 0,
+          "deco": "moos",
+          "text": "Dichter Moosbelag, feucht und weich. Es riecht nach Moder.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_moorsee_moos3",
+          "type": "sign",
+          "x": 9,
+          "y": 17,
+          "face": 2,
+          "deco": "moos",
+          "text": "Dichter Moosbelag, feucht und weich. Es riecht nach Moder.",
+          "style": "dark"
         }
       ],
       "waterMsg": "Das Wasser ist tief und kalt. Zur Schatzinsel kommt man nicht durchs Wasser: Der Fuhrmann am Steg im Osten setzt euch über."
@@ -9900,6 +10190,26 @@
           "go": "hinab",
           "text": "Wegweiser: Der Weg führt hinab: Die Zisterne.",
           "sym": "ab"
+        },
+        {
+          "id": "dk_festung5_kratzer1",
+          "type": "sign",
+          "x": 18,
+          "y": 47,
+          "face": 2,
+          "deco": "kratzer",
+          "text": "Drei tiefe Kratzer im Stein, nebeneinander. Krallen.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung5_kratzer2",
+          "type": "sign",
+          "x": 12,
+          "y": 47,
+          "face": 3,
+          "deco": "kratzer",
+          "text": "Drei tiefe Kratzer im Stein, nebeneinander. Krallen.",
+          "style": "dark"
         }
       ]
     },
@@ -11346,6 +11656,46 @@
           "go": "hinauf",
           "text": "Wegweiser: Der Weg führt hinauf: Die Gießerei.",
           "sym": "auf"
+        },
+        {
+          "id": "dk_festung6_moos1",
+          "type": "sign",
+          "x": 69,
+          "y": 45,
+          "face": 2,
+          "deco": "moos",
+          "text": "Dichter Moosbelag, feucht und weich. Es riecht nach Moder.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung6_moos2",
+          "type": "sign",
+          "x": 30,
+          "y": 54,
+          "face": 0,
+          "deco": "moos",
+          "text": "Dichter Moosbelag, feucht und weich. Es riecht nach Moder.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung6_moos3",
+          "type": "sign",
+          "x": 93,
+          "y": 20,
+          "face": 3,
+          "deco": "moos",
+          "text": "Dichter Moosbelag, feucht und weich. Es riecht nach Moder.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_festung6_moos4",
+          "type": "sign",
+          "x": 83,
+          "y": 27,
+          "face": 2,
+          "deco": "moos",
+          "text": "Dichter Moosbelag, feucht und weich. Es riecht nach Moder.",
+          "style": "dark"
         }
       ],
       "rooms": [
@@ -11575,6 +11925,46 @@
           "go": "hinauf",
           "text": "Wegweiser: Der Weg führt hinauf: Siedlung am Moorrand.",
           "sym": "auf"
+        },
+        {
+          "id": "dk_moorlichtung_moos1",
+          "type": "sign",
+          "x": 9,
+          "y": 8,
+          "face": 2,
+          "deco": "moos",
+          "text": "Dichter Moosbelag, feucht und weich. Es riecht nach Moder.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_moorlichtung_moos2",
+          "type": "sign",
+          "x": 12,
+          "y": 2,
+          "face": 3,
+          "deco": "moos",
+          "text": "Dichter Moosbelag, feucht und weich. Es riecht nach Moder.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_moorlichtung_moos3",
+          "type": "sign",
+          "x": 5,
+          "y": 1,
+          "face": 1,
+          "deco": "moos",
+          "text": "Dichter Moosbelag, feucht und weich. Es riecht nach Moder.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_moorlichtung_kratzer1",
+          "type": "sign",
+          "x": 3,
+          "y": 9,
+          "face": 2,
+          "deco": "kratzer",
+          "text": "Drei tiefe Kratzer im Stein, nebeneinander. Krallen.",
+          "style": "dark"
         }
       ],
       "scene": {

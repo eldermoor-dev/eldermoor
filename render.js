@@ -1032,6 +1032,20 @@ function genDeco(kind, seed, full = true) {
       const rim = x < 60 || x > 132 || y < 134 || y > 178, bar = !rim && ((x - 60) % 11) < 3.4;
       set(x, y, rim ? P('iron', 3.4 + hash(x >> 2, y >> 2, seed) * 0.8) : bar ? P('iron', 4.6 - ((x - 60) % 11) * 0.25) : P('ceil', 0.1 + hash(x >> 1, y >> 1, seed + 1) * 0.3));
     }
+  } else if (kind === 'moos') { // 0.48.0: Moosbewuchs: unregelmäßige Polster, Tropfsträhnen von oben, helle Spitzen
+    const cs = [[36, 46, 34], [112, 72, 44], [158, 34, 26], [66, 134, 38], [142, 150, 32], [100, 14, 22]];
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      let m = 0;
+      for (const [cx, cy, r] of cs) { const d = Math.hypot(x - cx, (y - cy) * 1.15) / r + (hash(x >> 1, y >> 1, seed + 7) - 0.5) * 0.55; if (d < 1) m = Math.max(m, 1 - d); }
+      if (m > 0.04) set(x, y, P('moss', 1.5 + m * 2.6 + hash(x, y, seed + 8) * 0.8));
+    }
+    for (let x = 6; x < N - 6; x += 3) { const h0 = hash(x >> 2, 3, seed + 9); if (h0 < 0.55) continue; const len = 14 + Math.floor(h0 * 60); for (let y = 0; y < len; y++) { const w = y < len - 6 ? 1 : 0; for (let k = 0; k <= w; k++) set(x + k, y, P('moss', 1.8 + (y / len) * 1.4 + hash(x, y, seed + 10) * 0.6)); } }
+  } else if (kind === 'blut') { // 0.48.0: Blutspritzer mit Schleifspur zum Boden
+    for (let y = 70; y < N; y++) { const t = (y - 70) / (N - 70), cx = 96 + Math.sin(t * 3.1) * 16 + t * 14, w = 8 - t * 5; for (let x = Math.floor(cx - w - 2); x <= cx + w + 2; x++) { const e = Math.abs(x - cx) - w + (hash(x, y >> 1, seed + 1) - 0.5) * 5; if (e < 0) set(x, y, P('blood', 2.2 + hash(x >> 2, y >> 2, seed + 2) * 0.5 + t * 0.4)); } }
+    for (let i = 0; i < 70; i++) { const a = hash(i, 1, seed) * 6.283, d = 10 + hash(i, 2, seed) ** 1.5 * 66, r = 0.8 + hash(i, 3, seed) * 2.6, cx = 96 + Math.cos(a) * d * 1.15, cy = 78 + Math.sin(a) * d * 0.85, tail = Math.floor(r * (1 + hash(i, 5, seed) * 3)); for (let y = Math.floor(cy - r); y <= cy + r + tail; y++) for (let x = Math.floor(cx - r); x <= cx + r; x++) { const rr = y > cy ? r * (1 - (y - cy) / (r + tail + 1)) : r; if (Math.hypot(x - cx, Math.min(0, y - cy)) <= Math.max(0.6, rr)) set(x, y, P('blood', 2.2 + hash(x >> 1, y >> 1, seed + 4) * 0.6 + (y - cy) * 0.02)); } }
+    for (let y = 56; y < 100; y++) for (let x = 78; x < 116; x++) { const dx = (x - 97) / 13, dy = (y - 78) / 15, a = Math.atan2(dy, dx), rim = 1 + Math.sin(a * 7 + hash(1, 1, seed) * 6) * 0.22 + Math.sin(a * 13) * 0.12; if (Math.hypot(dx, dy) <= rim) set(x, y, P('blood', 1.9 + hash(x >> 2, y >> 2, seed + 5) * 0.5 + (y - 56) * 0.012)); }
+  } else if (kind === 'kratzer') { // 0.48.0: drei Krallenspuren im Stein: dunkle Rille, helle Bruchkanten
+    for (let k = 0; k < 3; k++) { const x0 = 66 + k * 26, y0 = 30 + k * 5; for (let i = 0; i < 110; i++) { const x = x0 + i * 0.34 + Math.sin(i * 0.09 + k) * 1.6, y = y0 + i * 1.0, w = i < 10 ? 0.8 + i / 10 : i > 96 ? (110 - i) / 14 + 0.6 : 2.6 + Math.sin(i * 0.3 + k) * 0.3; for (let dx = -4; dx <= 4; dx++) { const ad = Math.abs(dx); if (ad > w + 1.2) continue; set(Math.round(x) + dx, Math.round(y), ad <= w * 0.55 ? P('stone', 0.9 + hash(i, k, seed) * 0.5) : ad <= w + 0.2 ? P('stone', 3 + hash(i, k + 3, seed)) : P('stone', 7.2 - hash(i, k + 6, seed) * 0.8)); } } }
   } else if (kind === 'painting') { // Gemälde: Goldrahmen, düstere Landschaft mit Turm
     for (let y = 40; y <= 140; y++) for (let x = 36; x <= 156; x++) {
       const fr = x < 46 || x > 146 || y < 50 || y > 130;
@@ -1545,6 +1559,11 @@ function genLever(used, seed) {
   for (let i = 0; i < 24; i++) { // Stange
     const y = used ? 48 + i * 0.6 : 48 - i * 1.0, x = 32 + (used ? 0 : 0);
     for (let w = -1; w <= 1; w++) set(x + w, Math.round(y), P('iron', 5 - Math.abs(w) * 1.2));
+  }
+  for (let y = 24; y <= 63; y++) for (let x = 10; x <= 54; x++) { // 0.48.0: Runenring um den Sockel – leuchtet, solange der Hebel bereit ist
+    const r = Math.hypot((x - 32) / 21, (y - 46) / 19), onRing = r > 0.88 && r < 1.02, rune = onRing && (Math.floor((Math.atan2(y - 46, x - 32) + 3.1416) * 4) % 3 === 0 || hash(x >> 1, y >> 1, seed + 11) > 0.8);
+    if (!onRing || (y > 56 && Math.abs(x - 32) < 8)) continue;
+    if (used) { if (hash(x, y, seed + 12) > 0.35) set(x, y, P('iron', 2.2 + hash(x >> 1, y, seed + 13) * 0.8)); } else set(x, y, rune ? P('glow', 7) : P('glow', 4.2));
   }
   const ky = used ? 63 : 22, kx = 32;
   for (let y = -3; y <= 3; y++) for (let x = -4; x <= 4; x++) if (x * x + y * y <= 14) set(kx + x, Math.min(63, ky + y), P('wood', 5 - (x + y) * 0.2));

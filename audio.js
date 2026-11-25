@@ -125,16 +125,20 @@ export class Sfx {
     this._wind = { s, lfo };
     const drip = () => {
       if (!this.ambientOn) return;
-      if (!this.muted && this.ctx.state === 'running') this._tone({ dur: 0.14, f: 1400 + Math.random() * 900, fTo: 900, gain: 0.05 });
-      this._timers[0] = setTimeout(drip, 1500 + Math.random() * 3500);
+      if (!this.muted && this.ctx.state === 'running') {
+        const f = 420 + Math.random() * 200;
+        this._tone({ dur: 0.22, f, fTo: f * 0.62, gain: 0.035 });
+        this._noise({ dur: 0.05, type: 'lowpass', f: 600, gain: 0.03 });
+      }
+      this._timers[0] = setTimeout(drip, 4000 + Math.random() * 7000);
     };
     const crackle = () => {
       if (!this.ambientOn) return;
-      if (!this.muted && this.ctx.state === 'running') this._noise({ dur: 0.025, type: 'highpass', f: 3000, gain: 0.05 + Math.random() * 0.06 });
-      this._timers[1] = setTimeout(crackle, 150 + Math.random() * 650);
+      if (!this.muted && this.ctx.state === 'running') this._noise({ dur: 0.12, type: 'lowpass', f: 160 + Math.random() * 80, gain: 0.05 });
+      this._timers[1] = setTimeout(crackle, 3000 + Math.random() * 6000);
     };
-    this._timers[0] = setTimeout(drip, 1200);
-    this._timers[1] = setTimeout(crackle, 300);
+    this._timers[0] = setTimeout(drip, 3000);
+    this._timers[1] = setTimeout(crackle, 5000);
   }
   stopAmbient() {
     this.ambientOn = false;

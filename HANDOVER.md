@@ -1799,3 +1799,11 @@ Nächste: 0.47.4 (7–9), 0.47.5 (10–13 + BALANCE/SIM), 0.48.0 (14–17), spä
 - Tests: `node tests.js` 183 bestanden, 0 fehlgeschlagen (Set-Test auf drei Teile und Vollendungsmeldung umgestellt; Ring-/Fluch-Tests an Bossbeute und Set-Qualität angepasst; Gold fällt je Akt). BALANCE.md und SIM.md neu erzeugt. VERSION 0.47.18 in main.js und sw.js, keine neuen Dateien.
 - **Offen (Gerät, bewusst kurz):** (1) Kampf in Moorpfad/Kultgruft fühlt sich schwerer an, aber fair; (2) Stufenverlauf: Stufe 15 nicht vor dem Ende der Moorfestung; (3) Inventar zeigt die neuen Ringe, Set-Meldung beim Anlegen des dritten Teils (nur prüfbar, wenn man alle drei besitzt; sonst Selbsttest im Spiel).
 - Nummerierung: 0.48.0 = Schildformen, Wanddeko, Hebel, Geräusche; später „Tote erwecken“. Zurückgestellt (Nutzer 22:03): Test Schrat-Auftritt und Treppe „erst beim zweiten Mal“.
+
+## 0.48.0 (25.11.2026; headless, nicht auf Gerät getestet): Wanddeko, Hebel-Optik, Umgebungsgeräusche
+- Neue Wanddeko-Arten (render.js `genDeco`): `moos`, `blut`, `kratzer`; 39 Deko-Objekte `dk_<gebiet>_<art><n>` in game.json (Gebiete: moorpfad, moorlichtung, moorsee, schratgruben, kultgruft, nebelturm, festung1/2/3/5/6). Gemälde nur in Räumen. Keine Treppen-/Tür-/Hebel-/Truhen-Nähe.
+- Hebel: Runenring um den Sockel (leuchtend solange bereit, dunkel wenn benutzt).
+- Audio (audio.js `startAmbient`): Tropfen jetzt tiefer/weicher (ca. 420–620 Hz) und seltener (4–11 s); hohes Knistern ersetzt durch seltenes tiefes Knarzen (3–9 s). Erzkäfer-Ton unverändert.
+- Schildformen: bewusst ausgelassen (Schilder testet der Nutzer nicht).
+- Tests: `node tests.js` 183 bestanden, 0 fehlgeschlagen. Keine neuen Dateien. VERSION 0.48.0 in main.js und sw.js.
+- Offen (Gerät): Optik Blut/Kratzer/Moos, Hebelring, Klang der Geräusche. Offene Rückfragen: Treppe „erst beim zweiten Mal“ (Gebiet + Anlaufrichtung), zweite Figur im Schrat-Bild, mehr als zwei Schwierigkeitsgrade?

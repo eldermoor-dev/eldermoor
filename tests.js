@@ -706,7 +706,11 @@ export async function runTests(data, env = {}) {
   });
 
   await test('0.33.0 Deko: keine Bilder in Gängen, Wandschmuck/Fässer/Geröll in den Gebieten, nichts blockiert den Weg', () => {
-    for (const lvl of Object.values(data.levels)) for (const o of lvl.objects) assert(o.deco !== 'painting', `Bild ${o.id} entfernt`);
+    let paint = 0; for (const lvl of Object.values(data.levels)) for (const o of lvl.objects) if (o.deco === 'painting') { // 0.48.0: Gemälde selten und nur in Räumen, nie in Gängen
+      paint++; let open = 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && lvl.map[o.y + dy] && lvl.map[o.y + dy][o.x + dx] === '.') open++;
+      assert(open >= 5, `Bild ${o.id} liegt in einem Gang`);
+    }
+    assert(paint >= 1 && paint <= 4, 'Gemälde selten: ' + paint);
     let wall = 0, barrels = 0, rubble = 0;
     for (const [id, lvl] of Object.entries(data.levels)) {
       const dk = lvl.objects.filter((o) => String(o.id).startsWith('dk_')); if (!dk.length) continue;
@@ -714,7 +718,7 @@ export async function runTests(data, env = {}) {
       for (const o of dk) {
         assert(!(o.x === lvl.start.x && o.y === lvl.start.y), `${o.id}: nicht auf dem Startfeld`);
         if (o.type === 'decor' || o.type === 'barrel') { assert(lvl.map[o.y][o.x] === '.', `${o.id}: auf Boden`); assert(['fass', 'schutt'].includes(o.look), 'bekannte Optik'); if (o.look === 'fass') barrels++; else rubble++; }
-        else { assert(['rohr', 'gitter', 'nischeleer'].includes(o.deco) && o.face != null && lvl.map[o.y + [-1, 0, 1, 0][o.face]][o.x + [0, 1, 0, -1][o.face]] !== '.', `${o.id}: Schmuck an einer Wand`); wall++; }
+        else { assert(['rohr', 'gitter', 'nischeleer', 'moos', 'blut', 'kratzer', 'painting'].includes(o.deco) && o.face != null && lvl.map[o.y + [-1, 0, 1, 0][o.face]][o.x + [0, 1, 0, -1][o.face]] !== '.', `${o.id}: Schmuck an einer Wand`); wall++; }
       }
       assert(L.analyzeLevel(data, id).ok, `${id} bleibt lösbar`);
     }
