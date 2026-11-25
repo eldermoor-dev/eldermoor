@@ -3,6 +3,12 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.47.13 (25.11.2026, headless, nicht auf Gerät getestet)
+- Lesbarkeit der Schriften, abschließende Lösung (Nutzer 18:59, Screenshot Türtitel „KAPELLE“: „letzte Chance, optimale Lösung für alle Fälle“): Schrift auf Schildern und Türen bleibt im 480×270-Raster bei Abstand/schrägem Blick prinzipiell begrenzt. Neu: **Lesefeld** oben in der Mitte mit echter Schrift (fett, helle Schrift auf dunkler Platte) für das nächste Schild oder den nächsten Türtitel in Blickrichtung (bis 4 Felder voraus, Seitenwände und Stirnwand). Unabhängig von Winkel, Abstand und Auflösung. Im Kampf ausgeblendet.
+- **Pfeile im Lesefeld aus Sicht der Gruppe** (↑ voraus, ↓ zurück, ← links, → rechts), damit „SEE → INSEL“ nie mehr in die falsche Richtung zeigt, egal wie man das Schild passiert.
+- Die Raster-Schrift (0.47.12: Abtastung in voller Auflösung) bleibt, das Lesefeld ergänzt sie. Im Testbrowser gerendert und angesehen (Kultgruft, Schild „ALTE ZELLEN“ → Lesefeld „ALTE · ZELLEN“), nicht auf Gerät.
+- Nummerierung: 0.47.14 = Balance (10–13), 0.48.0 wie geplant (Treppenschilder nutzen das Lesefeld mit).
+
 ## 0.47.12 (25.11.2026, headless, nicht auf Gerät getestet)
 - Pfeile in falscher Richtung (Nutzer 18:53, Schild „SEE INSEL“): Pfeil gilt aus Sicht des Lesers, der zur Wand schaut. Geprüft gegen die Karte: „MOORPFAD → GRUFT“ zeigte nach hinten (Gruft liegt östlich, Schild an der Südwand → Pfeil links), „SEE → INSEL“ (Moorpfad) und „INSEL →“ (Moorsee, 15,8) ebenfalls. Auf ← gedreht, Zeichen ← neu in der Schrift. Test prüft vier Schilder gegen ihr Ziel. NICHT geprüft/geändert, weil Ziel unklar: „SÜDEN →“ (Schratgruben), „THRON-SAAL →“ (Nebelturm).
 - Schrift „Z ELLEN“ (Nutzer 18:55, Screenshot ALTE ZELLEN: E und N ohne Steg): Ursache am Code belegt: Wandschilder wurden horizontal nur in `WN` Stufen (Spalten der Wandtextur) abgetastet, nicht in der vollen Schildauflösung; dünne Stege fielen aus. Jetzt Spalte direkt aus `wallX` in voller Auflösung. Im Testbrowser vorher/nachher gerendert: am Standort (4,4) Kultgruft nur leichter Unterschied, der Winkel des Nutzers (Fehler sichtbar) ließ sich nicht exakt treffen.

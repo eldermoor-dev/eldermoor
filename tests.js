@@ -2952,6 +2952,15 @@ export async function runTests(data, env = {}) {
       assert(s.title.includes(want(s, t)) && !s.title.includes(want(s, t) === '→' ? '←' : '→'), `${sid}: Pfeil ${want(s, t)} erwartet, Titel „${s.title}“`);
     }
   });
+  await test('0.47.13 Lesefeld: Text des Schilds/Türtitels in Blickrichtung, Pfeile aus Sicht der Gruppe', () => {
+    const s = L.newGame(data, 81); L.jumpToLevel(s, data, 'kultgruft'); s.player = { x: 4, y: 4, dir: 0 };
+    const h = L.readHint(s, data); assert(h && /ALTE · ZELLEN/.test(h.text), 'Schild ALTE ZELLEN: ' + JSON.stringify(h));
+    s.player = { x: 4, y: 7, dir: 0 }; assert(L.readHint(s, data) === null || L.readHint(s, data).text !== undefined, 'kein Fehler');
+    L.jumpToLevel(s, data, 'moorpfad'); const sg = s.objs.find((o) => o.id === 'sign_pfad_insel'); // Schild an Westwand (face 3), Titel „SEE ←|INSEL“: ← = Süden
+    s.player = { x: sg.x, y: sg.y, dir: 2 }; assert(/SEE ↑ · INSEL/.test(L.readHint(s, data).text), 'Blick nach Süden: Pfeil voraus – ' + L.readHint(s, data).text);
+    s.player = { x: sg.x, y: sg.y, dir: 0 }; assert(/SEE ↓ · INSEL/.test(L.readHint(s, data).text), 'Blick nach Norden: Pfeil zurück');
+    s.combat = {}; eq(L.readHint(s, data), null, 'im Kampf nichts');
+  });
   await test('Taverne (0.34.0): Zugang, Wirtin, Anwerben, Reserve, Tausch, Verabschieden, Speichern', () => {
     const s = L.newGame(data, 11); L.jumpToLevel(s, data, 'moorrand');
     assert(!s.objs.some((o) => o.id === 'stairs_taverne') && !L.changeArea(s, data, 'stairs_taverne').ok && s.levelId === 'moorrand', '0.47.9: vor den Schratgruben gibt es keine Taverne (keine Tür, kein Zugang)');

@@ -25,6 +25,7 @@ button{font:inherit;color:inherit}
 @keyframes hit{0%{filter:brightness(2.4) saturate(1.6)}100%{filter:none}}
 #hud{position:absolute;inset:0;pointer-events:none}
 #fps{position:fixed;left:calc(env(safe-area-inset-left,0px) + 4px);top:calc(env(safe-area-inset-top,0px) + 44px);z-index:7;pointer-events:none;font:10px/1.25 monospace;white-space:pre;background:#000a;padding:2px 5px;border-radius:3px;color:#9f9}
+#readhint{zoom:var(--hs,1);position:absolute;left:50%;transform:translateX(-50%);top:calc(6px / var(--hs,1));max-width:min(60%,520px);background:rgba(14,11,8,.78);border:1px solid var(--amber);border-radius:6px;padding:3px 10px;color:#fff3cf;font:700 1.05rem/1.25 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;letter-spacing:.04em;text-align:center;text-shadow:0 1px 2px #000;pointer-events:none;z-index:3}
 #enemybox{zoom:var(--hs,1);position:absolute;left:50%;transform:translateX(-50%);top:4px;max-width:min(62%,560px);background:rgba(14,11,8,.55);border:1px solid var(--line);border-radius:6px;padding:1px 5px;font-size:.62rem}
 #foetags{position:absolute;inset:0;pointer-events:none}
 #foetags .ft{position:absolute;pointer-events:auto;cursor:pointer;touch-action:manipulation;display:flex;gap:3px;align-items:center;padding:6px 3px;margin-top:-5px;box-sizing:border-box;font-size:.6rem;line-height:1;color:#f0e2c0;text-shadow:0 1px 2px #000,0 0 3px #000}
@@ -204,6 +205,7 @@ body.on-title .pad,body.on-title #hud,body.on-title #fps{visibility:hidden}
   <canvas id="view" width="480" height="270"></canvas>
   <div id="hud">
     <div id="compass" aria-hidden="true"><div id="compass-dial"><b class="n">N</b><b class="o">O</b><b class="s">S</b><b class="w">W</b></div><i></i></div>
+    <div id="readhint" hidden></div>
     <div id="foetags" hidden></div>
     <div id="enemybox" hidden></div>
     <div id="stack">

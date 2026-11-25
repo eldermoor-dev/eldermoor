@@ -778,6 +778,27 @@ export function wallSignAhead(state, data) {
   if (isWallChar(cellChar(lvl, fx, fy)) || blockerAt(state, fx, fy)) return null;
   return at(fx, fy) || null;
 }
+// 0.47.13: Lesefeld (Nutzer: „Alle Schriften Lesbarkeiten sehen immer noch schlecht aus – letzte Chance, optimale Lösung für alle Fälle“).
+// Wandschilder und Türtitel sind auf 480×270 bei schrägem Blick oder Abstand nie sicher lesbar. Das Lesefeld zeigt den Text des nächsten Schilds/Türtitels
+// entlang des Gangs (bis 4 Felder voraus, Seitenwände und Stirnwand) in echter Schrift. Pfeile werden aus Sicht der Gruppe gerechnet: ↑ voraus, ↓ zurück, ← links, → rechts.
+// Schilder: Pfeil „→“ gilt für den Leser, der zur Wand schaut (rechts = (face+1)%4), „←“ links = (face+3)%4.
+export function readHint(state, data) {
+  if (!state || state.combat || !state.player) return null;
+  const p = state.player, lvl = getLevel(data, state), dirs = ['↑', '→', '↓', '←'];
+  const L = (p.dir + 3) % 4, R = (p.dir + 1) % 4;
+  const sign = (x, y, f) => state.objs.find((o) => o.type === 'sign' && o.face === f && o.x === x && o.y === y && o.title && !o.textless);
+  const fmt = (o, face) => String(o.title).split('|').map((ln) => ln.replace(/[→←]/g, (c) => dirs[(((c === '→' ? (face + 1) : (face + 3)) % 4) - p.dir + 4) % 4])).join(' · ');
+  let x = p.x, y = p.y;
+  for (let i = 0; i <= 4; i++) {
+    const side = sign(x, y, L) || sign(x, y, R); if (side) return { text: fmt(side, side.face), kind: 'sign', id: side.id };
+    const fr = sign(x, y, p.dir); if (fr) return { text: fmt(fr, fr.face), kind: 'sign', id: fr.id };
+    const nx = x + DIRS[p.dir].dx, ny = y + DIRS[p.dir].dy;
+    const dr = state.objs.find((o) => o.type === 'door' && o.title && !o.textless && o.x === nx && o.y === ny); if (dr) return { text: String(dr.title).replace(/\|/g, ' · '), kind: 'door', id: dr.id };
+    if (isWallChar(cellChar(lvl, nx, ny)) || blockerAt(state, nx, ny)) break;
+    x = nx; y = ny;
+  }
+  return null;
+}
 // 0.35.0: Notizbuch – state.journal = [{ id, lv, title, text }]; Hinweise werden beim Lesen/Hören eingetragen (je id einmal), Reihenfolge = Fundreihenfolge
 export function noteClue(state, id, title, text) {
   if (!id || !text) return false;

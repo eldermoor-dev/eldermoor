@@ -3,7 +3,7 @@
 import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, shopLeft, shopRestockIn, pushError, formatErrorLog, itemDef, cursedOwned, exorcise, EXORCISE, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, partyAvgLevel, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
+  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, shopLeft, shopRestockIn, readHint, pushError, formatErrorLog, itemDef, cursedOwned, exorcise, EXORCISE, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, partyAvgLevel, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
   activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogEnter, roomAt, floodLabel, dialogChoose, diceNew, diceRoll, diceKeep, diceNext, diceFinish, diceRoundLine, recruitHero, swapHero, dismissReserve, recruitCost, RESERVE_MAX, mapOffers, buyMap, mapQuota, MAP_MAX, boardView, boardTurnIn, boardDismiss, achievements, masteryLevel
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
@@ -11,7 +11,7 @@ import { Sfx } from './audio.js';
 import { startSleepScene } from './scene.js';
 import { store } from './store.js';
 
-const VERSION = '0.47.12';
+const VERSION = '0.47.13';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -389,7 +389,7 @@ function doMove(rel) {
   if (r.moved) {
     S.sfx.play('step'); vib(8);
     S.target.x = g.player.x + 0.5; S.target.y = g.player.y + 0.5;
-    beginTween();
+    beginTween(); updateReadHint();
     (r.events || []).forEach(onEvent);
     if (r.luck) { say(r.luck); toast(r.luck, 4500); S.sfx.play('chest'); vib(20); } // Glücksamulett (0.28.0)
     if (r.notes) { S.held = []; r.notes.forEach((t) => { say(t); toast(t, 5000); }); S.sfx.play('warn'); vib([40, 40, 40]); S.nextAllowed = performance.now() + 500; }
@@ -412,7 +412,7 @@ function doTurn(d) {
   const g = S.game;
   if (g.combat) { say('Im Kampf geht das nicht. Nutze unten Angriff, Verteidigen, Gegenstand oder Fähigkeit.'); S.held = []; return; }
   const r = turn(g, S.data, d);
-  renderCompass();
+  renderCompass(); updateReadHint();
   S.target.a += d * Math.PI / 2;
   beginTween(170);
   S.sfx.play('step');
@@ -742,7 +742,9 @@ function openCombatLog() {
 }
 function renderCompass() { const d = $('#compass-dial'); if (d && S.game) { S.compassTurns = nearestTurns(S.compassTurns || 0, S.game.player.dir); d.style.transform = `rotate(${-S.compassTurns * 90}deg)`; d.style.setProperty('--cr', `${S.compassTurns * 90}deg`); } }
 function nearestTurns(prev, dir) { const base = Math.round(prev / 4) * 4; let best = base + dir, bd = Math.abs(best - prev); for (const c of [base - 4 + dir, base + 4 + dir]) if (Math.abs(c - prev) < bd) { best = c; bd = Math.abs(c - prev); } return best; }
-function renderAll() { renderCompass(); announceTurn(); renderParty(); renderCombat(); renderLog(); updateInvBadge(); updateTalBadge(); }
+// 0.47.13: Lesefeld mit echter Schrift für Schild/Türtitel in Blickrichtung (unabhängig von Rasterauflösung und Blickwinkel)
+function updateReadHint() { const el = $('#readhint'); if (!el || !S.game) return; const r = S.game.combat || (S.settings && S.settings.readHint === false) ? null : readHint(S.game, S.data); if (!r) { if (!el.hidden) el.hidden = true; return; } if (el.textContent !== r.text) el.textContent = r.text; if (el.hidden) el.hidden = false; }
+function renderAll() { updateReadHint(); renderCompass(); announceTurn(); renderParty(); renderCombat(); renderLog(); updateInvBadge(); updateTalBadge(); }
 // 0.22.1: Punkt am Inventar-Knopf, solange etwas Neues drin ist
 function updateInvBadge() { const b = document.querySelector('[data-a="inv"]'); if (b && S.game) b.classList.toggle('hasnew', Object.keys(S.game.inv).some((k) => isNew(S.game, k))); }
 // 0.23.2 (Nutzer): lila Punkt am Charakter-Knopf, solange ein Held freie Talentpunkte hat

@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.47.12 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.47.13 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1717,4 +1717,11 @@ Nächste: 0.47.4 (7–9), 0.47.5 (10–13 + BALANCE/SIM), 0.48.0 (14–17), spä
 - Offene Rückfrage an den Nutzer: Treppe „erst beim zweiten Mal“. Verdacht (Vermutung): Betreten des Treppenfelds quer zur Durchgangsrichtung löst nach 0.47.6 nicht aus (gewollt), danach gegen die Treppenwand laufen = nur Wand (Sonderfall aus 0.47.3 entfernt). Möglicher Fix: auf dem Treppenfeld mit Blick zur Treppenwand „Vor“ = Wechsel, wenn die Gruppe nicht gerade quer hereingekommen ist. Erst nach Angabe von Treppe und Anlaufrichtung bauen.
 - Offene Tests (Gerät): Schild „ALTE ZELLEN“ vollständig lesbar aus 1–3 Feldern; Pfeile Moorpfad (GRUFT, SEE/INSEL) und Moorsee (INSEL) zeigen zum Ziel.
 - Nummerierung: 0.47.13 = Balance (10–13), 0.48.0 = Treppenschilder (Zielgebiet), Schrats Vorgarten, Schildformen, Wanddeko, Hebel, Geräusche; später „Tote erwecken“.
+
+## 0.47.13 (25.11.2026; headless, nicht auf Gerät getestet): Lesefeld (Schriften, abschließende Lösung)
+- Nutzer 18:59: Schriften weiter schlecht (Türtitel KAPELLE: K beschnitten, E/L zerrissen), „letzte Chance, selbstständig optimale Lösung für alle Fälle“. Entscheidung des Assistenten: Raster-Schrift allein reicht nicht (5×7-Buchstaben bei ~1,8 px je Spalte), daher **HUD-Lesefeld** mit echter Systemschrift.
+- logic.js `readHint(state,data)`: sucht entlang der Blickrichtung (bis 4 Felder) Schilder an linker/rechter Wand und Stirnwand sowie Türen mit Titel; liefert `{text, kind, id}`; Zeilen mit „ · “ verbunden; Pfeile → ← werden aus Sicht der Gruppe in ↑ → ↓ ← umgerechnet (Schild-Konvention: „→“ = (face+1)%4 für den Leser zur Wand). Im Kampf null. main.js `updateReadHint` (in `renderAll`, `doMove`, `doTurn`), index.html `#readhint` (oben Mitte, `zoom:var(--hs)`). Einstellung `readHint:false` blendet es aus (noch ohne Menüeintrag).
+- Test 0.47.13 (Kultgruft ALTE ZELLEN; Moorpfad SEE-Schild: Pfeil je nach Blickrichtung ↑/↓). Screenshot im Testbrowser geprüft.
+- Offen (Gerät): Lesefeld lesbar und nicht störend (Position zu Kompass/FPS-Anzeige, Moorlichtung, Kultgruft, Festung, Taverne-Türen); wird es bei Türen vor dem Schild doppelt/zu früh gezeigt? Wunsch nach Menüschalter?
+- Nummerierung: 0.47.14 = Balance (10–13), 0.48.0 = Treppenschilder (Lesefeld zeigt Zielgebiet mit), Schrats Vorgarten, Schildformen, Wanddeko, Hebel, Geräusche; später „Tote erwecken“.
 
