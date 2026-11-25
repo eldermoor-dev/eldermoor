@@ -3344,6 +3344,29 @@
             "dir": 1
           },
           "look": "path"
+        },
+        {
+          "id": "tw_stairs_back",
+          "type": "sign",
+          "x": 1,
+          "y": 1,
+          "face": 3,
+          "title": "MOOR-|LICHTUNG",
+          "style": "iron",
+          "go": "hinab",
+          "text": "Wegweiser: Der Weg führt hinab: Moorlichtung.",
+          "sym": "ab"
+        },
+        {
+          "id": "tw_stairs_pfad",
+          "type": "sign",
+          "x": 10,
+          "y": 4,
+          "face": 1,
+          "title": "MOOR-|PFAD",
+          "style": "stone",
+          "go": "weg",
+          "text": "Wegweiser: Der Weg führt: Moorpfad."
         }
       ],
       "alt": {
@@ -3635,6 +3658,40 @@
           ],
           "look": "eisen",
           "mat": "stein"
+        },
+        {
+          "id": "tw_stairs_pfad_west",
+          "type": "sign",
+          "x": 1,
+          "y": 2,
+          "face": 3,
+          "title": "MOOR-|RAND",
+          "style": "stone",
+          "go": "weg",
+          "text": "Wegweiser: Der Weg führt: Siedlung am Moorrand."
+        },
+        {
+          "id": "tw_stairs_gruft",
+          "type": "sign",
+          "x": 22,
+          "y": 5,
+          "face": 1,
+          "title": "KULT-|GRUFT",
+          "style": "iron",
+          "go": "hinab",
+          "text": "Wegweiser: Der Weg führt hinab: Kultgruft.",
+          "sym": "ab"
+        },
+        {
+          "id": "tw_stairs_pfad_see",
+          "type": "sign",
+          "x": 22,
+          "y": 6,
+          "face": 1,
+          "title": "MOOR-|SEE",
+          "style": "stone",
+          "go": "weg",
+          "text": "Wegweiser: Der Weg führt: Moorsee."
         }
       ],
       "intro": {
@@ -4170,6 +4227,30 @@
           ],
           "look": "eisen",
           "mat": "stein"
+        },
+        {
+          "id": "tw_stairs_gruft_up",
+          "type": "sign",
+          "x": 1,
+          "y": 5,
+          "face": 3,
+          "title": "MOOR-|PFAD",
+          "style": "wood",
+          "go": "hinauf",
+          "text": "Wegweiser: Der Weg führt hinauf: Moorpfad.",
+          "sym": "auf"
+        },
+        {
+          "id": "tw_stairs_gruft_down",
+          "type": "sign",
+          "x": 25,
+          "y": 7,
+          "face": 1,
+          "title": "SCHRAT-|GRUBEN",
+          "style": "iron",
+          "go": "hinab",
+          "text": "Wegweiser: Der Weg führt hinab: Schratgruben.",
+          "sym": "ab"
         }
       ],
       "intro": {
@@ -4305,7 +4386,7 @@
           "x": 19,
           "y": 9,
           "text": "Wer den Schlüssel will, geht nach Süden. Wer überleben will, geht nach Süden mit Plan.",
-          "title": "SÜDEN|→",
+          "title": "SÜDEN|←",
           "style": "arrow",
           "face": 2
         },
@@ -4710,6 +4791,30 @@
           ],
           "look": "eisen",
           "mat": "stein"
+        },
+        {
+          "id": "tw_stairs_gruben_up",
+          "type": "sign",
+          "x": 1,
+          "y": 6,
+          "face": 3,
+          "title": "KULT-|GRUFT",
+          "style": "wood",
+          "go": "hinauf",
+          "text": "Wegweiser: Der Weg führt hinauf: Kultgruft.",
+          "sym": "auf"
+        },
+        {
+          "id": "tw_stairs_gruben_turm",
+          "type": "sign",
+          "x": 32,
+          "y": 10,
+          "face": 1,
+          "title": "NEBEL-|TURM",
+          "style": "wood",
+          "go": "hinauf",
+          "text": "Wegweiser: Der Weg führt hinauf: Nebelturm.",
+          "sym": "auf"
         }
       ],
       "intro": {
@@ -5111,6 +5216,30 @@
           ],
           "look": "eisen",
           "mat": "stein"
+        },
+        {
+          "id": "tw_stairs_turm_down",
+          "type": "sign",
+          "x": 1,
+          "y": 11,
+          "face": 3,
+          "title": "SCHRAT-|GRUBEN",
+          "style": "iron",
+          "go": "hinab",
+          "text": "Wegweiser: Der Weg führt hinab: Schratgruben.",
+          "sym": "ab"
+        },
+        {
+          "id": "tw_stairs_turm_festung",
+          "type": "sign",
+          "x": 25,
+          "y": 13,
+          "face": 1,
+          "title": "VOR-|BURG",
+          "style": "iron",
+          "go": "hinab",
+          "text": "Wegweiser: Der Weg führt hinab: Moorfestung – Vorburg.",
+          "sym": "ab"
         }
       ],
       "foe": {
@@ -5592,6 +5721,30 @@
           ],
           "look": "edel",
           "mat": "stein"
+        },
+        {
+          "id": "tw_stairs_festung_turm",
+          "type": "sign",
+          "x": 1,
+          "y": 19,
+          "face": 3,
+          "title": "NEBEL-|TURM",
+          "style": "wood",
+          "go": "hinauf",
+          "text": "Wegweiser: Der Weg führt hinauf: Nebelturm.",
+          "sym": "auf"
+        },
+        {
+          "id": "tw_stairs_festung_keller",
+          "type": "sign",
+          "x": 33,
+          "y": 7,
+          "face": 0,
+          "title": "KELLER-|GEWÖLBE",
+          "style": "iron",
+          "go": "hinab",
+          "text": "Wegweiser: Der Weg führt hinab: Moorfestung – Kellergewölbe.",
+          "sym": "ab"
         }
       ]
     },
@@ -6295,6 +6448,30 @@
           ],
           "look": "edel",
           "mat": "stein"
+        },
+        {
+          "id": "tw_stairs_k_up",
+          "type": "sign",
+          "x": 2,
+          "y": 4,
+          "face": 3,
+          "title": "VOR-|BURG",
+          "style": "wood",
+          "go": "hinauf",
+          "text": "Wegweiser: Der Weg führt hinauf: Moorfestung – Vorburg.",
+          "sym": "auf"
+        },
+        {
+          "id": "tw_stairs_k_tiefe",
+          "type": "sign",
+          "x": 49,
+          "y": 33,
+          "face": 1,
+          "title": "BLUT-|GRUFT",
+          "style": "iron",
+          "go": "hinab",
+          "text": "Wegweiser: Der Weg führt hinab: Moorfestung – Blutgruft.",
+          "sym": "ab"
         }
       ]
     },
@@ -7178,6 +7355,30 @@
           ],
           "look": "edel",
           "mat": "stein"
+        },
+        {
+          "id": "tw_stairs_b_up",
+          "type": "sign",
+          "x": 2,
+          "y": 21,
+          "face": 3,
+          "title": "KELLER-|GEWÖLBE",
+          "style": "wood",
+          "go": "hinauf",
+          "text": "Wegweiser: Der Weg führt hinauf: Moorfestung – Kellergewölbe.",
+          "sym": "auf"
+        },
+        {
+          "id": "tw_stairs_b_spinne",
+          "type": "sign",
+          "x": 56,
+          "y": 23,
+          "face": 1,
+          "title": "SPINNEN-|HÖHLE",
+          "style": "iron",
+          "go": "hinab",
+          "text": "Wegweiser: Der Weg führt hinab: Spinnenhöhle.",
+          "sym": "ab"
         }
       ]
     },
@@ -7449,6 +7650,17 @@
           "x": 6,
           "y": 3,
           "look": "fass"
+        },
+        {
+          "id": "tw_stairs_see_back",
+          "type": "sign",
+          "x": 1,
+          "y": 7,
+          "face": 3,
+          "title": "MOOR-|PFAD",
+          "style": "stone",
+          "go": "weg",
+          "text": "Wegweiser: Der Weg führt: Moorpfad."
         }
       ],
       "waterMsg": "Das Wasser ist tief und kalt. Zur Schatzinsel kommt man nicht durchs Wasser: Der Fuhrmann am Steg im Osten setzt euch über."
@@ -8505,6 +8717,30 @@
           ],
           "look": "edel",
           "mat": "stein"
+        },
+        {
+          "id": "tw_stairs_s_up",
+          "type": "sign",
+          "x": 1,
+          "y": 28,
+          "face": 3,
+          "title": "BLUT-|GRUFT",
+          "style": "wood",
+          "go": "hinauf",
+          "text": "Wegweiser: Der Weg führt hinauf: Moorfestung – Blutgruft.",
+          "sym": "auf"
+        },
+        {
+          "id": "tw_stairs_s_tiefe",
+          "type": "sign",
+          "x": 71,
+          "y": 26,
+          "face": 2,
+          "title": "GIESS-|EREI",
+          "style": "iron",
+          "go": "hinab",
+          "text": "Wegweiser: Der Weg führt hinab: Die Gießerei.",
+          "sym": "ab"
         }
       ]
     },
@@ -8800,6 +9036,17 @@
           "name": "Hexe Ysolde",
           "look": "hexe",
           "dialog": "hexe"
+        },
+        {
+          "id": "tw_stairs_taverne_aus",
+          "type": "sign",
+          "x": 6,
+          "y": 7,
+          "face": 2,
+          "title": "MOOR-|RAND",
+          "style": "stone",
+          "go": "weg",
+          "text": "Wegweiser: Der Weg führt: Siedlung am Moorrand."
         }
       ],
       "fog": 0.4
@@ -9536,6 +9783,30 @@
           ],
           "look": "edel",
           "mat": "stein"
+        },
+        {
+          "id": "tw_stairs_g_up",
+          "type": "sign",
+          "x": 1,
+          "y": 29,
+          "face": 0,
+          "title": "SPINNEN-|HÖHLE",
+          "style": "wood",
+          "go": "hinauf",
+          "text": "Wegweiser: Der Weg führt hinauf: Spinnenhöhle.",
+          "sym": "auf"
+        },
+        {
+          "id": "tw_stairs_g_tiefe",
+          "type": "sign",
+          "x": 82,
+          "y": 37,
+          "face": 1,
+          "title": "ZISTERNE",
+          "style": "iron",
+          "go": "hinab",
+          "text": "Wegweiser: Der Weg führt hinab: Die Zisterne.",
+          "sym": "ab"
         }
       ]
     },
@@ -10970,6 +11241,18 @@
           ],
           "look": "edel",
           "mat": "nebel"
+        },
+        {
+          "id": "tw_stairs_z_up",
+          "type": "sign",
+          "x": 1,
+          "y": 24,
+          "face": 3,
+          "title": "GIESS-|EREI",
+          "style": "wood",
+          "go": "hinauf",
+          "text": "Wegweiser: Der Weg führt hinauf: Die Gießerei.",
+          "sym": "auf"
         }
       ],
       "rooms": [
@@ -11174,6 +11457,30 @@
             }
           ],
           "mat": "moder"
+        },
+        {
+          "id": "tw_stairs_licht_down",
+          "type": "sign",
+          "x": 1,
+          "y": 6,
+          "face": 3,
+          "title": "TEST-|GEWÖLBE",
+          "style": "iron",
+          "go": "hinab",
+          "text": "Wegweiser: Der Weg führt hinab: Testgewölbe (Phase 1).",
+          "sym": "ab"
+        },
+        {
+          "id": "tw_stairs_licht_up",
+          "type": "sign",
+          "x": 17,
+          "y": 5,
+          "face": 1,
+          "title": "MOOR-|RAND",
+          "style": "wood",
+          "go": "hinauf",
+          "text": "Wegweiser: Der Weg führt hinauf: Siedlung am Moorrand.",
+          "sym": "auf"
         }
       ]
     }

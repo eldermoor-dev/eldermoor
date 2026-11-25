@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.47.15 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.47.16 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1755,3 +1755,13 @@ Nächste: 0.47.4 (7–9), 0.47.5 (10–13 + BALANCE/SIM), 0.48.0 (14–17), spä
 - Prüfung: `node tests.js` 180 bestanden, 0 fehlgeschlagen; Sprite alt/neu als Bild verglichen. Kein BALANCE-/SIM-Lauf nötig (keine Werte geändert). VERSION 0.47.15 in main.js und sw.js.
 - Offen (Gerät): Kampf gegen Erzkäfer (Festung/Keller) im Modus Scharf und Retro: Bild glatt, Käfer erkennbar und bedrohlich, Zangen/Augen gut sichtbar; Gegnerpaar A/B überlappt weiter wie vorher (Aufstellung nicht geändert).
 - Nummerierung: 0.47.16 = Balance (10–13), 0.48.0 = Treppenschilder (Zielgebiet), Schrats Vorgarten, Schildformen, Wanddeko, Hebel, Geräusche; später „Tote erwecken“.
+
+## 0.47.16 (25.11.2026; headless, nicht auf Gerät getestet): Wegweiser an Treppen, Schild „SÜDEN“ korrigiert
+- Nutzer 20:45 (Screenshot Schratgruben): „Schild zeigt nicht Richtung Süden. Schriftzug soll draufstehen, in welche Ebene der nächste Ab- oder Aufgang führt.“
+- **Fehler `sign_s3` (Schratgruben 19,9, face 2):** Titel „SÜDEN → “: Pfeil „→“ = West = Wand (belegt: Nachbarfeld ist Fels). Der Weg zum Süden führt nach Osten, für den Leser (Blick Süd) „←“. Titel jetzt „SÜDEN|←“. Neuer Test prüft **alle** Schilder mit Pfeil: das Nachbarfeld in Pfeilrichtung ist begehbar (die übrigen fünf Pfeilschilder waren schon richtig).
+- **Wegweiser (Backlog „Treppenschilder“ vorgezogen):** 26 Schilder `tw_<Treppen-ID>` in game.json, je Treppe (`look` down/up/path, nicht `tuer`, nicht der Ausgang `exit_z_tiefe` des letzten Gebiets, nicht in test1/test2). Titel = Zielgebiet in 2 Zeilen (z. B. „KULT-|GRUFT“), Symbol Pfeil ab/auf (`sym` „ab“/„auf“, neu in SYMS), Feld `go` hinab/hinauf/weg, Text nennt den vollständigen Gebietsnamen. Stil: hinab Eisen, hinauf Holz, Weg Stein.
+- Platzwahl (einmal per Skript berechnet, dann fest in game.json): bevorzugt die Wand direkt neben dem Treppenbild (gleiche Wandlinie), sonst Pfeilerseite, sonst Seitenwand vor der Treppe. Nie auf Fackelwänden, nie auf Ankunftsfeldern anderer Treppen, nie doppelt. Ein Altstand erhält die neuen Schilder über den bestehenden Objekt-Abgleich (nicht auf Gerät geprüft).
+- Lesefeld (`readHint`): Wegweiser mit `go` zeigen „HINAB: KULT-GRUFT“ / „HINAUF: …“ / „WEG: …“. `tw_`-Schilder erzeugen keinen Notizbucheintrag (`isClueSign`).
+- Prüfung: `node tests.js` 182 bestanden, 0 fehlgeschlagen (2 neue Tests); Render-Vergleich an der Treppe Moorpfad→Kultgruft (Schild neben dem Bogen, Pfeil ab + Name, lesbar). Kein BALANCE-/SIM-Lauf nötig. VERSION 0.47.16 in main.js und sw.js.
+- Offen (Gerät): Schild „SÜDEN ←“ in den Schratgruben; Wegweiser an mehreren Treppen (hinab/hinauf/Weg) sichtbar neben dem Bogen, nicht auf Fackeln, Pfeil passt zur Richtung; Lesefeld-Text beim Anlaufen.
+- Nummerierung: 0.47.17 = Balance (10–13), 0.48.0 = Schrats Vorgarten, Schildformen, Wanddeko, Hebel, Geräusche; später „Tote erwecken“. (Treppenschilder sind mit 0.47.16 erledigt, sobald auf dem Gerät bestätigt.)

@@ -787,7 +787,9 @@ export function readHint(state, data) {
   const p = state.player, lvl = getLevel(data, state), dirs = ['↑', '→', '↓', '←'];
   const L = (p.dir + 3) % 4, R = (p.dir + 1) % 4;
   const sign = (x, y, f) => state.objs.find((o) => o.type === 'sign' && o.face === f && o.x === x && o.y === y && o.title && !o.textless);
-  const fmt = (o, face) => String(o.title).split('|').map((ln) => ln.replace(/[→←]/g, (c) => dirs[(((c === '→' ? (face + 1) : (face + 3)) % 4) - p.dir + 4) % 4])).reduce((acc, ln) => (acc === '' ? ln : acc + (acc.endsWith('-') ? '' : ' · ') + ln), ''); // 0.47.14: Zeile auf „-“ endet = Wort geht weiter (KULT-GRUFT)
+  const GO = { hinab: 'HINAB', hinauf: 'HINAUF', weg: 'WEG' }; // 0.47.15: Wegweiser an Treppen: „HINAB: KULT-GRUFT“
+  const fmt0 = (o, face) => String(o.title).split('|').map((ln) => ln.replace(/[→←]/g, (c) => dirs[(((c === '→' ? (face + 1) : (face + 3)) % 4) - p.dir + 4) % 4])).reduce((acc, ln) => (acc === '' ? ln : acc + (acc.endsWith('-') ? '' : ' · ') + ln), ''); // 0.47.14: Zeile auf „-“ endet = Wort geht weiter (KULT-GRUFT)
+  const fmt = (o, face) => (o.go && GO[o.go] ? GO[o.go] + ': ' : '') + fmt0(o, face);
   let x = p.x, y = p.y;
   for (let i = 0; i <= 4; i++) {
     const side = sign(x, y, L) || sign(x, y, R); if (side) return { text: fmt(side, side.face), kind: 'sign', id: side.id };
@@ -807,7 +809,7 @@ export function noteClue(state, id, title, text) {
   j.push({ id, lv: state.levelId, title: title || 'Hinweis', text });
   return true;
 }
-const isClueSign = (o) => o && o.type === 'sign' && o.text && !/^(dk_|deco_)/.test(o.id);
+const isClueSign = (o) => o && o.type === 'sign' && o.text && !/^(dk_|deco_|tw_)/.test(o.id); // tw_ = Wegweiser an Treppen (0.47.15): kein Notizbucheintrag
 const signClue = (state, o) => { if (o.board) return { board: true, sfx: 'ui' }; const r = { msg: o.text, sfx: 'ui', long: true }; if (isClueSign(o) && noteClue(state, o.id, String(o.title || 'Tafel').replace(/\|/g, ' '), o.text)) r.newNote = true; return r; };
 const recClue = (state, id, title, text, r) => { if (noteClue(state, id, title, text)) r.newNote = true; return r; };
 function runePlate(state, o) {

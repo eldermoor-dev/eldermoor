@@ -2952,6 +2952,35 @@ export async function runTests(data, env = {}) {
       assert(s.title.includes(want(s, t)) && !s.title.includes(want(s, t) === '→' ? '←' : '→'), `${sid}: Pfeil ${want(s, t)} erwartet, Titel „${s.title}“`);
     }
   });
+  await test('0.47.16 Wegweiser an Treppen: je Treppe ein Schild mit Zielgebiet an einer Wand, Pfeile zeigen auf begehbare Felder', () => {
+    const D = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+    let n = 0;
+    for (const [id, lv] of Object.entries(data.levels)) {
+      if (id === 'test1' || id === 'test2') continue;
+      for (const st of lv.objects.filter((o) => o.type === 'stairs' && o.look !== 'tuer')) {
+        const w = lv.objects.find((o) => o.id === 'tw_' + st.id); assert(w, `${id}: ${st.id} ohne Wegweiser`); n++;
+        assert(w.type === 'sign' && w.face != null && w.title && w.go, `${w.id}: Felder`);
+        assert(w.title.split('|').length <= 2 && w.title.split('|').every((l) => [...l].length <= 8), `${w.id}: Titel „${w.title}“ passt nicht (2 Zeilen, je 8 Zeichen)`);
+        assert(L.cellChar(lv, w.x, w.y) === '.' && L.cellChar(lv, w.x + D[w.face][0], w.y + D[w.face][1]) !== '.', `${w.id}: hängt an einer Wand`);
+        const tgt = data.levels[st.to.level]; assert(tgt && tgt.name, `${w.id}: Zielgebiet`);
+        assert(w.text.includes(tgt.name), `${w.id}: Text nennt das Zielgebiet`);
+        for (const q of data.levels[st.to.level].objects) if (q.to && q.to.level === id) assert(!(q.to.x === w.x && q.to.y === w.y), `${w.id}: liegt auf einem Ankunftsfeld`);
+      }
+    }
+    assert(n >= 20, 'Anzahl Wegweiser: ' + n);
+    const ids = data.levels.festung6.objects.filter((o) => o.type === 'exit').map((o) => o.id); assert(!data.levels.festung6.objects.some((o) => ids.some((i) => o.id === 'tw_' + i)), 'Ausgang des letzten Gebiets bekommt keinen Wegweiser');
+    // Pfeil „→“/„←“ an allen Schildern zeigt auf ein begehbares Nachbarfeld (sign_s3 zeigte vorher in die Wand)
+    for (const [id, lv] of Object.entries(data.levels)) for (const o of lv.objects) if (o.type === 'sign' && o.face != null && /[→←]/.test(o.title || '')) for (const c of o.title.match(/[→←]/g)) {
+      const dd = (c === '→' ? o.face + 1 : o.face + 3) % 4; assert(L.cellChar(lv, o.x + D[dd][0], o.y + D[dd][1]) === '.', `${id}: ${o.id} Pfeil ${c} zeigt in eine Wand`);
+    }
+  });
+  await test('0.47.16 Lesefeld nennt die Richtung an Wegweisern (HINAB: KULT-GRUFT)', () => {
+    const s = L.newGame(data, 83); L.jumpToLevel(s, data, 'moorpfad');
+    const w = s.objs.find((o) => o.id === 'tw_stairs_gruft'); assert(w, 'Wegweiser vorhanden');
+    s.player = { x: w.x, y: w.y, dir: (w.face + 2) % 4 }; // vom Schildfeld aus: Wand im Rücken, Schild liegt seitlich/hinten – daher mit Blick entlang der Wand
+    s.player.dir = (w.face + 1) % 4;
+    const h = L.readHint(s, data); assert(h && h.text === 'HINAB: KULT-GRUFT', 'Lesefeld: ' + JSON.stringify(h));
+  });
   await test('0.47.14 Lesefeld: Zeile endet auf „-“ = Wort geht weiter (KULT-GRUFT, kein „ · “ im Wort)', () => {
     const s = L.newGame(data, 82); L.jumpToLevel(s, data, 'moorpfad');
     const d = s.objs.find((o) => o.id === 'door_gruft'); assert(d, 'door_gruft vorhanden');

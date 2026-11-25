@@ -818,7 +818,9 @@ const SYMS = {
   faehre: ['00000100000', '00001110000', '00011111000', '00111111100', '00000100000', '11111111111', '01111111110', '00111111100'],
   schaedel: ['011111110', '111111111', '110111011', '110111011', '011111110', '001111100', '001010100'],
   wuerfel: ['111111101111111', '101110101111111', '111111101111111', '111011101110111', '111111101111111', '101110101111101', '111111101111111'], // zwei weiße Würfel, Augen = Löcher (dunkel durch Kontur)
-  schluessel: ['0111000000', '1000100000', '1000100000', '0111011111', '0000010101', '0000010101']
+  schluessel: ['0111000000', '1000100000', '1000100000', '0111011111', '0000010101', '0000010101'],
+  ab: ['0011100', '0011100', '0011100', '1111111', '0111110', '0011100', '0001000'], // 0.47.15: Wegweiser an Treppen: Pfeil hinab/hinauf
+  auf: ['0001000', '0011100', '0111110', '1111111', '0011100', '0011100', '0011100']
 };
 // 0.32.1 (Nutzer: „unterschiedliche Schriftarten im Spiel“): Schriftarten der Wand- und Türtitel (FONTMODES): rad = Strichdicke, xs/ys = Breite/Höhe der Buchstaben, shear = Schräge, wave = Wackeln der Zeile; Objektfeld font überschreibt die Schrift des Schildstils
 export const FONTMODES = { block: { rad: 0.6 }, bold: { rad: 0.85 }, thin: { rad: 0.5 }, slant: { rad: 0.62, shear: -0.3 }, wide: { rad: 0.62, xs: 1.3 }, tall: { rad: 0.6, ys: 1.3 }, wavy: { rad: 0.62, wave: 0.5 }, shadow: { rad: 0.62 } };
