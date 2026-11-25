@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.46.0 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.46.1 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1435,6 +1435,9 @@ Nutzer (18:30, Screenshot Kampf gegen Gießmeister Harkon + Foto eines Gießers 
 - **Hüterstatuen (Zisterne), Untersuchung:** Im Code nicht nachstellbar. Alle 24 Reihenfolgen der vier Statuen, je mit und ohne Speichern/Laden, ergeben denselben Ausgang: Nur die Hand der lügenden Statue (Hüter III) gibt den Schlüssel; die anderen drei lösen den Kampf mit einem Kultwächter aus. Kein anderer Weg zu `quellschluessel`. Ursache der Gerätebeobachtung unbekannt: Es fehlen Angaben, welche Statue gedrückt wurde, was geschah und die Meldung (Screenshot). Offen: Titelbild-Version auf dem Gerät prüfen (0.37.6 oder neuer erwartet).
 - Offene Gerätetests 0.40.0: siehe Testliste im Chat (Karte kaufen, Kreuz, Wand öffnen, Truhe; Aushangbrett über Tafel und Marga; Wölfe/Trophäe/Abgabe; Abreißen; alter Spielstand lädt).
 - Ideen, nicht gebaut: Kartenpreis mit Feilschen-Talent, mehrere Extraräume je große Ebene, Steckbriefe mit festen Kettenaufträgen (Geschichte), Aushang auch in der Siedlung am Weg zur Taverne.
+
+## 0.46.1 (25.11.2026; headless)
+- Nutzer (13:00): „Schaltfläche Protokoll viel zu groß, wird kaum gebraucht.“ → kleines ≡-Symbol (`.logbtn`, 36 px) in der Kampfleiste, Funktion unverändert.
 
 ## 0.46.0 (25.11.2026; headless, nicht auf Gerät getestet)
 - Nutzer (12:42): „Mehr verfluchte Gegenstände. Der Gefangene oder eine Hexe ist Gast in der Taverne und kann Flüche gegen eine Gegenleistung entfernen. Denk dir was aus: die Karte, die man als Belohnung vom befreiten Gefangenen bekommt, zeigt noch einen weiteren Geheimraum … Er kommentiert das mit ‚Gute Wahl‘ und einer Erläuterung.“ **Annahme (Assistent):** „jagte“ = „Karte“ (Wunsch „Wissen: Karte der Gruft“).

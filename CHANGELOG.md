@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.46.1 (25.11.2026, headless)
+- Kampfleiste: Knopf „Protokoll“ ist jetzt ein kleines ≡-Symbol (36 px) statt einer ganzen Zeile.
+
 ## 0.46.0 (25.11.2026, headless)
 - Sechs neue verfluchte Gegenstände in Truhen (Zornklinge, Stab der leeren Kammer, Panzer der Schwere, Witwenschleier, Ring des Hungers, Aschenamulett).
 - Hexe Ysolde in der Taverne entflucht bekannte Gegenstände für 100 Gold und einen mittleren Heiltrank; der Nutzen bleibt.

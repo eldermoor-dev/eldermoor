@@ -11,7 +11,7 @@ import { Sfx } from './audio.js';
 import { startSleepScene } from './scene.js';
 import { store } from './store.js';
 
-const VERSION = '0.46.0';
+const VERSION = '0.46.1';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -905,7 +905,7 @@ function renderCombat() {
   ab.hidden = false;
   const a = currentActor(S.game);
   if (c.over || !a) { ab.hidden = true; return; }
-  if (a.side !== 'h' || S.lock) { ab.innerHTML = `<div class="wait">${a.side === 'h' ? esc(S.game.heroes[a.idx].name) + ' ist gleich dran …' : 'Gegner ist am Zug …'}</div><button class="ab" data-c="log" style="flex:0 0 auto">Protokoll</button>`; return; }
+  if (a.side !== 'h' || S.lock) { ab.innerHTML = `<div class="wait">${a.side === 'h' ? esc(S.game.heroes[a.idx].name) + ' ist gleich dran …' : 'Gegner ist am Zug …'}</div><button class="ab logbtn" data-c="log" aria-label="Protokoll" title="Protokoll">≡</button>`; return; }
   const potions = drinkIds().reduce((s, id) => s + S.game.inv[id], 0) + (S.game.inv.gegengift || 0) + (S.game.inv.oelflasche || 0);
   const ch = S.game.heroes[a.idx], cab = S.data.classes[ch.cls].ability, cres = S.data.classes[ch.cls].res;
   const inv = S.game.inv, itemRows = [];
@@ -923,7 +923,7 @@ function renderCombat() {
     row(inv.oelflasche, () => S.game.combat.enemies.map((e, i) => ({ c: `throw:${i}`, ok: e.hp > 0, w: `${e.name} ist schon besiegt.`, t: `Ölflasche (${inv.oelflasche}) → ${esc(e.name)}` }))); }
   const known = knownSpells(S.data, ch);
   const abBtn = known.length > 1 ? `<button class="ab" data-c="spells">✦ Zauber (${known.length})${S.spMode ? ' ▴' : ' ▾'}</button>` : cab ? `<button class="ab" data-c="sp:0"${ch.mp >= cab.cost ? '' : whyAttr(`Zu wenig ${cres.name} (${ch.mp}/${cab.cost}).`)}>✦ ${esc(cab.name)} (${cab.cost} ${esc(cres.name)})</button>` : '';
-  let html = `<button class="ab" data-c="attack">⚔ Angriff</button><button class="ab${heavyNow.length ? ' pulse' : ''}" data-c="defend">⛨ Verteidigen</button><button class="ab" data-c="item"${potions ? '' : whyAttr('Keine Tränke oder Gegengifte im Beutel.')}>Gegenstand (${potions})</button>${abBtn}${multi ? `<button class="ab" data-c="sweep">⚔ Alle (${SWEEP_MULT} %)</button>` : ''}<button class="ab" data-c="log">Protokoll</button>`;
+  let html = `<button class="ab" data-c="attack">⚔ Angriff</button><button class="ab${heavyNow.length ? ' pulse' : ''}" data-c="defend">⛨ Verteidigen</button><button class="ab" data-c="item"${potions ? '' : whyAttr('Keine Tränke oder Gegengifte im Beutel.')}>Gegenstand (${potions})</button>${abBtn}${multi ? `<button class="ab" data-c="sweep">⚔ Alle (${SWEEP_MULT} %)</button>` : ''}<button class="ab logbtn" data-c="log" aria-label="Protokoll" title="Protokoll">≡</button>`;
   if (S.itemMode) {
     html += itemRows.length ? itemRows.map((r) => `<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">${r}</div>`).join('') : `<div class="wait" style="flex:1 0 100%">${esc(ch.name)} hat volle LP und kein Gift. Heiltrank und Gegengift wirkt nur auf den, der dran ist (Ausnahme: Alchemist).</div>`;
   }
@@ -970,7 +970,7 @@ async function dialogPick(i) {
   if (r.tavern) { S.tav = { pi: null, sure: null }; openTavern(); return; } // 0.34.0: Taverne
   if (r.maps) { openMaps(); return; } // 0.40.0: Schatzkarten
   if (r.board) { openBoard(); return; } // 0.40.0: Aushangbrett
-  if (r.exorcise) { openExorcise(); return; } // 0.46.0: Hexe
+  if (r.exorcise) { openExorcise(); return; } // 0.46.1: Hexe
   if (r.game) { closeModal(); openDice(d.id); return; } // 0.32.0: Würfelspiel mit Murmel
   if (r.next) { openDialog(d.id, r.next); renderAll(); return; }
   closeModal(); renderAll();
@@ -1012,7 +1012,7 @@ function openBoard() {
   const rows = list.length ? list.map((v) => `<div class="row nw"><div><b>${icon[v.type] || ''} ${esc(v.title)}</b><div>${esc(v.text)}</div><div class="muted">Belohnung: ${v.xp} EP${v.gold ? ` und ${v.gold} Gold` : ''} · ${v.type === 'kill' ? `Fortschritt ${v.have}/${v.need}` : v.have ? 'Liegt im Beutel' : 'Noch nicht beschafft'}</div></div><div style="display:flex;flex-direction:column;gap:4px"><button class="mb${v.ready ? ' primary' : ''}" data-m="bd-in:${v.id}" ${v.ready ? '' : 'disabled'}>Abgeben</button><button class="mb" data-m="bd-x:${v.id}">Abreißen</button></div></div>`).join('') : '<p class="muted">Das Brett ist leer. Ein paar Schritte weiter hängt vielleicht ein neuer Zettel – oder es gibt noch nichts, was zu euren Gebieten passt.</p>';
   openModal(`<h2>Aushangbrett</h2><p class="muted">Steckbriefe zählen ab dem Aushang. Erfahrung gibt es für alle Helden, die noch stehen. Neue Zettel erscheinen nach etwa 60 Schritten.</p>${rows}<div class="acts">${closeBtn}</div>`, 'board');
 }
-// ---------- Hexe Ysolde (0.46.0); Logik: logic.js (cursedOwned, exorcise) ----------
+// ---------- Hexe Ysolde (0.46.1); Logik: logic.js (cursedOwned, exorcise) ----------
 function openExorcise() {
   const g = S.game, list = cursedOwned(g, S.data), pot = S.data.items[EXORCISE.item].name, have = g.inv[EXORCISE.item] || 0;
   const rows = list.length ? list.map((o) => `<div class="row nw"><div><b>${esc(o.name)}</b>${o.worn ? ` <span class="muted">(getragen von ${esc(o.worn)})</span>` : ''}<div class="muted">Fluch: ${esc(o.curse)}</div></div><button class="mb${o.ok ? ' primary' : ''}" data-m="exo:${o.id}" ${o.ok ? '' : 'disabled'}>Entfluchen</button></div>`).join('') : '<p class="muted">Ysolde schaut in euren Beutel und zuckt die Schultern: „Nichts Verfluchtes dabei. Noch.“</p>';
