@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.49.0 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.49.1 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1835,3 +1835,13 @@ Nächste: 0.47.4 (7–9), 0.47.5 (10–13 + BALANCE/SIM), 0.48.0 (14–17), spä
 - Offen (Gerät): Rast im Gang auslösen: Szene dunkel genug und trotzdem erkennbar? Fackel flackert? Augen sichtbar, nicht aufdringlich? Szene läuft ca. 5 s, Tippen überspringt.
 - **Offene Rückfragen an den Nutzer:** (1) Treppe „erst beim zweiten Mal“: Fix wäre „Vor“ auf dem Treppenfeld mit Blick zur Treppenwand löst den Wechsel aus; berührt bestätigte 0.47.6-Entscheidung, daher nicht gebaut. Frage: Stand die Gruppe beim Drücken schon auf dem Feld mit dem Treppenbild? (2) Schwierigkeitsgrade: laut GESTALTUNGSENTSCHEIDUNGEN bleiben es zwei (Normal, Schwer); Bestätigung steht aus.
 - Später (Plan): Wanddeko 0.48.0, Balance 0.47.18, Hebelring testen; „Tote erwecken“ (Kleriker, spät).
+
+## 0.49.1 (25.11.2026; headless, nicht auf Gerät getestet): Moorschrat brutaler, Totenkopf an der Kammertür
+Auslöser: Nutzerfoto des Schrat-Kampfs (Moorschrat in der blutroten Kammer) und Meldung 22:33–22:34. Wortlaut: „Schrat größer, gefährlicher, brutaler. Auf der Tür zu ihm ist ein Totenkopf zu sehen.“ und „Mooswand gut, bitte gut“.
+- **Nutzerbestätigung auf Gerät (22:34): Wandmoos „Schwarzes Moos, nass und kalt.“ in der Schrat-Kammer ist gut und bleibt so (nicht verändern).**
+- Gebaut: (1) Tür `door_kammer` (Schrat-Kammer, 13/2) trägt das Totenkopf-Symbol (`sym: schaedel`, `textless`, Stil `dark`; Mechanik wie Tür „Knochengänge“, Alt-Stände ziehen `sym` per syncStatic nach). (2) Moorschrat-Sprite (`genSchratBoss`, nur Variante moor): Knochendornen an Schultern und Ellbogen, Blutschmiere an Brust und Armen, Blut aus dem Maul. Grubenschrat unverändert. (3) Darstellungsgröße `bossScale` Schrat 1,4 → 1,5.
+- Nicht geändert: Kampfwerte (HP 80, ATK 13, Schwerer Schlag alle 3 Runden ×170 %), Spielstand, Dateien. BALANCE.md/SIM.md unverändert.
+- Grenze: „Bosse ganz im Bild“ (0.17.0) begrenzt die Größe; 1,5 ist vorsichtig gewählt. Optik wurde nicht gerendert (nur Tests: 183 grün), nicht auf Gerät getestet.
+- Offene Frage an den Nutzer: Soll „gefährlicher“ auch Werte betreffen (mehr HP/Schaden, zusätzlicher Angriff)? Bis zur Antwort keine Werteänderung (Regel: Werte erst nach Gerätedaten).
+- Offene Geräteprüfung: Schrat größer und brutaler, noch ganz im Bild; Totenkopf auf der Tür von außen sichtbar.
+

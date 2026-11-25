@@ -12014,7 +12014,10 @@
           "x": 13,
           "y": 2,
           "locked": false,
-          "look": "stein"
+          "look": "stein",
+          "sym": "schaedel",
+          "textless": true,
+          "style": "dark"
         },
         {
           "id": "dk_kammer_moos1",

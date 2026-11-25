@@ -1213,6 +1213,7 @@ function genSchratBoss(seed, variant = 'moor') { // 'moor': grünlich, algig, na
   const hair = (px, py) => { for (const p of STR) for (let n = 0; n < 5; n++) { const q = lim(px, py, p[n][0], p[n][1], p[n + 1][0], p[n + 1][1], 1.9 - n * 0.2, 1.6 - n * 0.28); if (q) return q; } return null; };
   const arm = (px, py) => { for (const sg of MIRROR) { const h = lim(px, py, 32 + sg * 17, 27, 32 + sg * 27, 44, 7, 5.4) || lim(px, py, 32 + sg * 27, 44, 32 + sg * 25, 59, 5.4, 4) || ell(px, py, 32 + sg * 17, 26, 9, 8); if (h) return h; } return null; };
   const claws = (px, py) => { for (const sg of MIRROR) for (const d of [-5, -1.5, 2]) { const c = lim(px, py, 32 + sg * 25, 58, 32 + sg * (25 + d * 1.7), 63.7, 1.9, 0.35); if (c) return c; } return null; };
+  const spikes = (px, py) => { for (const sg of MIRROR) { const X = (v) => 32 + sg * v; const h = lim(px, py, X(15), 21, X(21), 11.5, 2.8, 0.4) || lim(px, py, X(18), 26, X(26), 19.5, 2.4, 0.4) || lim(px, py, X(26), 43, X(31), 40.5, 2.2, 0.4); if (h) return h; } return null; }; // 0.49.1: Knochendornen an Schultern und Ellbogen (brutaler)
   const antlers = (px, py) => {
     for (const sg of MIRROR) {
       const X = (v) => 32 + sg * v;
@@ -1232,6 +1233,7 @@ function genSchratBoss(seed, variant = 'moor') { // 'moor': grünlich, algig, na
     if (!hit && (hit = arm(px, py))) part = 'arm';
     if (!hit && (hit = roots(px, py))) part = 'root';
     if (!hit && (hit = claws(px, py))) part = 'claw';
+    if (!hit && moor && (hit = spikes(px, py))) part = 'claw';
     if (!hit) continue;
     const l = ((px - hit.cx) * 0.9 + (py - hit.cy) * 0.7) / hit.r;
     let sh = 3.3 - l * 1.9 + (vnoise(px, py, 3.5, seed) - 0.5) * 0.7, mat = 'wood';
@@ -1268,6 +1270,13 @@ function genSchratBoss(seed, variant = 'moor') { // 'moor': grünlich, algig, na
   for (let i = 0; i < (moor ? 3 : 4); i++) { // 0.48.1: auch der Moorschrat trägt glühende Risse
     let cx = 32 + (i - 1.5) * 4.2, cy = 33 + (i % 2) * 2;
     for (let n = 0; n < 26; n++) { setp(cx, cy, P('glow', 6.4 - n * 0.06)); setp(cx + 0.35, cy, P('glow', 5)); cx += (hash(i, n, seed + 20) - 0.5) * 1.5; cy += 0.55; }
+  }
+  if (moor) { // 0.49.1: brutaler – Blutschmiere an Brust und Armen, Blut aus dem Maul
+    for (let i = 0; i < 16; i++) {
+      let bx = 16 + hash(i, 41, seed) * 32, by = 26 + hash(i, 42, seed) * 14; const L = 4 + hash(i, 43, seed) * 11;
+      for (let n = 0; n < L; n += 0.5) { setp(bx, by, P('blood', 4.6 + hash(i, n, seed + 44) * 1.6)); setp(bx + 0.3, by, P('blood', 4.2)); bx += (hash(i, n + 50, seed + 45) - 0.5) * 0.25; by += 0.5; }
+    }
+    for (let i = 0; i < 6; i++) { const bx = 27 + i * 1.7; for (let n = 0; n < 3 + hash(i, 47, seed) * 5; n += 0.5) setp(bx, 25.2 + n, P('blood', 5.4 - n * 0.1)); }
   }
   // dunkler Umriss
   for (let pass = 0; pass < 2; pass++) {
@@ -3194,7 +3203,7 @@ export function buildGrid(lvl, objs) {
   return { grid, gw: w, gh: h };
 }
 const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'turmwache' ? tex.sprites.turmwache : k === 'schlackenwaechter' ? tex.sprites.schlacke : k === 'wolf' ? tex.sprites.wolf : k === 'kultist' ? tex.sprites.kultist : k === 'hauptmann' ? tex.sprites.captain : k === 'giessmeister' ? tex.sprites.giessmeister : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : (k === 'kultpriester' || k === 'quellhueterin') ? tex.sprites.priester : k === 'truhenmaul' ? tex.sprites.mimic : k === 'brandmagier' ? tex.sprites.magier : (k === 'riesenspinne' || k === 'brutspinne' || k === 'netzwaechter') ? tex.sprites.spinne : k === 'spinnenkoenigin' ? tex.sprites.koenigin : k === 'blutdiener' ? tex.sprites.diener : k === 'vampirbrut' ? tex.sprites.brut : k === 'blutgraefin' ? tex.sprites.graefin : k === 'teufel' ? tex.sprites.teufel : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
-const bossScale = (k) => (k === 'schrat' ? 1.4 : k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' || k === 'blutgraefin' || k === 'giessmeister' || k === 'quellhueterin' ? 1.12 : k === 'truhenmaul' ? 0.8 : k === 'spinnenkoenigin' ? 1.4 : k === 'brutspinne' ? 0.7 : k === 'netzwaechter' ? 1.0 : k === 'riesenspinne' ? 1.15 : k === 'teufel' ? 1.12 : 0.9); // Bosse stehen größer im Gang
+const bossScale = (k) => (k === 'schrat' ? 1.5 : k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' || k === 'blutgraefin' || k === 'giessmeister' || k === 'quellhueterin' ? 1.12 : k === 'truhenmaul' ? 0.8 : k === 'spinnenkoenigin' ? 1.4 : k === 'brutspinne' ? 0.7 : k === 'netzwaechter' ? 1.0 : k === 'riesenspinne' ? 1.15 : k === 'teufel' ? 1.12 : 0.9); // Bosse stehen größer im Gang
 export const GROUP_SCALE = 0.78, GROUP_GAP = 0.44, CHEST_SCALE = 0.58; // 0.16.4: Gruppen vorher 0.62/0.36, Truhe 0.5 (Nutzer: zu klein, hinter der Leiste)
 let combatFit = 1; // 0.16.17: im Kampf verkleinert die Kamera zu große Figuren so, dass sie samt Füßen über der Leiste ins Bild passen
 export const setCombatFit = (v) => { combatFit = v; };
