@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.47.14 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.47.15 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1748,3 +1748,10 @@ Nächste: 0.47.4 (7–9), 0.47.5 (10–13 + BALANCE/SIM), 0.48.0 (14–17), spä
 - Offene Tests (Gerät, ohne Schilder und Schriftzüge): Taverne-Tür erst nach Schratgruben; Moorlicht im Wolfkampf innerhalb der Wände; Ysolde entflucht; Händler-Vorrat; alter Spielstand aus 0.47.8; Performance. Schilder/Schriftzüge/Lesefeld: Nutzer prüft sie später, wenn er will.
 - Nummerierung: 0.47.15 = Balance (10–13), 0.48.0 = Treppenschilder (Zielgebiet), Schrats Vorgarten, Schildformen, Wanddeko, Hebel, Geräusche; später „Tote erwecken“.
 - **Gerätetest 0.47.14 (Nutzer, Galaxy S25, 25.11.2026 20:39, Screenshot): „Gut“** für Türschild KULT-GRUFT (Moorpfad, Schild aus Holz mit Nägeln, innerhalb des Rahmens) und Lesefeld „KULT-GRUFT“ (Trennstrich-Fehler behoben). Nicht bestätigt: Irrlichtschild, übrige Schilder und Schriftzüge (Nutzer testet sie vorerst nicht).
+
+## 0.47.15 (25.11.2026; headless, nicht auf Gerät getestet): Erzkäfer scharf statt verpixelt
+- Nutzer 20:41 (Screenshot Kampf gegen zwei Erzkäfer, Modus Scharf 960×540): „Wirkt sehr verpixelt“. Ursache (belegt im Code): `genKaefer` zeichnete nur 64×64 und wurde mit `sm` (4× glätten) auf 256 vergrößert; alle anderen Gegner sind 128–192 px und laufen über `sm2`. Der Käfer war der einzige Sprite dieser Art.
+- Änderung: `genKaefer` (render.js) zeichnet in 3-facher Eigenauflösung (192², Koordinaten und Aussehen wie bisher): runde Pinsel für Linien/Beine/Zangen/Augen, spitz zulaufende Dornen (links hell, rechts dunkel), Fühler hinter dem Panzer (nur außerhalb der Kuppel sichtbar), Umriss 2 statt 3 Bildpunkte, Zangen etwas heller. Eintrag `kaefer: sm2(genKaefer(201))`. Auflösung im Modus Scharf 384², im Modus Retro 192².
+- Prüfung: `node tests.js` 180 bestanden, 0 fehlgeschlagen; Sprite alt/neu als Bild verglichen. Kein BALANCE-/SIM-Lauf nötig (keine Werte geändert). VERSION 0.47.15 in main.js und sw.js.
+- Offen (Gerät): Kampf gegen Erzkäfer (Festung/Keller) im Modus Scharf und Retro: Bild glatt, Käfer erkennbar und bedrohlich, Zangen/Augen gut sichtbar; Gegnerpaar A/B überlappt weiter wie vorher (Aufstellung nicht geändert).
+- Nummerierung: 0.47.16 = Balance (10–13), 0.48.0 = Treppenschilder (Zielgebiet), Schrats Vorgarten, Schildformen, Wanddeko, Hebel, Geräusche; später „Tote erwecken“.
