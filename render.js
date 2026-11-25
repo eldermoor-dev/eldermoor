@@ -1145,7 +1145,7 @@ export function buildDecals(lvl, objs, tex) {
   // 0.49.2 (Nutzer: „Hier auch Schilder, wohin es geht“): Wegweiser neben jeder Treppe mit Ziel, auf der Wand seitlich vom Bogen (nur wo dort noch nichts hängt)
   for (const o of objs) {
     const ttl = o.type === 'stairs' && o.look !== 'tuer' && o.to ? DEST_TITLES[o.to.level] : null;
-    if (!ttl) continue;
+    if (!ttl || objs.some((q) => q.type === 'sign' && q.id === 'tw_' + o.id)) continue; // schon ein handgesetzter Wegweiser vorhanden (tw_…)
     for (const f of passFaces(wallAt, o)) {
       let done = false;
       for (const sd of [(f + 1) % 4, (f + 3) % 4]) {

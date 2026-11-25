@@ -3422,7 +3422,7 @@
         "#..........#",
         "#..........#",
         "#..........#",
-        "############"
+        "###T###T####"
       ],
       "start": {
         "x": 2,
@@ -3491,6 +3491,62 @@
           "style": "stone",
           "go": "weg",
           "text": "Wegweiser: Der Weg führt: Moorpfad."
+        },
+        {
+          "id": "d_m_regal",
+          "type": "decor",
+          "x": 9,
+          "y": 1,
+          "look": "regal"
+        },
+        {
+          "id": "d_m_fass1",
+          "type": "decor",
+          "x": 10,
+          "y": 1,
+          "look": "fass"
+        },
+        {
+          "id": "d_m_fass2",
+          "type": "decor",
+          "x": 10,
+          "y": 2,
+          "look": "fass"
+        },
+        {
+          "id": "d_m_weinfass",
+          "type": "decor",
+          "x": 8,
+          "y": 1,
+          "look": "weinfass"
+        },
+        {
+          "id": "d_m_tisch",
+          "type": "decor",
+          "x": 4,
+          "y": 1,
+          "look": "tisch"
+        },
+        {
+          "id": "d_m_stuhl",
+          "type": "decor",
+          "x": 3,
+          "y": 1,
+          "look": "stuhl"
+        },
+        {
+          "id": "d_m_fass3",
+          "type": "decor",
+          "x": 1,
+          "y": 4,
+          "look": "fass"
+        },
+        {
+          "id": "d_m_vase",
+          "type": "decor",
+          "x": 7,
+          "y": 4,
+          "look": "vase"
         }
       ],
       "alt": {

@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.49.3 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.49.4 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1863,4 +1863,11 @@ Auftrag aus den Vorschlägen vom 25.11.: **A** Lehrpfad ohne Belehrung, **C** Ge
 - Ausgangslage (aus game.json gelesen): Gebiet `test1` „Testgewölbe (Phase 1)“, 22×10, drei Räume, `door_a` (6/3), `door_b` (12/7), Truhe (12/1), Wölfe `en2` (10/3) und `en3` (9/7), Runenstein `rune_t1` (19/7) mit Inschrift (Sechs Siegel, „merkt euch, wo das Licht ist“), Treppen hinab (1/1 Untere Gruft) und hinauf (1/4 Moorlichtung).
 - A: Raum 1 Hebel öffnet Gitter zur Truhe; Raum 2 Falle mit Wandhinweis; Ostflügel Wölfe als erster Kampf; Runenstein bleibt der Schluss. C: Geheimwand mit kleiner nützlicher Beute (Beute vorher festlegen, nicht aus dem Gedächtnis). D: Fackeln, Wanddeko, Rastplatz (Nachtlager-Szene 0.49.0), eventuell größere Karte. E: Notizbuch-Einträge und Inschriften.
 - Vor dem Bau: Raumaufteilung (Karte) dem Nutzer zeigen. Alt-Spielstände müssen laden (syncStatic, neue Objekte nachziehen), Tests und sim.js (Gegnerwerte nur bei Änderung) beachten. Offene Frage: Soll die Moorlichtung vor dem Testgewölbe bleiben (Treppe hinauf 1/4)?
+
+## 0.49.4 (25.11.2026; Bild headless gerendert, nicht auf Gerät getestet): Siedlung am Moorrand belebt
+- Nutzer 22:44 (Foto, Hedda am Tresen): „Ebenfalls zu langweilig, eintönig. Händlerin steht quasi im Nichts.“ Gestaltung vom Assistenten gewählt (delegiert).
+- Gebaut (nur Daten, game.json `moorrand`): Marktstand hinter Hedda (Regal 9/1, Fässer 10/1 und 10/2, Weinfass 8/1), Tisch mit Stuhl (4/1, 3/1), Fass 1/4, Vase 7/4, zwei zusätzliche Wandfackeln an der Südwand (3/5, 7/5). Karte sonst unverändert (12×6). IDs `d_m_*`. Alt-Spielstände ziehen die Objekte nach (geprüft: gelöscht, syncStatic, wieder da). Tests 183 grün. Alle Felder zu den Treppen bleiben erreichbar (Test grün).
+- Korrektur zu 0.49.2: Wegweiser-Schilder werden übersprungen, wenn es für die Treppe schon ein handgesetztes Schild `tw_<Treppen-ID>` gibt (z. B. MOOR-PFAD in der Siedlung), sonst gäbe es zwei Schilder.
+- Das Foto zeigt das handgesetzte Schild MOOR-PFAD neben dem Bogen (Gerät). Ob die automatischen Wegweiser von 0.49.2 an anderen Treppen erscheinen, ist weiter unbestätigt.
+- Idee offen (Plan „Siedlung wächst mit“): Schmied, Aushangbrett, Alchemistenküche; Siedlung vergrößern.
 
