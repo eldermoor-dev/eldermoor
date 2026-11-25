@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.47.1 (25.11.2026, headless, nicht auf Gerät getestet)
+- Kampf: Der ≡-Knopf in der Mitte ist entfernt (mehr Bild). Das Kampfprotokoll steht jetzt im Menü („Kampfprotokoll“).
+
 ## 0.47.0 (25.11.2026, headless, nicht auf Gerät getestet)
 - Vorgeschichte: Pergamentseite „Eine verlorene Wette“ (Magister Quillon) direkt beim ersten Bild nach „Neues Spiel“ (nicht beim Laden). Text in game.json `story.intro`.
 - Neues Gebiet „Moorlichtung“ zwischen Testgewölbe und Siedlung (Treppe hinauf). Der Moorschrat steht jetzt dort in einer Nische abseits des Wegs (umgehbar, Test per Pfadsuche).
