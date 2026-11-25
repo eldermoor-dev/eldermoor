@@ -1435,6 +1435,11 @@ Nutzer (18:30, Screenshot Kampf gegen Gießmeister Harkon + Foto eines Gießers 
 - Offene Gerätetests 0.40.0: siehe Testliste im Chat (Karte kaufen, Kreuz, Wand öffnen, Truhe; Aushangbrett über Tafel und Marga; Wölfe/Trophäe/Abgabe; Abreißen; alter Spielstand lädt).
 - Ideen, nicht gebaut: Kartenpreis mit Feilschen-Talent, mehrere Extraräume je große Ebene, Steckbriefe mit festen Kettenaufträgen (Geschichte), Aushang auch in der Siedlung am Weg zur Taverne.
 
+## IDEE (Nutzer, 25.11.2026, noch NICHT gebaut): lebendige Taverne
+- Wortlaut sinngemäß: Mit den Leuten in der Taverne kann man interagieren, teils bekommt man Aufträge von ihnen. Bei jedem erneuten Besuch sind einige Gäste weg oder neu dazugekommen. Viel Kreativitätspotenzial; der Nutzer kümmert sich später darum (Umfang und Zeitpunkt offen, nicht beauftragt).
+- Anknüpfungspunkte im Bestand (aus dem Code/HANDOVER, nicht neu geprüft): Gäste sind bisher feste `decor`-Sprites (`gast0–2`, 0.39.0); Personen/Dialoge über `npc` + `dialogs` (0.25.0); Aufträge über Steckbriefe/Aushangbrett (0.40.0, `state.board`); Zufall deterministisch über `mix32`/`strHash` statt `state.rng`.
+- Offene Entscheidungen für später: wie viele Gäste je Besuch, was den Wechsel auslöst (Besuchszähler, Gebietswechsel, Story-Ereignisse), ob Aufträge je Gast eigene kleine Geschichten haben, Verhältnis zum Aushangbrett. Kein Spoiler-Bezug.
+
 ## Für den nächsten Chat (Stand 25.11.2026)
 - Offene Gerätetests (alle bisher nur headless): Schatzkarten und Steckbriefe (0.40.0), Taverne neu (0.39.0: Fassade, Stube, Zimmer gegen Gold), Zisterne-Paket 0.38.0 (Flut/Pumpenhahn, Schleusenwart, Runentruhe), neues Gießmeister-Bild (0.37.1), Zisterne (0.37.0), Gießerei (0.36.0), Notizbuch (0.35.0), Shop-Scrollposition bei Hedda (0.35.0), Treppen/Thronsaal (0.34.2), B-Talentwege (0.35.1), Taverne (0.34.0), Spinnenhöhle (0.33.0).
 - Offen vom Nutzer: Screenshot der Wache ohne Text – nach Gebiet und Beschwerde fragen. Entscheidungen in der Checkliste (Artefakt) weiter offen.
