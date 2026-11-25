@@ -3,7 +3,7 @@
 import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, shopLeft, shopRestockIn, readHint, pushError, formatErrorLog, itemDef, cursedOwned, exorcise, EXORCISE, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, partyAvgLevel, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
+  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, shopLeft, shopRestockIn, readHint, pushError, formatErrorLog, itemDef, cursedOwned, exorcise, EXORCISE, smithJobs, smithUpgrade, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, partyAvgLevel, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
   activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogEnter, roomAt, floodLabel, dialogChoose, diceNew, diceRoll, diceKeep, diceNext, diceFinish, diceRoundLine, recruitHero, swapHero, dismissReserve, recruitCost, RESERVE_MAX, mapOffers, buyMap, mapQuota, MAP_MAX, boardView, boardTurnIn, boardDismiss, achievements, masteryLevel
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, figureScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
@@ -11,7 +11,7 @@ import { Sfx } from './audio.js';
 import { startSleepScene } from './scene.js';
 import { store } from './store.js';
 
-const VERSION = '0.52.1';
+const VERSION = '0.53.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -563,7 +563,7 @@ async function heroAct(a) {
   if (a.target == null && (a.type === 'attack' || a.type === 'ability' || a.type === 'spell')) a.target = S.foe;
   const r = heroAction(S.game, S.data, a);
   if (r.error) {
-    const t = { 'full-hp': 'Dieser Held hat volle LP.', 'full-mp': 'Dieser Held hat volles Mana.', 'no-item': 'Kein Trank mehr.', 'bad-target': 'Das Ziel kann nicht geheilt werden.', 'not-available': 'Noch nicht verfügbar.', 'no-mp': 'Zu wenig Mana oder Ausdauer.', 'no-ability': 'Dieser Held hat keine Fähigkeit.' }[r.error];
+    const t = { 'full-hp': 'Dieser Held hat volle LP.', 'full-mp': 'Dieser Held hat volles Mana.', 'no-item': 'Kein Trank mehr.', 'bad-target': 'Das Ziel kann nicht geheilt werden.', 'once': 'Tote erwecken geht nur einmal je Kampf.', 'not-available': 'Noch nicht verfügbar.', 'no-mp': 'Zu wenig Mana oder Ausdauer.', 'no-ability': 'Dieser Held hat keine Fähigkeit.' }[r.error];
     if (t) say(t);
     return;
   }
@@ -717,7 +717,7 @@ function castKnown(i) {
   const h = S.game.heroes[a.idx];
   if (h.mp < sp.cost) { say(`Zu wenig ${S.data.classes[h.cls].res.name} (${h.mp}/${sp.cost}).`); return; }
   S.spSel = i;
-  if (sp.kind === 'heal' && !sp.all) { S.abMode = true; S.itemMode = false; renderCombat(); }
+  if ((sp.kind === 'heal' && !sp.all) || sp.kind === 'revive') { S.abMode = true; S.itemMode = false; renderCombat(); }
   else { S.spMode = false; heroAct(spellAct(i)); }
 }
 // Knopf „Fähigkeit“/„Zauber“: bei mehreren Zaubern Liste auf-/zuklappen, sonst die einzige Fähigkeit wirken
@@ -960,6 +960,10 @@ function renderCombat() {
       `<button class="ab" data-c="sp:${i}"${ch.mp >= sp.cost ? '' : whyAttr(`Zu wenig ${cres.name} (${ch.mp}/${sp.cost}).`)}>${esc(sp.name)} (${sp.cost} ${esc(cres.name)})${sp.all ? ' · alle' : ''}</button>`).join('') + '</div>';
   }
   const sel = known[S.spSel];
+  if (S.abMode && sel && sel.kind === 'revive') { // 0.53.0: Tote erwecken – nur bewusstlose Helden sind Ziel
+    html += '<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">' + S.game.heroes.map((h, i) =>
+      `<button class="ab" data-c="abheal:${i}"${h.hp <= 0 && !(S.game.combat && S.game.combat.awakened) ? '' : whyAttr(h.hp > 0 ? `${h.name} ist nicht bewusstlos.` : 'Schon einmal gewirkt in diesem Kampf.')}>${esc(sel.name)} → ${esc(h.name)}</button>`).join('') + '</div>';
+  }
   if (S.abMode && sel && sel.kind === 'heal' && !sel.all) {
     html += '<div style="flex:1 0 100%;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">' + S.game.heroes.map((h, i) =>
       `<button class="ab" data-c="abheal:${i}"${h.hp > 0 && (h.hp < h.maxHp || canCleanse(sel, statusOf(S.game, 'h', i))) ? '' : whyAttr(h.hp > 0 ? `${h.name} hat volle LP.` : `${h.name} ist bewusstlos.`)}>${esc(sel.name)} → ${esc(h.name)}</button>`).join('') + '</div>';
@@ -999,6 +1003,7 @@ async function dialogPick(i) {
   if (r.maps) { openMaps(); return; } // 0.40.0: Schatzkarten
   if (r.board) { openBoard(); return; } // 0.40.0: Aushangbrett
   if (r.exorcise) { openExorcise(); return; } // 0.46.0: Hexe
+  if (r.smith) { openSmith(); return; } // 0.53.0: Schmied
   if (r.game) { closeModal(); openDice(d.id); return; } // 0.32.0: Würfelspiel mit Murmel
   if (r.next) { openDialog(d.id, r.next); renderAll(); return; }
   closeModal(); renderAll();
@@ -1051,6 +1056,18 @@ function exoAct(m) {
   const bad = { 'in-combat': 'Im Kampf geht das nicht.', gold: `Dafür fehlen ${r.cost} Gold.`, item: `Ysolde braucht: ${r.item}.` }[r.error];
   if (r.msg) { say(r.msg); S.sfx.play(r.sfx || 'ui'); toast(r.msg, 5000); } else toast(bad || 'Das geht nicht.', 3200);
   const sc = $('#modal-box').scrollTop; renderAll(); openExorcise(); $('#modal-box').scrollTop = sc;
+}
+// ---------- Schmied (0.53.0); Logik: logic.js (smithJobs, smithUpgrade) ----------
+function openSmith() {
+  const g = S.game, list = smithJobs(g, S.data);
+  const rows = list.length ? list.map((j) => `<div class="row nw"><div><b>${esc(j.name)}</b> <span class="muted">${esc(j.from)} → ${esc(j.to)}${j.worn ? ` · getragen von ${esc(j.worn)}` : ''}</span><div class="muted">Danach: ${esc(j.gain)}</div></div><button class="mb${j.ok ? ' primary' : ''}" data-m="smi:${j.id}" ${j.ok ? '' : 'disabled'}>Aufwerten (${j.cost} G)</button></div>`).join('') : '<p class="muted">Der Schmied dreht eure Stücke in der Hand: „Hier gibt es nichts mehr zu verbessern. Bringt mir Waffen und Rüstungen, die noch nicht Selten sind.“</p>';
+  openModal(`<h2>Schmied Brann</h2><p>Gold: <b>${g.gold}</b></p><p class="muted">Er hebt Waffen und Rüstungen um eine Stufe, höchstens bis Selten. Gewöhnlich → Gut: +1 auf den Hauptwert. Gut → Selten: eine Zufallseigenschaft. Der Preis steht am Knopf. Ringe, Amulette, Einzigartiges und Set-Teile fasst er nicht an. Auch getragene Stücke.</p>${rows}<div class="acts">${closeBtn}</div>`, 'smith');
+}
+function smiAct(m) {
+  const r = smithUpgrade(S.game, S.data, m.slice(4));
+  const bad = { 'in-combat': 'Im Kampf geht das nicht.', gold: `Dafür fehlen ${r.cost} Gold.`, unknown: 'Das Stück ist nicht mehr zu verbessern.' }[r.error];
+  if (r.msg) { say(r.msg); S.sfx.play(r.sfx || 'ui'); toast(r.msg, 5000); } else toast(bad || 'Das geht nicht.', 3200);
+  const sc = $('#modal-box').scrollTop; renderAll(); openSmith(); $('#modal-box').scrollTop = sc;
 }
 function wirtAct(m) {
   const g = S.game;
@@ -1818,6 +1835,7 @@ async function onModalClick(e) {
   else if (m.startsWith('tav-')) tavAct(m);
   else if (m.startsWith('map-buy:') || m.startsWith('bd-')) wirtAct(m);
   else if (m.startsWith('exo:')) exoAct(m);
+  else if (m.startsWith('smi:')) smiAct(m);
   else if (m === 'shopgo') { S.shopTalk = null; openShop(S.shopId, false); }
   else if (m.startsWith('dlg:')) dialogPick(+m.slice(4));
   else if (m.startsWith('dice-')) diceAction(m);

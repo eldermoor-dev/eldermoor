@@ -3,6 +3,12 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.53.0 (26.11.2026, nicht auf Gerät getestet)
+- Schmied Brann in der Siedlung (nach dem Betreten des Nebelturms): wertet Waffen und Rüstungen gegen Gold um eine Stufe auf, höchstens bis Selten.
+- Kleriker: Zauber „Tote erwecken“ ab Stufe 12 (Kampf, einmal je Kampf, 18 Mana, 40 % LP).
+- Schilder: KRATZER → TAGE GEZÄHLT, RUNEN → NICHT BLIND.
+- Geprüft, nicht gebaut: Aushangbrett (gibt es seit 0.40.0). Idee Körperteile/Materialien als Analyse in HANDOVER.md.
+
 ## 0.52.1 (25.11.2026, headless gerendert, nicht auf Gerät getestet)
 - Lager: Zettel statt Tafel (ohne Titel); STRICHE → ZÄHLUNG, SEITE → RAT.
 - Testgewölbe: Gitter vor der Nische durch Steinplatte ersetzt.

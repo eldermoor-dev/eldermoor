@@ -2977,7 +2977,7 @@ export async function runTests(data, env = {}) {
   await test('0.47.10: Moorlicht in Gruppen kleiner, Taverne erst nach den Schratgruben sichtbar', async () => {
     const R = await import('./render.js'); assert(R.spriteScale('moorlicht', 3) < R.spriteScale('moorlicht', 1) && Math.abs(R.spriteScale('moorlicht', 3) / R.spriteScale('moorlicht', 1) - 0.84) < 0.01, 'in Gruppen kleiner (×0,84), einzeln unverändert'); eq(R.spriteScale('wolf', 3), R.spriteScale('wolf', 1), 'Wolf unverändert');
     { const st = R.buildSprites([{ type: 'enemy', id: 'e1', x: 3, y: 3, kinds: ['wolf', 'wolf', 'moorlicht'] }], { sprites: new Proxy({}, { get: () => ({}) }) }, 0, 0, { e1: ['wolf', 'wolf', 'moorlicht'] }, null); const w = st[2]; assert(w && Math.abs(w.x - 3) <= 0.13 + 1e-9, 'Moorlicht steht höchstens 0,12 neben der Feldmitte (offene Aufstellung)'); }
-    assert(!data.levels.moorrand.objects.some((o) => o.id === 'stairs_taverne') && data.levels.moorrand.alt.objects.some((o) => o.id === 'stairs_taverne') && data.levels.moorrand.alt.flag === 'taverne_offen', 'Tür nur im Umbau');
+    assert(!data.levels.moorrand.objects.some((o) => o.id === 'stairs_taverne') && [].concat(data.levels.moorrand.alt).some((al) => al.flag === 'taverne_offen' && al.objects.some((o) => o.id === 'stairs_taverne')), 'Tür nur im Umbau');
   });
   await test('0.47.12: Pfeile auf Wandschildern zeigen zum Ziel (aus Sicht des Lesers, der zur Wand schaut)', () => {
     const DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0], find = (lv, id) => data.levels[lv].objects.find((o) => o.id === id);
@@ -3513,6 +3513,80 @@ export async function runTests(data, env = {}) {
     // Erfolge
     const a = L.achievements(ms, data); assert(a.length === 5 && a.every((x) => x.tier === 0 || x.id === 'masters'), 'Erfolge abgeleitet'); eq(a.find((x) => x.id === 'masters').tier, 1, 'Meister zählt');
     ms.eliteKills = 5; eq(L.achievements(ms, data).find((x) => x.id === 'elite').tier, 2, 'Elite Stufe 2');
+  });
+  await test('0.53.0 Schmied: Freischaltung, Dialog, Aufwerten (Grundgegenstand, Instanz, getragen), Preise, Grenzen', async () => {
+    // Daten
+    const sm = data.dialogs.schmied; assert(sm && sm.nodes.erst.choices.some((c) => c.smith) && sm.nodes.a.choices.some((c) => c.smith), 'Dialog mit Aufwerten');
+    const alts = [].concat(data.levels.moorrand.alt), sa = alts.find((a) => a.flag === 'schmied_offen');
+    assert(sa && sa.objects.some((o) => o.id === 'npc_schmied' && o.dialog === 'schmied' && o.look === 'schmied') && !data.levels.moorrand.objects.some((o) => o.id === 'npc_schmied'), 'Schmied nur im Umbau');
+    assert(alts.some((a) => a.flag === 'taverne_offen'), 'Taverne bleibt im Umbau');
+    // Freischaltung über den Nebelturm, Altstand
+    const f = L.newGame(data, 531); L.jumpToLevel(f, data, 'moorrand'); assert(!f.objs.some((o) => o.id === 'npc_schmied'), 'Schmied am Anfang nicht da');
+    L.jumpToLevel(f, data, 'nebelturm'); L.jumpToLevel(f, data, 'moorrand'); assert(f.objs.some((o) => o.id === 'npc_schmied') && !f.objs.some((o) => o.id === 'stairs_taverne'), 'Schmied nach dem Nebelturm da, Taverne unabhängig davon erst nach den Schratgruben');
+    const o2 = L.newGame(data, 532); o2.areas = { nebelturm: { objs: [], seen: [], notes: [] } }; L.syncStatic(o2, data); assert(o2.flags.schmied_offen, 'alter Stand mit besuchtem Nebelturm: Schmied offen');
+    // erreichbar (Nachbarfeld frei)
+    { const lvl = L.levelFor(data, 'moorrand', { taverne_offen: true, schmied_offen: true }), n = lvl.objects.find((o) => o.id === 'npc_schmied'); assert(L.cellChar(lvl, n.x, n.y) === '.' && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => L.cellChar(lvl, n.x + dx, n.y + dy) === '.' && !lvl.objects.some((o) => o.x === n.x + dx && o.y === n.y + dy && ['decor', 'npc', 'merchant', 'sign'].includes(o.type))), 'Schmied steht frei'); }
+    // Dialog öffnet das Fenster
+    assert(L.dialogChoose(fresh(533), data, { id: 'npc_schmied', dialog: 'schmied' }, 'a', 0).smith, 'Dialog öffnet die Schmiede');
+    // Grundgegenstand im Beutel: Eisenschwert Gewöhnlich → Gut (+1 Angriff)
+    const s = fresh(534); s.gold = 500; s.inv.iron_sword = 1;
+    let jobs = L.smithJobs(s, data); const j = jobs.find((x) => x.id === 'iron_sword'); assert(j && j.from === 'Gewöhnlich' && j.to === 'Gut' && j.gain === '+1 Angriff' && j.cost > 0 && j.ok, 'Auftrag Eisenschwert');
+    const price0 = L.smithPrice(s, data, 'iron_sword'); eq(price0, j.cost, 'Preis stimmt');
+    const gold0 = s.gold, r1 = L.smithUpgrade(s, data, 'iron_sword'); assert(r1.msg && !r1.error && r1.id !== 'iron_sword', 'Aufwerten gelingt: ' + JSON.stringify(r1.error));
+    eq(s.gold, gold0 - j.cost, 'Gold abgezogen'); assert(!(s.inv.iron_sword > 0) && s.inv[r1.id] === 1, 'Grundgegenstand ersetzt durch Instanz');
+    const g1 = L.itemDef(s, data, r1.id); eq(g1.q, 'fine', 'Qualität Gut'); eq(g1.atk, data.items.iron_sword.atk + 1, '+1 Angriff'); assert(L.itemWorth(s, data, r1.id) > data.items.iron_sword.value, 'Wert steigt');
+    // Gut → Selten: Zufallseigenschaft, Name, Beschreibung
+    const j2 = L.smithJobs(s, data).find((x) => x.id === r1.id); assert(j2 && j2.to === 'Selten' && j2.gain === 'eine Zufallseigenschaft', 'zweite Stufe angeboten');
+    const r2 = L.smithUpgrade(s, data, r1.id); assert(!r2.error, 'zweite Stufe gelingt'); const g2 = L.itemDef(s, data, r1.id);
+    eq(g2.q, 'rare', 'Qualität Selten'); eq(g2.affixes.length, 1, 'eine Zufallseigenschaft'); assert(g2.name.startsWith(data.items.iron_sword.name + ' des'), 'Name trägt die Eigenschaft: ' + g2.name); assert(g2.desc && g2.desc.includes('Angriff'), 'Beschreibung neu');
+    // Obergrenze Selten
+    assert(!L.smithJobs(s, data).some((x) => x.id === r1.id) && L.smithUpgrade(s, data, r1.id).error === 'unknown', 'Selten wird nicht weiter aufgewertet');
+    // Preis höher als Verkaufsgewinn (kein Gold durch Aufwerten und Verkaufen)
+    for (const id of ['iron_sword', 'oak_staff', 'leather_armor', 'chain_mail']) { const t = fresh(540); t.inv[id] = 1; const before = L.sellPrice(t, data, id), cost = L.smithPrice(t, data, id); t.gold = 9999; const r = L.smithUpgrade(t, data, id); assert(!r.error, id); const after = L.sellPrice(t, data, r.id); assert(cost > after - before, `${id}: Aufwerten (${cost}) muss mehr kosten als der Mehrerlös (${after - before})`); }
+    // zu wenig Gold, im Kampf, Ring, Fluch
+    const p = fresh(541); p.inv.iron_sword = 1; p.gold = 0; eq(L.smithUpgrade(p, data, 'iron_sword').error, 'gold', 'kein Gold'); p.gold = 500; p.combat = {}; eq(L.smithUpgrade(p, data, 'iron_sword').error, 'in-combat', 'nicht im Kampf'); delete p.combat;
+    for (const id of Object.keys(data.items)) { const it = data.items[id]; if (it.kind === 'equip' && (it.slot === 'ring' || it.slot === 'amulet')) { p.inv[id] = 1; } }
+    assert(!L.smithJobs(p, data).some((x) => data.items[x.id] && (data.items[x.id].slot === 'ring' || data.items[x.id].slot === 'amulet')), 'Ringe und Amulette bleiben unberührt');
+    const un = Object.keys(data.items).find((id) => data.items[id].q === 'unique' && data.items[id].slot === 'weapon'); if (un) { p.inv[un] = 1; assert(!L.smithJobs(p, data).some((x) => x.id === un), 'Unikat bleibt unberührt'); }
+    // getragener Grundgegenstand
+    const w = fresh(542); w.gold = 500; const h = w.heroes.find((x) => data.items.iron_sword.classes.includes(x.cls)); assert(h, 'Held für Eisenschwert'); h.equip = h.equip || {}; h.equip.weapon = 'iron_sword';
+    const jw = L.smithJobs(w, data).find((x) => x.id === 'iron_sword'); assert(jw && jw.worn === h.name, 'getragenes Stück erscheint mit Träger');
+    const rw = L.smithUpgrade(w, data, 'iron_sword'); assert(!rw.error && h.equip.weapon === rw.id && !w.inv[rw.id] && L.itemDef(w, data, rw.id).q === 'fine', 'Träger hält jetzt das bessere Stück, Beutel bleibt leer');
+    // Angriffswert steigt tatsächlich
+    const before = L.heroAtk(data, h, fresh(543)); const stat0 = L.gearBonus(data, h, w).atk; eq(stat0, data.items.iron_sword.atk + 1, 'Ausrüstungsbonus +1');
+    void before;
+    // Rüstung: Verteidigung
+    const a = fresh(544); a.gold = 500; a.inv.leather_armor = 1; const ra = L.smithUpgrade(a, data, 'leather_armor'); eq(L.itemDef(a, data, ra.id).def, data.items.leather_armor.def + 1, 'Rüstung +1 Verteidigung');
+    // Speicherstand: Instanz bleibt über JSON erhalten
+    const rt = JSON.parse(JSON.stringify(s)); eq(L.itemDef(rt, data, r1.id).q, 'rare', 'Aufgewertetes Stück übersteht Speichern');
+  });
+  await test('0.53.0 Tote erwecken: Kleriker ab Stufe 12, im Kampf, einmal je Kampf, nur Bewusstlose, Erweckter handelt ab nächster Runde', () => {
+    const sp = data.spells.awaken; assert(sp && sp.kind === 'revive' && sp.cost > 0 && sp.pct > 0 && sp.pct <= 100, 'Zauberdaten');
+    const ps = data.classes.priest.spells.find((x) => x.id === 'awaken'); assert(ps && ps.level === 12, 'Kleriker lernt ihn mit Stufe 12');
+    assert(!Object.keys(data.classes).filter((k) => k !== 'priest').some((k) => (data.classes[k].spells || []).some((x) => x.id === 'awaken')), 'nur der Kleriker');
+    const s = fresh(530); const pr = s.heroes.find((h) => h.cls === 'priest'); assert(pr, 'Kleriker in der Gruppe');
+    assert(!L.knownSpells(data, pr).some((x) => x.id === 'awaken'), 'vor Stufe 12 unbekannt');
+    pr.level = 12; pr.maxMp = pr.mp = 60; assert(L.knownSpells(data, pr).some((x) => x.id === 'awaken'), 'ab Stufe 12 bekannt');
+    const idx = s.heroes.indexOf(pr), tIdx = s.heroes.findIndex((h, i) => i !== idx), t = s.heroes[tIdx];
+    L.startCombat(s, data, s.objs.find((o) => o.type === 'enemy' && !o.dead)); const c = s.combat;
+    // Wirken nur, wenn der Kleriker dran ist: Reihenfolge so legen
+    c.order = [{ side: 'h', idx }, { side: 'e', idx: 0 }]; c.pos = 0;
+    const base = { type: 'spell', spell: 'awaken', target: tIdx };
+    eq(L.heroAction(s, data, base).error, 'bad-target', 'Lebender ist kein Ziel');
+    t.hp = 0; s.heroes.forEach((h) => { if (h !== t && h !== pr) h.hp = Math.max(1, h.hp); });
+    const mp0 = pr.mp, r = L.heroAction(s, data, base); assert(!r.error, 'wirkt: ' + r.error);
+    eq(pr.mp, mp0 - sp.cost, 'Mana abgezogen'); eq(t.hp, Math.ceil(t.maxHp * sp.pct / 100), 'LP-Anteil'); assert(c.awakened, 'Marke gesetzt');
+    // einmal je Kampf
+    const t2 = s.heroes.find((h, i) => i !== idx && i !== tIdx && h.hp > 0); t2.hp = 0; const t2i = s.heroes.indexOf(t2);
+    c.order = [{ side: 'h', idx }, { side: 'e', idx: 0 }]; c.pos = 0;
+    eq(L.heroAction(s, data, { type: 'spell', spell: 'awaken', target: t2i }).error, 'once', 'nur einmal je Kampf'); eq(t2.hp, 0, 'zweiter bleibt liegen');
+    // zu wenig Mana
+    const u = fresh(531); const p2 = u.heroes.find((h) => h.cls === 'priest'); p2.level = 12; p2.mp = 1; const ui = u.heroes.indexOf(p2), tt = u.heroes.findIndex((h, i) => i !== ui); u.heroes[tt].hp = 0;
+    L.startCombat(u, data, u.objs.find((o) => o.type === 'enemy' && !o.dead)); u.combat.order = [{ side: 'h', idx: ui }, { side: 'e', idx: 0 }]; u.combat.pos = 0;
+    eq(L.heroAction(u, data, { type: 'spell', spell: 'awaken', target: tt }).error, 'no-mp', 'zu wenig Mana');
+    // Außerhalb des Kampfes nicht wirkbar (Heilzauber-Liste kennt nur kind heal)
+    const o = fresh(532); const p3 = o.heroes.find((h) => h.cls === 'priest'); p3.level = 12; p3.mp = 60; o.heroes.find((h) => h !== p3).hp = 0;
+    assert(L.castOutside(o, data, o.heroes.indexOf(p3), 'awaken', 0).error, 'nicht außerhalb des Kampfes');
   });
   const failed = results.filter((r) => !r.ok).length; // 0.23.0: erst am Ende zählen (vorher fehlten spätere Tests in der Summe)
   data.balance = realBalance;

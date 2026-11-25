@@ -1091,6 +1091,10 @@
         {
           "id": "group_heal",
           "level": 3
+        },
+        {
+          "id": "awaken",
+          "level": 12
         }
       ]
     },
@@ -3798,25 +3802,48 @@
           "look": "vase"
         }
       ],
-      "alt": {
-        "flag": "taverne_offen",
-        "objects": [
-          {
-            "id": "stairs_taverne",
-            "type": "stairs",
-            "x": 4,
-            "y": 4,
-            "msg": "Du betrittst die Taverne „Zum goldenen Eber“.",
-            "to": {
-              "level": "taverne",
-              "x": 7,
-              "y": 6,
-              "dir": 0
+      "alt": [
+        {
+          "flag": "taverne_offen",
+          "objects": [
+            {
+              "id": "stairs_taverne",
+              "type": "stairs",
+              "x": 4,
+              "y": 4,
+              "msg": "Du betrittst die Taverne „Zum goldenen Eber“.",
+              "to": {
+                "level": "taverne",
+                "x": 7,
+                "y": 6,
+                "dir": 0
+              },
+              "look": "tuer"
+            }
+          ]
+        },
+        {
+          "flag": "schmied_offen",
+          "objects": [
+            {
+              "id": "npc_schmied",
+              "type": "npc",
+              "x": 6,
+              "y": 3,
+              "name": "Schmied Brann",
+              "look": "schmied",
+              "dialog": "schmied"
             },
-            "look": "tuer"
-          }
-        ]
-      }
+            {
+              "id": "d_m_esse",
+              "type": "decor",
+              "x": 5,
+              "y": 3,
+              "look": "feuerschale"
+            }
+          ]
+        }
+      ]
     },
     "moorpfad": {
       "id": "moorpfad",
@@ -4603,7 +4630,7 @@
           "y": 8,
           "face": 3,
           "deco": "graffiti",
-          "title": "KRATZER",
+          "title": "TAGE|GEZÄHLT",
           "text": "In den Stein geritzt: ein Strichmännchen, eine Strichliste mit vier Kerben – und ein Pfeil. Wer hier gewartet hat, hat die Tage gezählt."
         },
         {
@@ -5692,7 +5719,7 @@
           "x": 6,
           "y": 12,
           "text": "Über dem Durchgang glimmen feine Zeichen. Jemand hat darunter geschrieben: „Nicht blind hindurch.“",
-          "title": "RUNEN",
+          "title": "NICHT|BLIND",
           "face": 0,
           "style": "dark"
         },
@@ -13232,6 +13259,13 @@
       "mult": 100,
       "all": true,
       "desc": "100 % Schaden gegen alle."
+    },
+    "awaken": {
+      "name": "Tote erwecken",
+      "kind": "revive",
+      "cost": 18,
+      "pct": 40,
+      "desc": "Erweckt einen bewusstlosen Helden mit 40 % seiner Max-LP. Nur im Kampf, einmal je Kampf. Der Erweckte greift erst in der nächsten Runde ein."
     }
   },
   "lootBases": [
@@ -16070,6 +16104,56 @@
           "choices": [
             {
               "t": "Gehen"
+            }
+          ]
+        }
+      }
+    },
+    "schmied": {
+      "name": "Schmied Brann",
+      "start": "erst",
+      "again": "a",
+      "nodes": {
+        "erst": {
+          "text": "Ein breiter Mann mit kahlem Kopf und rußigem Vollbart lehnt den Hammer an die Esse. „Brann. Der Nebel frisst Eisen, und das Moor frisst Männer, die schlechtes Eisen tragen. Ich schmiede nichts Neues, dafür mache ich aus eurem Gerät das Beste, was drinsteckt. Das kostet Gold, und es hat seine Grenze: Selten ist selten genug.“",
+          "choices": [
+            {
+              "t": "Ausrüstung aufwerten",
+              "smith": true
+            },
+            {
+              "t": "Wie weit geht das?",
+              "to": "b"
+            },
+            {
+              "t": "Gehen",
+              "done": true
+            }
+          ]
+        },
+        "a": {
+          "text": "Brann wischt sich die Hände an der Schürze ab. „Wieder da. Zeigt her, was ihr tragt.“",
+          "choices": [
+            {
+              "t": "Ausrüstung aufwerten",
+              "smith": true
+            },
+            {
+              "t": "Wie weit geht das?",
+              "to": "b"
+            },
+            {
+              "t": "Gehen",
+              "done": true
+            }
+          ]
+        },
+        "b": {
+          "text": "„Gewöhnliches wird gut, Gutes wird selten, mehr nicht. Ringe und Amulette rühre ich nicht an, und was seinen eigenen Namen trägt, hat schon einen Schmied gehabt, der besser war als ich. Bezahlt wird je Stück, die Preise steigen mit dem Wert des Grundstücks.“",
+          "choices": [
+            {
+              "t": "Verstanden",
+              "to": "a"
             }
           ]
         }

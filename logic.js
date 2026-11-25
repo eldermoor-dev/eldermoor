@@ -315,12 +315,15 @@ export function passEntryDirs(lvl, o) {
 }
 // 0.47.9: Die Taverne erscheint erst, wenn die Schratgruben (3. Gebiet nach dem Moorpfad) betreten wurden: Marke 'taverne_offen' baut die Siedlung um (moorrand.alt fügt die Tür hinzu). Alte Stände, die die Taverne schon kennen, behalten sie.
 export const TAVERN_FLAG = 'taverne_offen', TAVERN_AREA = 'schratgruben';
+// 0.53.0: Der Schmied zieht in die Siedlung, sobald der Nebelturm betreten wurde (Marke 'schmied_offen', moorrand.alt fügt ihn hinzu).
+export const SMITH_FLAG = 'schmied_offen', SMITH_AREA = 'nebelturm';
 function unlockWorld(state) {
   state.flags = state.flags || {};
-  if (state.flags[TAVERN_FLAG]) return false;
   const seen = (id) => state.levelId === id || !!(state.areas && state.areas[id]);
-  if (seen(TAVERN_AREA) || seen('taverne')) { state.flags[TAVERN_FLAG] = true; return true; }
-  return false;
+  let changed = false;
+  if (!state.flags[TAVERN_FLAG] && (seen(TAVERN_AREA) || seen('taverne'))) { state.flags[TAVERN_FLAG] = true; changed = true; }
+  if (!state.flags[SMITH_FLAG] && seen(SMITH_AREA)) { state.flags[SMITH_FLAG] = true; changed = true; }
+  return changed;
 }
 export function changeArea(state, data, stairsId) {
   const st = state.objs.find((o) => o.id === stairsId && o.type === 'stairs');
@@ -1125,6 +1128,7 @@ export function dialogChoose(state, data, npc, nodeId, idx) {
   if (c.maps) return { end: true, maps: true, npc, changed: false }; // 0.40.0: Schatzkarten des Wirts (Oberfläche)
   if (c.board) return { end: true, board: true, npc, changed: false }; // 0.40.0: Aushangbrett (Oberfläche)
   if (c.exorcise) return { end: true, exorcise: true, npc, changed: false }; // 0.46.0: Hexe entfernt Flüche (Oberfläche)
+  if (c.smith) return { end: true, smith: true, npc, changed: false }; // 0.53.0: Schmied wertet Ausrüstung auf (Oberfläche)
   if (c.tavern) return { end: true, tavern: true, npc, changed: false }; // 0.34.0: öffnet die Gruppenverwaltung der Taverne (Oberfläche)
   const msgs = [];
   if (c.cost && c.cost.gold) state.gold -= c.cost.gold;
@@ -1409,6 +1413,71 @@ export function exorcise(state, data, id) {
   state.gold -= EXORCISE.gold; state.inv[EXORCISE.item]--; if (state.inv[EXORCISE.item] <= 0) delete state.inv[EXORCISE.item];
   state.flags['ent:' + id] = true;
   return { msg: `Ysolde murmelt über ${it.name}, der Sud zischt. Der Fluch (${curseText(it)}) ist fort. Kosten: ${EXORCISE.gold} Gold und ${data.items[EXORCISE.item].name}.`, sfx: 'unlock', changed: true };
+}
+// ---------- Schmied (0.53.0) ----------
+// Wertet erzeugte Waffen und Rüstungen (Beute und Grundgegenstände aus data.lootBases) um eine Qualitätsstufe auf, höchstens bis „Selten“:
+// Gewöhnlich → Gut: +1 auf den Hauptwert (Waffe Angriff, Rüstung Verteidigung). Gut → Selten: eine Zufallseigenschaft (data.affixes). Episch, Unikate, Sets, Ringe und Amulette nicht.
+// Preis = SMITH.mult × Wertzuwachs des Grundgegenstands (Wert × 0,5 je Stufe), mit Akt-Aufschlag (balance.price) und Feilschen. Das liegt immer über dem Wertzuwachs beim Verkauf, ein Handel mit Aufwerten und Verkaufen lohnt sich nicht.
+export const SMITH = { maxQ: 2, mult: 3 };
+const smithBase = (state, data, id) => {
+  const it = itemDef(state, data, id);
+  if (!it || it.kind !== 'equip' || it.curse || (it.slot !== 'weapon' && it.slot !== 'armor')) return null;
+  if (it.base) { const b = data.items[it.base]; return b && (data.lootBases || []).includes(it.base) && data.quality.some((q) => q.id === it.q) ? { it, base: b, baseId: it.base, qi: data.quality.findIndex((q) => q.id === it.q), raw: false } : null; }
+  return (data.lootBases || []).includes(id) && !it.q ? { it, base: it, baseId: id, qi: 0, raw: true } : null;
+};
+export function smithPrice(state, data, id) {
+  const sb = smithBase(state, data, id); if (!sb || sb.qi >= SMITH.maxQ) return null;
+  const v = sb.base.value || 0, diff = Math.floor(v * (1 + 0.5 * (sb.qi + 1))) - Math.floor(v * (1 + 0.5 * sb.qi));
+  return Math.max(1, Math.ceil((diff * SMITH.mult * balancePct(state, data, 'price') / 100 * (100 - haggle(state, data))) / 100));
+}
+export function smithJobs(state, data) {
+  const out = [], seen = new Set(), all = [...(state.heroes || []), ...(state.reserve || [])];
+  const add = (id, worn) => {
+    if (seen.has(id)) return; const sb = smithBase(state, data, id); if (!sb || sb.qi >= SMITH.maxQ) return;
+    seen.add(id);
+    const cost = smithPrice(state, data, id), from = data.quality[sb.qi], to = data.quality[sb.qi + 1];
+    const gain = sb.qi === 0 ? `+1 ${sb.it.slot === 'weapon' ? 'Angriff' : 'Verteidigung'}` : 'eine Zufallseigenschaft';
+    out.push({ id, name: sb.it.name, slot: sb.it.slot, worn, from: from.name, to: to.name, gain, cost, ok: state.gold >= cost });
+  };
+  for (const id of Object.keys(state.inv || {})) if ((state.inv[id] || 0) > 0) add(id, null);
+  for (const h of all) for (const s of SLOTS) if (h && h.equip && h.equip[s]) add(h.equip[s], h.name);
+  return out;
+}
+export function smithUpgrade(state, data, id) {
+  if (state.combat) return { error: 'in-combat' };
+  const job = smithJobs(state, data).find((j) => j.id === id);
+  if (!job) return { error: 'unknown' };
+  if (state.gold < job.cost) return { error: 'gold', cost: job.cost };
+  const sb = smithBase(state, data, id);
+  let inst, uid = id;
+  if (sb.raw) { // Grundgegenstand: wird zum erzeugten Stück (Qualität Gut)
+    inst = { kind: 'equip', base: sb.baseId, slot: sb.base.slot, q: 'fine', atk: sb.base.atk || 0, def: sb.base.def || 0, init: 0, classes: sb.base.classes ? [...sb.base.classes] : null, name: sb.base.name, affixes: [] };
+    inst[sb.base.slot === 'weapon' ? 'atk' : 'def'] += data.quality.find((q) => q.id === 'fine').statBonus;
+    inst.desc = gearDesc(data, inst);
+    state.gold -= job.cost;
+    if ((state.inv[id] || 0) > 0) { state.inv[id]--; if (state.inv[id] <= 0) delete state.inv[id]; uid = addGear(state, data, inst); }
+    else { // getragen: Platz im Beutel tauschen
+      const hh = [...state.heroes, ...(state.reserve || [])].find((h) => h && h.equip && SLOTS.some((s) => h.equip[s] === id));
+      uid = addGear(state, data, inst); delete state.inv[uid]; if (state.newItems) delete state.newItems[uid];
+      for (const s of SLOTS) if (hh.equip[s] === id) hh.equip[s] = uid;
+    }
+  } else {
+    inst = sb.it; // Instanz in state.gear, wird verändert
+    state.gold -= job.cost;
+    const main = inst.slot === 'weapon' ? 'atk' : 'def';
+    if (sb.qi === 0) { inst.q = 'fine'; inst[main] += data.quality.find((q) => q.id === 'fine').statBonus; }
+    else {
+      inst.q = 'rare';
+      const pool = (data.affixes || []).filter((a) => a.slots.includes(inst.slot) && !(inst.affixes || []).includes(a.id));
+      if (pool.length) { const a = pool[randInt(state, 0, pool.length - 1)]; inst[a.stat] = (inst[a.stat] || 0) + randInt(state, a.min, a.max); inst.affixes = [...(inst.affixes || []), a.id]; }
+      else inst[main] += 1;
+      const names = (inst.affixes || []).map((aid) => (data.affixes.find((a) => a.id === aid) || {}).name).filter(Boolean);
+      inst.name = names.length ? `${sb.base.name} ${names.join(' und ')}` : sb.base.name;
+    }
+    inst.desc = gearDesc(data, inst);
+  }
+  const now = itemDef(state, data, uid);
+  return { msg: `Der Schmied hämmert: ${job.name} wird ${job.to} (${job.gain}). Kosten: ${job.cost} Gold.`, id: uid, item: now, sfx: 'unlock', changed: true, price: job.cost };
 }
 export function gearBonus(data, h, state) {
   const b = { atk: 0, def: 0, init: 0 };
@@ -2000,7 +2069,16 @@ export function heroAction(state, data, act) {
     if (!ab) return { error: 'no-ability' };
     if (h.mp < ab.cost) return { error: 'no-mp' };
     const rn = data.classes[h.cls].res.name;
-    if (ab.kind === 'heal') {
+    if (ab.kind === 'revive') { // 0.53.0: Tote erwecken – ein bewusstloser Held steht wieder auf, einmal je Kampf, handelt erst ab der nächsten Runde
+      const t = state.heroes[act.target];
+      if (!t || t.hp > 0) return { error: 'bad-target' };
+      if (c.awakened) return { error: 'once' };
+      h.mp -= ab.cost; c.awakened = true;
+      t.hp = Math.min(t.maxHp, Math.max(1, Math.ceil((t.maxHp * (ab.pct || 40)) / 100)));
+      delete c.status['h' + act.target]; delete c.defending[act.target];
+      msgs.push(`${h.name} wirkt ${ab.name}: ${t.name} steht wieder auf (${t.hp} LP, −${ab.cost} ${rn}). ${t.name} greift erst in der nächsten Runde ein.`);
+      sfx = 'heal';
+    } else if (ab.kind === 'heal') {
       const targets = ab.all ? state.heroes.map((x, i) => i).filter((i) => state.heroes[i].hp > 0 && state.heroes[i].hp < state.heroes[i].maxHp) : [act.target];
       if (ab.all) { if (!targets.length) return { error: 'full-hp' }; }
       else {
