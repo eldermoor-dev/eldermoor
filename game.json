@@ -3344,24 +3344,27 @@
             "dir": 1
           },
           "look": "path"
-        },
-        {
-          "id": "stairs_taverne",
-          "type": "stairs",
-          "x": 4,
-          "y": 4,
-          "msg": "Du betrittst die Taverne „Zum goldenen Eber“.",
-          "to": {
-            "level": "taverne",
-            "x": 7,
-            "y": 6,
-            "dir": 0
-          },
-          "look": "tuer",
-          "needArea": "schratgruben",
-          "lockedMsg": "Die Tür des Goldenen Ebers ist verrammelt. Ein Brett daran: „Wegen Umbau geschlossen. Wir öffnen, wenn es sich lohnt.“"
         }
-      ]
+      ],
+      "alt": {
+        "flag": "taverne_offen",
+        "objects": [
+          {
+            "id": "stairs_taverne",
+            "type": "stairs",
+            "x": 4,
+            "y": 4,
+            "msg": "Du betrittst die Taverne „Zum goldenen Eber“.",
+            "to": {
+              "level": "taverne",
+              "x": 7,
+              "y": 6,
+              "dir": 0
+            },
+            "look": "tuer"
+          }
+        ]
+      }
     },
     "moorpfad": {
       "id": "moorpfad",

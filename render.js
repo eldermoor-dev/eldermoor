@@ -3155,7 +3155,7 @@ export const setCombatFit = (v) => { combatFit = v; };
 // 0.19.2: Gruppen je nach Größe kleiner, damit sich die Gestalten nicht überschneiden (Nutzer: „Gegner überschneiden sich“)
 export const GROUP_SIZE = { 2: 0.84, 3: 0.72 }; // 0.22.1 (Nutzer: „Gegner wirken zu klein“): vorher 0.72 / 0.6
 export const spriteScale = (k, n) => bossScale(k) * // 0.22.1 (Nutzer: „alle gleich groß, wie auf offener Fläche“): Gruppengröße ändert die Figurengröße nicht mehr
-   (k === 'wolf' ? 1.3 : 1); // Wolf ist niedrig gebaut: größer ansetzen (0.19.3: 1,25 → 1,45; 0.19.5: 1,65, Nutzer: „noch etwas größer“; 0.47.7 Nutzer: „Monster zu groß“ → 1,3)
+   (k === 'wolf' ? 1.3 : k === 'moorlicht' && n > 1 ? 0.84 : 1); // 0.47.10 (Nutzer: „Geist ragt heraus“): das Moorlicht ist breit (Schleier, Ärmel) und ragte im Gang in die Wand; in Gruppen kleiner // Wolf ist niedrig gebaut: größer ansetzen (0.19.3: 1,25 → 1,45; 0.19.5: 1,65, Nutzer: „noch etwas größer“; 0.47.7 Nutzer: „Monster zu groß“ → 1,3)
 // Aufstellung einer Gruppe (0.16.4b): lat = seitlich (rechts +), dep = Tiefe (vom Betrachter weg). Im engen Gang (links und rechts Wand)
 // stehen die Gegner gestaffelt hintereinander statt nebeneinander, sonst ragen sie in die Wände (Nutzer-Screenshot 0.16.4).
 // 0.22.1: Alle Figuren in voller Größe. Offen: nebeneinander. Enger Gang (1 Feld): eine vorn, die anderen leicht versetzt dahinter;
@@ -3229,10 +3229,12 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
       const tot = Array.isArray(o.kinds) ? Math.min(3, o.kinds.length) : 1;
       const av = alive && alive[o.id] != null ? alive[o.id] : null, kindList = Array.isArray(av) ? av : null;
       const n = kindList ? kindList.length : av != null ? av : tot; // Gruppe: eine Gestalt je lebendem Gegner, nebeneinander
-      const offs = groupLayout(grid, o.x, o.y, angle, n);
+      const offs = groupLayout(grid, o.x, o.y, angle, n), tight = n > 1 && isNarrowAt(grid, o.x, o.y, angle);
       for (let i = 0; i < n; i++) {
-        const { lat, dep, grow } = offs[i];
-        const kd = kindList ? kindList[i] : kindOf(o, i), sc = spriteScale(kd, n) * combatFit * (grow || 1);
+        let { lat, dep, grow } = offs[i];
+        const kd = kindList ? kindList[i] : kindOf(o, i);
+        if (tight && kd === 'moorlicht') lat *= 0.25; // 0.47.10: breite Gestalt im engen Gang nah an die Mitte, nicht an die Wand
+        const sc = spriteScale(kd, n) * combatFit * (grow || 1);
         const inFight = !!(alive && alive[o.id] != null);
         out.push({ x: o.x + rx * lat + fx * dep, y: o.y + ry * lat + fy * dep, tex: spriteFor(tex, kd), scale: sc, base: sc, front: inFight, foe: inFight ? { id: o.id, k: i } : null });
       }

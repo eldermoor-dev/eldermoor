@@ -3,6 +3,13 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.47.10 (25.11.2026, headless, nicht auf Gerät getestet)
+- Taverne: Nutzer „soll erst im 3. Level erscheinen“. Vorher (0.47.9) war nur der Zugang gesperrt, Tür und Schild „GOLDENER EBER“ standen schon in der Siedlung. Jetzt gibt es die Tür gar nicht, bis die Schratgruben betreten wurden (Siedlung wird per `alt` + Marke `taverne_offen` umgebaut, auch in gespeicherten Gebieten). Alte Stände, die die Taverne kennen, behalten sie.
+- Moorlicht („Geist“) ragte im Wolfskampf in die Wand (Screenshot): in Gruppen ×0,84 und im engen Gang näher zur Mitte. Nicht per Render nachgestellt, nur Geometrie geändert; Gerätetest nötig. (Korrektur: Die „zweite grünliche Figur“ aus 0.47.7 war dieses Moorlicht, nicht die Krallenhand des Kultisten.)
+- Schrift (Wandschild „ACHTUNG IRRLICHT“, schräg gesehen: Buchstaben zerrissen) gemeldet, noch NICHT behoben; eigener Schritt.
+- „Schrat zu früh“: vom Nutzer als erledigt gemeldet.
+- Nummerierung: 0.47.11 = Schrift, 0.47.12 = Balance (10–13), 0.48.0 = Rest Lesbarkeit/Stimmung.
+
 ## 0.47.9 (25.11.2026, headless, nicht auf Gerät getestet)
 - Entfluchte Gegenstände (Ysolde) wirken nur noch halb: positive Boni (Angriff/Verteidigung/Initiative, Lebensraub, Ausweichen, Krit, Widerstand, Gold) halbiert, gerundet, mindestens 1; Beschreibung angepasst (Zornklinge +7 → +4). Spieldaten unverändert, wirkt auch in alten Ständen. Preis weiter 100 Gold + mittlerer Heiltrank.
 - Taverne „Zum goldenen Eber“: Tür in der Siedlung verschlossen („Wegen Umbau geschlossen“), bis die Schratgruben (3. Gebiet nach dem Moorpfad: Moorpfad, Kultgruft, Schratgruben) betreten wurden. Alte Stände, die die Taverne schon kennen, bleiben offen. Entscheidung des Assistenten (Zählung des 3. Gebiets war nicht eindeutig).

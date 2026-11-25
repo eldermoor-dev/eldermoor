@@ -309,10 +309,18 @@ export function passEntryDirs(lvl, o) {
   const ns = Math.min(run(0, -1), run(0, 1)), ew = Math.min(run(-1, 0), run(1, 0));
   return ns <= ew ? [0, 2] : [1, 3];
 }
+// 0.47.9: Die Taverne erscheint erst, wenn die Schratgruben (3. Gebiet nach dem Moorpfad) betreten wurden: Marke 'taverne_offen' baut die Siedlung um (moorrand.alt fügt die Tür hinzu). Alte Stände, die die Taverne schon kennen, behalten sie.
+export const TAVERN_FLAG = 'taverne_offen', TAVERN_AREA = 'schratgruben';
+function unlockWorld(state) {
+  state.flags = state.flags || {};
+  if (state.flags[TAVERN_FLAG]) return false;
+  const seen = (id) => state.levelId === id || !!(state.areas && state.areas[id]);
+  if (seen(TAVERN_AREA) || seen('taverne')) { state.flags[TAVERN_FLAG] = true; return true; }
+  return false;
+}
 export function changeArea(state, data, stairsId) {
   const st = state.objs.find((o) => o.id === stairsId && o.type === 'stairs');
   if (!st || !st.to) return { ok: false, msg: 'Hier führt nichts weiter.' };
-  if (st.needArea && st.needArea !== state.levelId && !(state.areas && (state.areas[st.needArea] || state.areas[st.to.level]))) return { ok: false, msg: st.lockedMsg || 'Der Weg ist noch versperrt.' }; // 0.47.9: Gebiet muss schon besucht sein (alte Stände, die das Ziel kennen, bleiben offen)
   return travelTo(state, data, st.to, st.msg);
 }
 // Gebietswechsel zu einem Ziel { level, x, y, dir } (Treppe oder Fähre, 0.28.0)
@@ -327,6 +335,7 @@ export function travelTo(state, data, to, msg) {
   state.levelId = to.level;
   state.objs = a.objs; state.seen = a.seen; state.notes = a.notes || [];
   state.player = { x: to.x, y: to.y, dir: arrivalDir(target, to) };
+  if (unlockWorld(state)) syncStatic(state, data);
   markSeen(state, data);
   return { ok: true, msg: msg || `Du erreichst: ${target.name}.`, levelName: target.name };
 }
@@ -1130,6 +1139,7 @@ export function jumpToLevel(state, data, levelId) {
     state.objs = a.objs; state.seen = a.seen; state.notes = a.notes || [];
   }
   state.player = { x: target.start.x, y: target.start.y, dir: target.start.dir };
+  if (unlockWorld(state)) syncStatic(state, data);
   markSeen(state, data);
   return { ok: true };
 }
@@ -2355,6 +2365,7 @@ export function validateState(state, data) {
 // So bekommen alte Spielstände Neuerungen (z. B. eine neue Treppe) ohne neue Speicherversion. Truhen, Türen und Gegner behalten ihren Zustand (nur `title` und `style` werden aus game.json nachgezogen).
 const STATIC_TYPES = new Set(['stairs', 'sign', 'merchant', 'exit', 'runestone', 'decor', 'rail']);
 export function syncStatic(state, data) {
+  unlockWorld(state);
   for (const h of state.heroes || []) if (h && data.classes[h.cls] && h.role !== data.classes[h.cls].name) h.role = data.classes[h.cls].name; // umbenannte Berufe (Priester → Kleriker)
   const areas = [{ id: state.levelId, objs: state.objs }, ...Object.entries(state.areas || {}).map(([id, a]) => ({ id, objs: a.objs }))];
   let n = 0;

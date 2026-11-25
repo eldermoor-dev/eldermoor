@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.47.9 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.47.10 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1689,3 +1689,12 @@ Nächste: 0.47.4 (7–9), 0.47.5 (10–13 + BALANCE/SIM), 0.48.0 (14–17), spä
 - Tests 176 grün (neu: Halbierung, Vorrat/Nachschub mit Zeitparameter, Taverne zu/offen).
 - Offene Tests (Gerät): Ysolde entflucht → Beschreibung/Werte halb; Taverne vor/nach Schratgruben; Händler Vorrat sinkt, „Ausverkauft“, nach 1 Std. wieder da (Spielstand speichern/laden, Uhr nicht verstellen); alter Spielstand aus 0.47.8 lädt.
 - Nummerierung: 0.47.10 = Balance (10–13), 0.48.0 = Rest Lesbarkeit/Stimmung, später „Tote erwecken“.
+
+## 0.47.10 (25.11.2026; headless, nicht auf Gerät getestet): Taverne unsichtbar bis Schratgruben, Moorlicht nicht in der Wand
+- Nutzer 18:39: „Taverne soll erst im 3. Level erscheinen“ (Screenshot: Tür + Schild „GOLDENER EBER“ in der Siedlung sichtbar). Ersetzt die Sperre aus 0.47.9 (needArea/lockedMsg entfernt).
+- logic.js `unlockWorld` (Konstanten `TAVERN_FLAG='taverne_offen'`, `TAVERN_AREA='schratgruben'`): setzt die Marke, wenn Schratgruben oder Taverne aktuell/besucht sind; aufgerufen in `travelTo`, `jumpToLevel`, `syncStatic` (danach syncStatic, damit die Tür auch im gespeicherten Gebiet erscheint). game.json: `stairs_taverne` steht nur noch in `levels.moorrand.alt.objects` (alt.flag `taverne_offen`). Tests: Gebiete-Test zählt alt-Objekte mit (`allObjs`).
+- Nutzer 18:40 (Screenshot Wolfskampf): „Geist ragt heraus“ = Moorlicht (Spriteart wisp) ragt in die rechte Wand. render.js: `spriteScale('moorlicht', n>1)` ×0,84; `buildSprites`: im engen Gang (`isNarrowAt`) wird `lat` des Moorlichts ×0,25. Nicht per Render nachgestellt. Korrigiert die Annahme in 0.47.7 („zweite Figur“ = Kultisten-Hand): es war das Moorlicht.
+- Nutzer 18:40 (Screenshot): Wandschild „ACHTUNG|IRRLICHT“ (Moorpfad, `sign_pfad2`, Stil moss) schräg gesehen: Buchstaben zerrissen/wellig, blaue Schrift. Ursache vermutet (nicht belegt): 480×270 Raster + starke Verkürzung im schrägen Blick + 8 Zeichen je Zeile, Stile mit `wavy/slant`. NÄCHSTER SCHRITT 0.47.11: Fall per Render am selben Winkel nachstellen, dann Lösung (z. B. Minification-Filter beim Abtasten, feste Schriftart ohne wave/shear auf Wandschildern, größere Buchstaben).
+- „Schrat zu früh“: Nutzer meldet erledigt.
+- Offene Tests (Gerät): Siedlung ohne Taverne-Tür vor den Schratgruben; Tür erscheint nach Betreten der Schratgruben (auch bei laufendem Spiel, nach Rückkehr in die Siedlung); Moorlicht im Gang mit Wölfen innerhalb der Wände.
+- Nummerierung: 0.47.11 = Schrift, 0.47.12 = Balance (10–13), 0.48.0 = Rest Lesbarkeit/Stimmung, später „Tote erwecken“.

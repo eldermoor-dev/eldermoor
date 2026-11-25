@@ -1315,7 +1315,8 @@ export async function runTests(data, env = {}) {
   await test('Gebiete (Phase 3): Treppen-Daten, Gegenstück, Zielfeld begehbar, Objekt-IDs über alle Gebiete eindeutig', () => {
     const ids = new Set();
     let n = 0;
-    for (const [lid, lvl] of Object.entries(data.levels)) for (const o of lvl.objects) {
+    const allObjs = (l) => [...l.objects, ...((l.alt && l.alt.objects) || [])]; // 0.47.9: auch nachträglich eingebaute Objekte (Taverne)
+    for (const [lid, lvl] of Object.entries(data.levels)) for (const o of allObjs(lvl)) {
       assert(!ids.has(o.id), `Objekt-ID ${o.id} kommt in mehreren Gebieten vor (Flags sind global)`); ids.add(o.id);
       if (o.type !== 'stairs') continue;
       n++;
@@ -1323,8 +1324,8 @@ export async function runTests(data, env = {}) {
       assert(tl, `${o.id}: Zielgebiet fehlt`);
       assert(L.cellChar(tl, to.x, to.y) === '.', `${o.id}: Zielfeld ist keine Bodenzelle`);
       assert(Number.isInteger(to.dir) && to.dir >= 0 && to.dir <= 3, `${o.id}: Blickrichtung`);
-      assert(!tl.objects.some((q) => q.x === to.x && q.y === to.y && q.type !== 'stairs' && q.type !== 'exit'), `${o.id}: Zielfeld ist belegt`);
-      assert(tl.objects.some((q) => q.type === 'stairs' && q.to.level === lid), `${o.id}: keine Treppe zurück nach ${lid}`);
+      assert(!allObjs(tl).some((q) => q.x === to.x && q.y === to.y && q.type !== 'stairs' && q.type !== 'exit'), `${o.id}: Zielfeld ist belegt`);
+      assert(allObjs(tl).some((q) => q.type === 'stairs' && q.to.level === lid), `${o.id}: keine Treppe zurück nach ${lid}`);
     }
     assert(n >= 2, 'mindestens zwei Treppen');
     return `${n} Treppen geprüft`;
@@ -2932,14 +2933,21 @@ export async function runTests(data, env = {}) {
     for (const [id, sp] of Object.entries(data.shops)) for (const e of sp.stock) assert(e.n >= 1 && e.n <= 3, `${id}/${e.item}: Bestand gesetzt`);
     for (const [id, sp] of Object.entries(data.shops)) for (const e of sp.stock) if (data.items[e.item].kind === 'equip') eq(e.n, 1, `${id}/${e.item}: Ausrüstung nur einmal`);
     // Taverne
-    const tv = L.newGame(data, 73); L.jumpToLevel(tv, data, 'moorrand'); assert(!L.changeArea(tv, data, 'stairs_taverne').ok, 'Taverne zu');
+    const tv = L.newGame(data, 73); L.jumpToLevel(tv, data, 'moorrand'); assert(!tv.objs.some((o) => o.id === 'stairs_taverne') && !L.changeArea(tv, data, 'stairs_taverne').ok, 'Taverne nicht da');
     L.jumpToLevel(tv, data, 'schratgruben'); L.jumpToLevel(tv, data, 'moorrand'); assert(L.changeArea(tv, data, 'stairs_taverne').ok, 'Taverne offen nach den Schratgruben');
+    // Treppe wirklich erst nach dem Betreten da, auch über Treppe statt Sprung; alter Stand mit besuchter Taverne behält sie
+    const tw = L.newGame(data, 74); L.jumpToLevel(tw, data, 'moorrand'); L.jumpToLevel(tw, data, 'schratgruben'); assert(tw.areas.moorrand.objs.some((o) => o.id === 'stairs_taverne'), 'Tür in der gespeicherten Siedlung ergänzt');
+    const old = L.newGame(data, 75); old.areas = { taverne: { objs: [], seen: [], notes: [] } }; L.syncStatic(old, data); assert(old.flags.taverne_offen, 'alter Stand mit besuchter Taverne bleibt offen');
+  });
+  await test('0.47.10: Moorlicht in Gruppen kleiner, Taverne erst nach den Schratgruben sichtbar', async () => {
+    const R = await import('./render.js'); assert(R.spriteScale('moorlicht', 3) < R.spriteScale('moorlicht', 1) && Math.abs(R.spriteScale('moorlicht', 3) / R.spriteScale('moorlicht', 1) - 0.84) < 0.01, 'in Gruppen kleiner (×0,84), einzeln unverändert'); eq(R.spriteScale('wolf', 3), R.spriteScale('wolf', 1), 'Wolf unverändert');
+    assert(!data.levels.moorrand.objects.some((o) => o.id === 'stairs_taverne') && data.levels.moorrand.alt.objects.some((o) => o.id === 'stairs_taverne') && data.levels.moorrand.alt.flag === 'taverne_offen', 'Tür nur im Umbau');
   });
   await test('Taverne (0.34.0): Zugang, Wirtin, Anwerben, Reserve, Tausch, Verabschieden, Speichern', () => {
     const s = L.newGame(data, 11); L.jumpToLevel(s, data, 'moorrand');
-    const st = s.objs.find((o) => o.id === 'stairs_taverne'); assert(st && st.to.level === 'taverne', 'Treppe in der Siedlung');
-    const lk = L.changeArea(s, data, 'stairs_taverne'); assert(!lk.ok && s.levelId === 'moorrand' && /verrammelt/.test(lk.msg), '0.47.9: Taverne vor den Schratgruben verschlossen'); // 0.47.9
+    assert(!s.objs.some((o) => o.id === 'stairs_taverne') && !L.changeArea(s, data, 'stairs_taverne').ok && s.levelId === 'moorrand', '0.47.9: vor den Schratgruben gibt es keine Taverne (keine Tür, kein Zugang)');
     L.jumpToLevel(s, data, 'schratgruben'); L.jumpToLevel(s, data, 'moorrand');
+    const st = s.objs.find((o) => o.id === 'stairs_taverne'); assert(st && st.to.level === 'taverne', 'Treppe in der Siedlung');
     const t = L.changeArea(s, data, 'stairs_taverne'); assert(t.ok && s.levelId === 'taverne', 'Taverne erreichbar');
     const back = s.objs.find((o) => o.id === 'stairs_taverne_aus'); assert(back && back.to.level === 'moorrand' && L.cellChar(data.levels.moorrand, back.to.x, back.to.y) === '.', 'Rückweg liegt auf Boden');
     const w = s.objs.find((o) => o.id === 'npc_wirt'); assert(w && L.blockerAt(s, w.x, w.y) === w, 'Wirtin versperrt das Feld');
@@ -2990,7 +2998,7 @@ export async function runTests(data, env = {}) {
     const bad2 = JSON.parse(JSON.stringify(s)); bad2.reserve = [1, 2, 3, 4, 5]; assert(L.validateState(bad2, data).some((e) => /Reserve ungültig/.test(e)), 'mehr als vier Reservehelden erkannt');
     const old = L.newGame(data, 14); assert(old.reserve === undefined && L.validateState(old, data).length === 0, 'Altstand ohne Reserve bleibt gültig');
     // Alter Spielstand bekommt die Treppe nachgeliefert
-    const o2 = L.newGame(data, 15); L.jumpToLevel(o2, data, 'moorrand'); o2.objs = o2.objs.filter((q) => q.id !== 'stairs_taverne'); L.syncStatic(o2, data); assert(o2.objs.some((q) => q.id === 'stairs_taverne'), 'syncStatic liefert die Taverne nach');
+    const o2 = L.newGame(data, 15); L.jumpToLevel(o2, data, 'schratgruben'); L.jumpToLevel(o2, data, 'moorrand'); o2.objs = o2.objs.filter((q) => q.id !== 'stairs_taverne'); L.syncStatic(o2, data); assert(o2.objs.some((q) => q.id === 'stairs_taverne'), 'syncStatic liefert die Taverne nach');
   });
   await test('Alders Rat wirkt (0.34.0): Spinnenkönigin scheut Feuer und ruft seltener, nur mit Hinweis', () => {
     const mk = (flag) => { const s = L.newGame(data, 21); L.jumpToLevel(s, data, 'festung4'); if (flag) s.flags['spinne:schwaeche'] = true; const q = s.objs.find((o) => o.type === 'enemy' && o.kind === 'spinnenkoenigin') || { id: 'q', type: 'enemy', kind: 'spinnenkoenigin', x: 1, y: 1, hp: data.enemies.spinnenkoenigin.hp, dead: false }; if (!s.objs.includes(q)) s.objs.push(q); L.startCombat(s, data, q); return s; };
@@ -3049,7 +3057,7 @@ export async function runTests(data, env = {}) {
     assert(false, 'kein freies Nachbarfeld am Fass');
   });
   await test('0.39.0 Taverne „Zum goldenen Eber“: Fassade, Einrichtung, Zimmer gegen Gold', () => {
-    const tv = data.levels.taverne, mo = data.levels.moorrand;
+    const tv = data.levels.taverne, mo = L.levelFor(data, 'moorrand', { taverne_offen: true });
     eq(tv.name, 'Taverne „Zum goldenen Eber“', 'Name'); assert(data.palettes[tv.palette], 'Palette vorhanden');
     // 0.43.1: Taverne liegt nicht im Raum, nur eine Holztür (look 'tuer') in der Südwand; Eingang auf Boden vor der Wand, Rückweg stimmt
     const st = mo.objects.find((o) => o.id === 'stairs_taverne'); assert(L.cellChar(mo, st.x, st.y) === '.' && st.look === 'tuer' && L.cellChar(mo, st.x, st.y + 1) !== '.' && !mo.map.some((r) => r.includes('h')) && !mo.objects.some((o) => o.id === 'sign_taverne'), 'Holztür in der Wand, keine Fassade im Raum');
