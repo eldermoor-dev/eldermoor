@@ -339,6 +339,7 @@ export function blockerAt(state, x, y) {
     if (o.type === 'lever' || o.type === 'boulder') return o; // boulder = beweglicher Stein (0.19.0)
     if (o.type === 'npc' && !o.gone) return o; // 0.25.0: Begegnungsperson
     if (o.type === 'decor') return o; // 0.28.0: feste Dekoration (Boot)
+    if (o.type === 'barrel' && !o.broken) return o; // 0.44.0: zerschlagbares Fass; Trümmer sind begehbar
     if (o.type === 'merchant' || o.type === 'runestone' || (o.type === 'sign' && o.face == null)) return o; // Tafel mit face hängt an der Wand und versperrt nichts (0.16.8)
     if (o.type === 'enemy' && !o.dead) return o;
   }
@@ -420,6 +421,7 @@ function blockedText(b) {
   if (b.type === 'secret' && b.needs) return 'Die Wand stimmt mit dem Kreuz auf eurer Schatzkarte überein. ◉ untersucht sie.';
   if (b.type === 'secret') return 'Eine Wand. Durch die Fugen läuft ein feiner Riss.';
   if (b.type === 'lever') return b.torch ? 'Eine Wandfackel. Ihre Halterung sitzt locker.' : b.wall ? 'Ein Stein in der Wand sitzt locker.' : 'Ein Wandhebel steht im Weg.';
+  if (b.type === 'barrel') return 'Ein Fass versperrt den Weg. ◉ zerschlägt es.';
   if (b.type === 'decor') return DECOR_TEXT[b.look] || 'Hier steht etwas im Weg.'; // 0.38.1: Einrichtung hieß fälschlich „Gegner“
   if (b.type === 'enemy') return 'Ein Gegner steht im Weg.';
   return 'Hier steht etwas im Weg.';
@@ -765,6 +767,56 @@ function runePlate(state, o) {
   if (want >= plates.length) { ch.runesOk = true; return { msg: 'Die letzte Rune leuchtet auf. Weit im Süden des Raums knackt ein Siegel.', sfx: 'unlock', changed: true, long: true }; }
   return { msg: `Die Platte rastet ein, die Rune glimmt (${want} von ${plates.length}).`, sfx: 'door', changed: true };
 }
+// ---------- Zerschlagbare Fässer (0.44.0) ----------
+// Objekt { type: 'barrel', look: 'fass', broken }: ◉ zerschlägt das Fass, der Inhalt wird gewürfelt (data.barrels.outcomes, Gewichte w):
+// leer · beute (Vorrat/Trank) · gold · ausruestung · monster (Art aus den Gegnern dieses Gebiets, keine Bosse; fehlt eine, zählt es als leer) ·
+// explosion (Falle „blast“) · teleport (zufälliges erreichbares Feld mit Mindestabstand) · gift (Falle „gas“) · wein (Heilung der Wachen).
+function barrelKinds(state, data) { // Gegnerarten des Gebiets ohne Bosse
+  const out = new Set();
+  for (const o of state.objs) if (o.type === 'enemy' && data.enemies[o.kind] && !data.enemies[o.kind].boss && !o.elite) out.add(o.kind);
+  return [...out];
+}
+function reachableFrom(state, data, minDist) {
+  const lvl = getLevel(data, state), w = lvl.map[0].length, h = lvl.map.length, p = state.player;
+  const dist = new Int16Array(w * h).fill(-1), q = [p.y * w + p.x]; dist[q[0]] = 0;
+  const free = (x, y) => x >= 0 && y >= 0 && x < w && y < h && !isWallChar(cellChar(lvl, x, y)) && cellChar(lvl, x, y) !== '~' && !blockerAt(state, x, y);
+  for (let i = 0; i < q.length; i++) { const c = q[i], cx = c % w, cy = (c - cx) / w; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = cx + dx, ny = cy + dy; if (!free(nx, ny) || dist[ny * w + nx] >= 0) continue; dist[ny * w + nx] = dist[c] + 1; q.push(ny * w + nx); } }
+  return q.filter((c) => dist[c] >= minDist).map((c) => ({ x: c % w, y: (c - (c % w)) / w })).filter((c) => !state.objs.some((o) => o.x === c.x && o.y === c.y && (o.type === 'stairs' || o.type === 'exit' || o.type === 'teleport' || o.type === 'plate' || o.type === 'trap')));
+}
+export function smashBarrel(state, data, o) {
+  if (state.combat) return { msg: 'Im Kampf ist dafür keine Zeit.' };
+  const cfg = data.barrels || { outcomes: [{ id: 'leer', w: 1 }] };
+  const total = cfg.outcomes.reduce((n, e) => n + e.w, 0);
+  let r = rand(state) * total, pick = cfg.outcomes[0];
+  for (const e of cfg.outcomes) { r -= e.w; if (r < 0) { pick = e; break; } }
+  let id = pick.id;
+  const kinds = id === 'monster' ? barrelKinds(state, data) : [];
+  if (id === 'monster' && !kinds.length) id = 'leer';
+  const cells = id === 'teleport' ? reachableFrom(state, data, cfg.teleportMin || 6) : [];
+  if (id === 'teleport' && !cells.length) id = 'leer';
+  o.broken = true;
+  const head = 'Ihr schlagt das Fass in Stücke.';
+  if (id === 'leer') return { msg: `${head} Nur Dauben und ein Schwall alter Brühe.`, sfx: 'bump', changed: true };
+  if (id === 'beute') { const e = pick.loot[randInt(state, 0, pick.loot.length - 1)]; return { msg: `${head} Zwischen den Dauben: ${addLoot(state, data, [e])}.`, sfx: 'chest', changed: true }; }
+  if (id === 'gold') { const g = randInt(state, 5, 14) + 2 * partyAvgLevel(state); return { msg: `${head} Im Boden klimpert es: ${addLoot(state, data, [{ gold: g }])}.`, sfx: 'chest', changed: true }; }
+  if (id === 'ausruestung') { const txt = addLoot(state, data, [{ gear: { boost: 0 } }]); return { msg: `${head} Unter einem Lumpen liegt: ${txt}.`, sfx: 'chest', changed: true, long: true }; }
+  if (id === 'monster') {
+    const kind = kinds[randInt(state, 0, kinds.length - 1)], en = data.enemies[kind];
+    Object.assign(o, { type: 'enemy', kind, hp: en.hp, dead: false }); delete o.broken; delete o.look;
+    return { encounter: o, msg: `${head} Etwas springt heraus: ${en.name}!`, sfx: 'hurt', changed: true };
+  }
+  if (id === 'explosion' || id === 'gift') { const msgs = springTrap(state, data, { kind: id === 'explosion' ? 'blast' : 'gas' }); return { msg: msgs.join(' '), sfx: 'hurt', changed: true, long: true }; }
+  if (id === 'teleport') {
+    const c = cells[randInt(state, 0, cells.length - 1)];
+    state.player.x = c.x; state.player.y = c.y;
+    return { msg: `${head} Ein Wirbel aus bunten Funken packt die Gruppe. Als er verfliegt, steht ihr an einem anderen Ort.`, sfx: 'door', changed: true, long: true, teleported: true };
+  }
+  if (id === 'wein') {
+    for (const h of state.heroes) if (h.hp > 0) h.hp = Math.min(h.maxHp, h.hp + Math.ceil((h.maxHp * (cfg.wineHeal || 25)) / 100));
+    return { msg: `${head} Das Fass war voller Wein. Jeder, der noch steht, nimmt einen Schluck: +${cfg.wineHeal || 25} % LP.`, sfx: 'heal', changed: true, long: true };
+  }
+  return { msg: head, changed: true };
+}
 export function interact(state, data, target = null) { // target (0.26.2): Objekt, das aus 2 Feldern Abstand benutzt wird (nur Türen)
   const f = frontCell(state);
   const o = target || blockerAt(state, f.x, f.y);
@@ -792,6 +844,7 @@ export function interact(state, data, target = null) { // target (0.26.2): Objek
     return { msg: 'Hier gibt es nichts zu tun.' };
   }
   if (o.type === 'enemy') return { encounter: o };
+  if (o.type === 'barrel') return smashBarrel(state, data, o); // 0.44.0
   if (o.type === 'npc') return { talk: o.id, sfx: 'ui' };
   if (o.type === 'sign') return signClue(state, o);
   if (o.type === 'runestone') return recClue(state, o.id, 'Runenstein', o.text, { msg: o.text, sfx: 'ui', long: true }); // 0.16.5: Inschrift übersetzt (später Reisenetz)
@@ -2203,6 +2256,7 @@ export function syncStatic(state, data) {
     for (const o of lvl.objects) {
       const i = a.objs.findIndex((x) => x && x.id === o.id);
       if (i < 0) { a.objs.push(freshObj(data, o)); n++; }
+      else if (o.type === 'barrel' && a.objs[i].type === 'decor') { a.objs[i] = freshObj(data, o); n++; } // 0.44.0: altes Dekorationsfass wird zerschlagbar
       else if (STATIC_TYPES.has(o.type) && a.objs[i].type === o.type && JSON.stringify(a.objs[i]) !== JSON.stringify(o)) { a.objs[i] = clone(o); n++; }
       else if (o.type === 'chest' && o.lootV && a.objs[i].type === 'chest' && !a.objs[i].open && a.objs[i].lootV !== o.lootV) { a.objs[i].loot = clone(o.loot); a.objs[i].lootV = o.lootV; n++; } // 0.21.0: neue Beute (z. B. Set-Teile) auch in ungeöffneten Truhen alter Stände
       else if (o.type === 'enemy' && a.objs[i].type === 'enemy' && !a.objs[i].dead && (a.objs[i].x !== o.x || a.objs[i].y !== o.y) && !(a.id === state.levelId && state.player.x === o.x && state.player.y === o.y)) { a.objs[i].x = o.x; a.objs[i].y = o.y; n++; } // 0.23.12: Gegnerplatz (z. B. Hüter am Thron) auch in alten Ständen nachziehen

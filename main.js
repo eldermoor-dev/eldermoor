@@ -11,7 +11,7 @@ import { Sfx } from './audio.js';
 import { startSleepScene } from './scene.js';
 import { store } from './store.js';
 
-const VERSION = '0.43.1';
+const VERSION = '0.44.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -364,6 +364,7 @@ function act(name) {
       if (r.long) toast(r.msg + (r.newNote ? ' – Ins Notizbuch eingetragen.' : ''), 8000);
       if (r.newNote) say('Ins Notizbuch eingetragen.');
       if (r.changed) vib(20);
+      if (r.teleported) snapCam(); // 0.44.0: Fass-Teleport
       renderAll();
       break;
     }

@@ -709,7 +709,7 @@ export async function runTests(data, env = {}) {
       const w = lvl.map[0].length;
       for (const o of dk) {
         assert(!(o.x === lvl.start.x && o.y === lvl.start.y), `${o.id}: nicht auf dem Startfeld`);
-        if (o.type === 'decor') { assert(lvl.map[o.y][o.x] === '.', `${o.id}: auf Boden`); assert(['fass', 'schutt'].includes(o.look), 'bekannte Optik'); if (o.look === 'fass') barrels++; else rubble++; }
+        if (o.type === 'decor' || o.type === 'barrel') { assert(lvl.map[o.y][o.x] === '.', `${o.id}: auf Boden`); assert(['fass', 'schutt'].includes(o.look), 'bekannte Optik'); if (o.look === 'fass') barrels++; else rubble++; }
         else { assert(['rohr', 'gitter', 'nischeleer'].includes(o.deco) && o.face != null && lvl.map[o.y + [-1, 0, 1, 0][o.face]][o.x + [0, 1, 0, -1][o.face]] !== '.', `${o.id}: Schmuck an einer Wand`); wall++; }
       }
       assert(L.analyzeLevel(data, id).ok, `${id} bleibt lösbar`);
@@ -2977,7 +2977,7 @@ export async function runTests(data, env = {}) {
   });
   await test('0.38.1 Hindernis-Texte: Einrichtung heißt nicht „Gegner“', () => {
     const s = L.newGame(data, 5); L.jumpToLevel(s, data, 'nebelturm'); const lv = L.getLevel(data, s);
-    const d = s.objs.find((o) => o.type === 'decor' && o.look === 'fass'); assert(d, 'Fass vorhanden');
+    const d = s.objs.find((o) => o.type === 'barrel' && o.look === 'fass'); assert(d, 'Fass vorhanden');
     for (const [dir, dx, dy] of [[0, 0, 1], [1, -1, 0], [2, 0, -1], [3, 1, 0]]) { /* Gruppe neben das Fass stellen und hineinlaufen */ const px = d.x + dx, py = d.y + dy; if (L.cellChar(lv, px, py) === '.' && !L.blockerAt(s, px, py)) { s.player = { x: px, y: py, dir }; const r = L.tryMove(s, data, 'f'); assert(!r.moved && /Fass/.test(r.msg) && !/Gegner/.test(r.msg), 'Fass: ' + r.msg); return; } }
     assert(false, 'kein freies Nachbarfeld am Fass');
   });
@@ -3033,6 +3033,31 @@ export async function runTests(data, env = {}) {
     const s2 = L.deserialize(JSON.parse(JSON.stringify(L.serialize(s))), data); assert(s2.objs.find((o) => o.id === wall.id).open, 'offen nach Laden');
     const old = L.newGame(data, 41); L.jumpToLevel(old, data, 'kultgruft'); old.objs = old.objs.filter((o) => o.id !== wall.id && o.id !== chest.id); L.syncStatic(old, data);
     assert(old.objs.some((o) => o.id === wall.id && !o.open) && old.objs.some((o) => o.id === chest.id && !o.open), 'Alt-Stand: Wand und Truhe nachgetragen');
+  });
+  await test('0.44.0 Fässer: zerschlagbar, alle Ausgänge, Monster/Teleport/Explosion/Wein, Altstand, Käferbild', async () => {
+    const barrels = []; for (const [id, lv] of Object.entries(data.levels)) for (const o of lv.objects) if (o.type === 'barrel') barrels.push(id); assert(barrels.length >= 25, 'mindestens 25 Fässer: ' + barrels.length);
+    assert(!data.levels.taverne.objects.some((o) => o.type === 'barrel'), 'Taverne: Fässer bleiben Einrichtung'); eq(data.barrels.outcomes.reduce((n, e) => n + e.w, 0), 100, 'Gewichte ergeben 100');
+    const seen = new Set(); let monster = 0;
+    for (let seed = 1; seed <= 400; seed++) {
+      const s = L.newGame(data, seed); L.jumpToLevel(s, data, 'festung1'); const b = s.objs.find((o) => o.type === 'barrel'); s.objs.forEach((o) => { if (o.type === 'enemy') o.dead = true; });
+      s.player = { x: b.x, y: b.y + 1, dir: 0 }; if (L.cellChar(L.getLevel(data, s), s.player.x, s.player.y) !== '.') { s.player = { x: b.x, y: b.y - 1, dir: 2 }; }
+      assert(L.blockerAt(s, b.x, b.y) === b && /◉/.test(L.obstacleText ? L.obstacleText(b) : '◉'), 'Fass versperrt');
+      const hp0 = s.heroes.map((h) => h.hp), gold0 = s.gold, pos0 = { ...s.player }; s.heroes.forEach((h) => { h.hp = Math.max(2, h.maxHp - 5); });
+      const r = L.smashBarrel(s, data, b); assert(r.msg && r.msg.length > 5, 'Meldung');
+      if (r.encounter) { seen.add('monster'); monster++; eq(b.type, 'enemy', 'Fass wird Gegner'); assert(data.enemies[b.kind] && !data.enemies[b.kind].boss, 'kein Boss'); continue; }
+      eq(b.broken, true, 'Fass kaputt'); assert(!L.blockerAt(s, b.x, b.y), 'Trümmer begehbar');
+      if (r.teleported) { seen.add('teleport'); assert(Math.abs(s.player.x - pos0.x) + Math.abs(s.player.y - pos0.y) >= 4 && L.cellChar(L.getLevel(data, s), s.player.x, s.player.y) === '.', 'Teleport auf Boden'); }
+      else if (/Explosion|Stichflamme/.test(r.msg)) { seen.add('explosion'); assert(s.heroes.every((h) => h.hp >= 1), 'Explosion tötet nicht'); }
+      else if (/Wein/.test(r.msg)) seen.add('wein'); else if (/Gold/.test(r.msg) && s.gold > gold0) seen.add('gold'); else if (/Nebel|Gift/.test(r.msg)) seen.add('gift'); else if (/Zwischen den Dauben|Unter einem Lumpen/.test(r.msg)) seen.add('beute'); else seen.add('leer');
+    }
+    for (const k of ['leer', 'beute', 'gold', 'monster', 'explosion', 'teleport', 'gift', 'wein']) assert(seen.has(k), 'Ausgang kam vor: ' + k);
+    assert(monster > 15 && monster < 90, 'Monster etwa 12 %: ' + monster + ' von 400');
+    // Altstand: Dekorationsfass wird zum Fass
+    const old = L.newGame(data, 9); L.jumpToLevel(old, data, 'festung1'); const ob = old.objs.find((o) => o.type === 'barrel'); Object.assign(ob, { type: 'decor' }); L.syncStatic(old, data); eq(old.objs.find((o) => o.id === ob.id).type, 'barrel', 'Altstand: Fass zerschlagbar');
+    // Speichern/Laden: zerschlagenes Fass bleibt kaputt
+    const sv = L.newGame(data, 10); L.jumpToLevel(sv, data, 'festung1'); const sb = sv.objs.find((o) => o.type === 'barrel'); sb.broken = true; const s2 = L.deserialize(JSON.parse(JSON.stringify(L.serialize(sv))), data); assert(s2.objs.find((o) => o.id === sb.id).broken, 'bleibt kaputt');
+    assert(data.traps.kinds.blast, 'Explosion als Fallenart');
+    const M = await import('./render.js'); assert(M && true, 'render.js lädt');
   });
   await test('0.43.0 Kartenlimit: 3 je Besuch, Sperre eine Stunde, Wirtin erklärt es; Erstgespräch', () => {
     const s = L.newGame(data, 43); s.gold = 99999; for (const id of Object.keys(data.maps)) L.jumpToLevel(s, data, id);

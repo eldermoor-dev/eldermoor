@@ -3,6 +3,10 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.44.0 (25.11.2026, headless)
+- Fässer in den Dungeons lassen sich mit ◉ zerschlagen. Inhalt zufällig: leer, Proviant oder Trank, Gold, Ausrüstung, Monster (Kampf), Explosion, Teleport, Giftnebel oder Heilwein. Taverne-Fässer bleiben Einrichtung.
+- Erzkäfer neu gezeichnet: Dornenpanzer, vier rote Augen, große Zangen, kräftige Beine.
+
 ## 0.43.1 (25.11.2026, headless)
 - Taverne außen: keine Holzfassade im Raum mehr, nur noch eine Tür in der Wand mit Holztäfelung und Namensschild „GOLDENER EBER“.
 

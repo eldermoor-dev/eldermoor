@@ -4854,21 +4854,21 @@
         },
         {
           "id": "dk_nebelturm_f1",
-          "type": "decor",
+          "type": "barrel",
           "x": 16,
           "y": 6,
           "look": "fass"
         },
         {
           "id": "dk_nebelturm_f2",
-          "type": "decor",
+          "type": "barrel",
           "x": 19,
           "y": 8,
           "look": "fass"
         },
         {
           "id": "dk_nebelturm_f3",
-          "type": "decor",
+          "type": "barrel",
           "x": 21,
           "y": 5,
           "look": "fass"
@@ -5328,28 +5328,28 @@
         },
         {
           "id": "dk_festung1_f1",
-          "type": "decor",
+          "type": "barrel",
           "x": 27,
           "y": 15,
           "look": "fass"
         },
         {
           "id": "dk_festung1_f2",
-          "type": "decor",
+          "type": "barrel",
           "x": 15,
           "y": 16,
           "look": "fass"
         },
         {
           "id": "dk_festung1_f3",
-          "type": "decor",
+          "type": "barrel",
           "x": 9,
           "y": 14,
           "look": "fass"
         },
         {
           "id": "dk_festung1_f4",
-          "type": "decor",
+          "type": "barrel",
           "x": 21,
           "y": 11,
           "look": "fass"
@@ -6012,42 +6012,42 @@
         },
         {
           "id": "dk_festung2_f1",
-          "type": "decor",
+          "type": "barrel",
           "x": 34,
           "y": 6,
           "look": "fass"
         },
         {
           "id": "dk_festung2_f2",
-          "type": "decor",
+          "type": "barrel",
           "x": 35,
           "y": 6,
           "look": "fass"
         },
         {
           "id": "dk_festung2_f3",
-          "type": "decor",
+          "type": "barrel",
           "x": 47,
           "y": 11,
           "look": "fass"
         },
         {
           "id": "dk_festung2_f4",
-          "type": "decor",
+          "type": "barrel",
           "x": 43,
           "y": 4,
           "look": "fass"
         },
         {
           "id": "dk_festung2_f5",
-          "type": "decor",
+          "type": "barrel",
           "x": 15,
           "y": 33,
           "look": "fass"
         },
         {
           "id": "dk_festung2_f6",
-          "type": "decor",
+          "type": "barrel",
           "x": 37,
           "y": 12,
           "look": "fass"
@@ -6880,49 +6880,49 @@
         },
         {
           "id": "dk_festung3_f1",
-          "type": "decor",
+          "type": "barrel",
           "x": 25,
           "y": 19,
           "look": "fass"
         },
         {
           "id": "dk_festung3_f2",
-          "type": "decor",
+          "type": "barrel",
           "x": 35,
           "y": 29,
           "look": "fass"
         },
         {
           "id": "dk_festung3_f3",
-          "type": "decor",
+          "type": "barrel",
           "x": 18,
           "y": 20,
           "look": "fass"
         },
         {
           "id": "dk_festung3_f4",
-          "type": "decor",
+          "type": "barrel",
           "x": 43,
           "y": 15,
           "look": "fass"
         },
         {
           "id": "dk_festung3_f5",
-          "type": "decor",
+          "type": "barrel",
           "x": 25,
           "y": 25,
           "look": "fass"
         },
         {
           "id": "dk_festung3_f6",
-          "type": "decor",
+          "type": "barrel",
           "x": 34,
           "y": 20,
           "look": "fass"
         },
         {
           "id": "dk_festung3_f7",
-          "type": "decor",
+          "type": "barrel",
           "x": 23,
           "y": 15,
           "look": "fass"
@@ -7242,21 +7242,21 @@
         },
         {
           "id": "dk_moorsee_f1",
-          "type": "decor",
+          "type": "barrel",
           "x": 18,
           "y": 11,
           "look": "fass"
         },
         {
           "id": "dk_moorsee_f2",
-          "type": "decor",
+          "type": "barrel",
           "x": 5,
           "y": 3,
           "look": "fass"
         },
         {
           "id": "dk_moorsee_f3",
-          "type": "decor",
+          "type": "barrel",
           "x": 6,
           "y": 3,
           "look": "fass"
@@ -7504,7 +7504,7 @@
         },
         {
           "id": "m_fass1",
-          "type": "decor",
+          "type": "barrel",
           "x": 8,
           "y": 8,
           "look": "fass",
@@ -9285,14 +9285,14 @@
         },
         {
           "id": "dk_festung5_f1",
-          "type": "decor",
+          "type": "barrel",
           "x": 13,
           "y": 32,
           "look": "fass"
         },
         {
           "id": "dk_festung5_f2",
-          "type": "decor",
+          "type": "barrel",
           "x": 40,
           "y": 26,
           "look": "fass"
@@ -9313,7 +9313,7 @@
         },
         {
           "id": "dk_festung5_f3",
-          "type": "decor",
+          "type": "barrel",
           "x": 22,
           "y": 51,
           "look": "fass"
@@ -10238,7 +10238,7 @@
         },
         {
           "id": "dk_festung6_f1",
-          "type": "decor",
+          "type": "barrel",
           "x": 7,
           "y": 28,
           "look": "fass"
@@ -10259,7 +10259,7 @@
         },
         {
           "id": "dk_festung6_f2",
-          "type": "decor",
+          "type": "barrel",
           "x": 67,
           "y": 44,
           "look": "fass"
@@ -12499,6 +12499,12 @@
         "rows": "all",
         "mp": 3,
         "text": "Eine Rune flammt unter euren Füßen auf."
+      },
+      "blast": {
+        "name": "Explosion",
+        "pct": 20,
+        "rows": "all",
+        "text": "Das Fass birst mit einem Knall: Pulver! Eine Stichflamme fährt über die Gruppe."
       }
     }
   },
@@ -14121,5 +14127,65 @@
       "Ihr kennt ihre Eigenheiten",
       "Ihr schlagt sie im Schlaf"
     ]
+  },
+  "barrels": {
+    "outcomes": [
+      {
+        "id": "leer",
+        "w": 26
+      },
+      {
+        "id": "beute",
+        "w": 22,
+        "loot": [
+          {
+            "item": "ration",
+            "n": 1
+          },
+          {
+            "item": "potion",
+            "n": 1
+          },
+          {
+            "item": "potion",
+            "n": 2
+          },
+          {
+            "item": "ration",
+            "n": 2
+          }
+        ]
+      },
+      {
+        "id": "gold",
+        "w": 14
+      },
+      {
+        "id": "ausruestung",
+        "w": 4
+      },
+      {
+        "id": "monster",
+        "w": 12
+      },
+      {
+        "id": "explosion",
+        "w": 8
+      },
+      {
+        "id": "teleport",
+        "w": 5
+      },
+      {
+        "id": "gift",
+        "w": 5
+      },
+      {
+        "id": "wein",
+        "w": 4
+      }
+    ],
+    "teleportMin": 6,
+    "wineHeal": 25
   }
 }
