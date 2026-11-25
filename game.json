@@ -3417,7 +3417,7 @@
       "name": "Siedlung am Moorrand",
       "palette": "moor",
       "map": [
-        "####T###T###",
+        "####T###T#T#",
         "#.....m....#",
         "#..........#",
         "#..........#",
@@ -3540,6 +3540,26 @@
           "x": 1,
           "y": 4,
           "look": "fass"
+        },
+        {
+          "id": "w_m_banner1",
+          "type": "sign",
+          "x": 2,
+          "y": 1,
+          "face": 0,
+          "style": "banner",
+          "title": "MARKT|AM MOOR",
+          "text": "Markt am Moor. Hedda handelt mit allem, was im Moor gebraucht wird."
+        },
+        {
+          "id": "w_m_banner2",
+          "type": "sign",
+          "x": 7,
+          "y": 1,
+          "face": 0,
+          "style": "banner",
+          "title": "HEDDAS|WAREN",
+          "text": "Hedda handelt mit Tränken, Proviant und Ausrüstung."
         },
         {
           "id": "d_m_vase",

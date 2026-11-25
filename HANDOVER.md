@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.49.7 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.49.8 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1889,3 +1889,7 @@ Auftrag aus den Vorschlägen vom 25.11.: **A** Lehrpfad ohne Belehrung, **C** Ge
 - Nutzer 22:59 (Testliste, q-stairs-fix ✓): Umsetzen. `tryMove` (logic.js): Wand voraus + `rel==='f'` + Treppe auf dem eigenen Feld + Richtung in `passEntryDirs` → Ergebnis `stairsHere`, main.js `doMove` löst das Stairs-Ereignis aus. Entscheidung 0.47.6 damit auf Wunsch des Nutzers erweitert (Wechsel auch vom Treppenfeld aus, nur beim geraden „Vor“ zur Treppenwand). Tests 183 grün (Test zu 0.47.6 angepasst).
 - Nutzer 23:00: „Weiter bauen. Erstmal keine weiteren Tests.“ → keine neue Testliste zu 0.49.6/0.49.7.
 - Offen: Schrat im Kampfbild (siehe 0.49.6, Screenshot nötig), Siedlung Licht/Wandschmuck, Plan 0.50.0.
+
+## 0.49.8 (25.11.2026; Bild headless gerendert, nicht auf Gerät getestet): Siedlung Licht und Wandschmuck
+- Nutzer 23:04 „Weiter“; Vorschlag aus dem Chat (Licht, Wandschmuck) umgesetzt, Gestaltung vom Assistenten (delegiert). Daten (game.json `moorrand`): Karte Zeile 0 `####T###T#T#` (Fackel bei x=10 neben Hedda), Wandschilder `w_m_banner1` (2/1, „MARKT|AM MOOR“) und `w_m_banner2` (7/1, „HEDDAS|WAREN“), Stil banner, face 0. Schildtext zu Heddas Sortiment mit game.json geprüft (Tränke, Ration, Ausrüstung). Tests 183 grün. Banner sind Schilder (`text` Pflicht), daher mit Titel statt Symbol.
+- Offen: Schrat im Kampfbild (Screenshot nötig, Befund bei 0.49.6), Plan 0.50.0 Testgewölbe (neuer Chat), Siedlung wächst (Schmied, Aushangbrett, Alchemistenküche).

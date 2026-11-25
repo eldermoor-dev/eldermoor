@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.49.8 (25.11.2026, headless, nicht auf Gerät getestet)
+- Siedlung: eine dritte Wandfackel (rechts von Hedda), zwei Wandbanner „MARKT AM MOOR“ und „HEDDAS WAREN“ an der Rückwand. Werte unverändert.
+
 ## 0.49.7 (25.11.2026, headless, nicht auf Gerät getestet)
 - Treppen: „Vor“ auf dem Treppenfeld mit Blick zur Treppenwand löst den Gebietswechsel aus (Nutzer-Freigabe, ändert 0.47.6). Seitlich und zurück bleibt Wand. Test angepasst.
 
