@@ -11,7 +11,7 @@ import { Sfx } from './audio.js';
 import { startSleepScene } from './scene.js';
 import { store } from './store.js';
 
-const VERSION = '0.47.16';
+const VERSION = '0.47.17';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -393,7 +393,11 @@ function doMove(rel) {
     (r.events || []).forEach(onEvent);
     if (r.luck) { say(r.luck); toast(r.luck, 4500); S.sfx.play('chest'); vib(20); } // Glücksamulett (0.28.0)
     if (r.notes) { S.held = []; r.notes.forEach((t) => { say(t); toast(t, 5000); }); S.sfx.play('warn'); vib([40, 40, 40]); S.nextAllowed = performance.now() + 500; }
-    if (r.encounter) startCombatUI(r.encounter, r.ambush);
+    if (r.encounter && (r.events || []).some((e) => e.type === 'scene')) { // 0.47.17: erst Auftritt (Erscheinen, Albtraum), dann Kampf
+      S.held = []; S.queued = null; S.lock = true;
+      const enc = r.encounter;
+      setTimeout(() => { S.lock = false; if (S.game && !S.game.combat) startCombatUI(enc, false); }, 1700);
+    } else if (r.encounter) startCombatUI(r.encounter, r.ambush);
   } else if (r.encounter) startCombatUI(r.encounter);
   else if (r.trapWarn) { S.held = []; S.queued = null; S.nextAllowed = performance.now() + 700; say(r.msg); toast(r.msg, 5000); S.sfx.play('warn'); }
   else if (rel === 'f' && r.blocker && ['door', 'chest', 'lever', 'gate', 'secret'].includes(r.blocker.type) && !r.msg) { // gegen Tür, Truhe, Hebel laufen = benutzen
@@ -437,6 +441,7 @@ async function onEvent(ev) {
     return;
   }
   if (ev.type === 'teleport') { S.held = []; S.queued = null; snapCam(); if (!ev.hidden) { say(ev.msg); toast(ev.msg, 3000); S.sfx.play('sting'); flash(); vib(40); } renderAll(); return; } // 0.23.0: versteckte Teleporter ohne Meldung – nur die Umgebung und der Kompass verraten es
+  if (ev.type === 'scene') { S.held = []; S.queued = null; syncLook(); flash(); S.sfx.play('sting'); vib([90, 50, 90]); say(ev.text); showEvent(ev.title, ev.text, 4600); renderAll(); return; } // 0.47.17: Auftritt (Albtraum)
   if (ev.type === 'illusion') { say(ev.msg); toast(ev.msg, 4000); S.sfx.play('sting'); vib(30); renderAll(); return; } // 0.22.0: Illusionswand durchschritten
   if (ev.type === 'mech') { // Stein geschoben / Druckplatte
     S.held = []; S.nextAllowed = performance.now() + 350;
@@ -744,7 +749,8 @@ function renderCompass() { const d = $('#compass-dial'); if (d && S.game) { S.co
 function nearestTurns(prev, dir) { const base = Math.round(prev / 4) * 4; let best = base + dir, bd = Math.abs(best - prev); for (const c of [base - 4 + dir, base + 4 + dir]) if (Math.abs(c - prev) < bd) { best = c; bd = Math.abs(c - prev); } return best; }
 // 0.47.13: Lesefeld mit echter Schrift für Schild/Türtitel in Blickrichtung (unabhängig von Rasterauflösung und Blickwinkel)
 function updateReadHint() { const el = $('#readhint'); if (!el || !S.game) return; const r = S.game.combat || (S.settings && S.settings.readHint === false) ? null : readHint(S.game, S.data); if (!r) { if (!el.hidden) el.hidden = true; return; } if (el.textContent !== r.text) el.textContent = r.text; if (el.hidden) el.hidden = false; }
-function renderAll() { updateReadHint(); renderCompass(); announceTurn(); renderParty(); renderCombat(); renderLog(); updateInvBadge(); updateTalBadge(); }
+function syncLook() { const l = getLevel(S.data, S.game); if (l !== S.lvl) { S.lvl = l; S.rc.setPalette(S.data.palettes[l.palette]); } } // 0.47.17: Gebietsumbau (Albtraum-Palette) folgt der Marke im Spielstand
+function renderAll() { syncLook(); updateReadHint(); renderCompass(); announceTurn(); renderParty(); renderCombat(); renderLog(); updateInvBadge(); updateTalBadge(); }
 // 0.22.1: Punkt am Inventar-Knopf, solange etwas Neues drin ist
 function updateInvBadge() { const b = document.querySelector('[data-a="inv"]'); if (b && S.game) b.classList.toggle('hasnew', Object.keys(S.game.inv).some((k) => isNew(S.game, k))); }
 // 0.23.2 (Nutzer): lila Punkt am Charakter-Knopf, solange ein Held freie Talentpunkte hat
@@ -1468,7 +1474,7 @@ function mapSymKind(o) {
   if (o.type === 'chest') return o.open ? 'chestOpen' : 'chest';
   if (o.type === 'gate') return o.open ? 'gateOpen' : 'gate';
   if (o.type === 'lever') return o.used ? 'leverUsed' : 'lever';
-  if (o.type === 'enemy') return o.dead ? null : 'enemy';
+  if (o.type === 'enemy') return o.dead || o.lurk ? null : 'enemy';
   if (o.type === 'plate') return o.down ? 'plateDown' : 'plate';
   if (o.type === 'boulder') return 'boulder';
   if (o.type === 'teleport') return o.look === 'hidden' && !o.used ? null : o.open ? 'teleOff' : 'tele';

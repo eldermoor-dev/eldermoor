@@ -3252,7 +3252,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
     else if (o.type === 'boulder') out.push({ x: o.x, y: o.y, tex: tex.sprites.boulder, scale: 0.78 });
     else if (o.type === 'trap') { if (!o.disarmed) out.push({ x: o.x, y: o.y, tex: o.sprung ? tex.sprites['trapSprung_' + o.kind] || tex.sprites.trapSprung : o.spotted ? tex.sprites.trapSeen : tex.sprites.trapFaint, scale: 1 }); }
     else if (o.type === 'chest') out.push({ x: o.x, y: o.y, tex: chestTex(tex, o), scale: CHEST_SCALE });
-    else if (o.type === 'enemy' && !o.dead) {
+    else if (o.type === 'enemy' && !o.dead && !o.lurk) {
       const tot = Array.isArray(o.kinds) ? Math.min(3, o.kinds.length) : 1;
       const av = alive && alive[o.id] != null ? alive[o.id] : null, kindList = Array.isArray(av) ? av : null;
       const n = kindList ? kindList.length : av != null ? av : tot; // Gruppe: eine Gestalt je lebendem Gegner, nebeneinander

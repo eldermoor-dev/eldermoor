@@ -371,7 +371,7 @@ export function blockerAt(state, x, y) {
     if (o.type === 'decor') return o; // 0.28.0: feste Dekoration (Boot)
     if (o.type === 'barrel' && !o.broken) return o; // 0.44.0: zerschlagbares Fass; Trümmer sind begehbar
     if (o.type === 'merchant' || o.type === 'runestone' || (o.type === 'sign' && o.face == null)) return o; // Tafel mit face hängt an der Wand und versperrt nichts (0.16.8)
-    if (o.type === 'enemy' && !o.dead) return o;
+    if (o.type === 'enemy' && !o.dead && !o.lurk) return o; // 0.47.17: verborgener Gegner (lurk) steht noch nicht im Raum
   }
   return null;
 }
@@ -401,7 +401,7 @@ export function spottedEnemy(state, data) {
   const blocked = (x, y) => isWallChar(cellChar(lvl, x, y)) || at(x, y).some((o) => (o.type === 'door' && !o.open) || (o.type === 'secret' && !o.open) || (o.type === 'lever' && o.wall) || (o.type === 'illusion' && !o.found));
   let best = null, bd = 99;
   for (const o of state.objs) {
-    if (o.type !== 'enemy' || o.dead) continue;
+    if (o.type !== 'enemy' || o.dead || o.lurk) continue;
     const dx = o.x - p.x, dy = o.y - p.y, dist = Math.abs(dx) + Math.abs(dy); // Feldabstand in Schritten (0.16.15: nur gerade Nachbarfelder, nie schräg – sonst steht der Gegner außerhalb des Bilds)
     if (dist === 0 || dist > range || dist >= bd) continue;
     const ax = p.x + 0.5, ay = p.y + 0.5, n = Math.ceil(Math.hypot(dx, dy) * 10);
@@ -511,10 +511,34 @@ export function tryMove(state, data, rel) {
   } else if (ex) res.events.push({ type: 'exitAgain', id: ex.id }); // 0.16.4: erneutes Betreten zeigt einen kurzen Hinweis
   const stairs = state.objs.find((o) => o.type === 'stairs' && o.x === nx && o.y === ny);
   if (stairs && rel === 'f' && passEntryDirs(lvl, stairs).includes(d)) { res.events.push({ type: 'stairs', id: stairs.id }); return res; } // 0.46.0: nur frontales Betreten löst den Gebietswechsel aus, seitliches Vorbeigehen nicht
+  const scn = sceneCheck(state, data);
+  if (scn) { res.events.push({ type: 'scene', id: scn.id, title: scn.title, text: scn.text }); res.encounter = scn.enemy; res.ambush = false; return res; }
   res.encounter = enemyInFront(state);
   if (!res.encounter) { const sp = spottedEnemy(state, data); if (sp) { res.encounter = sp.enemy; res.ambush = sp.ambush; } }
   if (!res.encounter) { const notes = [...scanTraps(state, data), ...scanSecrets(state, data), ...scanBuried(state, data), ...scanLuck(state, data)]; if (notes.length) res.notes = notes; }
   return res;
+}
+
+// ---------- Auftritt in einem Gebiet (0.47.17) ----------
+// levels.<id>.scene = { id, enemy: <Objekt-ID>, zone: {x1,y1,x2,y2}, title, text, endMsg }; der Gegner trägt in game.json `lurk: true` (unsichtbar, nicht entdeckbar, versperrt nichts).
+// Betritt die Gruppe die Zone, erscheint er 2 (sonst 3, 1) Felder vor ihr (sonst seitlich/hinten), Marke state.flags[scene.id] = true (Gebietsumbau `alt` mit dieser Marke), dann beginnt der Kampf.
+// Nach dem Sieg endet der Albtraum: Marke false (finishVictory).
+const SC_DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+export function sceneCheck(state, data) {
+  const lvl = getLevel(data, state), sc = lvl && lvl.scene;
+  if (!sc || state.combat) return null;
+  const en = state.objs.find((o) => o.id === sc.enemy && o.type === 'enemy');
+  if (!en || en.dead || !en.lurk) return null;
+  const p = state.player, z = sc.zone;
+  if (p.x < z.x1 || p.x > z.x2 || p.y < z.y1 || p.y > z.y2) return null;
+  const clearLine = (d, k) => { for (let j = 1; j <= k; j++) { const x = p.x + SC_DIRS[d][0] * j, y = p.y + SC_DIRS[d][1] * j; if (cellChar(lvl, x, y) !== '.' || (j < k && blockerAt(state, x, y)) || (j === k && !freeFor(state, data, x, y))) return false; } return true; };
+  let spot = null;
+  for (const d of [p.dir, (p.dir + 1) % 4, (p.dir + 3) % 4, (p.dir + 2) % 4]) { for (const k of [2, 3, 1]) if (clearLine(d, k)) { spot = { x: p.x + SC_DIRS[d][0] * k, y: p.y + SC_DIRS[d][1] * k }; break; } if (spot) break; }
+  if (!spot) return null;
+  en.x = spot.x; en.y = spot.y; en.lurk = false;
+  state.flags[sc.id] = true;
+  state.flags['intro:' + en.id] = true; // der Auftritt ersetzt die Boss-Ansage
+  return { type: 'scene', id: sc.id, title: sc.title, text: sc.text, enemy: en };
 }
 
 // ---------- Druckplatten und bewegliche Steine (0.19.0) ----------
@@ -1575,7 +1599,7 @@ export function formatErrorLog(list, meta = '') {
 export function restThreat(state, data, cfg = data.rest || {}) {
   const lvl = getLevel(data, state), w = lvl.map[0].length, h = lvl.map.length;
   const D = cfg.enemyDistance == null ? 10 : cfg.enemyDistance;
-  const foes = state.objs.filter((o) => o.type === 'enemy' && !o.dead && o.x >= 0 && o.y >= 0 && o.x < w && o.y < h);
+  const foes = state.objs.filter((o) => o.type === 'enemy' && !o.dead && !o.lurk && o.x >= 0 && o.y >= 0 && o.x < w && o.y < h);
   if (!foes.length) return { near: 0, seen: false };
   const at = (x, y) => state.objs.filter((o) => o.x === x && o.y === y);
   const pathBlocked = (x, y) => isWallChar(cellChar(lvl, x, y)) || at(x, y).some((o) => (o.type === 'door' && !o.open && o.locked) || ((o.type === 'gate' || o.type === 'secret') && !o.open) || (o.type === 'lever' && o.wall));
@@ -1865,7 +1889,7 @@ function finishVictory(state, data, msgs) {
     state.kills = state.kills || {}; state.kills[e.kind] = (state.kills[e.kind] || 0) + 1; // 0.40.0: Abschüsse für Steckbriefe
     { const ms = masteryStep(state, data, e.kind); if (ms) { xp += ms.xp; msgs.push(ms.msg); } } // 0.41.0: Meisterschaft im Bestiarium
     const obj = state.objs.find((o) => o.id === e.objId);
-    if (obj) { obj.dead = true; obj.hp = 0; }
+    if (obj) { obj.dead = true; obj.hp = 0; const sc = getLevel(data, state).scene; if (sc && sc.enemy === obj.id && state.flags[sc.id]) { state.flags[sc.id] = false; if (sc.endMsg) msgs.push(sc.endMsg); } } // 0.47.17: Albtraum endet mit dem Sieg
   }
   rollTrophies(state, data, c.enemies.filter((x) => !x.fled), msgs);
   const dg = diffPct(state, data, 'gold'), dx = diffPct(state, data, 'xp');
@@ -2403,6 +2427,7 @@ export function syncStatic(state, data) {
       else if ((o.type === 'barrel' || o.type === 'npc') && a.objs[i].type === 'decor') { a.objs[i] = freshObj(data, o); n++; } // 0.46.3: Taverne – Gäste und Kamin sind ansprechbar // 0.44.0: altes Dekorationsfass wird zerschlagbar
       else if (STATIC_TYPES.has(o.type) && a.objs[i].type === o.type && JSON.stringify(a.objs[i]) !== JSON.stringify(o)) { a.objs[i] = clone(o); n++; }
       else if (o.type === 'chest' && o.lootV && a.objs[i].type === 'chest' && !a.objs[i].open && a.objs[i].lootV !== o.lootV) { a.objs[i].loot = clone(o.loot); a.objs[i].lootV = o.lootV; n++; } // 0.21.0: neue Beute (z. B. Set-Teile) auch in ungeöffneten Truhen alter Stände
+      else if (o.type === 'enemy' && o.lurk && a.objs[i].type === 'enemy' && !a.objs[i].dead && a.objs[i].lurk == null && !(state.combat && state.combat.enemies.some((e) => e.objId === o.id)) && !(lvl.scene && lvl.scene.enemy === o.id && state.flags[lvl.scene.id])) { a.objs[i].lurk = true; a.objs[i].x = o.x; a.objs[i].y = o.y; n++; } // 0.47.17: alter Stand mit lebendem Schrat bekommt den Auftritt
       else if (o.type === 'enemy' && a.objs[i].type === 'enemy' && !a.objs[i].dead && (a.objs[i].x !== o.x || a.objs[i].y !== o.y) && !(a.id === state.levelId && state.player.x === o.x && state.player.y === o.y)) { a.objs[i].x = o.x; a.objs[i].y = o.y; n++; } // 0.23.12: Gegnerplatz (z. B. Hüter am Thron) auch in alten Ständen nachziehen
       else if (!STATIC_TYPES.has(o.type)) for (const k of o.type === 'chest' ? ['title', 'style', 'torch', 'msg', 'look', 'mat', 'x', 'y'] : o.type === 'npc' || o.type === 'door' || (o.type === 'buried' && !a.objs[i].dug) ? ['title', 'style', 'torch', 'msg', 'x', 'y', 'sym', 'textless', 'autoClose', 'look', 'font'] : ['title', 'style', 'torch', 'msg']) if (o[k] !== undefined && a.objs[i][k] !== o[k] && !(k === 'look' && a.objs[i].lookSet)) { a.objs[i][k] = o[k]; n++; } // 0.31.9: Truhenstufe (look) nachziehen // 0.16.14: Beschriftung/Stil von Türen u. a. nachziehen (alte Stände ohne `style` zeigten einen Zufallsstil)
     }

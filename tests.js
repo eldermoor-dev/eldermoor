@@ -2974,6 +2974,41 @@ export async function runTests(data, env = {}) {
       const dd = (c === '→' ? o.face + 1 : o.face + 3) % 4; assert(L.cellChar(lv, o.x + D[dd][0], o.y + D[dd][1]) === '.', `${id}: ${o.id} Pfeil ${c} zeigt in eine Wand`);
     }
   });
+  await test('0.47.17 Moorschrat-Auftritt: verborgen, erscheint beim Betreten der Lichtung 1–3 Felder vor der Gruppe, Albtraum-Palette, endet nach dem Sieg', () => {
+    assert(data.palettes.alptraum && Object.keys(data.palettes.alptraum).length === Object.keys(data.palettes.moor).length, 'Palette alptraum wie moor');
+    const lv0 = data.levels.moorlichtung, sc = lv0.scene; assert(sc && lv0.alt && lv0.alt.flag === sc.id && lv0.alt.patch.palette === 'alptraum', 'scene/alt in game.json');
+    const base = () => { const s = L.newGame(data, 91); L.jumpToLevel(s, data, 'moorlichtung'); return s; };
+    { // verborgen: kein Gegner sichtbar, nicht entdeckbar, versperrt nichts, keine Rast-Sperre
+      const s = base(), en = s.objs.find((o) => o.id === 'en_schrat'); assert(en && en.lurk === true && !en.dead, 'Schrat verborgen');
+      s.player = { x: en.x - 1, y: en.y, dir: 1 }; assert(!L.spottedEnemy(s, data), 'nicht entdeckbar'); assert(!L.blockerAt(s, en.x, en.y), 'versperrt nichts');
+      const spr = buildSprites(s.objs, makeTextures(1), 0, 0); assert(!spr.some((q) => q.x === en.x && q.y === en.y), 'kein Sprite');
+      assert(L.getLevel(data, s).palette === 'moor', 'Palette vorher moor');
+    }
+    let n = 0;
+    for (let y = sc.zone.y1; y <= sc.zone.y2; y++) for (let x = sc.zone.x1; x <= sc.zone.x2; x++) for (let d = 0; d < 4; d++) { // jede Zonenzelle, jede Blickrichtung
+      const s = base(), lv = L.getLevel(data, s); if (L.cellChar(lv, x, y) !== '.' || s.objs.some((o) => o.x === x && o.y === y && o.type !== 'sign')) continue;
+      s.player = { x, y, dir: d }; const ev = L.sceneCheck(s, data); n++;
+      assert(ev && ev.type === 'scene' && ev.title && ev.text, `Auftritt bei ${x},${y} dir ${d}`);
+      const en = ev.enemy, dist = Math.abs(en.x - x) + Math.abs(en.y - y); assert(dist >= 1 && dist <= 3 && (en.x === x || en.y === y), `Abstand ${dist} bei ${x},${y}`);
+      assert(!en.lurk && s.flags[sc.id] === true && L.getLevel(data, s).palette === 'alptraum', 'sichtbar, Marke, Palette');
+      assert(L.cellChar(lv, en.x, en.y) === '.' && !s.objs.some((o) => o !== en && o.x === en.x && o.y === en.y && ['stairs', 'chest', 'exit'].includes(o.type)), 'Erscheinungsfeld frei');
+      assert(!L.sceneCheck(s, data), 'nur einmal');
+    }
+    assert(n > 60, 'Zonenzellen geprüft: ' + n);
+    { // über tryMove von Westen: Auftritt + Kampf (ohne Hinterhalt), Sieg beendet den Albtraum
+      const s = base(); s.player = { x: 2, y: 7, dir: 1 }; let r = null;
+      for (let i = 0; i < 6 && !(r && r.encounter); i++) r = L.tryMove(s, data, 'f');
+      assert(r && r.encounter && r.encounter.id === 'en_schrat' && r.ambush === false && r.events.some((e) => e.type === 'scene'), 'tryMove löst Auftritt aus');
+      assert(s.flags['intro:en_schrat'] === true, 'Boss-Ansage ersetzt');
+      L.startCombat(s, data, r.encounter, { ambush: false }); assert(playOut(s) === 'victory', 'Sieg');
+      assert(s.flags[sc.id] === false && L.getLevel(data, s).palette === 'moor', 'Albtraum endet');
+    }
+    { // alter Stand: lebender, sichtbarer Schrat wird verborgen; toter bleibt tot; ausgelöster Auftritt wird nicht erneut verborgen
+      const s = base(), en = s.objs.find((o) => o.id === 'en_schrat'); delete en.lurk; en.x = 9; en.y = 9;
+      L.syncStatic(s, data); assert(en.lurk === true && en.x === 14 && en.y === 2, 'alter Stand: verborgen');
+      const t = base(), e2 = t.objs.find((o) => o.id === 'en_schrat'); delete e2.lurk; e2.dead = true; L.syncStatic(t, data); assert(!e2.lurk, 'toter bleibt');
+    }
+  });
   await test('0.47.16 Lesefeld nennt die Richtung an Wegweisern (HINAB: KULT-GRUFT)', () => {
     const s = L.newGame(data, 83); L.jumpToLevel(s, data, 'moorpfad');
     const w = s.objs.find((o) => o.id === 'tw_stairs_gruft'); assert(w, 'Wegweiser vorhanden');

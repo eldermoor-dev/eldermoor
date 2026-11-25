@@ -3082,6 +3082,48 @@
         196,
         100
       ]
+    },
+    "alptraum": {
+      "stone": [
+        92,
+        66,
+        84
+      ],
+      "moss": [
+        100,
+        104,
+        44
+      ],
+      "wood": [
+        92,
+        52,
+        50
+      ],
+      "iron": [
+        104,
+        90,
+        116
+      ],
+      "floor": [
+        66,
+        42,
+        54
+      ],
+      "ceil": [
+        130,
+        34,
+        48
+      ],
+      "flesh": [
+        150,
+        96,
+        70
+      ],
+      "glow": [
+        255,
+        96,
+        70
+      ]
     }
   },
   "levels": {
@@ -11440,7 +11482,8 @@
           "type": "enemy",
           "x": 14,
           "y": 2,
-          "kind": "schrat"
+          "kind": "schrat",
+          "lurk": true
         },
         {
           "id": "chest_licht",
@@ -11482,7 +11525,26 @@
           "text": "Wegweiser: Der Weg führt hinauf: Siedlung am Moorrand.",
           "sym": "auf"
         }
-      ]
+      ],
+      "scene": {
+        "id": "alp_licht",
+        "enemy": "en_schrat",
+        "zone": {
+          "x1": 4,
+          "y1": 1,
+          "x2": 16,
+          "y2": 9
+        },
+        "title": "Alptraum",
+        "text": "Der Himmel blutet, das Moor atmet aus. Aus dem Nebel steigt der Moorschrat.",
+        "endMsg": "Der Alptraum zerfällt. Über der Lichtung liegt wieder bleiches Moorlicht."
+      },
+      "alt": {
+        "flag": "alp_licht",
+        "patch": {
+          "palette": "alptraum"
+        }
+      }
     }
   },
   "spot": {
