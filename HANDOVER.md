@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.54.0 (26.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.55.0 (26.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1976,6 +1976,14 @@ Auftrag aus den Vorschlägen vom 25.11.: **A** Lehrpfad ohne Belehrung, **C** Ge
 - **Schilder** (Muster WARNUNG: Titel nennt die Funktion, nicht das Schreibmittel): `deco_g1` KRATZER → TAGE GEZÄHLT, `sign_trap_t1` RUNEN → NICHT BLIND. Alle 124 Schildtitel im Spiel durchgesehen; alle anderen nennen Ort, Warnung oder Inhalt. Nicht geändert (Entscheidung offen): AUGE (`sign_secret_g1`, Motiv eines Geheimhinweises, kein Schreibmittel).
 - Tests: 189 grün (neu: Schmied, Tote erwecken). VERSION 0.53.0 in main.js und sw.js, keine neuen Dateien (ASSETS unverändert). Gegner- und Heldenwerte unverändert (neuer Zauber ausgenommen).
 - Rückfall: Commit 1ee530c (0.52.1). Tag-Push liefert 403, nicht umgangen.
+
+## 0.55.0 (26.11.2026; nicht auf Gerät getestet; Tests 194 grün, nur Node): Ysolde-Aufträge, Rastereignisse, Bestiarium-Erweiterung, Simulation mit Schmied
+- Nutzer 00:36: „Die Ideen oben alle umsetzen“ (die fünf Vorschläge: Küche = 0.54.0, Ysolde-Aufträge, Simulation, Monsterbuch, Rastereignisse).
+- **Ysolde-Aufträge** (`data.hexejobs`, 8 Stück; `state.hexe = { cur, base, done }`): Dialogwahl „Habt ihr Aufträge für uns?“ (`hexe: true`). Ein Auftrag zugleich, Abschüsse zählen ab Annahme (`state.kills`), Lohn Trank (Klartrank, Eisenhaut, Frostschutz, Stärke, Feuerschutz, Flinkheit) + EP, **nie Gold**; jeder Auftrag einmal; Gebiet muss besucht sein. Lohn vom Assistenten gesetzt, nicht simuliert.
+- **Rastereignisse** (`data.restEvents`, `restEvent` in `restParty`): 22 % je Rast im Dungeon, deterministisch (mix32 über Schritte/Gebiet/Beutel/Gold, `state.rng` unberührt), kein Kampf, kein Malus. 6 Texte: zwei kleine Funde (Ration, kleiner Heiltrank), zwei wahre Spielhinweise (Heilende Hand nimmt Gift/Blutung; Set-Vollendung beim Schmied), zwei Stimmungstexte. Taverne-Rast unverändert (nicht geprüft, ob dort derselbe Weg läuft: Ereignis kommt nur über `restParty`).
+- **Bestiarium statt neues Monsterbuch** (gab es seit 0.9.0): neue Zeile „Trägt sehr selten: <Teil>“ erst, wenn das Teil einmal gefallen ist (`flags['part:<id>']`).
+- **Simulation** (`sim.js`): neue Zeile „klug + Schmied“ (gibt Gold bei Brann für Aufwertungen und Set-Vollendung aus, sobald der Schmied offen ist). Ergebnis 3000er Lauf, Kampagne: klug 31 % geschafft, klug + Schmied 38 %, Ø Stufe 11,8 – der Schmied hilft messbar, kippt aber nichts. Körperteile, Küche, Kampftränke und Ysolde-Lohn sind **nicht** simuliert. SIM.md neu erzeugt.
+- Offen auf Gerät: Ysolde-Fenster, Rastereignisse (Anzeige in der Meldung), Bestiarium-Zeile, alles aus 0.54.0.
 
 ## 0.54.0 (26.11.2026; nicht auf Gerät getestet; Tests 192 grün, nur Node): Tränke, Alchemistenküche
 - Nutzer 00:31/00:34: Gegengift praktisch nie gebraucht → „Empfehlungen oben alle umsetzen, bei den Tränken entscheidet der Assistent“; **Bedingung: nicht wieder schnell zu viel Gold.**

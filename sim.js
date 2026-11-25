@@ -122,12 +122,25 @@ function simShop(s) {
   const buy = (id, upTo) => { while ((s.inv[id] || 0) < upTo && s.gold >= L.buyPrice(s, data, id)) { if (L.buyItem(s, data, 'moorrand', id).error) break; } };
   buy('potion', 4); buy('ration', 3);
 }
-function campaign(seed, strat) {
+// 0.54.0: Schmied-Szenario – die Gruppe gibt Gold bei Brann aus (billigste Aufwertung zuerst), solange der Schmied offen ist; vollendet Sets.
+function simSmith(s) {
+  s.flags.schmied_offen = !!s.flags.schmied_offen;
+  if (!s.flags.schmied_offen) return;
+  for (let k = 0; k < 40; k++) {
+    const job = L.smithJobs(s, data).filter((j) => j.ok).sort((a, b) => a.cost - b.cost)[0];
+    const sets = L.smithSetJobs(s, data).filter((j) => j.ok)[0];
+    if (sets) { L.smithFinishSet(s, data, sets.heroKey, sets.setId); continue; }
+    if (!job || s.gold - job.cost < 20) break;
+    L.smithUpgrade(s, data, job.id);
+  }
+}
+function campaign(seed, strat, smith = false) {
   const s = ng(data, seed), log = {};
   let failed = null;
   for (const lid of CAMPAIGN) {
     if (failed) break;
     simShop(s);
+    if (smith) simSmith(s);
     L.jumpToLevel(s, data, lid);
     simChests(s);
     const foes = s.objs.filter((o) => o.type === 'enemy').sort((a, b) => (data.enemies[a.kind].boss ? 1 : 0) - (data.enemies[b.kind].boss ? 1 : 0));
@@ -201,6 +214,7 @@ out('Annahmen stehen in sim.js über `campaign`. „1. Versuch“ = Sieg ohne vo
 const CR = Math.max(100, Math.round(RUNS / 5));
 const camp = {};
 for (const strat of ['simple', 'smart']) { camp[strat] = []; for (let i = 0; i < CR; i++) camp[strat].push(campaign(9000 + i, strat)); }
+camp.smith = []; for (let i = 0; i < CR; i++) camp.smith.push(campaign(9000 + i, 'smart', true));
 out(`${CR} Läufe je Strategie.`);
 out('');
 out('| Strategie | Kampagne geschafft | Ø Stufe am Ende | Niederlagen je Lauf |');
@@ -209,6 +223,9 @@ for (const strat of ['simple', 'smart']) {
   const c = camp[strat];
   out(`| ${strat === 'simple' ? 'nur Angriff' : 'klug'} | ${pct(stats(c.map((r) => +!r.failed)))} | ${f1(stats(c.map((r) => r.level)))} | ${f1(stats(c.map((r) => Object.values(r.log).reduce((n, x) => n + x.tries - (x.won ? 1 : 0), 0))))} |`);
 }
+{ const c = camp.smith; out(`| klug + Schmied (gibt Gold bei Brann aus) | ${pct(stats(c.map((r) => +!r.failed)))} | ${f1(stats(c.map((r) => r.level)))} | ${f1(stats(c.map((r) => Object.values(r.log).reduce((n, x) => n + x.tries - (x.won ? 1 : 0), 0))))} |`); }
+out('');
+out('Hinweis: Die Zeile „klug + Schmied“ zeigt, ob Aufwertungen für Gold die Kampagne spürbar leichter machen. Körperteile, Küche und Kampftränke sind nicht simuliert.');
 out('');
 out('| Gebiet | Gegner | Strategie | erreicht | Ø Stufe | Sieg 1. Versuch | Runden | KO-Helden | Schaden |');
 out('|---|---|---|---|---|---|---|---|---|');

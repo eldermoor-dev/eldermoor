@@ -3,6 +3,12 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.55.0 (26.11.2026, nicht auf Gerät getestet)
+- Ysolde vergibt Aufträge (8 Stück, ein Auftrag zugleich): Lohn Trank und Erfahrung, kein Gold.
+- Rastereignisse im Dungeon (22 % je Rast): kleine Funde, wahre Hinweise, Stimmungstexte.
+- Bestiarium zeigt seltene Körperteile, sobald eines gefallen ist.
+- Simulation um Schmied erweitert: Kampagne 31 % → 38 % geschafft.
+
 ## 0.54.0 (26.11.2026, nicht auf Gerät getestet)
 - Gegenmittel (statt Gegengift) nimmt Gift und Blutung.
 - Neue Kampftränke: Stärke, Eisenhaut, Flinkheit, Feuerschutz, Frostschutz; Klartrank nimmt Fluch.

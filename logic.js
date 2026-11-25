@@ -1131,6 +1131,7 @@ export function dialogChoose(state, data, npc, nodeId, idx) {
   if (c.maps) return { end: true, maps: true, npc, changed: false }; // 0.40.0: Schatzkarten des Wirts (Oberfläche)
   if (c.board) return { end: true, board: true, npc, changed: false }; // 0.40.0: Aushangbrett (Oberfläche)
   if (c.exorcise) return { end: true, exorcise: true, npc, changed: false }; // 0.46.0: Hexe entfernt Flüche (Oberfläche)
+  if (c.hexe) return { end: true, hexe: true, npc, changed: false }; // 0.55.0: Ysolde vergibt Aufträge (Oberfläche)
   if (c.smith) return { end: true, smith: true, npc, changed: false }; // 0.53.0: Schmied wertet Ausrüstung auf (Oberfläche)
   if (c.tavern) return { end: true, tavern: true, npc, changed: false }; // 0.34.0: öffnet die Gruppenverwaltung der Taverne (Oberfläche)
   const msgs = [];
@@ -1641,7 +1642,7 @@ export function rollDrops(state, data, enemies, msgs) {
       const res = data.crafts && data.crafts[pd.item] && data.crafts[pd.item].result;
       if (!data.items[pd.item] || ownsItem(state, pd.item) || (res && (ownsItem(state, res) || state.flags['crafted:' + res]))) continue;
       if (mix32(state.rng + idx * 977 + ((state.kills && state.kills[e.kind]) || 0) * 131 + strHash(pd.item)) % 10000 >= Math.round(pd.chance * 100)) continue;
-      state.inv[pd.item] = 1; markNew(state, pd.item);
+      state.inv[pd.item] = 1; markNew(state, pd.item); state.flags['part:' + pd.item] = true;
       msgs.push(`Beute von ${e.name}: ${data.items[pd.item].name} (Körperteil, sehr selten).`);
     }
   });
@@ -1786,6 +1787,15 @@ export function restThreat(state, data, cfg = data.rest || {}) {
   };
   return { near: 0, seen: foes.some((o) => los(o.x, o.y)) };
 }
+// 0.55.0: Rastereignisse – deterministisch (mix32 über Schritte, Gebiet, Beutel), verändern state.rng nicht. data.restEvents = { chance (%), list: [{ id, text, give? }] }. Kein Kampf, kein Malus; Funde klein.
+export function restEvent(state, data) {
+  const re = data.restEvents; if (!re || !re.list || !re.list.length) return null;
+  const h = mix32((state.steps || 0) * 2654435 + strHash(state.levelId) + Object.keys(state.inv).length * 977 + (state.gold || 0));
+  if (h % 100 >= re.chance) return null;
+  const ev = re.list[mix32(h) % re.list.length];
+  if (ev.give) { state.inv[ev.give.item] = (state.inv[ev.give.item] || 0) + (ev.give.n || 1); markNew(state, ev.give.item); }
+  return { id: ev.id, text: ev.text };
+}
 export function restParty(state, data) {
   if (state.combat) return { error: 'in-combat' };
   const cfg = data.rest || { hungryPct: 30, enemyDistance: 10, sight: true };
@@ -1803,7 +1813,8 @@ export function restParty(state, data) {
       h.mp = Math.min(h.maxMp, h.mp + Math.ceil(h.maxMp * cfg.hungryPct / 100));
     }
   }
-  return { fed, msg: fed ? `Die Gruppe rastet und isst (Proviant übrig: ${state.inv.ration}). Alle sind wieder bei Kräften.` : `Kein Proviant: Die Gruppe rastet hungrig und erholt sich nur zu ${cfg.hungryPct} %.`, sfx: 'heal' };
+  const ev = restEvent(state, data);
+  return { fed, event: ev ? ev.id : null, msg: (fed ? `Die Gruppe rastet und isst (Proviant übrig: ${state.inv.ration}). Alle sind wieder bei Kräften.` : `Kein Proviant: Die Gruppe rastet hungrig und erholt sich nur zu ${cfg.hungryPct} %.`) + (ev ? ' ' + ev.text : ''), sfx: 'heal' };
 }
 
 // ---------- Kampf ----------
@@ -2822,6 +2833,33 @@ export function boardTurnIn(state, data, id) {
   if (b.gold) { state.gold += b.gold; msgs.push(`Lohn: ${b.gold} Gold.`); }
   msgs.push(`Erfahrung: +${b.xp} EP für jeden Helden, der noch steht.`);
   grantXp(state, data, b.xp, msgs);
+  return { msg: msgs.join(' '), sfx: 'chest', changed: true };
+}
+// ---------- Ysolde-Aufträge (0.55.0) ----------
+// data.hexejobs = [{ id, lvl, enemy, n, title, text, reward: { item, n }, xp }]; state.hexe = { cur: id | null, base: Abschüsse bei Annahme, done: [id] }. Lohn: Trank (nur hier und in der Küche) und EP, nie Gold.
+const hexeOf = (state) => state.hexe || (state.hexe = { cur: null, base: 0, done: [] });
+export function hexeJobs(state, data) {
+  const hx = hexeOf(state), seen = new Set([state.levelId, ...Object.keys(state.areas || {})]);
+  return (data.hexejobs || []).filter((j) => !hx.done.includes(j.id) && seen.has(j.lvl)).map((j) => {
+    const have = hx.cur === j.id ? Math.min(j.n, ((state.kills && state.kills[j.enemy]) || 0) - hx.base) : 0;
+    return { ...j, active: hx.cur === j.id, have, ready: hx.cur === j.id && have >= j.n, name: data.items[j.reward.item].name, enemyName: data.enemies[j.enemy].name };
+  });
+}
+export function hexeAccept(state, data, id) {
+  const hx = hexeOf(state), j = hexeJobs(state, data).find((x) => x.id === id);
+  if (!j) return { error: 'unknown' };
+  if (hx.cur) return { error: 'busy' };
+  hx.cur = id; hx.base = (state.kills && state.kills[j.enemy]) || 0;
+  return { msg: `Auftrag angenommen: ${j.title}. Erlege ${j.n} ${j.enemyName}.`, sfx: 'ui', changed: true };
+}
+export function hexeClaim(state, data, id) {
+  const hx = hexeOf(state), j = hexeJobs(state, data).find((x) => x.id === id);
+  if (!j || !j.active) return { error: 'unknown' };
+  if (!j.ready) return { error: 'not-ready' };
+  hx.cur = null; hx.done.push(id);
+  state.inv[j.reward.item] = (state.inv[j.reward.item] || 0) + (j.reward.n || 1); markNew(state, j.reward.item);
+  const msgs = [`Ysolde reicht euch einen ${j.name}. Auftrag erledigt: ${j.title}.`, `Erfahrung: +${j.xp} EP für jeden Helden, der noch steht.`];
+  grantXp(state, data, j.xp, msgs);
   return { msg: msgs.join(' '), sfx: 'chest', changed: true };
 }
 export function boardDismiss(state, data, id) {

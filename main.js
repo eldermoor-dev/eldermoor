@@ -3,7 +3,7 @@
 import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, shopLeft, shopRestockIn, readHint, pushError, formatErrorLog, itemDef, cursedOwned, exorcise, EXORCISE, smithJobs, smithUpgrade, smithSetJobs, smithFinishSet, smithPartJobs, smithCraft, setsComplete, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, partyAvgLevel, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
+  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, shopLeft, shopRestockIn, readHint, pushError, formatErrorLog, itemDef, cursedOwned, exorcise, EXORCISE, hexeJobs, hexeAccept, hexeClaim, smithJobs, smithUpgrade, smithSetJobs, smithFinishSet, smithPartJobs, smithCraft, setsComplete, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, partyAvgLevel, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
   activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogEnter, roomAt, floodLabel, dialogChoose, diceNew, diceRoll, diceKeep, diceNext, diceFinish, diceRoundLine, recruitHero, swapHero, dismissReserve, recruitCost, RESERVE_MAX, mapOffers, buyMap, mapQuota, MAP_MAX, boardView, boardTurnIn, boardDismiss, achievements, masteryLevel
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, figureScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
@@ -11,7 +11,7 @@ import { Sfx } from './audio.js';
 import { startSleepScene } from './scene.js';
 import { store } from './store.js';
 
-const VERSION = '0.54.0';
+const VERSION = '0.55.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -1007,6 +1007,7 @@ async function dialogPick(i) {
   if (r.tavern) { S.tav = { pi: null, sure: null }; openTavern(); return; } // 0.34.0: Taverne
   if (r.maps) { openMaps(); return; } // 0.40.0: Schatzkarten
   if (r.board) { openBoard(); return; } // 0.40.0: Aushangbrett
+  if (r.hexe) { openHexe(); return; } // 0.55.0: Ysolde-Aufträge
   if (r.exorcise) { openExorcise(); return; } // 0.46.0: Hexe
   if (r.smith) { openSmith(); return; } // 0.53.0: Schmied
   if (r.game) { closeModal(); openDice(d.id); return; } // 0.32.0: Würfelspiel mit Murmel
@@ -1061,6 +1062,18 @@ function exoAct(m) {
   const bad = { 'in-combat': 'Im Kampf geht das nicht.', gold: `Dafür fehlen ${r.cost} Gold.`, item: `Ysolde braucht: ${r.item}.` }[r.error];
   if (r.msg) { say(r.msg); S.sfx.play(r.sfx || 'ui'); toast(r.msg, 5000); } else toast(bad || 'Das geht nicht.', 3200);
   const sc = $('#modal-box').scrollTop; renderAll(); openExorcise(); $('#modal-box').scrollTop = sc;
+}
+// ---------- Ysolde-Aufträge (0.55.0); Logik: logic.js (hexeJobs, hexeAccept, hexeClaim) ----------
+function openHexe() {
+  const g = S.game, list = hexeJobs(g, S.data), busy = list.some((j) => j.active);
+  const rows = list.length ? list.map((j) => `<div class="row nw"><div><b>${esc(j.title)}</b><div class="muted">${esc(j.text)}</div><div class="muted">Aufgabe: ${j.n} ${esc(j.enemyName)} erlegen${j.active ? ` (${j.have}/${j.n})` : ''} · Lohn: ${esc(j.name)} und ${j.xp} EP</div></div>${j.active ? `<button class="mb${j.ready ? ' primary' : ''}" data-m="hxc:${j.id}" ${j.ready ? '' : 'disabled'}>Abgeben</button>` : `<button class="mb" data-m="hxa:${j.id}" ${busy ? 'disabled' : ''}>Annehmen</button>`}</div>`).join('') : '<p class="muted">Ysolde winkt ab: „Für euch habe ich gerade nichts. Seht euch weiter um.“</p>';
+  openModal(`<h2>Ysolde, Aufträge</h2><p class="muted">Immer nur ein Auftrag. Lohn sind Tränke und Erfahrung, kein Gold. Abschüsse zählen ab der Annahme.</p>${rows}<div class="acts">${closeBtn}</div>`, 'hexe');
+}
+function hexAct(m) {
+  const r = m.startsWith('hxa:') ? hexeAccept(S.game, S.data, m.slice(4)) : hexeClaim(S.game, S.data, m.slice(4));
+  const bad = { busy: 'Du hast schon einen Auftrag.', 'not-ready': 'Noch nicht genug erlegt.', unknown: 'Das geht nicht mehr.' }[r.error];
+  if (r.msg) { say(r.msg); S.sfx.play(r.sfx || 'ui'); toast(r.msg, 5000); } else toast(bad || 'Das geht nicht.', 3200);
+  const sc = $('#modal-box').scrollTop; renderAll(); openHexe(); $('#modal-box').scrollTop = sc;
 }
 // ---------- Schmied (0.53.0); Logik: logic.js (smithJobs, smithUpgrade) ----------
 function openSmith() {
@@ -1267,6 +1280,7 @@ function openBestiary() {
     if (r.onHit && e.onHit) L.push(`Trefferwirkung: ${esc(d.statuses[e.onHit.status].name)} (${e.onHit.chance} %)`);
     const rs = Object.keys(r.resist || {}).map((el) => { const v = (e.resist || {})[el] || 0; return v >= 100 ? `immun gegen ${esc(d.elements[el].name)}` : `${v > 0 ? 'resistent gegen' : 'anfällig für'} ${esc(d.elements[el].name)} (${v > 0 ? '−' : '+'}${Math.abs(v)} % Schaden)`; });
     if (rs.length) L.push('Elemente: ' + rs.join(', '));
+    { const pp = (e.parts || []).filter((x) => g.flags && g.flags['part:' + x.item] && d.items[x.item]); if (pp.length) L.push('Trägt sehr selten: ' + pp.map((x) => esc(d.items[x.item].name)).join(', ') + ' (Körperteil, nur für den Schmied)'); } // 0.55.0
     if (e.phases) L.push(`Phasen erreicht: ${r.phase || 0} von ${e.phases.length}${(r.phase || 0) > 0 ? ' – ' + e.phases.slice(0, r.phase).map((p) => esc(p.name)).join(', ') : ''}`);
     if (d.mastery && !e.boss) { const ml = masteryLevel(g, d, k), nx = d.mastery.at[ml]; L.push(`Meisterschaft: ${ml ? 'I'.repeat(ml) : '–'}${nx ? ` (nächste bei ${nx} Siegen, jetzt ${(g.kills && g.kills[k]) || 0})` : ' (höchste Stufe)'}`); }
     return `<div style="${BX}"><b>${esc(e.name)}${e.boss ? ' · Boss' : ''}</b>${L.map((t) => `<div class="muted">${t}</div>`).join('')}</div>`;
@@ -1845,6 +1859,7 @@ async function onModalClick(e) {
   else if (m.startsWith('tav-')) tavAct(m);
   else if (m.startsWith('map-buy:') || m.startsWith('bd-')) wirtAct(m);
   else if (m.startsWith('exo:')) exoAct(m);
+  else if (m.startsWith('hxa:') || m.startsWith('hxc:')) hexAct(m);
   else if (m.startsWith('smi:') || m.startsWith('smc:') || m.startsWith('smf:')) smiAct(m);
   else if (m === 'shopgo') { S.shopTalk = null; openShop(S.shopId, false); }
   else if (m.startsWith('dlg:')) dialogPick(+m.slice(4));

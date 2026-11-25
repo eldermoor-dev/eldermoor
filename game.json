@@ -16107,6 +16107,10 @@
               "exorcise": true
             },
             {
+              "t": "Habt ihr Aufträge für uns?",
+              "hexe": true
+            },
+            {
               "t": "Wie erkenne ich Verfluchtes?",
               "to": "b"
             },
@@ -17023,5 +17027,148 @@
       "cost": 200,
       "hint": "Ein Auge, das Flüche gesehen hat. Davon bleibt etwas in einer Robe."
     }
+  },
+  "hexejobs": [
+    {
+      "id": "h_skelett",
+      "lvl": "kultgruft",
+      "enemy": "skeleton",
+      "n": 4,
+      "title": "Ruhe für die Toten",
+      "text": "„Vier der Klapperer, die unter der Gruft laufen. Ich brauche sie still, nicht tot, aber tot geht schneller.“",
+      "reward": {
+        "item": "klartrank",
+        "n": 1
+      },
+      "xp": 80
+    },
+    {
+      "id": "h_kaefer",
+      "lvl": "schratgruben",
+      "enemy": "erzkaefer",
+      "n": 3,
+      "title": "Panzer zum Prüfen",
+      "text": "„Erzkäfer fressen Eisen. Erlegt drei, dann braue ich euch etwas, das euer Eisen ersetzt.“",
+      "reward": {
+        "item": "eisenhauttrank",
+        "n": 1
+      },
+      "xp": 100
+    },
+    {
+      "id": "h_nebel",
+      "lvl": "nebelturm",
+      "enemy": "nebelgeist",
+      "n": 3,
+      "title": "Kälte im Turm",
+      "text": "„Die Geister im Turm hauchen Frost. Drei weniger davon, dann zeige ich euch, wie man sich dagegen wärmt.“",
+      "reward": {
+        "item": "frostschutz",
+        "n": 1
+      },
+      "xp": 130
+    },
+    {
+      "id": "h_wache",
+      "lvl": "nebelturm",
+      "enemy": "turmwache",
+      "n": 2,
+      "title": "Wachen ohne Herren",
+      "text": "„Zwei Turmwachen. Ihr Stahl ist schwer, aber ihr Mut ist geliehen. Ich zahle in Stärke.“",
+      "reward": {
+        "item": "staerketrank",
+        "n": 1
+      },
+      "xp": 150
+    },
+    {
+      "id": "h_glut",
+      "lvl": "festung1",
+      "enemy": "brandmagier",
+      "n": 3,
+      "title": "Feuer mit Feuer",
+      "text": "„Brandmagier spielen mit Dingen, die sie nicht beherrschen. Drei davon, dann bekommt ihr Schutz gegen ihr Spiel.“",
+      "reward": {
+        "item": "feuerschutz",
+        "n": 1
+      },
+      "xp": 180
+    },
+    {
+      "id": "h_vampir",
+      "lvl": "festung3",
+      "enemy": "vampirbrut",
+      "n": 3,
+      "title": "Blut für den Sud",
+      "text": "„Drei Vampirbrüder. Ihr Biss macht schwach, mein Trank macht stark. Ein fairer Tausch.“",
+      "reward": {
+        "item": "staerketrank",
+        "n": 1
+      },
+      "xp": 200
+    },
+    {
+      "id": "h_spinne",
+      "lvl": "festung4",
+      "enemy": "netzwaechter",
+      "n": 3,
+      "title": "Fäden im Dunkeln",
+      "text": "„Netzwächter spinnen Gift. Erlegt drei, und ich gebe euch etwas, das den Schnellen die Zeit schenkt.“",
+      "reward": {
+        "item": "flinkheitstrank",
+        "n": 1
+      },
+      "xp": 220
+    },
+    {
+      "id": "h_schlacke",
+      "lvl": "festung5",
+      "enemy": "schlackenwaechter",
+      "n": 2,
+      "title": "Glut in der Esse",
+      "text": "„Zwei Schlackenwächter, heiß wie die Esse selbst. Dafür brauche ich euch gut geschützt gegen ihre Wut.“",
+      "reward": {
+        "item": "feuerschutz",
+        "n": 1
+      },
+      "xp": 250
+    }
+  ],
+  "restEvents": {
+    "chance": 22,
+    "list": [
+      {
+        "id": "fund_ration",
+        "text": "Beim Aufbruch findet ihr zwischen den Steinen einen Beutel mit trockenem Brot.",
+        "give": {
+          "item": "ration",
+          "n": 1
+        }
+      },
+      {
+        "id": "fund_trank",
+        "text": "Jemand hat vor langer Zeit ein Fläschchen in einer Mauernische vergessen. Es ist noch verschlossen.",
+        "give": {
+          "item": "potion",
+          "n": 1
+        }
+      },
+      {
+        "id": "stimme_hand",
+        "text": "Im Halbschlaf murmelt ein Held eine alte Lehre der Kleriker: Die Heilende Hand wäscht Gift und Blutung aus der Wunde."
+      },
+      {
+        "id": "stimme_brann",
+        "text": "Ihr hört im Traum einen Hammer. Ein Schmied kann ein Set erst vollenden, wenn alle Teile beisammen sind."
+      },
+      {
+        "id": "unruhe",
+        "text": "Die Nacht ist unruhig. Irgendwo tropft es, und mehr als einmal glaubt jemand, Schritte zu hören. Es kommt aber nichts."
+      },
+      {
+        "id": "kaelte",
+        "text": "Eine kalte Strömung zieht durch den Gang. Die Gruppe rückt näher zusammen und wärmt sich, so gut es geht."
+      }
+    ]
   }
 }

@@ -3623,6 +3623,26 @@ export async function runTests(data, env = {}) {
     // Verkauf: Rückkaufpreis höchstens die Hälfte (kein Gewinn durch Kaufen und Verkaufen)
     const x = fresh(26); x.inv.staerketrank = 1; assert(L.sellPrice(x, data, 'staerketrank') <= data.items.staerketrank.value / 2 + 1, 'Rückverkauf höchstens halber Wert');
   });
+  await test('0.55.0 Ysolde-Aufträge: nur ein Auftrag, Abschüsse zählen ab Annahme, Lohn Trank und EP ohne Gold', () => {
+    for (const j of data.hexejobs) { assert(data.enemies[j.enemy] && data.levels[j.lvl] && data.items[j.reward.item] && !j.gold && j.xp > 0, 'Auftrag ' + j.id); }
+    assert(data.dialogs.hexe.nodes.a.choices.some((c) => c.hexe), 'Ysolde bietet Aufträge an');
+    const s = fresh(31); s.areas = { kultgruft: { objs: [], seen: [], notes: [] } }; s.kills = { skeleton: 5 };
+    const list = L.hexeJobs(s, data); assert(list.some((j) => j.id === 'h_skelett') && !list.some((j) => j.id === 'h_kaefer'), 'nur besuchte Gebiete');
+    assert(!L.hexeAccept(s, data, 'h_skelett').error, 'annehmen'); eq(L.hexeAccept(s, data, 'h_skelett').error, 'busy', 'nur ein Auftrag zugleich');
+    eq(L.hexeClaim(s, data, 'h_skelett').error, 'not-ready', 'noch nicht genug (frühere Abschüsse zählen nicht)');
+    s.kills.skeleton = 9; const g0 = s.gold, xp0 = s.heroes[0].xp; const r = L.hexeClaim(s, data, 'h_skelett');
+    assert(!r.error && s.inv.klartrank === 1 && s.gold === g0 && s.heroes[0].xp > xp0, 'Lohn: Trank + EP, kein Gold: ' + JSON.stringify(r));
+    eq(L.hexeJobs(s, data).some((j) => j.id === 'h_skelett'), false, 'jeder Auftrag nur einmal');
+  });
+  await test('0.55.0 Rastereignisse: selten, ohne Kampf, verändern state.rng nicht, Bestiarium zeigt gefundene Teile', () => {
+    let n = 0, gifts = 0; const N = 600;
+    for (let k = 0; k < N; k++) { const s = fresh(40 + k); s.steps = k * 7; s.gold = k; const rng = s.rng, inv0 = JSON.stringify(s.inv); const ev = L.restEvent(s, data); eq(s.rng, rng, 'rng unverändert'); if (ev) { n++; if (JSON.stringify(s.inv) !== inv0) gifts++; assert(ev.text && !s.combat, 'Text, kein Kampf'); } }
+    assert(n > N * 0.1 && n < N * 0.4, 'Ereignisquote um 22 %: ' + n + ' von ' + N); assert(gifts > 0 && gifts < n, 'manche Ereignisse bringen etwas, nicht alle');
+    const a = fresh(77); a.steps = 50; const b = fresh(77); b.steps = 50; eq(JSON.stringify(L.restEvent(a, data)), JSON.stringify(L.restEvent(b, data)), 'deterministisch');
+    const s = fresh(78); L.rollDrops(s, data, [{ kind: 'wolf', name: 'Wolf' }], []); // Flagge nur bei Fund
+    for (let k = 0; k < 4000 && !s.flags['part:teil_wolfsfang']; k++) { s.rng = 1000 + k; s.kills = { wolf: k }; delete s.inv.teil_wolfsfang; L.rollDrops(s, data, [{ kind: 'wolf', name: 'Wolf' }], []); }
+    assert(s.flags['part:teil_wolfsfang'], 'Fundflagge für das Bestiarium gesetzt');
+  });
   await test('0.53.0 Tote erwecken: Kleriker ab Stufe 12, im Kampf, einmal je Kampf, nur Bewusstlose, Erweckter handelt ab nächster Runde', () => {
     const sp = data.spells.awaken; assert(sp && sp.kind === 'revive' && sp.cost > 0 && sp.pct > 0 && sp.pct <= 100, 'Zauberdaten');
     const ps = data.classes.priest.spells.find((x) => x.id === 'awaken'); assert(ps && ps.level === 12, 'Kleriker lernt ihn mit Stufe 12');
