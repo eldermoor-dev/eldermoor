@@ -9489,7 +9489,7 @@
         {
           "id": "sign_g_meister",
           "type": "sign",
-          "x": 76,
+          "x": 78,
           "y": 22,
           "face": 0,
           "title": "ESSE",
@@ -10006,7 +10006,7 @@
         {
           "id": "sign_z_pumpe",
           "type": "sign",
-          "x": 31,
+          "x": 35,
           "y": 3,
           "face": 0,
           "title": "SCHLEU|SE",

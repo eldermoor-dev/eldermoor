@@ -3032,6 +3032,10 @@ export async function runTests(data, env = {}) {
     assert(side.moved && !(side.events || []).some((e) => e.type === 'stairs'), 'seitlich: keine Treppe');
     s.player.x = st.x - 1; s.player.y = st.y; s.player.dir = 1; const fr = L.tryMove(s, data, 'f'); assert((fr.events || []).some((e) => e.type === 'stairs'), 'frontal: Treppe');
   });
+  await test('0.46.2 Schilder liegen auf keiner Wandfackel', () => {
+    const D = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+    for (const [id, lv] of Object.entries(data.levels)) for (const o of lv.objects) if (o.type === 'sign' && o.face != null && o.title) { const c = L.cellChar(lv, o.x + D[o.face][0], o.y + D[o.face][1]); assert(c !== 'T', id + ': ' + o.id + ' liegt auf Fackel'); }
+  });
   await test('0.40.0 Schatzkarten: Daten, Kartenwand ohne/mit Karte, Kauf, Extraraum erreichbar', () => {
     const ids = Object.keys(data.maps || {}); assert(ids.length >= 10, 'mindestens zehn Gebiete mit Karte: ' + ids.length);
     for (const id of ids) {
