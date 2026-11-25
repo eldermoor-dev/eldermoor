@@ -3637,7 +3637,7 @@ export async function runTests(data, env = {}) {
   await test('0.55.0 Rastereignisse: selten, ohne Kampf, verändern state.rng nicht, Bestiarium zeigt gefundene Teile', () => {
     let n = 0, gifts = 0; const N = 600;
     for (let k = 0; k < N; k++) { const s = fresh(40 + k); s.steps = k * 7; s.gold = k; const rng = s.rng, inv0 = JSON.stringify(s.inv); const ev = L.restEvent(s, data); eq(s.rng, rng, 'rng unverändert'); if (ev) { n++; if (JSON.stringify(s.inv) !== inv0) gifts++; assert(ev.text && !s.combat, 'Text, kein Kampf'); } }
-    assert(n > N * 0.1 && n < N * 0.4, 'Ereignisquote um 22 %: ' + n + ' von ' + N); assert(gifts > 0 && gifts < n, 'manche Ereignisse bringen etwas, nicht alle');
+    assert(n > N * 0.05 && n < N * 0.22, 'Ereignisquote um 12 %: ' + n + ' von ' + N); assert(gifts > 0 && gifts < n, 'manche Ereignisse bringen etwas, nicht alle');
     const a = fresh(77); a.steps = 50; const b = fresh(77); b.steps = 50; eq(JSON.stringify(L.restEvent(a, data)), JSON.stringify(L.restEvent(b, data)), 'deterministisch');
     const s = fresh(78); L.rollDrops(s, data, [{ kind: 'wolf', name: 'Wolf' }], []); // Flagge nur bei Fund
     for (let k = 0; k < 4000 && !s.flags['part:teil_wolfsfang']; k++) { s.rng = 1000 + k; s.kills = { wolf: k }; delete s.inv.teil_wolfsfang; L.rollDrops(s, data, [{ kind: 'wolf', name: 'Wolf' }], []); }

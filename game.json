@@ -17135,7 +17135,7 @@
     }
   ],
   "restEvents": {
-    "chance": 22,
+    "chance": 12,
     "list": [
       {
         "id": "fund_ration",
