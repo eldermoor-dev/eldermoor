@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.49.6 (25.11.2026, headless, nicht auf Gerät getestet)
+- Rast im Dungeon: Gangwände als unregelmäßiges Bruchsteinmauerwerk (verschieden große Steine, Farbabweichungen, Risse, Feuchtflecken) statt gleichmäßiger Kacheln. Werte unverändert.
+
 ## 0.49.5 (25.11.2026, headless, nicht auf Gerät getestet)
 - Rast im Dungeon überarbeitet: Gang in Perspektive (Seitenwände, Decke, Boden, dunkle Seitenöffnungen), Wandfackel mit unregelmäßigem Flackern, kleines niedergebranntes Lagerfeuer in der Mitte, gedämpfte Deckenfarben, rote Augen in den Seitenöffnungen und im Gangende. Werte unverändert.
 

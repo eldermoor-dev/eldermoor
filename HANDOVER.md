@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.49.5 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.49.6 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1878,3 +1878,9 @@ Auftrag aus den Vorschlägen vom 25.11.: **A** Lehrpfad ohne Belehrung, **C** Ge
 - Schrat: Im Kampf passt die Figur schon jetzt fast die ganze Bildhöhe (headless gerendert, Leiste bei 70 %: Kopf am oberen Rand). Weiter vergrößern würde den Kopf abschneiden, daher keine Änderung. Offen: Nutzer fragen, welche Version im Titelbild stand (Vermutung: veralteter Cache, 0.49.1 kam erst nach dem Foto).
 - Tür-Totenkopf: im Code und Render belegt (0.49.1); Nutzer soll nach Neuladen von der Moorlichtung aus erneut schauen.
 - Offen: Treppen „erst beim zweiten Mal“ (Änderung würde Entscheidung 0.47.6 berühren, Zustimmung nötig); Plan 0.50.0 Testgewölbe in neuem Chat.
+
+## 0.49.6 (25.11.2026; Bild headless gerendert, nicht auf Gerät getestet): Rast-Wände, Schrat-Befund
+- Auswertung Testliste 0.49.5 (Nutzer, Gerät): ✓ Update, Lagerfeuer/Fackel, Decken, Augen, Totenkopf auf der Tür, Treppenfix freigegeben (Freigabe zu 0.47.6: „Vor“ auf dem Treppenfeld mit Blick zur Treppenwand darf den Wechsel auslösen). ✗ Gang: „Wände zu glatt, sehen aus wie Kacheln“ → in 0.49.6 behoben (scene.js, Render angesehen). ✗ Schrat: „Nur im ersten Moment (Bild mit seinem Namen) groß, im Kampfbildschirm weiterhin zu klein“.
+- Schrat-Befund (belegt am Code, main.js `viewTarget`): Die Einpassung `fit` schrumpft Figuren auf die Fläche über der Leiste; Untergrenze 0,5. Beim Schrat (Skalierung 1,5 × Brennweite) greift die Untergrenze, daher entspricht die Höhe immer 0,5 × Figurhöhe, egal wie hoch die Leiste steht. Das erklärt „erst groß, dann kleiner“ (Auftrittsbild vor dem Einpassen). Vergrößern der Skalierung ändert nichts, solange die Untergrenze bindet. Ein Versuch, die Füße hinter die Leiste zu senken, wäre wirkungslos und wurde verworfen.
+- Offen, braucht Entscheidung/Screenshot: Kampfbild des Schrats mit sichtbarer Leiste (0.49.6). Möglicher Hebel: Untergrenze für Bosse senken oder Kopf teilweise abschneiden lassen; Kopf im Bild bleibt Entscheidung 0.17.0.
+- Offen: Treppenfix umsetzen (freigegeben), Siedlung: Licht und Wandschmuck hinter Hedda (Vorschlag), Plan 0.50.0 Testgewölbe.

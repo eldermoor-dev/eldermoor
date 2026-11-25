@@ -172,12 +172,31 @@ function corridor(c, t) {
   poly([[0, 0], [VX0, VY0], [VX0, VY1], [0, 160]], '#34312b'); poly([[W, 0], [VX1, VY0], [VX1, VY1], [W, 160]], '#2e2b26');
   poly([[0, 0], [W, 0], [VX1, VY0], [VX0, VY0]], '#1f1d1a'); poly([[0, 160], [VX0, VY1], [VX1, VY1], [W, 160], [W, H], [0, H]], '#2a2722');
   rect(c, VX0, VY0, VX1 - VX0, VY1 - VY0, '#050405');
-  c.strokeStyle = 'rgba(0,0,0,.55)'; c.lineWidth = 1;
+  // 0.49.5b (Nutzer: „Wände zu glatt, sehen aus wie Kacheln“): unregelmäßiges Bruchsteinmauerwerk, jeder Stein anders in Größe, Farbe und Kante, dazu Risse, Feuchtflecken und Moos
+  const sf = (d) => Math.min(1, (1 - 1 / (1 + 0.5 * d)) / 0.78);
   for (const left of [true, false]) {
-    const ex = left ? 0 : W, fx = left ? VX0 : VX1;
-    for (let r = 1; r < 8; r++) { const v = r / 8; c.beginPath(); c.moveTo(ex, 160 * v); c.lineTo(fx, VY0 + (VY1 - VY0) * v); c.stroke(); } // Steinlagen
-    for (let k = 1; k <= 7; k++) { const sf = Math.min(1, (1 - 1 / (1 + 0.5 * k)) / 0.78), x = ex + (fx - ex) * sf; c.beginPath(); c.moveTo(x, VY0 * sf); c.lineTo(x, 160 + (VY1 - 160) * sf); c.stroke(); } // Fugen rücken zusammen
+    const ex = left ? 0 : W, fx = left ? VX0 : VX1, sd = left ? 11 : 97;
+    const P = (d, v) => { const f = sf(d), x = ex + (fx - ex) * f, top = VY0 * f, bot = 160 + (VY1 - 160) * f; return [x, top + (bot - top) * v]; };
+    let v0 = 0, row = 0;
+    while (v0 < 1) {
+      const hr = 0.075 + (hash(sd + row * 31) % 100) / 100 * 0.1, v1 = Math.min(1, v0 + hr);
+      let d0 = -((hash(sd + row * 7) % 100) / 100) * 1.4;
+      while (d0 < 7.2) {
+        const h = hash(sd * 3 + row * 101 + Math.round((d0 + 3) * 10)), dw = 0.55 + (h % 100) / 100 * 1.15, d1 = d0 + dw, q = (h >> 8) % 100;
+        const a0 = Math.max(0, d0), a1 = Math.min(7.2, d1);
+        if (a1 > a0) {
+          const pts = [P(a0, v0 + 0.004), P(a1, v0 + 0.004), P(a1, v1 - 0.004), P(a0, v1 - 0.004)];
+          poly(pts, q < 40 ? `rgba(0,0,0,${0.05 + q / 400})` : q < 75 ? `rgba(255,255,255,${0.025 + (q - 40) / 900})` : `rgba(40,60,30,${0.1 + (q - 75) / 250})`); // dunkler / heller / bemooster Stein
+          c.strokeStyle = 'rgba(0,0,0,.6)'; c.lineWidth = 1 + (h >> 16) % 2 * 0.6; c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); c.lineTo(pts[1][0], pts[1][1]); c.moveTo(pts[1][0], pts[1][1]); c.lineTo(pts[2][0], pts[2][1]); c.stroke(); // Fugen
+          if ((h >> 4) % 9 === 0) { const m = P((a0 + a1) / 2, v0 + (v1 - v0) * 0.4); c.strokeStyle = 'rgba(0,0,0,.5)'; c.beginPath(); c.moveTo(m[0], m[1]); c.lineTo(m[0] + (left ? 3 : -3), m[1] + 5 + h % 4); c.lineTo(m[0] + (left ? 1 : -1), m[1] + 9 + h % 3); c.stroke(); } // Riss
+        }
+        d0 = d1;
+      }
+      v0 = v1; row++;
+    }
+    for (let k = 0; k < 6; k++) { const h = hash(sd + k * 53), pp = P(0.4 + (h % 60) / 10, 0.1 + ((h >> 6) % 80) / 100); glow(c, pp[0], pp[1], 14 + h % 14, '10,16,8', 0.35); } // Feuchtflecken
   }
+  c.strokeStyle = 'rgba(0,0,0,.55)'; c.lineWidth = 1;
   for (let k = -3; k <= 3; k++) { c.beginPath(); c.moveTo(160 + k * 14, VY1); c.lineTo(160 + k * 70, H); c.stroke(); } // Bodenplatten
   for (const dy of [112, 124, 142, 164]) { c.beginPath(); c.moveTo(0, dy + 8); c.lineTo(W, dy + 8); c.stroke(); }
   for (const left of [true, false]) { // dunkle Seitenöffnungen
