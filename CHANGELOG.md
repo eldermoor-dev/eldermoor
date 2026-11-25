@@ -3,6 +3,12 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.47.9 (25.11.2026, headless, nicht auf Gerät getestet)
+- Entfluchte Gegenstände (Ysolde) wirken nur noch halb: positive Boni (Angriff/Verteidigung/Initiative, Lebensraub, Ausweichen, Krit, Widerstand, Gold) halbiert, gerundet, mindestens 1; Beschreibung angepasst (Zornklinge +7 → +4). Spieldaten unverändert, wirkt auch in alten Ständen. Preis weiter 100 Gold + mittlerer Heiltrank.
+- Taverne „Zum goldenen Eber“: Tür in der Siedlung verschlossen („Wegen Umbau geschlossen“), bis die Schratgruben (3. Gebiet nach dem Moorpfad: Moorpfad, Kultgruft, Schratgruben) betreten wurden. Alte Stände, die die Taverne schon kennen, bleiben offen. Entscheidung des Assistenten (Zählung des 3. Gebiets war nicht eindeutig).
+- Händler: begrenzter Vorrat je Gegenstand (Proviant 3, kleine Tränke 3, mittlere 2, große 1, Ausrüstung 1, übrige 2). Nachschub erst 1 Stunde echte Zeit nach dem ersten Verkauf (Zeitstempel im Spielstand, `state.shops`, optional, kein Versionssprung). Anzeige „Vorrat“, „Ausverkauft“ und Restzeit.
+- Tests 176 grün. Keine Gegner- oder Heldenwerte geändert; BALANCE.md bleibt, SIM.md erst mit 0.47.10 neu (die Simulation kauft jetzt begrenzt).
+
 ## 0.47.8 (25.11.2026, headless, nicht auf Gerät getestet)
 - Schriften auf Wänden und Türen: Ursachen belegt am Screenshot „MOORPFAD → GRUFT“ aus der Nähe: (1) Striche waren breiter als das Raster und verschmolzen (M wirkte wie H), (2) dunkle Schrift auf grauem Stein ohne Abhebung, (3) 192-Bild grob vergrößert.
 - Jetzt: Wandschilder in 384×384 (statt 192), Strichbreite genau ein Rasterpunkt, helle Schrift (Bernstein oder Eisweiß je Stil) mit dunkler 3-Punkt-Kontur auf dunkler Platte mit hellem Rand und runden Ecken. Türtitel: helle Schrift mit dunkler Kontur (ohne Platte, bleibt auf dem Türsturz). Als Bilder gerendert und angesehen (fünf Stile), nicht auf Gerät.

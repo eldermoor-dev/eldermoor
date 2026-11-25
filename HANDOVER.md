@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.47.8 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.47.9 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1679,3 +1679,13 @@ Nächste: 0.47.4 (7–9), 0.47.5 (10–13 + BALANCE/SIM), 0.48.0 (14–17), spä
 - Tests 175 grün (keine Werteänderung, BALANCE.md/SIM.md unverändert).
 - Offene Tests (Gerät): Schilder im Moorpfad/Kultgruft/Festung aus der Nähe und aus 3–4 Feldern, Türtitel (Lesbarkeit auf Holz-/Steintür), Blick auf Schilder in Hallen (Performance).
 - Nummerierung neu: 0.47.9 = Struktur (7–9), 0.47.10 = Balance (10–13), 0.48.0 = Rest Lesbarkeit/Stimmung (Schildformen, Treppenschilder, Wanddeko, Hebel, Geräusche), später „Tote erwecken“.
+
+## 0.47.9 (25.11.2026; headless, nicht auf Gerät getestet): Struktur (Punkte 7–9)
+- Nutzerentscheidungen: Entfluchte Gegenstände positive Boni halbieren; Händler Nachschub nach 1 Stunde echter Zeit (Zeitstempel im Spielstand).
+- (7) logic.js `cleansedDef(b)`/`halfBonus(v)`: atk/def/init und fx-Zahlen ×0,5 gerundet, mind. 1; Beschreibungszahlen per Textersatz (Angriff, Verteidigung, Initiative, Lebensraub, Gold, Ausweichen, Krit, Widerstand); Zusatz „Von Ysolde entflucht: nur noch halbe Wirkung.“ `itemDef` nutzt es (Cache je Gegenstand). Test 0.46.0 angepasst (7 → 4).
+- (8) Taverne: Objekt `stairs_taverne` (moorrand) hat `needArea: "schratgruben"` und `lockedMsg`; `changeArea` prüft: Gebiet aktuell oder in `state.areas` (besucht), oder Ziel (taverne) schon besucht → offen. Die Zählung „3. Gebiet“ ist meine Auslegung (Moorpfad 1, Kultgruft 2, Schratgruben 3); Siedlung und Nebengebiete (Moorsee) zählen nicht. Falls der Nutzer etwas anderes meint: nur `needArea` ändern.
+- (9) Händler: `shops.<id>.stock[].n` = Vorrat (Proviant 3, potion/zaubertrank 3, `_m` 2, `_g` 1, Ausrüstung 1, übrige 2). `state.shops[shopId] = { t, sold:{item:n} }` (optional, nicht in newGame nötig). `shopLeft`, `shopRestock`, `shopRestockIn`, `SHOP_RESTOCK_MS` (1 h). `buyItem(state,data,shopId,itemId,now?)` liefert `sold-out`. Nachschub: eine Stunde nach dem ersten Verkauf seit dem letzten Nachschub kommt der gesamte Vorrat zurück (Vermutung zur Auslegung von „nach 1 Stunde“, nicht rückgefragt). Oberfläche (main.js openShop): „Vorrat: n“, Knopf „Ausverkauft“, Hinweis „Nachschub in etwa X Min.“.
+- Folge (Vermutung, nicht gemessen): Die Balance-Simulation kauft weniger Tränke/Proviant; SIM.md wird mit 0.47.10 neu erzeugt.
+- Tests 176 grün (neu: Halbierung, Vorrat/Nachschub mit Zeitparameter, Taverne zu/offen).
+- Offene Tests (Gerät): Ysolde entflucht → Beschreibung/Werte halb; Taverne vor/nach Schratgruben; Händler Vorrat sinkt, „Ausverkauft“, nach 1 Std. wieder da (Spielstand speichern/laden, Uhr nicht verstellen); alter Spielstand aus 0.47.8 lädt.
+- Nummerierung: 0.47.10 = Balance (10–13), 0.48.0 = Rest Lesbarkeit/Stimmung, später „Tote erwecken“.

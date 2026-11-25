@@ -312,6 +312,7 @@ export function passEntryDirs(lvl, o) {
 export function changeArea(state, data, stairsId) {
   const st = state.objs.find((o) => o.id === stairsId && o.type === 'stairs');
   if (!st || !st.to) return { ok: false, msg: 'Hier führt nichts weiter.' };
+  if (st.needArea && st.needArea !== state.levelId && !(state.areas && (state.areas[st.needArea] || state.areas[st.to.level]))) return { ok: false, msg: st.lockedMsg || 'Der Weg ist noch versperrt.' }; // 0.47.9: Gebiet muss schon besucht sein (alte Stände, die das Ziel kennen, bleiben offen)
   return travelTo(state, data, st.to, st.msg);
 }
 // Gebietswechsel zu einem Ziel { level, x, y, dir } (Treppe oder Fähre, 0.28.0)
@@ -1279,11 +1280,32 @@ export function curseText(it) {
 }
 // Gegenstandsdefinition: erzeugte Ausrüstung (state.gear) hat Vorrang vor den festen Gegenständen (data.items)
 const _clean = new WeakMap();
+// 0.47.9: Entflucht heißt nicht „wie neu“: positive Boni (atk/def/init, fx-Zahlen) halbiert, gerundet, mindestens 1. Beschreibungszahlen werden angepasst.
+export const halfBonus = (v) => (typeof v === 'number' && v > 0 ? Math.max(1, Math.round(v * 0.5)) : v);
+export function cleansedDef(b) {
+  const c = { ...b, cleansed: true }; delete c.curse;
+  let desc = b.desc || '';
+  for (const [k, lab] of [['atk', 'Angriff'], ['def', 'Verteidigung'], ['init', 'Initiative']]) {
+    if (typeof b[k] === 'number' && b[k] > 0) { c[k] = halfBonus(b[k]); desc = desc.replace(new RegExp(`\\+${b[k]} ${lab}`), `+${c[k]} ${lab}`); }
+  }
+  if (b.fx) {
+    c.fx = { ...b.fx };
+    const pats = { lifesteal: (v, n) => [`Lebensraub ${v} %`, `Lebensraub ${n} %`], gold: (v, n) => [`Gold +${v} %`, `Gold +${n} %`], dodge: (v, n) => [`Ausweichen +${v} %`, `Ausweichen +${n} %`], crit: (v, n) => [`Krit +${v} %`, `Krit +${n} %`], resist: (v, n) => [`Widerstand +${v} %`, `Widerstand +${n} %`] };
+    for (const k of Object.keys(c.fx)) {
+      const v = c.fx[k]; if (typeof v !== 'number' || v <= 0) continue;
+      const n = halfBonus(v); c.fx[k] = n;
+      if (pats[k]) { const [a, z] = pats[k](v, n); desc = desc.replace(a, z); }
+    }
+  }
+  c.desc = desc + ' Von Ysolde entflucht: nur noch halbe Wirkung.';
+  return c;
+}
+
 export const itemDef = (state, data, id) => {
   const g = state && state.gear && state.gear[id]; if (g) return g;
   const b = data.items[id];
   if (b && b.curse && state && state.flags && state.flags['ent:' + id]) { // 0.46.0: von Ysolde entflucht (Flagge, kein Eintrag in state.gear – dessen Schlüssel sind g<Zahl>)
-    if (!_clean.has(b)) { const c = { ...b, cleansed: true, desc: (b.desc || '') + ' Von Ysolde entflucht.' }; delete c.curse; _clean.set(b, c); }
+    if (!_clean.has(b)) { const c = cleansedDef(b); _clean.set(b, c); }
     return _clean.get(b);
   }
   return b;
@@ -1461,14 +1483,32 @@ export function sellItem(state, data, id) {
 // ---------- Handel (Phase 3, Schritt 5) ----------
 // data.shops.<id> = { name, owner, greeting, stock: [{ item }] } (feste Ware, unbegrenzt). Kaufpreis = voller Wert, Verkauf = Hälfte (siehe sellPrice).
 export const shopStock = (data, shopId) => ((data.shops && data.shops[shopId] && data.shops[shopId].stock) || []).filter((e) => data.items[e.item]);
+// 0.47.9: Begrenzter Bestand je Gegenstand (stock[].n, Standard 1). state.shops[shopId] = { t: Zeitpunkt des ersten Verkaufs seit dem letzten Nachschub (ms), sold: { item: Anzahl } }.
+// Nachschub erst nach SHOP_RESTOCK_MS echter Zeit (1 Stunde) nach diesem ersten Verkauf; dann ist alles wieder da. Optionales Feld, keine Speicher-Migration nötig.
+export const SHOP_RESTOCK_MS = 60 * 60 * 1000;
+export function shopRestock(state, shopId, now = Date.now()) {
+  const r = state.shops && state.shops[shopId];
+  if (r && r.t && now - r.t >= SHOP_RESTOCK_MS) delete state.shops[shopId];
+}
+export function shopLeft(state, data, shopId, itemId, now = Date.now()) {
+  shopRestock(state, shopId, now);
+  const e = shopStock(data, shopId).find((x) => x.item === itemId); if (!e) return 0;
+  const r = state.shops && state.shops[shopId];
+  return Math.max(0, (e.n == null ? 1 : e.n) - ((r && r.sold && r.sold[itemId]) || 0));
+}
+export const shopRestockIn = (state, shopId, now = Date.now()) => { const r = state.shops && state.shops[shopId]; return r && r.t ? Math.max(0, SHOP_RESTOCK_MS - (now - r.t)) : 0; };
 export const buyPrice = (state, data, id) => { const w = itemWorth(state, data, id); return w == null ? null : Math.max(1, Math.ceil((w * balancePct(state, data, 'price') / 100 * (100 - haggle(state, data))) / 100)); }; // 0.47.0: Aufschlag je Akt
-export function buyItem(state, data, shopId, itemId) {
+export function buyItem(state, data, shopId, itemId, now = Date.now()) {
   if (state.combat) return { error: 'in-combat' };
   if (!shopStock(data, shopId).some((e) => e.item === itemId)) return { error: 'not-in-stock' };
+  if (shopLeft(state, data, shopId, itemId, now) < 1) return { error: 'sold-out' };
   const p = buyPrice(state, data, itemId), it = data.items[itemId];
   if (p == null) return { error: 'not-for-sale' };
   if (state.gold < p) return { error: 'no-gold', price: p };
   state.gold -= p;
+  state.shops = state.shops || {};
+  const r = state.shops[shopId] || (state.shops[shopId] = { t: now, sold: {} });
+  r.sold[itemId] = (r.sold[itemId] || 0) + 1;
   state.inv[itemId] = (state.inv[itemId] || 0) + 1;
   markNew(state, itemId);
   return { msg: `${it.name} gekauft: −${p} Gold.`, price: p, sfx: 'chest' };

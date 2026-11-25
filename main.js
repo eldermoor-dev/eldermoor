@@ -3,7 +3,7 @@
 import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, pushError, formatErrorLog, itemDef, cursedOwned, exorcise, EXORCISE, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, partyAvgLevel, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
+  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, shopLeft, shopRestockIn, pushError, formatErrorLog, itemDef, cursedOwned, exorcise, EXORCISE, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, partyAvgLevel, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
   activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogEnter, roomAt, floodLabel, dialogChoose, diceNew, diceRoll, diceKeep, diceNext, diceFinish, diceRoundLine, recruitHero, swapHero, dismissReserve, recruitCost, RESERVE_MAX, mapOffers, buyMap, mapQuota, MAP_MAX, boardView, boardTurnIn, boardDismiss, achievements, masteryLevel
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
@@ -11,7 +11,7 @@ import { Sfx } from './audio.js';
 import { startSleepScene } from './scene.js';
 import { store } from './store.js';
 
-const VERSION = '0.47.8';
+const VERSION = '0.47.9';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -1176,9 +1176,11 @@ function openShop(shopId, greet) {
     <div class="acts" style="margin-top:0"><button class="mb${tab === 'buy' ? ' primary' : ''}" data-m="shopbuy">Kaufen</button><button class="mb${tab === 'sell' ? ' primary' : ''}" data-m="shopsellTab">Verkaufen</button></div>`;
   if (tab === 'buy') {
     html += shopStock(d, shopId).map((e) => {
-      const it = d.items[e.item], p = buyPrice(g, d, e.item), have = g.inv[e.item] || 0;
-      return `<div class="row nw"><div><b>${itemIcon(e.item, it)}${esc(it.name)}</b>${have ? ` <span class="muted">(im Beutel: ${have})</span>` : ''}<div class="muted">${esc(it.desc)}</div></div><button class="mb" data-m="buy:${e.item}" ${g.gold >= p ? '' : 'disabled'}>Kaufen (${p} G)</button></div>`;
+      const it = d.items[e.item], p = buyPrice(g, d, e.item), have = g.inv[e.item] || 0, left = shopLeft(g, d, shopId, e.item);
+      return `<div class="row nw"><div><b>${itemIcon(e.item, it)}${esc(it.name)}</b>${have ? ` <span class="muted">(im Beutel: ${have})</span>` : ''} <span class="muted">· Vorrat: ${left}</span><div class="muted">${esc(it.desc)}</div></div><button class="mb" data-m="buy:${e.item}" ${left > 0 && g.gold >= p ? '' : 'disabled'}>${left > 0 ? `Kaufen (${p} G)` : 'Ausverkauft'}</button></div>`;
     }).join('');
+    const wait = shopRestockIn(g, shopId); // 0.47.9: Nachschub nur in echter Zeit
+    if (wait > 0) html += `<p class="muted">Nachschub in etwa ${Math.ceil(wait / 60000)} Min. (echte Zeit).</p>`;
   } else {
     const rows = stackedInv(g, d, (id) => sellPrice(g, d, id) != null).map((gr) => [gr.id, gr.n]);
     html += rows.length ? rows.map(([id, n]) => {
@@ -1745,7 +1747,7 @@ async function onModalClick(e) {
   else if (m.startsWith('buy:')) {
     const sc = $('#modal-box').scrollTop; // 0.35.0: Liste bleibt beim Kaufen an ihrer Stelle
     const r = buyItem(g, S.data, S.shopId, m.slice(4));
-    if (r.msg) { say(r.msg); S.sfx.play(r.sfx); toast(r.msg); } else toast(r.error === 'no-gold' ? `Zu wenig Gold (${r.price} nötig).` : 'Das geht nicht.');
+    if (r.msg) { say(r.msg); S.sfx.play(r.sfx); toast(r.msg); } else toast(r.error === 'no-gold' ? `Zu wenig Gold (${r.price} nötig).` : r.error === 'sold-out' ? 'Ausverkauft. Nachschub kommt später.' : 'Das geht nicht.');
     renderAll(); openShop(S.shopId); $('#modal-box').scrollTop = sc;
   }
   else if (m.startsWith('shopsell:')) {

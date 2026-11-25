@@ -3357,7 +3357,9 @@
             "y": 6,
             "dir": 0
           },
-          "look": "tuer"
+          "look": "tuer",
+          "needArea": "schratgruben",
+          "lockedMsg": "Die Tür des Goldenen Ebers ist verrammelt. Ein Brett daran: „Wegen Umbau geschlossen. Wir öffnen, wenn es sich lohnt.“"
         }
       ]
     },
@@ -11592,40 +11594,52 @@
       "greeting": "Hedda mustert euch über ihre Laterne: „Wer aus dem Moor kommt, braucht Proviant. Und Heiltränke.“",
       "stock": [
         {
-          "item": "potion"
+          "item": "potion",
+          "n": 3
         },
         {
-          "item": "potion_m"
+          "item": "potion_m",
+          "n": 2
         },
         {
-          "item": "zaubertrank"
+          "item": "zaubertrank",
+          "n": 3
         },
         {
-          "item": "zaubertrank_m"
+          "item": "zaubertrank_m",
+          "n": 2
         },
         {
-          "item": "gegengift"
+          "item": "gegengift",
+          "n": 2
         },
         {
-          "item": "oelflasche"
+          "item": "oelflasche",
+          "n": 2
         },
         {
-          "item": "ration"
+          "item": "ration",
+          "n": 3
         },
         {
-          "item": "dietrich"
+          "item": "dietrich",
+          "n": 2
         },
         {
-          "item": "iron_sword"
+          "item": "iron_sword",
+          "n": 1
         },
         {
-          "item": "oak_staff"
+          "item": "oak_staff",
+          "n": 1
         },
         {
-          "item": "leather_armor"
+          "item": "leather_armor",
+          "n": 1
         },
         {
-          "item": "chain_mail"
+          "item": "chain_mail",
+          "n": 1
         }
       ]
     },
@@ -11635,37 +11649,48 @@
       "greeting": "Valdis klopft auf seinen Zweihänder. „Ich habe wenig, aber nichts davon passt jedem. Jede Klinge gehört in genau eine Hand. Preise sind Preise.“",
       "stock": [
         {
-          "item": "potion_m"
+          "item": "potion_m",
+          "n": 2
         },
         {
-          "item": "potion_g"
+          "item": "potion_g",
+          "n": 1
         },
         {
-          "item": "zaubertrank_m"
+          "item": "zaubertrank_m",
+          "n": 2
         },
         {
-          "item": "zaubertrank_g"
+          "item": "zaubertrank_g",
+          "n": 1
         },
         {
-          "item": "gegengift"
+          "item": "gegengift",
+          "n": 2
         },
         {
-          "item": "ration"
+          "item": "ration",
+          "n": 3
         },
         {
-          "item": "orkspalter"
+          "item": "orkspalter",
+          "n": 1
         },
         {
-          "item": "steinherzstab"
+          "item": "steinherzstab",
+          "n": 1
         },
         {
-          "item": "mondsilberbogen"
+          "item": "mondsilberbogen",
+          "n": 1
         },
         {
-          "item": "tueftlerstab"
+          "item": "tueftlerstab",
+          "n": 1
         },
         {
-          "item": "lichtbringer"
+          "item": "lichtbringer",
+          "n": 1
         }
       ]
     },
@@ -11675,28 +11700,36 @@
       "greeting": "Brum wischt sich die Hände an der Schürze ab. „Was ich nicht gegossen hab, hab ich wenigstens geschliffen.“",
       "stock": [
         {
-          "item": "potion_m"
+          "item": "potion_m",
+          "n": 2
         },
         {
-          "item": "potion_g"
+          "item": "potion_g",
+          "n": 1
         },
         {
-          "item": "zaubertrank_m"
+          "item": "zaubertrank_m",
+          "n": 2
         },
         {
-          "item": "zaubertrank_g"
+          "item": "zaubertrank_g",
+          "n": 1
         },
         {
-          "item": "gegengift"
+          "item": "gegengift",
+          "n": 2
         },
         {
-          "item": "ration"
+          "item": "ration",
+          "n": 3
         },
         {
-          "item": "stahlschwert"
+          "item": "stahlschwert",
+          "n": 1
         },
         {
-          "item": "plattenpanzer"
+          "item": "plattenpanzer",
+          "n": 1
         }
       ]
     }

@@ -2913,9 +2913,33 @@ export async function runTests(data, env = {}) {
     s.player = { x: door.x - 2, y: door.y, dir: 3 }; assert(L.doorAhead2(s, door.x, door.y) === null, 'Blick in die falsche Richtung');
     const rb = s.objs.find((o) => o.id === 'door_f_riegel2'); s.player = { x: rb.x - 2, y: rb.y, dir: 1 }; assert(L.doorAhead2(s, rb.x, rb.y) === null, 'Riegeltür braucht Nähe');
   });
+  await test('0.47.9 Struktur: entfluchte Boni halbiert, Händlerbestand + Nachschub nach 1 h, Taverne erst nach den Schratgruben', () => {
+    const s = L.newGame(data, 71); s.inv.zornklinge = 1; s.inv.ring_blutdurst = 1; s.inv.witwenschleier = 1; s.inv.amulett_gier = 1;
+    for (const id of ['zornklinge', 'ring_blutdurst', 'witwenschleier', 'amulett_gier']) s.flags['ent:' + id] = true;
+    const z = L.itemDef(s, data, 'zornklinge'), r = L.itemDef(s, data, 'ring_blutdurst'), w = L.itemDef(s, data, 'witwenschleier'), g = L.itemDef(s, data, 'amulett_gier');
+    eq(z.atk, 4, 'Zornklinge 7 → 4'); eq(r.atk, 2, 'Ring 3 → 2'); eq(r.fx.lifesteal, 5, 'Lebensraub 10 → 5'); eq(w.def, 2, 'Schleier 3 → 2'); eq(w.fx.dodge, 3, 'Ausweichen 6 → 3'); eq(g.fx.gold, 20, 'Gold 40 → 20');
+    assert(/\+4 Angriff/.test(z.desc) && /Lebensraub 5 %/.test(r.desc) && /Ausweichen \+3 %/.test(w.desc) && /Gold \+20 %/.test(g.desc), 'Beschreibung angepasst');
+    eq(data.items.zornklinge.atk, 7, 'Spieldaten unverändert'); eq(L.halfBonus(1), 1, 'Minimum 1'); eq(L.halfBonus(0), 0, 'null bleibt null');
+    // Händler
+    const sh = L.newGame(data, 72); sh.gold = 5000; const T0 = 1_000_000;
+    eq(L.shopLeft(sh, data, 'moorrand', 'ration', T0), 3, 'Proviant begrenzt (3)');
+    for (let i = 0; i < 3; i++) assert(!L.buyItem(sh, data, 'moorrand', 'ration', T0 + i).error, 'Kauf ' + i);
+    eq(L.buyItem(sh, data, 'moorrand', 'ration', T0 + 10).error, 'sold-out', 'ausverkauft');
+    eq(L.shopLeft(sh, data, 'blutgruft', 'ration', T0 + 10), 3, 'anderer Händler eigener Vorrat');
+    eq(L.buyItem(sh, data, 'moorrand', 'ration', T0 + L.SHOP_RESTOCK_MS - 1).error, 'sold-out', 'vor einer Stunde kein Nachschub');
+    assert(!L.buyItem(sh, data, 'moorrand', 'ration', T0 + L.SHOP_RESTOCK_MS).error, 'nach einer Stunde wieder da'); eq(L.shopLeft(sh, data, 'moorrand', 'ration', T0 + L.SHOP_RESTOCK_MS), 2, 'Vorrat wieder 3, einer gekauft');
+    assert(JSON.parse(JSON.stringify(sh)).shops.moorrand, 'Zeitstempel im Spielstand (JSON)');
+    for (const [id, sp] of Object.entries(data.shops)) for (const e of sp.stock) assert(e.n >= 1 && e.n <= 3, `${id}/${e.item}: Bestand gesetzt`);
+    for (const [id, sp] of Object.entries(data.shops)) for (const e of sp.stock) if (data.items[e.item].kind === 'equip') eq(e.n, 1, `${id}/${e.item}: Ausrüstung nur einmal`);
+    // Taverne
+    const tv = L.newGame(data, 73); L.jumpToLevel(tv, data, 'moorrand'); assert(!L.changeArea(tv, data, 'stairs_taverne').ok, 'Taverne zu');
+    L.jumpToLevel(tv, data, 'schratgruben'); L.jumpToLevel(tv, data, 'moorrand'); assert(L.changeArea(tv, data, 'stairs_taverne').ok, 'Taverne offen nach den Schratgruben');
+  });
   await test('Taverne (0.34.0): Zugang, Wirtin, Anwerben, Reserve, Tausch, Verabschieden, Speichern', () => {
     const s = L.newGame(data, 11); L.jumpToLevel(s, data, 'moorrand');
     const st = s.objs.find((o) => o.id === 'stairs_taverne'); assert(st && st.to.level === 'taverne', 'Treppe in der Siedlung');
+    const lk = L.changeArea(s, data, 'stairs_taverne'); assert(!lk.ok && s.levelId === 'moorrand' && /verrammelt/.test(lk.msg), '0.47.9: Taverne vor den Schratgruben verschlossen'); // 0.47.9
+    L.jumpToLevel(s, data, 'schratgruben'); L.jumpToLevel(s, data, 'moorrand');
     const t = L.changeArea(s, data, 'stairs_taverne'); assert(t.ok && s.levelId === 'taverne', 'Taverne erreichbar');
     const back = s.objs.find((o) => o.id === 'stairs_taverne_aus'); assert(back && back.to.level === 'moorrand' && L.cellChar(data.levels.moorrand, back.to.x, back.to.y) === '.', 'Rückweg liegt auf Boden');
     const w = s.objs.find((o) => o.id === 'npc_wirt'); assert(w && L.blockerAt(s, w.x, w.y) === w, 'Wirtin versperrt das Feld');
@@ -3055,7 +3079,7 @@ export async function runTests(data, env = {}) {
     const d0 = L.gearCompare(s, data, s.heroes[0], 'zornklinge');
     const r = L.exorcise(s, data, 'zornklinge'); assert(!r.error && s.gold === 400 && s.inv.potion_m === 1 && !L.isCursed(L.itemDef(s, data, 'zornklinge')), 'entflucht: ' + JSON.stringify(r));
     assert(L.isCursed(data.items.zornklinge), 'Spieldaten bleiben unverändert'); eq(L.cursedOwned(s, data).length, 0, 'nicht mehr verflucht');
-    assert(L.itemDef(s, data, 'zornklinge').atk === 7, 'Nutzen bleibt'); assert(!L.validateState || true, 'ok');
+    assert(L.itemDef(s, data, 'zornklinge').atk === 4, 'Nutzen halbiert (7 → 4)'); assert(!L.validateState || true, 'ok');
     const u = fresh(61); u.inv.zornklinge = 1; u.flags['id:zornklinge'] = true; u.gold = 50; u.inv.potion_m = 1; eq(L.exorcise(u, data, 'zornklinge').error, 'gold', 'zu wenig Gold');
     u.gold = 500; delete u.inv.potion_m; eq(L.exorcise(u, data, 'zornklinge').error, 'item', 'ohne Trank');
     const npc = s.objs && null; const dv = L.dialogChoose(fresh(62), data, { id: 'npc_hexe', dialog: 'hexe' }, 'a', 0); assert(dv.exorcise, 'Dialog öffnet die Entfluchung');
