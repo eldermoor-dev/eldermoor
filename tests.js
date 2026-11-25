@@ -2941,6 +2941,7 @@ export async function runTests(data, env = {}) {
   });
   await test('0.47.10: Moorlicht in Gruppen kleiner, Taverne erst nach den Schratgruben sichtbar', async () => {
     const R = await import('./render.js'); assert(R.spriteScale('moorlicht', 3) < R.spriteScale('moorlicht', 1) && Math.abs(R.spriteScale('moorlicht', 3) / R.spriteScale('moorlicht', 1) - 0.84) < 0.01, 'in Gruppen kleiner (×0,84), einzeln unverändert'); eq(R.spriteScale('wolf', 3), R.spriteScale('wolf', 1), 'Wolf unverändert');
+    { const st = R.buildSprites([{ type: 'enemy', id: 'e1', x: 3, y: 3, kinds: ['wolf', 'wolf', 'moorlicht'] }], { sprites: new Proxy({}, { get: () => ({}) }) }, 0, 0, { e1: ['wolf', 'wolf', 'moorlicht'] }, null); const w = st[2]; assert(w && Math.abs(w.x - 3) <= 0.13 + 1e-9, 'Moorlicht steht höchstens 0,12 neben der Feldmitte (offene Aufstellung)'); }
     assert(!data.levels.moorrand.objects.some((o) => o.id === 'stairs_taverne') && data.levels.moorrand.alt.objects.some((o) => o.id === 'stairs_taverne') && data.levels.moorrand.alt.flag === 'taverne_offen', 'Tür nur im Umbau');
   });
   await test('Taverne (0.34.0): Zugang, Wirtin, Anwerben, Reserve, Tausch, Verabschieden, Speichern', () => {

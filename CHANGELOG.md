@@ -3,6 +3,10 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.47.11 (25.11.2026, headless, nicht auf Gerät getestet)
+- Moorlicht ragt weiter in die Wand (Nutzer 18:49, Screenshot, Problem bleibt): Ursache belegt am Bild: Aufstellung „Wand nur auf einer Seite“ (Wolf links, Moorlicht rechts bei +0,28, zweiter Wolf mittig dahinter); 0.47.10 deckte nur den engen Gang ab. Jetzt steht das Moorlicht in jeder Aufstellung höchstens 0,12 neben der Feldmitte. Test schlägt ohne die Korrektur fehl.
+- Nummerierung: Schrift (schräg gesehen) = 0.47.12, Balance = 0.47.13, 0.48.0 wie geplant.
+
 ## 0.47.10 (25.11.2026, headless, nicht auf Gerät getestet)
 - Taverne: Nutzer „soll erst im 3. Level erscheinen“. Vorher (0.47.9) war nur der Zugang gesperrt, Tür und Schild „GOLDENER EBER“ standen schon in der Siedlung. Jetzt gibt es die Tür gar nicht, bis die Schratgruben betreten wurden (Siedlung wird per `alt` + Marke `taverne_offen` umgebaut, auch in gespeicherten Gebieten). Alte Stände, die die Taverne kennen, behalten sie.
 - Moorlicht („Geist“) ragte im Wolfskampf in die Wand (Screenshot): in Gruppen ×0,84 und im engen Gang näher zur Mitte. Nicht per Render nachgestellt, nur Geometrie geändert; Gerätetest nötig. (Korrektur: Die „zweite grünliche Figur“ aus 0.47.7 war dieses Moorlicht, nicht die Krallenhand des Kultisten.)

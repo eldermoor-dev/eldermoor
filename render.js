@@ -3233,7 +3233,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
       for (let i = 0; i < n; i++) {
         let { lat, dep, grow } = offs[i];
         const kd = kindList ? kindList[i] : kindOf(o, i);
-        if (tight && kd === 'moorlicht') lat *= 0.25; // 0.47.10: breite Gestalt im engen Gang nah an die Mitte, nicht an die Wand
+        if (n > 1 && kd === 'moorlicht') lat = tight ? lat * 0.25 : Math.max(-0.12, Math.min(0.12, lat)); // 0.47.10/11: breite Gestalt nah an die Mitte in jeder Aufstellung (Nutzer-Screenshot: Aufstellung „Wand auf einer Seite“ stellte sie bei +0,28 an die rechte Wand)
         const sc = spriteScale(kd, n) * combatFit * (grow || 1);
         const inFight = !!(alive && alive[o.id] != null);
         out.push({ x: o.x + rx * lat + fx * dep, y: o.y + ry * lat + fy * dep, tex: spriteFor(tex, kd), scale: sc, base: sc, front: inFight, foe: inFight ? { id: o.id, k: i } : null });
