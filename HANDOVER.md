@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.47.5 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.47.6 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1654,3 +1654,11 @@ Nächste: 0.47.4 (7–9), 0.47.5 (10–13 + BALANCE/SIM), 0.48.0 (14–17), spä
 - Entscheidung: Entdeckung bleibt über die Würfe (2 und 1 Feld Abstand) und Hinweise (Wand/Schild/Talent); das Bild ist nur noch ein feiner Zusatzhinweis. Falls es auf dem Gerät zu unsichtbar ist, Schatten 2 → 1 oder Risse länger.
 - Nummerierung neu: 0.47.6 = Struktur (7–9), 0.47.7 = Balance (10–13, mit BALANCE.md/SIM.md), 0.48.0 = Lesbarkeit/Stimmung (14–17), später „Tote erwecken“.
 - Offen: Gerätetest 0.47.3 (Treppen seitlich, Zelle, Rastbild, Marga-Karten, Steinhaufen), „Schrat im Testgewölbe“ (Levelname/Screenshot vom Nutzer).
+
+## 0.47.6 (25.11.2026; headless, nicht auf Gerät getestet): Treppen nur bei geradem Betreten
+- Nutzer (25.11.2026 17:49, Screenshot Zisterne-artige Halle mit Treppe in der linken Wand): „Seitliches Hereinziehen besteht weiterhin bei allen Aufgängen. Betreten soll ausschließlich bei geradem Betreten möglich sein.“
+- Nachstellung: in der Logik NICHT gelungen. `tryMove` löst `stairs` nur aus, wenn rel==='f' und die Bewegungsrichtung in `passEntryDirs` liegt (Test: 82 Zugänge × 4 Richtungen); `passFaces` (render.js) und `passEntryDirs` (logic.js) liefern dieselben Wandrichtungen; außer `tryMove` löst nichts den Wechsel aus (changeArea nur aus onEvent, travelTo zusätzlich für Dialog-`goto`, z. B. Fuhrmann).
+- Geändert (Vermutung als Ursache, nicht belegt): Der Sonderfall aus 0.47.3 „auf dem Treppenfeld gegen die Treppenwand laufen = hindurchgehen“ ist entfernt (logic.js tryMove, main.js doMove). Wer seitlich aufs Treppenfeld kommt und dann „Vor“ drückt, löst nichts mehr aus.
+- Test 0.47.3 angepasst (Treppenfeld gegen Wand = nur Wand). Tests 175 grün. Keine Werteänderung.
+- Offene Rückfrage an den Nutzer: genaue Tastenfolge (Vor/Seitwärts/Drehen/Antippen der Treppe?), Gebiet und Treppe, Meldung oder Bild nach dem Hereinziehen. Verdacht dann: Antippen des Treppenbildes oder Halten der Vor-Taste (`S.held`).
+- Nummerierung neu: 0.47.7 = Struktur (7–9), 0.47.8 = Balance (10–13), 0.48.0 = Lesbarkeit (14–17).

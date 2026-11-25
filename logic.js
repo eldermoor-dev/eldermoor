@@ -455,10 +455,7 @@ export function tryMove(state, data, rel) {
   const d = rel === 'f' ? p.dir : rel === 'b' ? (p.dir + 2) % 4 : rel === 'l' ? (p.dir + 3) % 4 : (p.dir + 1) % 4;
   const nx = p.x + DIRS[d].dx, ny = p.y + DIRS[d].dy;
   { const cc = cellChar(lvl, nx, ny); if (cc === '~') return { moved: false, wall: true, msg: lvl.waterMsg || 'Das Wasser ist tief und kalt. Hier kommt ihr nicht durch.' };
-    if (isWallChar(cc)) { // 0.47.3: steht die Gruppe schon auf dem Treppenfeld (z. B. seitlich hineingegangen), führt der Schritt gegen die Treppenwand hindurch
-      const on = rel === 'f' && state.objs.find((o) => o.type === 'stairs' && o.x === p.x && o.y === p.y);
-      if (on && passEntryDirs(lvl, on).includes(d)) return { moved: false, events: [{ type: 'stairs', id: on.id }] };
-      return { moved: false, wall: true }; } }
+    if (isWallChar(cc)) return { moved: false, wall: true }; } // 0.47.6 (Nutzer: Treppen nur bei geradem Betreten): Wand voraus auf dem Treppenfeld ist wieder nur Wand – der Wechsel entsteht ausschließlich beim Schritt vom Zugangsfeld auf das Treppenfeld in Eintrittsrichtung
   let b = blockerAt(state, nx, ny);
   const pushNotes = [];
   if (b && b.type === 'boulder') {

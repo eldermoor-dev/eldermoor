@@ -11,7 +11,7 @@ import { Sfx } from './audio.js';
 import { startSleepScene } from './scene.js';
 import { store } from './store.js';
 
-const VERSION = '0.47.5';
+const VERSION = '0.47.6';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -394,8 +394,7 @@ function doMove(rel) {
     if (r.luck) { say(r.luck); toast(r.luck, 4500); S.sfx.play('chest'); vib(20); } // Glücksamulett (0.28.0)
     if (r.notes) { S.held = []; r.notes.forEach((t) => { say(t); toast(t, 5000); }); S.sfx.play('warn'); vib([40, 40, 40]); S.nextAllowed = performance.now() + 500; }
     if (r.encounter) startCombatUI(r.encounter, r.ambush);
-  } else if (r.events && r.events.length) { S.held = []; r.events.forEach(onEvent); } // 0.47.3: Schritt gegen die Treppenwand vom Treppenfeld aus
-  else if (r.encounter) startCombatUI(r.encounter);
+  } else if (r.encounter) startCombatUI(r.encounter);
   else if (r.trapWarn) { S.held = []; S.queued = null; S.nextAllowed = performance.now() + 700; say(r.msg); toast(r.msg, 5000); S.sfx.play('warn'); }
   else if (rel === 'f' && r.blocker && ['door', 'chest', 'lever', 'gate', 'secret'].includes(r.blocker.type) && !r.msg) { // gegen Tür, Truhe, Hebel laufen = benutzen
     S.held = []; S.nextAllowed = performance.now() + 350;

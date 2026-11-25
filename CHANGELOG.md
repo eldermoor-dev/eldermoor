@@ -3,6 +3,10 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.47.6 (25.11.2026, headless, nicht auf Gerät getestet)
+- Treppen/Ausgänge: Der Gebietswechsel entsteht ausschließlich beim geraden Schritt vom Zugangsfeld auf das Treppenfeld in Eintrittsrichtung. Entfernt: Wechsel durch „Vor“ gegen die Treppenwand, wenn die Gruppe schon (z. B. seitlich) auf dem Treppenfeld steht (aus 0.47.3). Das ist eine VERMUTETE Ursache für das gemeldete „seitliche Hereinziehen“ (Nutzer: besteht weiter bei allen Aufgängen); ein anderer Auslöser ließ sich in der Logik nicht finden (Tests: alle 82 Zugänge × 4 Richtungen).
+- Nummerierung: Struktur (7–9) = 0.47.7, Balance (10–13) = 0.47.8, Lesbarkeit (14–17) = 0.48.0.
+
 ## 0.47.5 (25.11.2026, headless, nicht auf Gerät getestet)
 - Fallen: unentdeckte Falle nochmals unauffälliger (Gerätetest 0.47.4: „immer noch zu leicht erkennbar“). Ursache nachgestellt: Spur war im Material „Stein“ gezeichnet (hebt sich von der Bodenfarbe ab) und als Rechteck (wirkt wie eine Platte). Jetzt Material des Bodens, kein Rechteck, nur zwei kurze unregelmäßige Haarrisse und wenige Staubpunkte (36 Bildpunkte). Als Bild gegen die Bodentextur gerendert und angesehen (Kultgruft-Palette), nicht auf Gerät.
 - Nummerierung: Struktur (7–9) = 0.47.6, Balance (10–13) = 0.47.7, Lesbarkeit (14–17) = 0.48.0.
