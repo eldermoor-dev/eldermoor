@@ -1509,6 +1509,43 @@ Nutzer (18:30, Screenshot Kampf gegen Gießmeister Harkon + Foto eines Gießers 
 - Altstände: Schilder und NPC-Look werden über `syncStatic` nachgezogen. Tests 162 grün, keine Werteänderung (BALANCE.md/SIM.md unverändert). Nur im Headless-Browser gesehen.
 - Hinweis zur Palette `schenke`: Material „stone“ ist braun, deshalb wirkt Margas Bluse graubraun; Schürze nutzt „glow“ (cremefarben).
 
+## KONZEPT „Lebendige Taverne“ (25.11.2026, Plan, NICHTS davon gebaut außer 0.46.3/0.46.4-Gästen)
+Quelle: Entwicklungsauftrag (ChatGPT-Vorschläge, Anhang des Nutzers 13:26); Nutzer: „auf Realisierbarkeit prüfen, ggf. Nachfragen, anschließend einbauen“. Antworten des Nutzers: **Feuer = Schnellreise zu Feuerstellen; Start = Gäste wechseln + Vertrauen; erstes Minispiel = Armdrücken.**
+
+**Bestand (geprüft im Code):** Dialog-Engine (Knoten, `if` flag/noflag/item, `cost`, `take`, `give`, `set`, `xp`, `note`, `tavern`, `maps`, `board`, `inn`, `exorcise`, `again`), Flags im Spielstand (dauerhaft), Notizbuch, Würfelspiel (Murmel, 0.32.0), Aushangbrett mit Steckbriefen (`state.board`), Heldentausch/Reserve (Taverne 0.34.0), Zimmer + Schlafkammerbild (0.43.0), Hexe (0.46.0), Gäste ansprechbar (0.46.3/4), `syncStatic` für Altstände, deterministischer Zufall (`mix32`).
+
+| Vorschlag | Bewertung | Aufwand | Risiko |
+|---|---|---|---|
+| Individuelle Gäste mit Namen, Geheimnis | machbar, teils da | klein je Gast | gering |
+| Vertrauen/Gedächtnis je Gast | machbar: optionales `state.tav = {visits, trust{}, ev{}}`, kein Versionssprung | mittel | gering |
+| Klassen-/Rassen-/Stufen-Optionen im Dialog | machbar: `if` um `cls`, `race`, `lvl`, `trust` erweitern | klein | gering |
+| Gäste kommen/gehen | machbar: Roster + deterministischer Würfel je Besuchszähler, Plätze fest | mittel | mittel (Gäste = `npc`-Objekte, Platzbelegung/Altstand) |
+| Ereignisse (Schlägerei, Diebstahl, Auktion …) | machbar als Dialogketten mit Auslöser (Besuchszähler, Ebene, Flags) | mittel je Ereignis | gering |
+| Taschendiebstahl, Bestechen, Einschüchtern | machbar über Wurf (Talente/Werte), je Gast einmalig | klein | Ausnutzbarkeit → einmalig + Ruf-Verlust |
+| Minispiele | Armdrücken: machbar (Touch-Takt, Angriff/Stärke); Messerwerfen: Timing; Kartenspiel: groß | mittel / mittel / groß | Bedienung am Handy → Gerätetest nötig |
+| Geheimer Weinkeller-Zugang | machbar als neue Ebene (`levels`), Konzept „Keller unter der Taverne“ | groß | `analyzeLevel`, Karte |
+| Gemälde wandelt sich mit Fortschritt | machbar: `genDeco` nach Flag | klein–mittel | gering |
+| Geist nur unter Bedingungen | machbar: npc mit `if` auf Flags/Uhrzeit-frei | klein | gering |
+| Individuelle Porträts | machbar: je Figur ca. 40 Zeilen `paintFigure` | mittel (viele Figuren) | Optik prüfen |
+| Atmosphärische Geräusche | nur dezent, `audio.js` prozedural | klein | gering |
+| Widersprüchliche Aussagen/Rätsel | Inhaltsarbeit, Technik vorhanden | Text | gering |
+| „Unauffällige Hintergrundgeschichte“ | nur mit SPOILER-Abschnitt in den Projektdateien; nie im Chat | Text | Regel 3 beachten |
+
+**Nicht empfohlen:** Karten-/Kampfduell-Minispiele als erster Schritt (zu groß); Belohnungen ohne Einmaligkeit (Ausnutzung); Ruf-System über alle Fraktionen (es gibt keine Fraktionen im Bestand).
+
+**Umsetzungsplan (je Schritt eine Version, je ein Chat):**
+1. **0.47.0 Gäste wechseln + Vertrauen:** `state.tav`; Roster mit ca. 10 Gästen (5 vorhanden + 5 neu), je Besuch 4–5 anwesend (deterministisch, Stammgäste bleiben); `if`-Erweiterung cls/race/lvl/trust; 2 neue Figuren; Test + Altstand.
+2. **0.48.0 Schriften/Schilder** (siehe oben, Nutzerwunsch 12:53/12:54) und 0.47.x Lange Räume – nach Nutzer-Priorität.
+3. **0.49.0 Feuer-Schnellreise:** Feuerstelle (Objekt `fire`) in Taverne + Ebenen, Aktivierung durch Berühren, Reise nur zwischen aktivierten Feuern. **Offene Entscheidungen (Assistent trifft sie, Begründung folgt):** Kosten (Vorschlag: 15 Gold je Reise, Gold-Senke), Rast am Feuer (nein, nur Reise), keine Reise bei Gegner in Sicht, Reise nur außerhalb von Kämpfen. Nur in Ebenen, die `travelTo` bereits kennt.
+4. **0.50.0 Armdrücken:** Gegner-Gast mit Einsatz; 5–7 Takte, Tippen im Rhythmus, Angriffswert des gewählten Helden verschiebt den Balken; Einsatz 10/25/50 Gold; je Gast höchstens ein Sieg pro Besuch.
+5. **0.51.0 Ereignisse** (Schlägerei, Diebstahl, Duellforderung) **und Weinkeller** als größere Pakete.
+
+**Risiken:** (a) Gäste als `npc` mit Platzwechsel erzeugen Altstand-Konflikte → `syncStatic` erweitern und testen; (b) Taverne-Raum ist klein (13×7) → höchstens 6 Gäste; (c) Minispiele auf dem Touchscreen nur durch Gerätetest bestätigbar; (d) Spoiler-Regel; (e) Chat-Budget: je Schritt ein Chat.
+
+**Teststrategie Android:** je Version die Checkliste (Artefakt) mit Gruppen je Funktion; Tavernenbesuch 3× hintereinander (Gäste ändern sich), Neuladen (Spielstand bleibt), App aus dem Hintergrund zurück, Vollbild, Querformat; Minispiele: Daumenbedienung, keine Fehltipps. „Getestet“ nur nach Bestätigung des Nutzers.
+
+**Beispiel verknüpfte Geschichte (ohne Spoiler):** Ilka (Ex-Kultistin) nennt einen Gefangenen im Kultgewölbe → Spieler befreit Tilo → Ilka erinnert sich (Flag `tilo:frei`), Vertrauen +1 → neuer Dialogzweig: sie tauscht eine Information gegen ein Kultmedaillon.
+
 ## IDEE (Nutzer, 25.11.2026, noch NICHT gebaut): lebendige Taverne
 - Wortlaut sinngemäß: Mit den Leuten in der Taverne kann man interagieren, teils bekommt man Aufträge von ihnen. Bei jedem erneuten Besuch sind einige Gäste weg oder neu dazugekommen. Viel Kreativitätspotenzial; der Nutzer kümmert sich später darum (Umfang und Zeitpunkt offen, nicht beauftragt).
 - Anknüpfungspunkte im Bestand (aus dem Code/HANDOVER, nicht neu geprüft): Gäste sind bisher feste `decor`-Sprites (`gast0–2`, 0.39.0); Personen/Dialoge über `npc` + `dialogs` (0.25.0); Aufträge über Steckbriefe/Aushangbrett (0.40.0, `state.board`); Zufall deterministisch über `mix32`/`strHash` statt `state.rng`.
