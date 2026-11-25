@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.42.0 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.43.0 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -22,6 +22,7 @@ Autor: eldermoor-dev · Stand: Version 0.42.0 (25.11.2026). Auf dem Galaxy S25 v
 | logic.js | Reine Spiellogik ohne DOM: Zustand, Bewegung, Interaktion, Kampf, Speicherformat, Migration, Level-Analyse |
 | render.js | Raycaster (eigener Pixelpuffer), prozedurale Texturen/Sprites, Palette, Porträts |
 | audio.js | Prozedurale Geräusche per Web Audio (keine Musik) |
+| scene.js | Schlafkammer-Bild beim Rasten (0.43.0): Canvas 320×180, vier Zimmer, animiert; `startSleepScene`, `drawSleepScene` |
 | store.js | IndexedDB (Datenbank `eldermoor-dev`, Store `kv`) mit Arbeitsspeicher-Rückfall |
 | game.json | Daten: Level, Objekte, Gegner, Items, Helden, Paletten |
 | tests.js | Testsuite (Node: `node tests.js`; im Spiel: Einstellungen → Selbsttest) |
@@ -1434,6 +1435,13 @@ Nutzer (18:30, Screenshot Kampf gegen Gießmeister Harkon + Foto eines Gießers 
 - **Hüterstatuen (Zisterne), Untersuchung:** Im Code nicht nachstellbar. Alle 24 Reihenfolgen der vier Statuen, je mit und ohne Speichern/Laden, ergeben denselben Ausgang: Nur die Hand der lügenden Statue (Hüter III) gibt den Schlüssel; die anderen drei lösen den Kampf mit einem Kultwächter aus. Kein anderer Weg zu `quellschluessel`. Ursache der Gerätebeobachtung unbekannt: Es fehlen Angaben, welche Statue gedrückt wurde, was geschah und die Meldung (Screenshot). Offen: Titelbild-Version auf dem Gerät prüfen (0.37.6 oder neuer erwartet).
 - Offene Gerätetests 0.40.0: siehe Testliste im Chat (Karte kaufen, Kreuz, Wand öffnen, Truhe; Aushangbrett über Tafel und Marga; Wölfe/Trophäe/Abgabe; Abreißen; alter Spielstand lädt).
 - Ideen, nicht gebaut: Kartenpreis mit Feilschen-Talent, mehrere Extraräume je große Ebene, Steckbriefe mit festen Kettenaufträgen (Geschichte), Aushang auch in der Siedlung am Weg zur Taverne.
+
+## 0.43.0 (25.11.2026; headless, nicht auf Gerät getestet)
+- Nutzer (12:05): Schatzkarten nicht alle auf einmal (max. 3 je Besuch, Besuch mindestens 1 h her), Wirtin weist darauf hin; beim ersten Kontakt zählt sie Rast- und Ausgangsmöglichkeiten auf; beim Rasten ca. 5 s ein Bild der Schlafkammer mit den schlafenden Helden (Abenteuerromantik, Margas Herberge, Kamin, weitere Zimmer vom Assistenten).
+- **Kartenlimit** (logic.js `mapQuota`, `MAP_MAX` 3, `MAP_WAIT_MS` 1 h, `state.mapBuy = {t0, n}`): Der Besuch beginnt mit dem ersten Kauf; 3 Karten, danach Fehler `limit` mit Restwartezeit, ohne Goldabzug. Neuer Besuch erst 1 h nach dem ersten Kauf des alten. **Entscheidung (Assistent): Echtzeit** (`Date.now()`, zählt auch bei geschlossener App; Uhr zurückgestellt gibt kein Dauer-Sperren). Nicht gesichert, ob der Nutzer Echtzeit oder Spielzeit meinte; Spielzeit gibt es im Spiel nicht (nur Schritte). Schatzkarten-Fenster zeigt Margas Satz zum Rest-Kontingent. Altstände ohne `mapBuy` = drei frei.
+- **Erstgespräch** (game.json `dialogs.wirt`, Startknoten `erst`, danach `a` wie bisher): Marga nennt Rasten (Menü/Beutel, Proviant, kein Gegner in Sicht, 10 Schritte), Zimmer, Treppe (Wand gegenüber vom Tresen) und das Kartenlimit. Knoten `b` nennt Limit und Stundenfrist.
+- **Schlafkammer** (scene.js, main.js `sleepScene`): bei jeder erfolgreichen Rast (Menü, Beutel, Zimmer bei Marga) ca. 5 s Vollbild, Tippen überspringt nach 1,5 s, Ein-/Ausblenden 0,6 s. Vier Zimmer wechseln je Rast (`state.restN`, optional): Kaminzimmer, Dachkammer, Eckzimmer am Fenster (Regen), Gewölbestube (Schnee). Animiert: Feuer, Funken, Kerze, Atmen, Zzz, Regen/Schnee. Jeder Held liegt im Bett (Rasse: Haut, Elfenohren, Zwergenbart, Ork mit Hauern, Gnom mit Zipfelmütze; Klasse: Deckenfarbe und Ausrüstung am Bettpfosten). **Annahme:** Das Bild zeigt auch bei Rast im Gebiet Margas Herberge, wie vom Nutzer formuliert; ein Lagerbild wäre eine mögliche spätere Änderung.
+- Neue Datei scene.js in ASSETS (sw.js) und FILES (tests.js). Tests 164 grün (zwei neu), Taverne-Test auf Knoten `a` angepasst. Keine Werteänderung. Bild nur im Headless-Browser gesehen, Dauer und Tippen nicht auf Gerät geprüft.
 
 ## 0.42.0 (25.11.2026; headless, nicht auf Gerät getestet)
 - Nutzer (11:58): „Aushang mit verschieden großen Zetteln an der Wand darstellen“ und „Marga sieht nicht aus wie eine Wirtin“ (Screenshot: Marga nutzte das Bild des Waffenhändlers, kahl mit Augenklappe).

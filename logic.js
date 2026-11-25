@@ -999,7 +999,7 @@ export function dialogChoose(state, data, npc, nodeId, idx) {
     Object.assign(npc, { type: 'enemy', kind: eff.attack, hp: en.hp, dead: false });
     return { end: true, encounter: npc, msg: msgs.join(' '), changed: true };
   }
-  return { end: !next, next, msg: msgs.join(' '), changed: true, sfx: c.inn ? 'heal' : eff.give ? 'chest' : 'ui' };
+  return { end: !next, next, msg: msgs.join(' '), changed: true, sfx: c.inn ? 'heal' : eff.give ? 'chest' : 'ui', inn: !!c.inn };
 }
 
 export function useItemOutside(state, data, itemId, heroIdx) {
@@ -2337,19 +2337,32 @@ export function achievements(state, data) {
 // des Gebiets ist durch eine Kartenwand (type 'secret' mit needs = Kartengegenstand) verschlossen: ohne Karte gewöhnliche Mauer, mit Karte
 // zeigt die Karte ein Kreuz, ◉ öffnet die Wand. Beute der Truhe darin: bessere Ausrüstung.
 export const hasMap = (state, o) => !o.needs || (state.inv[o.needs] || 0) > 0;
-export function mapOffers(state, data) {
+// 0.43.0: Kartenlimit – höchstens MAP_MAX Karten je Besuch; der Besuch beginnt mit dem ersten Kauf (state.mapBuy = { t0, n }, Echtzeit in ms).
+// Erst MAP_WAIT_MS nach diesem ersten Kauf zählt ein neuer Besuch (Entscheidung des Assistenten: Echtzeit, auch bei geschlossener App).
+export const MAP_MAX = 3, MAP_WAIT_MS = 3600000;
+export function mapQuota(state, now = Date.now()) {
+  const b = state.mapBuy;
+  if (!b || !(now - b.t0 < MAP_WAIT_MS) || b.t0 > now) return { left: MAP_MAX, waitMs: 0 }; // kein Besuch offen, abgelaufen oder Uhr zurückgestellt
+  return { left: Math.max(0, MAP_MAX - b.n), waitMs: Math.max(0, b.t0 + MAP_WAIT_MS - now) };
+}
+export function mapOffers(state, data, now = Date.now()) {
+  const q = mapQuota(state, now);
   const seen = new Set([state.levelId, ...Object.keys(state.areas || {})]);
   return Object.entries(data.maps || {}).filter(([id]) => seen.has(id)).map(([id, c]) => {
     const owned = (state.inv[c.item] || 0) > 0 || !!(state.flags && state.flags['karte:' + id]);
-    return { id, item: c.item, name: data.items[c.item].name, area: data.levels[id].name, price: c.price, owned, ok: !owned && state.gold >= c.price };
+    return { id, item: c.item, name: data.items[c.item].name, area: data.levels[id].name, price: c.price, owned, ok: !owned && state.gold >= c.price && q.left > 0 };
   });
 }
-export function buyMap(state, data, id) {
+export function buyMap(state, data, id, now = Date.now()) {
   if (state.combat) return { error: 'in-combat' };
-  const o = mapOffers(state, data).find((x) => x.id === id);
+  const o = mapOffers(state, data, now).find((x) => x.id === id);
   if (!o) return { error: 'unknown' };
   if (o.owned) return { error: 'owned' };
+  const q = mapQuota(state, now);
+  if (q.left <= 0) return { error: 'limit', waitMs: q.waitMs };
   if (state.gold < o.price) return { error: 'gold', cost: o.price };
+  if (!state.mapBuy || q.left === MAP_MAX) state.mapBuy = { t0: now, n: 0 };
+  state.mapBuy.n++;
   state.gold -= o.price; state.flags['karte:' + id] = true; state.inv[o.item] = 1; markNew(state, o.item);
   return { msg: `${o.name} gekauft (${o.price} Gold). Auf der Gebietskarte erscheint dort ein Kreuz.`, sfx: 'chest', changed: true };
 }

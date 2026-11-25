@@ -1,10 +1,10 @@
 // Die Schatten von Eldermoor – Service Worker (Offline-Cache)
 // Autor: eldermoor-dev
 // Bei jeder Änderung an einer Spieldatei VERSION erhöhen (gleichzeitig in main.js), sonst bleibt die alte Fassung im Cache.
-const VERSION = '0.42.0';
+const VERSION = '0.43.0';
 const CACHE = 'eldermoor-' + VERSION;
 const ASSETS = [
-  './', './index.html', './main.js', './render.js', './logic.js', './audio.js', './store.js', './tests.js',
+  './', './index.html', './main.js', './render.js', './logic.js', './scene.js', './audio.js', './store.js', './tests.js',
   './game.json', './manifest.webmanifest', './icon-192.png', './icon-512.png'
 ];
 

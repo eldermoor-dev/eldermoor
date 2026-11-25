@@ -3,6 +3,11 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.43.0 (25.11.2026, headless)
+- Schatzkarten: höchstens 3 je Besuch; neuer Besuch erst eine Stunde (Echtzeit) nach dem ersten Kauf. Marga weist darauf hin.
+- Marga erklärt beim ersten Gespräch Rast, Zimmer, Ausgang und das Kartenlimit.
+- Rast zeigt ca. 5 s ein animiertes Bild der Schlafkammer in Margas Herberge mit den schlafenden Helden (vier Zimmer im Wechsel, neue Datei scene.js). Tippen überspringt.
+
 ## 0.42.0 (25.11.2026, headless)
 - Aushang in der Taverne: viele verschieden große, schiefe Zettel mit Nadeln und Siegeln statt des Schriftzugs „AUS-HANG“.
 - Wirtin Marga bekommt ein eigenes Bild (Haarknoten, Schürze, Bierkrug) statt des Händlerbilds.

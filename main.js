@@ -4,13 +4,14 @@ import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
   buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, pushError, formatErrorLog, itemDef, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, partyAvgLevel, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
-  activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogEnter, roomAt, floodLabel, dialogChoose, diceNew, diceRoll, diceKeep, diceNext, diceFinish, diceRoundLine, recruitHero, swapHero, dismissReserve, recruitCost, RESERVE_MAX, mapOffers, buyMap, boardView, boardTurnIn, boardDismiss, achievements, masteryLevel
+  activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogEnter, roomAt, floodLabel, dialogChoose, diceNew, diceRoll, diceKeep, diceNext, diceFinish, diceRoundLine, recruitHero, swapHero, dismissReserve, recruitCost, RESERVE_MAX, mapOffers, buyMap, mapQuota, MAP_MAX, boardView, boardTurnIn, boardDismiss, achievements, masteryLevel
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
 import { Sfx } from './audio.js';
+import { startSleepScene } from './scene.js';
 import { store } from './store.js';
 
-const VERSION = '0.42.0';
+const VERSION = '0.43.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -950,6 +951,11 @@ function openDialog(id, node) {
   const noted = nd && nd.note && (g.journal || []).some((e) => e.id === 'dlg:' + npc.id + ':x') ? '<p class="muted" style="margin:0 0 10px">✔ Im Notizbuch eingetragen</p>' : '';
   openModal(`<h2>${esc(v.name)}</h2><p style="font-style:italic;line-height:1.45;margin:6px 0 10px">${esc(v.text)}</p>${noted}<div class="acts" style="flex-direction:column;align-items:stretch">${v.choices.map((c) => `<button class="mb" data-m="dlg:${c.i}" ${c.ok ? '' : 'disabled'}>${esc(c.t)}</button>`).join('')}</div>`, 'dialog');
 }
+// 0.43.0: Schlafkammer-Bild (scene.js) bei jeder Rast, ca. 5 s; Zimmer wechselt je Rast
+function sleepScene() {
+  const g = S.game; g.restN = (g.restN || 0) + 1;
+  return new Promise((res) => startSleepScene(g.heroes, g.restN * 7 + (g.steps || 0), res));
+}
 async function dialogPick(i) {
   const g = S.game, d = S.dlg, npc = d && g.objs.find((o) => o.id === d.id);
   if (!npc) return;
@@ -959,6 +965,7 @@ async function dialogPick(i) {
   if (r.sfx) S.sfx.play(r.sfx);
   if (r.encounter) { closeModal(); renderAll(); startCombatUI(r.encounter); return; }
   if (r.goto) { closeModal(); const t = travelTo(g, S.data, r.goto, r.msg); if (!t.ok) { say(t.msg); renderAll(); return; } S.sfx.play('door'); await afterAreaChange(t); return; } // 0.28.0: Fähre
+  if (r.inn) { closeModal(); renderAll(); await sleepScene(); renderAll(); try { await saveSlot('auto', true); } catch { /* egal */ } return; } // 0.43.0: Zimmer mit Schlafkammer-Bild
   if (r.tavern) { S.tav = { pi: null, sure: null }; openTavern(); return; } // 0.34.0: Taverne
   if (r.maps) { openMaps(); return; } // 0.40.0: Schatzkarten
   if (r.board) { openBoard(); return; } // 0.40.0: Aushangbrett
@@ -993,7 +1000,9 @@ function openTavern() {
 function openMaps() {
   const g = S.game, offers = mapOffers(g, S.data);
   const rows = offers.length ? offers.map((o) => `<div class="row nw"><div><b>${esc(o.name)}</b><div class="muted">${o.owned ? 'Schon gekauft – das Kreuz steht auf der Gebietskarte.' : `Führt zu einem verborgenen Raum in „${esc(o.area)}“.`}</div></div><button class="mb${o.owned ? '' : ' primary'}" data-m="map-buy:${o.id}" ${o.ok ? '' : 'disabled'}>${o.owned ? 'Gekauft' : `${o.price} G`}</button></div>`).join('') : '<p class="muted">Marga schüttelt den Kopf: „Für Gegenden, die ihr nie betreten habt, zeichne ich nichts.“</p>';
-  openModal(`<h2>Schatzkarten</h2><p>Gold: <b>${g.gold}</b></p><p class="muted">Eine Karte zeigt auf der Gebietskarte ein Kreuz an einer Wand. Nur mit der Karte im Beutel lässt sie sich öffnen. Für jedes Gebiet gibt es eine, und nur Gebiete, die ihr schon besucht habt.</p>${rows}<div class="acts">${closeBtn}</div>`, 'maps');
+  const q = mapQuota(g), wait = Math.ceil(q.waitMs / 60000);
+  const quota = q.left > 0 ? `Marga: „Höchstens ${MAP_MAX} Karten je Besuch. ${q.left === MAP_MAX ? 'Heute habt ihr noch keine genommen.' : `Ihr könnt noch ${q.left} nehmen.`}“` : `Marga: „Für heute habt ihr genug Karten. Kommt in ${wait >= 60 ? 'etwa einer Stunde' : `${wait} Minuten`} wieder.“`;
+  openModal(`<h2>Schatzkarten</h2><p>Gold: <b>${g.gold}</b></p><p class="muted">Eine Karte zeigt auf der Gebietskarte ein Kreuz an einer Wand. Nur mit der Karte im Beutel lässt sie sich öffnen. Für jedes Gebiet gibt es eine, und nur Gebiete, die ihr schon besucht habt.</p><p><i>${quota}</i></p>${rows}<div class="acts">${closeBtn}</div>`, 'maps');
 }
 function openBoard() {
   const g = S.game, list = boardView(g, S.data);
@@ -1008,7 +1017,7 @@ function wirtAct(m) {
   else if (m.startsWith('bd-in:')) r = boardTurnIn(g, S.data, m.slice(6));
   else if (m.startsWith('bd-x:')) r = boardDismiss(g, S.data, m.slice(5));
   if (r) {
-    const bad = { 'in-combat': 'Im Kampf geht das nicht.', 'gold': `Dafür fehlen ${r.cost} Gold.`, 'owned': 'Diese Karte habt ihr schon.', 'not-ready': 'Dafür fehlt noch etwas.' }[r.error];
+    const bad = { 'in-combat': 'Im Kampf geht das nicht.', 'gold': `Dafür fehlen ${r.cost} Gold.`, 'owned': 'Diese Karte habt ihr schon.', 'limit': `Marga: „Für heute habt ihr genug Karten. Kommt in ${Math.ceil((r.waitMs || 0) / 60000)} Minuten wieder.“`, 'not-ready': 'Dafür fehlt noch etwas.' }[r.error];
     if (r.msg) { say(r.msg); S.sfx.play(r.sfx || 'ui'); toast(r.msg, 5000); } else toast(bad || 'Das geht nicht.', 3200);
   }
   const sc = $('#modal-box').scrollTop; renderAll(); (m.startsWith('map-buy:') ? openMaps : openBoard)(); $('#modal-box').scrollTop = sc;
@@ -1708,7 +1717,7 @@ async function onModalClick(e) {
     const r = restParty(g, S.data);
     const t = { 'in-combat': 'Im Kampf kann niemand rasten.', 'enemy-near': `Ein Gegner ist zu nah (${r.dist} Schritte, nötig sind ${(S.data.rest || {}).enemyDistance || 10}). So kann die Gruppe nicht rasten.`, 'enemy-seen': 'Ein Gegner ist in Sichtweite. So kann die Gruppe nicht rasten.', 'nothing-to-do': 'Alle sind bereits bei Kräften.' }[r.error];
     if (t) { say(t); toast(t, 3200); if (S.modal === 'inventory') openInventory(); else closeModal(); } // 0.30.1: Inventar bleibt bei gesperrter Rast offen (Meldung nur beim Tippen auf „Rasten“)
-    else { say(r.msg); S.sfx.play(r.sfx); toast(r.msg, 3200); closeModal(); renderAll(); }
+    else { say(r.msg); S.sfx.play(r.sfx); closeModal(); renderAll(); await sleepScene(); toast(r.msg, 3200); renderAll(); } // 0.43.0: Schlafkammer-Bild
   }
   else if (m === 'shopbuy' || m === 'shopsellTab') { S.shopTab = m === 'shopbuy' ? 'buy' : 'sell'; S.shopSure = null; openShop(S.shopId); }
   else if (m.startsWith('buy:')) {

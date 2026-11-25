@@ -6,7 +6,7 @@
 import * as L from './logic.js';
 import { makeTextures, Raycaster, buildGrid, buildFloorGrid, buildSprites, setResolution, drawPortrait, PLAQUE_STYLES, plaqueMetrics, DOOR_LOOKS, doorWall, FONTMODES, W, H } from './render.js';
 
-const FILES = ['index.html', 'main.js', 'render.js', 'logic.js', 'audio.js', 'store.js', 'tests.js', 'game.json', 'sw.js', 'manifest.webmanifest'];
+const FILES = ['index.html', 'main.js', 'render.js', 'logic.js', 'scene.js', 'audio.js', 'store.js', 'tests.js', 'game.json', 'sw.js', 'manifest.webmanifest'];
 
 export async function runTests(data, env = {}) {
   const results = [];
@@ -2876,7 +2876,7 @@ export async function runTests(data, env = {}) {
     const t = L.changeArea(s, data, 'stairs_taverne'); assert(t.ok && s.levelId === 'taverne', 'Taverne erreichbar');
     const back = s.objs.find((o) => o.id === 'stairs_taverne_aus'); assert(back && back.to.level === 'moorrand' && L.cellChar(data.levels.moorrand, back.to.x, back.to.y) === '.', 'Rückweg liegt auf Boden');
     const w = s.objs.find((o) => o.id === 'npc_wirt'); assert(w && L.blockerAt(s, w.x, w.y) === w, 'Wirtin versperrt das Feld');
-    const v = L.dialogView(s, data, w, L.dialogStartNode(s, data, w)); assert(v.choices.length === 6, 'Wirtin: sechs Wahlmöglichkeiten (Gruppe, Zimmer, Karten, Aushang, Erklärung, Gehen)');
+    const v = L.dialogView(s, data, w, 'a'); assert(v.choices.length === 6, 'Wirtin: sechs Wahlmöglichkeiten (Gruppe, Zimmer, Karten, Aushang, Erklärung, Gehen)');
     const r0 = L.dialogChoose(s, data, w, 'a', 0); assert(r0.end && r0.tavern, 'Wahl öffnet die Taverne');
     // Anwerben
     assert(L.recruitCost(s, data) === 60, 'Kosten Stufe 1: 40 + 20 × 1');
@@ -3033,6 +3033,30 @@ export async function runTests(data, env = {}) {
     const s2 = L.deserialize(JSON.parse(JSON.stringify(L.serialize(s))), data); assert(s2.objs.find((o) => o.id === wall.id).open, 'offen nach Laden');
     const old = L.newGame(data, 41); L.jumpToLevel(old, data, 'kultgruft'); old.objs = old.objs.filter((o) => o.id !== wall.id && o.id !== chest.id); L.syncStatic(old, data);
     assert(old.objs.some((o) => o.id === wall.id && !o.open) && old.objs.some((o) => o.id === chest.id && !o.open), 'Alt-Stand: Wand und Truhe nachgetragen');
+  });
+  await test('0.43.0 Kartenlimit: 3 je Besuch, Sperre eine Stunde, Wirtin erklärt es; Erstgespräch', () => {
+    const s = L.newGame(data, 43); s.gold = 99999; for (const id of Object.keys(data.maps)) L.jumpToLevel(s, data, id);
+    const T0 = 1e12, H = 3600000, offered = () => L.mapOffers(s, data, T0).filter((o) => !o.owned).map((o) => o.id);
+    assert(offered().length >= 4, 'mindestens vier Karten im Angebot: ' + offered().length); eq(L.mapQuota(s, T0).left, 3, 'Anfang: drei frei');
+    for (let i = 0; i < 3; i++) { const r = L.buyMap(s, data, offered()[0], T0 + i * 1000); assert(!r.error, 'Kauf ' + (i + 1)); }
+    eq(L.mapQuota(s, T0 + 5000).left, 0, 'nach drei: keine frei'); assert(L.mapOffers(s, data, T0 + 5000).every((o) => !o.ok), 'nichts mehr kaufbar');
+    const g0 = s.gold, r4 = L.buyMap(s, data, offered()[0], T0 + 60000); eq(r4.error, 'limit', 'vierte gesperrt'); assert(r4.waitMs > 0 && r4.waitMs <= H, 'Wartezeit genannt'); eq(s.gold, g0, 'kein Gold abgezogen');
+    eq(L.buyMap(s, data, offered()[0], T0 + H - 1).error, 'limit', 'knapp vor einer Stunde: noch gesperrt');
+    const r5 = L.buyMap(s, data, offered()[0], T0 + H); assert(!r5.error, 'nach einer Stunde: neuer Besuch'); eq(L.mapQuota(s, T0 + H + 1).left, 2, 'neuer Besuch: zwei übrig');
+    eq(L.mapQuota(s, T0 - 5000).left, 3, 'Uhr zurückgestellt: kein Dauer-Sperren');
+    const s2 = L.deserialize(JSON.parse(JSON.stringify(L.serialize(s))), data); eq(L.mapQuota(s2, T0 + H + 1).left, 2, 'Limit bleibt nach Speichern/Laden');
+    const dl = data.dialogs.wirt; eq(dl.start, 'erst', 'Startknoten Erstgespräch'); const tx = dl.nodes.erst.text;
+    for (const w of ['Rasten', 'Zimmer', 'Treppe', 'drei']) assert(tx.includes(w), 'Erstgespräch nennt ' + w);
+    const npc = s.objs.find((o) => o.type === 'npc' && o.dialog === 'wirt') || { id: 'npc_wirt', dialog: 'wirt' };
+    eq(L.dialogStartNode(s, data, npc), 'erst', 'erster Kontakt'); s.flags['d:' + npc.id] = true; eq(L.dialogStartNode(s, data, npc), 'a', 'danach normales Gespräch');
+    for (const [k, n] of Object.entries(dl.nodes)) for (const c of n.choices) assert(!c.to || dl.nodes[c.to], k + ': Ziel vorhanden');
+  });
+  await test('0.43.0 Schlafkammer: Szene zeichnet in allen Zimmern ohne Fehler, ASSETS enthält scene.js', async () => {
+    const sw = env.readText ? await env.readText('sw.js') : null; if (sw) assert(sw.includes("'./scene.js'"), 'scene.js in ASSETS');
+    const calls = []; const ctx = new Proxy({}, { get: (t, k) => (k in t ? t[k] : k === 'createRadialGradient' ? () => ({ addColorStop() {} }) : (...a) => { calls.push(k); } ), set: (t, k, v) => { t[k] = v; return true; } });
+    const M = await import('./scene.js'); assert(M.SLEEP_ROOMS.length >= 4, 'mindestens vier Zimmer');
+    const heroes = ['human', 'elf', 'dwarf', 'ork', 'gnome'].map((race, i) => ({ name: 'H' + i, race, cls: ['warrior', 'rogue', 'priest', 'mage', 'ranger', 'alchemist'][i] }));
+    for (let v = 0; v < M.SLEEP_ROOMS.length; v++) for (const t of [0, 1.7, 4.9]) { calls.length = 0; M.drawSleepScene(ctx, heroes, v, t); assert(calls.length > 150, 'Zimmer ' + v + ' zeichnet'); }
   });
   await test('0.40.0 Steckbriefe: Daten, Aushang nur für besuchte Gebiete, Abschüsse, Trophäen, Abgabe, Nachrücken, Abreißen', () => {
     const B = data.bounties; assert(B.length >= 15, 'mindestens 15 Steckbriefe'); const kinds = new Set(B.map((b) => b.type)); for (const k of ['kill', 'trophy', 'gear']) assert(kinds.has(k), 'Art ' + k);

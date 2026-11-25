@@ -13407,9 +13407,23 @@
     },
     "wirt": {
       "name": "Wirtin Marga",
-      "start": "a",
+      "start": "erst",
       "again": "a",
       "nodes": {
+        "erst": {
+          "text": "Eine Frau mit Haarknoten und Schürze stellt den Krug ab und mustert euch. „Neue Gesichter. Ich bin Marga, der Goldene Eber gehört mir. Drei Dinge, damit ihr euch nicht verlauft: Rasten könnt ihr überall, wo kein Gegner in Sicht ist und keiner näher als zehn Schritte steht. Menü, dann Rasten, oder im Beutel beim Proviant. Mit Proviant erholt sich jeder, auch die Bewusstlosen; ohne nur zu knapp einem Drittel. Wer lieber unter einem Dach schläft, nimmt bei mir ein Zimmer: kostet Gold, dafür ruht auch die Reserve. Und hinaus geht es über die Treppe an der Wand gegenüber vom Tresen. Karten zeichne ich übrigens nur drei je Besuch.“",
+          "choices": [
+            {
+              "t": "Danke, das hilft",
+              "to": "a",
+              "done": true
+            },
+            {
+              "t": "Gehen",
+              "done": true
+            }
+          ]
+        },
         "a": {
           "text": "Eine breite Frau wischt hinter dem Tresen einen Krug aus. „Willkommen im Goldenen Eber. Wer hier einkehrt, bleibt nicht allein: Ich führe die Liste derer, die mit euch ziehen würden, und halte ihre Betten warm. Lernen tun sie auch, wenn ihr sie holt – nur langsamer. Und wer müde ist, bekommt ein Zimmer.“",
           "choices": [
@@ -13439,7 +13453,7 @@
           ]
         },
         "b": {
-          "text": "„Vier Betten habe ich. Wer dort wartet, bekommt die Hälfte der Erfahrung, die ihr unterwegs sammelt. Tauschen könnt ihr jederzeit, solange ihr nicht kämpft; die Rüstung des Gehenden wandert in euren Beutel. Neue Gesichter kosten Gold – je erfahrener ihr seid, desto mehr, denn desto besser sind sie.“ Ein Zimmer für die Nacht kostet je nach Stufe etwas mehr, dafür ruht auch die Reserve, und wer bewusstlos war, steht am Morgen wieder. Und wer einen Zeichenstift mag: Ich verkaufe Karten zu verborgenen Räumen in Gebieten, die ihr schon kennt. Am Brett neben der Tür hängen Steckbriefe, die Erfahrung bringen.",
+          "text": "„Vier Betten habe ich. Wer dort wartet, bekommt die Hälfte der Erfahrung, die ihr unterwegs sammelt. Tauschen könnt ihr jederzeit, solange ihr nicht kämpft; die Rüstung des Gehenden wandert in euren Beutel. Neue Gesichter kosten Gold – je erfahrener ihr seid, desto mehr, denn desto besser sind sie.“ Ein Zimmer für die Nacht kostet je nach Stufe etwas mehr, dafür ruht auch die Reserve, und wer bewusstlos war, steht am Morgen wieder. Und wer einen Zeichenstift mag: Ich verkaufe Karten zu verborgenen Räumen in Gebieten, die ihr schon kennt – aber nicht mehr als drei je Besuch, und der nächste Besuch zählt erst eine Stunde später. Am Brett neben der Tür hängen Steckbriefe, die Erfahrung bringen.",
           "choices": [
             {
               "t": "Gruppe verwalten",
