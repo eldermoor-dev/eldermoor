@@ -14058,70 +14058,266 @@
       }
     },
     "gast_hut": {
-      "name": "Bärtiger Gast",
+      "name": "Fuhrmann Jorn",
       "start": "a",
+      "again": "z",
       "nodes": {
         "a": {
-          "text": "Der Mann mit dem Hut hebt den Krug. „Setzt euch nicht an meinen Tisch, aber hört zu: Am Aushangbrett wechseln die Zettel. Wer oft hereinschaut, findet bessere.“",
+          "text": "Ein Mann mit schiefem Hut und Pfeife lehnt am Tisch. „Jorn. Früher hab ich Torf gefahren, heute fahr ich nur noch Geschichten. Ihr seht aus wie Leute, die bald über das Wasser müssen. Soll ich euch was über den Moorsee erzählen? Ein Krug dazu wäre nett.“",
           "choices": [
             {
-              "t": "Danke für den Rat"
+              "t": "Einen Krug ausgeben",
+              "cost": {
+                "gold": 10
+              },
+              "to": "b"
+            },
+            {
+              "t": "Nur plaudern",
+              "to": "c"
+            },
+            {
+              "t": "Später"
+            }
+          ]
+        },
+        "b": {
+          "text": "Jorn trinkt, wischt sich den Schaum ab und senkt die Stimme. „Der Fuhrmann am See nimmt zwanzig Gold für die erste Überfahrt. Wer zum zweiten Mal kommt, zahlt nur noch zehn. Er sagt, er schätzt Stammkunden. Und auf der Insel wohnt ein Gnom, der mit Würfeln spielt. Spielt nie mit mehr, als ihr verlieren könnt. Man sagt, bei Pech verwandelt er sich.“",
+          "choices": [
+            {
+              "t": "Danke, Jorn",
+              "done": true,
+              "note": "Jorn in der Taverne: Der Fuhrmann am Moorsee nimmt für die zweite Überfahrt nur noch 10 statt 20 Gold. Auf der Insel würfelt ein Gnom. Nie mehr setzen, als man verlieren kann.",
+              "noteTitle": "Jorns Tipp zum See"
+            }
+          ]
+        },
+        "c": {
+          "text": "„Torf ist ehrliche Arbeit. Das Moor ist es nicht. Es nimmt Fuhrwerke, Ochsen und manchmal Männer, und gibt nie etwas zurück.“ Er pafft. „Kommt wieder, wenn ihr einen Krug übrig habt.“",
+          "choices": [
+            {
+              "t": "Zurück",
+              "to": "a"
+            }
+          ]
+        },
+        "z": {
+          "text": "Jorn hebt den leeren Krug und zwinkert. „Der See, die Insel, der Gnom, ihr wisst alles, was ich weiß. Außer, wie man ohne Fuhrwerk Geld verdient.“",
+          "choices": [
+            {
+              "t": "Gehen"
             }
           ]
         }
       }
     },
     "gast_kapuze": {
-      "name": "Gast mit Kapuze",
+      "name": "Schwester Ilka",
       "start": "a",
+      "again": "z",
       "nodes": {
         "a": {
-          "text": "Unter der Kapuze flüstert es: „Stücke, die zu gut aussehen, sind oft verflucht. Merkt ihr es beim Anlegen, geht zur Hexe dort hinten. Sie nimmt den Fluch, aber nicht umsonst: Gold und ein Heiltrank.“",
+          "text": "Unter der Kapuze sitzt eine Frau, die ihren Becher nicht anrührt. „Ilka. Ich war in der Kultgruft, bevor ich Verstand bekam. Fragt nicht, was ich dort getan habe. Fragt, was ich gelernt habe.“",
           "choices": [
             {
-              "t": "Verstanden"
+              "t": "Was habt ihr gelernt?",
+              "to": "b"
+            },
+            {
+              "t": "Was wisst ihr über die Wächter dort?",
+              "to": "c"
+            },
+            {
+              "t": "Gehen"
+            }
+          ]
+        },
+        "b": {
+          "text": "„Dass man Wunden nicht zählt, sondern verbindet. Nehmt das hier, ich brauche es nicht mehr.“ Sie schiebt euch ein Fläschchen zu. „Gegen Gift. In den Gängen unter dem Moor gibt es genug davon.“",
+          "choices": [
+            {
+              "t": "Annehmen",
+              "give": [
+                {
+                  "item": "gegengift",
+                  "n": 1
+                }
+              ],
+              "done": true,
+              "msg": "Ilka nickt knapp und schaut wieder in ihren Becher."
+            }
+          ]
+        },
+        "c": {
+          "text": "„Die Wächter tragen Medaillons. Wer einem eines abnimmt, hat etwas, wofür die Wirtin am Aushangbrett Zettel aushängt. Und in einer Zelle dort unten sitzt jemand, der gern redet. Hört ihm zu, er hat Zeit.“",
+          "choices": [
+            {
+              "t": "Zurück",
+              "to": "a"
+            }
+          ]
+        },
+        "z": {
+          "text": "Ilka schaut kurz auf. „Ich habe euch alles gegeben, was ich habe. Das Fläschchen war ehrlich gemeint.“",
+          "choices": [
+            {
+              "t": "Gehen"
             }
           ]
         }
       }
     },
     "gast_rot": {
-      "name": "Gast im roten Wams",
+      "name": "Händler Dorn",
       "start": "a",
+      "again": "z",
       "nodes": {
         "a": {
-          "text": "Der Mann im roten Wams wischt sich den Bart. „Marga zeichnet Schatzkarten. Höchstens drei je Besuch, und dann muss eine Stunde vergehen. Das Kreuz auf der Karte führt zu einer Wand, die sonst nur Mauer ist.“",
+          "text": "Ein Mann im roten Wams zählt Münzen, die nicht seine sind. „Dorn, Händler für alles, was glänzt. Ich kenne jeden Waffenhändler zwischen hier und dem Keller. Wollt ihr einen Rat, der Gold spart? Er kostet fünfundzwanzig.“",
           "choices": [
             {
-              "t": "Gut zu wissen"
+              "t": "Rat kaufen",
+              "cost": {
+                "gold": 25
+              },
+              "to": "b"
+            },
+            {
+              "t": "Zu teuer",
+              "to": "c"
+            },
+            {
+              "t": "Später"
+            }
+          ]
+        },
+        "b": {
+          "text": "Dorn grinst. „Tief unten in der Blutgruft sitzt Valdis, und seine Waffenkammer ist kein Laden für Jedermann. Fünf Meisterwaffen, jede für genau einen Schlag Leute: den Orkspalter trägt nur ein Ork-Krieger, den Steinherzstab nur ein Zwerg-Magier, den Mondsilberbogen ein Elf-Waldläufer, den Tüftlerstab ein Gnom-Alchemist, den Lichtbringer ein Mensch-Kleriker. Teuer sind sie, über tausend Gold. Spart also, statt Kleinkram zu kaufen.“",
+          "choices": [
+            {
+              "t": "Merke ich mir",
+              "done": true,
+              "note": "Dorn: Valdis' Waffenkammer in der Blutgruft verkauft fünf Meisterwaffen, jede nur für eine Rasse und Klasse (Orkspalter: Ork-Krieger, Steinherzstab: Zwerg-Magier, Mondsilberbogen: Elf-Waldläufer, Tüftlerstab: Gnom-Alchemist, Lichtbringer: Mensch-Kleriker). Preis über tausend Gold.",
+              "noteTitle": "Dorns Rat zu Valdis"
+            }
+          ]
+        },
+        "c": {
+          "text": "„Zu teuer? Gutes Wissen ist immer zu teuer, bis man es braucht.“ Er zuckt die Schultern.",
+          "choices": [
+            {
+              "t": "Zurück",
+              "to": "a"
+            }
+          ]
+        },
+        "z": {
+          "text": "Dorn tippt sich an die Stirn. „Ihr habt meinen Rat. Spart auf Meisterwaffen. Alles Weitere kostet extra.“",
+          "choices": [
+            {
+              "t": "Gehen"
             }
           ]
         }
       }
     },
     "gast_dunkel": {
-      "name": "Gast am Tisch",
+      "name": "Alchemistin Brisa",
       "start": "a",
+      "again": "z",
       "nodes": {
         "a": {
-          "text": "Die Frau am Tisch dreht den Becher. „Geheimwände haben einen feinen Riss. Wer ein scharfes Auge hat, spürt sie schon im Vorbeigehen.“",
+          "text": "Eine Frau mit Tintenflecken an den Fingern schüttelt ein Fläschchen und hält es gegen das Licht. „Brisa. Ich mische Dinge, die manchmal explodieren. Meistens im Keller, selten in Gasthäusern. Interessiert euch an Fallen? Dann stellt eine Frage.“",
           "choices": [
             {
-              "t": "Danke"
+              "t": "Wie erkenne ich Fallen?",
+              "to": "b"
+            },
+            {
+              "t": "Und was hilft gegen Gift?",
+              "to": "c"
+            },
+            {
+              "t": "Gehen"
+            }
+          ]
+        },
+        "b": {
+          "text": "„Fallen verraten sich. Ein Riss im Boden, Kratzer an der Wand, ein Schild, das zu freundlich warnt. Jemand mit Talent für Fallen sieht sie früher und kann sie entschärfen, indem er ◉ drückt. Wer zu spät merkt, dass er auf einer Platte steht, hat Pech gehabt.“",
+          "choices": [
+            {
+              "t": "Gut zu wissen",
+              "done": true,
+              "note": "Brisa: Fallen verraten sich durch Risse im Boden, Kratzer an Wänden oder Schilder. Helden mit Fallentalent erkennen sie früher. Erkannte Fallen lassen sich mit ◉ entschärfen.",
+              "noteTitle": "Brisas Fallenkunde"
+            }
+          ]
+        },
+        "c": {
+          "text": "„Gegengift. Immer eines dabei haben, nicht erst kaufen, wenn die Haut grün wird. Das Zeug ist billig, wenn man es vorher braucht, und unbezahlbar danach.“",
+          "choices": [
+            {
+              "t": "Zurück",
+              "to": "a"
+            }
+          ]
+        },
+        "z": {
+          "text": "Brisa nickt über ihr Fläschchen hinweg. „Fallen und Gegengift. Mehr Rat gibt es nicht ohne Bezahlung in Zutaten.“",
+          "choices": [
+            {
+              "t": "Gehen"
             }
           ]
         }
       }
     },
     "gast_hut2": {
-      "name": "Müder Gast",
+      "name": "Söldner Karn",
       "start": "a",
+      "again": "z",
       "nodes": {
         "a": {
-          "text": "Der Gast gähnt. „Rasten? Geht überall, wo kein Gegner in Sicht ist. Aber bei Marga schläft man besser, dort ruht sogar die Reserve.“",
+          "text": "Ein Mann mit gebrochener Nase starrt in seinen Krug. „Karn. Ich war dabei, als wir die Blutgruft gestürmt haben. Von elf sind zwei zurückgekommen. Ich war der eine, der nicht schreit, wenn er schlafen will.“",
           "choices": [
             {
-              "t": "Verstanden"
+              "t": "Was ist dort unten passiert?",
+              "to": "b"
+            },
+            {
+              "t": "Was hilft gegen Vampire?",
+              "to": "c"
+            },
+            {
+              "t": "Gehen"
+            }
+          ]
+        },
+        "b": {
+          "text": "„Die Gräfin sammelt Gäste, heißt es. Wer sich dort umschaut, versteht, was das heißt. Die Wände sind warm. Das Wasser an den Wänden ist keines. Und im Hauptschiff stehen Säulen wie Zähne.“ Er trinkt. „Ich würde nie wieder hinuntergehen. Aber ihr geht ja ohnehin.“",
+          "choices": [
+            {
+              "t": "Zurück",
+              "to": "a"
+            }
+          ]
+        },
+        "c": {
+          "text": "„Ihr Biss heilt sie. Was ihr ihnen nehmt, holen sie sich zurück. Erledigt sie schnell. Und ihr Blutbiss geht auf den Schwächsten von euch, also haltet den gesund oder weit hinten.“",
+          "choices": [
+            {
+              "t": "Danke, Karn",
+              "done": true,
+              "note": "Karn: Die Vampire der Blutgruft heilen sich durch ihre Bisse. Schnell erledigen, die Schwächsten in die hintere Reihe stellen.",
+              "noteTitle": "Karns Rat zu Vampiren"
+            }
+          ]
+        },
+        "z": {
+          "text": "Karn hebt den Krug. „Auf die zwei, die zurückkamen. Und auf die neun, die nicht gejammert haben.“",
+          "choices": [
+            {
+              "t": "Gehen"
             }
           ]
         }

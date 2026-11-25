@@ -3045,6 +3045,16 @@ export async function runTests(data, env = {}) {
     assert(s.objs.find((x) => x.id === 'd_gast1').type === 'npc', 'Altstand: decor → npc');
     const a = L.analyzeLevel(data, 'taverne'); assert(a.ok, 'Analyse ok ' + JSON.stringify(a));
   });
+  await test('0.46.4 Taverne-Gäste: eigene Geschichten, Kosten, Notizbuch, Einmaligkeit', () => {
+    const s = fresh(71); L.jumpToLevel(s, data, 'taverne'); s.gold = 100;
+    const tk = (id, node, idx) => L.dialogChoose(s, data, s.objs.find((o) => o.id === id), node, idx);
+    let r = tk('d_gast1', 'a', 0); assert(!r.error && s.gold === 90, 'Jorn: Krug kostet 10'); r = tk('d_gast1', 'b', 0); assert(s.journal && s.journal.some((e) => /Jorn/.test(e.text)), 'Jorn: Notizbuch');
+    eq(L.dialogView(s, data, s.objs.find((o) => o.id === 'd_gast1'), L.dialogStartNode(s, data, s.objs.find((o) => o.id === 'd_gast1'))).text.includes('Stammkunden'), false, 'Jorn: danach Kurztext');
+    tk('d_gast3', 'a', 0); assert(s.gold === 65, 'Dorn: Rat kostet 25'); tk('d_gast3', 'b', 0); assert(s.journal.some((e) => /Valdis/.test(e.text)), 'Dorn: Notizbuch');
+    const g0 = s.inv.gegengift || 0; tk('d_gast2', 'b', 0); eq(s.inv.gegengift, g0 + 1, 'Ilka schenkt Gegengift einmalig');
+    tk('d_gast4', 'b', 0); tk('d_gast5', 'c', 0); assert(s.journal.length >= 4, 'vier Notizen');
+    const texts = new Set(['d_gast1', 'd_gast2', 'd_gast3', 'd_gast4', 'd_gast5'].map((id) => data.dialogs[data.levels.taverne.objects.find((o) => o.id === id).dialog].nodes.a.text)); eq(texts.size, 5, 'alle Gäste verschieden');
+  });
   await test('0.40.0 Schatzkarten: Daten, Kartenwand ohne/mit Karte, Kauf, Extraraum erreichbar', () => {
     const ids = Object.keys(data.maps || {}); assert(ids.length >= 10, 'mindestens zehn Gebiete mit Karte: ' + ids.length);
     for (const id of ids) {

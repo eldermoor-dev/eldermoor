@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.46.3 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.46.4 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1435,6 +1435,10 @@ Nutzer (18:30, Screenshot Kampf gegen Gießmeister Harkon + Foto eines Gießers 
 - **Hüterstatuen (Zisterne), Untersuchung:** Im Code nicht nachstellbar. Alle 24 Reihenfolgen der vier Statuen, je mit und ohne Speichern/Laden, ergeben denselben Ausgang: Nur die Hand der lügenden Statue (Hüter III) gibt den Schlüssel; die anderen drei lösen den Kampf mit einem Kultwächter aus. Kein anderer Weg zu `quellschluessel`. Ursache der Gerätebeobachtung unbekannt: Es fehlen Angaben, welche Statue gedrückt wurde, was geschah und die Meldung (Screenshot). Offen: Titelbild-Version auf dem Gerät prüfen (0.37.6 oder neuer erwartet).
 - Offene Gerätetests 0.40.0: siehe Testliste im Chat (Karte kaufen, Kreuz, Wand öffnen, Truhe; Aushangbrett über Tafel und Marga; Wölfe/Trophäe/Abgabe; Abreißen; alter Spielstand lädt).
 - Ideen, nicht gebaut: Kartenpreis mit Feilschen-Talent, mehrere Extraräume je große Ebene, Steckbriefe mit festen Kettenaufträgen (Geschichte), Aushang auch in der Siedlung am Weg zur Taverne.
+
+## 0.46.4 (25.11.2026; headless, nicht auf Gerät getestet)
+- Nutzer (13:25): „Weiterhin kein Zugang zum Feuer. Die Gäste erzählen nur, was die Wirtin schon erzählt hat. Langweilig.“ Gäste neu: je 2–3 Dialogknoten, eigene Stimme, Wahl mit Kosten (`cost`), einmaliges Geschenk (Ilka: Gegengift), Notizbuch-Einträge (Jorn: Fährpreis 2. Fahrt, Dorn: Meisterwaffen, Brisa: Fallen, Karn: Vampire), `again`-Knoten bei Wiederholung. Hinweise geprüft gegen Spieldaten.
+- **Feuer:** Ursache nicht gesichert. Vermutung A: Nutzer hat noch die alte Version (0.46.3 war kurz vorher gepusht, PWA braucht Neuladen). Vermutung B: Nutzer erwartet mehr als ein Gespräch (z. B. Feuer als Schnellreise/Rast). Nachfrage an den Nutzer offen.
 
 ## 0.46.3 (25.11.2026; headless, nicht auf Gerät getestet)
 - Nutzer (13:15, Screenshot): „Ich kann nicht zum Feuer gehen. Noch keine Interaktion mit anderen Gästen möglich.“ **Deutung (Annahme):** Kamin und Gäste sind bisher `decor` und nicht ansprechbar; „zum Feuer gehen“ = das Feuer benutzen. Der Kamin selbst ist begehbar nicht (Möbelstück, wie jeder Kamin).
