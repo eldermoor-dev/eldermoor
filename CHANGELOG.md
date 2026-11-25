@@ -3,6 +3,10 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.47.4 (25.11.2026, headless, nicht auf Gerät getestet)
+- Fallen: unentdeckte Falle deutlich unauffälliger. 0.47.3 hatte die Platte sichtbarer gemacht (Fehler, Screenshot des Nutzers bestätigt die helle Platte mit Lichtkante). Jetzt keine gefüllte Platte und keine Lichtkante mehr, nur feine, unterbrochene Fugen, zwei kurze Risse und wenig Staub (Fläche transparent). Entdeckte Falle (roter Bodenring) unverändert.
+- Nummerierung verschoben: Struktur (7–9) = 0.47.5, Balance (10–13) = 0.47.6, Lesbarkeit (14–17) = 0.48.0.
+
 ## 0.47.3 (25.11.2026, headless, nicht auf Gerät getestet)
 - Treppen/Ausgänge: Ursache des seitlichen Hereinziehens nachgestellt (Vorwärtsgang parallel zur Wand durch das Treppenfeld; 45 von 82 Zugängen, jetzt 0). Betreten nur noch frontal (`passEntryDirs`); seitlich/parallel gilt als Wand.
 - Gefangener Tilo sitzt in eigener 1×1-Zelle (Gittertür, Schild „ZELLE“).

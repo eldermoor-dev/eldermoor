@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.47.3 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.47.4 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1637,3 +1637,12 @@ Erledigt: Backlog-Punkte 1–6 (siehe CHANGELOG.md). Details:
 Offene Tests (Gerät): Treppen seitlich betreten, Zelle, Fallenbild, Rastbild, Karten im Erstgespräch.
 Offene Rückfragen an den Nutzer: a) „Moorschrat im Testlevel“ (siehe Backlog), b) Annahmen zu 7 (Fluch-Bonus ×0,5) und 9 (Händler-Nachschub 5 Stunden Echtzeit).
 Nächste: 0.47.4 (7–9), 0.47.5 (10–13 + BALANCE/SIM), 0.48.0 (14–17), später „Tote erwecken“.
+
+## 0.47.4 (25.11.2026; headless, nicht auf Gerät getestet): Fallenbild unauffälliger
+- Nutzer (25.11.2026 17:44, Screenshot): „Fallen weiterhin viel zu deutlich sichtbar“. Nachgestellt (Code, nicht auf Gerät): Der Screenshot zeigt die Platte von `genTrap('faint')`; 0.47.3 hatte sie kontrastreicher gemacht (Fehler).
+- Änderung nur in render.js `genTrap` Modus 'faint': keine gefüllte Platte, keine Lichtkante; nur unterbrochene feine Fugen (Rechteck x22–42, y60–63), zwei kurze Risse, wenig Staub. Modus 'seen' (roter Bodenring) und 'sprung' unverändert. Erscheinungsbild nicht gerendert/gesehen (Palettenabhängig), nur Code und Tests geprüft.
+- Tests 175 grün. Keine Werteänderung, BALANCE.md/SIM.md unverändert.
+- Offene Tests (Gerät): Fallenbild unentdeckt (kaum sichtbar, aber mit Schurken-Talent/Aufmerksamkeit erkennbar), entdeckte Falle weiter rot.
+- Nummerierung neu: 0.47.5 = Struktur (Backlog 7–9: entfluchte Gegenstände halbe Boni, Taverne erst im 3. Gebiet, Händlerbestand mit Nachschub nach 1 Stunde Echtzeit); 0.47.6 = Balance (10–13) mit BALANCE.md/SIM.md; 0.48.0 = Lesbarkeit/Stimmung (14–17); später „Tote erwecken“.
+- Entscheidungen des Nutzers (25.11.2026): Entfluchte Gegenstände: positive Boni halbieren (Kopie der itemDef, atk/def/init und fx-Zahlen ×0,5 gerundet, mindestens 1, Beschreibung anpassen). Händler: Nachschub nach 1 Stunde Echtzeit (Zeitstempel im Spielstand); ersetzt die frühere Annahme „5 Stunden“.
+- Offen: Gerätetest 0.47.3 (Ergebnisse stehen aus), „Schrat im Testgewölbe“ (laut `game.json` kein Schrat in test1; Schrat nur in moorlichtung `en_schrat` 14,2 und schratgruben `en_sboss` 30,7; Levelname vom Nutzer steht aus).
