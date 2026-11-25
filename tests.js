@@ -2952,6 +2952,12 @@ export async function runTests(data, env = {}) {
       assert(s.title.includes(want(s, t)) && !s.title.includes(want(s, t) === '→' ? '←' : '→'), `${sid}: Pfeil ${want(s, t)} erwartet, Titel „${s.title}“`);
     }
   });
+  await test('0.47.14 Lesefeld: Zeile endet auf „-“ = Wort geht weiter (KULT-GRUFT, kein „ · “ im Wort)', () => {
+    const s = L.newGame(data, 82); L.jumpToLevel(s, data, 'moorpfad');
+    const d = s.objs.find((o) => o.id === 'door_gruft'); assert(d, 'door_gruft vorhanden');
+    s.player = { x: d.x - 1, y: d.y, dir: 1 };
+    const h = L.readHint(s, data); assert(h && h.text === 'KULT-GRUFT', 'Türtitel: ' + JSON.stringify(h));
+  });
   await test('0.47.13 Lesefeld: Text des Schilds/Türtitels in Blickrichtung, Pfeile aus Sicht der Gruppe', () => {
     const s = L.newGame(data, 81); L.jumpToLevel(s, data, 'kultgruft'); s.player = { x: 4, y: 4, dir: 0 };
     const h = L.readHint(s, data); assert(h && /ALTE · ZELLEN/.test(h.text), 'Schild ALTE ZELLEN: ' + JSON.stringify(h));

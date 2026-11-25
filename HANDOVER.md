@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.47.13 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.47.14 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1738,3 +1738,12 @@ Nächste: 0.47.4 (7–9), 0.47.5 (10–13 + BALANCE/SIM), 0.48.0 (14–17), spä
 - Offen (Gerät): Lesefeld lesbar und nicht störend (Position zu Kompass/FPS-Anzeige, Moorlichtung, Kultgruft, Festung, Taverne-Türen); wird es bei Türen vor dem Schild doppelt/zu früh gezeigt? Wunsch nach Menüschalter?
 - Nummerierung: 0.47.14 = Balance (10–13), 0.48.0 = Treppenschilder (Lesefeld zeigt Zielgebiet mit), Schrats Vorgarten, Schildformen, Wanddeko, Hebel, Geräusche; später „Tote erwecken“.
 
+## 0.47.14 (25.11.2026; headless, nicht auf Gerät getestet): Schilder und Türtitel auf Schildern aus Material
+- Gerätebefund Nutzer 20:29–20:32 (Foto Tür KULT-GRUFT, Moorpfad): (1) Lesefeld zeigte „KULT- · GRUFT“ (Trennstrich-Fehler); (2) Irrlichtschild „wirkt wie Neonreklame“ (belegt im Headless-Render: hellblaue Schrift auf schwarzer Platte); (3) Türschrift „passt weder stilistisch noch farblich, Platzmangel auf der Tür“ (belegt: große goldene Schrift mit schwarzer Kontur, ragt über den oberen Türrahmen). Nutzer testet weitere Schilder/Schriftzüge vorerst nicht („keine Zeit verschwenden“); Schilder und Schriftzüge deshalb aus der Testliste genommen.
+- Entscheidung des Assistenten (Nutzer: „verbessere erneut so gut wie möglich“): `genPlaque` (render.js) malt Schrift auf ein **Schild aus dem Material des Stils** (BOARDS: Holz, Stein, Eisen, Moosbrett; Maserung/Körnung, Rand, Nägel bzw. Nieten, Moos am Oberrand bei `moss`). Helle Bretter: dunkle aufgemalte Schrift ohne Kontur; dunkle Platten (`dark`, `iron`): graue Kreideschrift mit dunkler Kontur. Kein Blau und kein Gold mehr; nur die Würfeltür behält Elfenbein auf Eisen.
+- Tür: Schrift höchstens Stufe 2,0, Schild mittig in der oberen Türfüllung (y ≈ 30–74 von 192), liegt innerhalb des Rahmens und über dem Schloss. Wandschilder: gleiche Schilder, Größe weiter nach Textbreite.
+- logic.js `readHint`: endet eine Zeile auf „-“, wird die nächste ohne „ · “ angefügt (KULT-GRUFT). Neuer Test.
+- Nicht geändert: Rahmen offener Türen (`genDoorFrame`) und Sprite-Schilder; ob dort noch Gold/Blau vorkommt, nicht geprüft.
+- Prüfung: `node tests.js` 180 bestanden, 0 fehlgeschlagen; Render-Vergleich vorher/nachher im Raycaster (Tür aus 1 und 2 Feldern, Irrlichtschild aus 1 und 3 Feldern). Kein BALANCE-/SIM-Lauf nötig (keine Gegner-/Heldenwerte geändert). VERSION in main.js und sw.js = 0.47.14.
+- Offene Tests (Gerät, ohne Schilder und Schriftzüge): Taverne-Tür erst nach Schratgruben; Moorlicht im Wolfkampf innerhalb der Wände; Ysolde entflucht; Händler-Vorrat; alter Spielstand aus 0.47.8; Performance. Schilder/Schriftzüge/Lesefeld: Nutzer prüft sie später, wenn er will.
+- Nummerierung: 0.47.15 = Balance (10–13), 0.48.0 = Treppenschilder (Zielgebiet), Schrats Vorgarten, Schildformen, Wanddeko, Hebel, Geräusche; später „Tote erwecken“.

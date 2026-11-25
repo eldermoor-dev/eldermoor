@@ -787,13 +787,13 @@ export function readHint(state, data) {
   const p = state.player, lvl = getLevel(data, state), dirs = ['↑', '→', '↓', '←'];
   const L = (p.dir + 3) % 4, R = (p.dir + 1) % 4;
   const sign = (x, y, f) => state.objs.find((o) => o.type === 'sign' && o.face === f && o.x === x && o.y === y && o.title && !o.textless);
-  const fmt = (o, face) => String(o.title).split('|').map((ln) => ln.replace(/[→←]/g, (c) => dirs[(((c === '→' ? (face + 1) : (face + 3)) % 4) - p.dir + 4) % 4])).join(' · ');
+  const fmt = (o, face) => String(o.title).split('|').map((ln) => ln.replace(/[→←]/g, (c) => dirs[(((c === '→' ? (face + 1) : (face + 3)) % 4) - p.dir + 4) % 4])).reduce((acc, ln) => (acc === '' ? ln : acc + (acc.endsWith('-') ? '' : ' · ') + ln), ''); // 0.47.14: Zeile auf „-“ endet = Wort geht weiter (KULT-GRUFT)
   let x = p.x, y = p.y;
   for (let i = 0; i <= 4; i++) {
     const side = sign(x, y, L) || sign(x, y, R); if (side) return { text: fmt(side, side.face), kind: 'sign', id: side.id };
     const fr = sign(x, y, p.dir); if (fr) return { text: fmt(fr, fr.face), kind: 'sign', id: fr.id };
     const nx = x + DIRS[p.dir].dx, ny = y + DIRS[p.dir].dy;
-    const dr = state.objs.find((o) => o.type === 'door' && o.title && !o.textless && o.x === nx && o.y === ny); if (dr) return { text: String(dr.title).replace(/\|/g, ' · '), kind: 'door', id: dr.id };
+    const dr = state.objs.find((o) => o.type === 'door' && o.title && !o.textless && o.x === nx && o.y === ny); if (dr) return { text: String(dr.title).split('|').reduce((acc, ln) => (acc === '' ? ln : acc + (acc.endsWith('-') ? '' : ' · ') + ln), ''), kind: 'door', id: dr.id };
     if (isWallChar(cellChar(lvl, nx, ny)) || blockerAt(state, nx, ny)) break;
     x = nx; y = ny;
   }

@@ -828,10 +828,10 @@ function genPlaque(title, kind, styleName, seed, clipY = PLQ, sym = null, fontNa
   const fm = FONTMODES[fontName] || FONTMODES[(PLAQUE_STYLES[styleName] || {}).font] || FONTMODES.block, fxs = fm.xs || 1, fys = fm.ys || 1;
   const maxC = Math.max(1, ...lines.map((l) => [...l].slice(0, 8).length)), cw = 6 * fxs;
   // 0.23.4 (Nutzer: aus der Nähe zu groß, unlesbar): Textblock höchstens ca. die halbe Wandbreite (vorher bis 75 %); Stil (Blutschmiere) bleibt
-  const s = (kind === 'door' ? Math.max(1.8, Math.min(2.6, 100 / (cw * maxC))) : Math.max(1.7, Math.min(2.9, 112 / (cw * maxC)))) * K; // 0.32.1: kurze Wandtitel (BRÜCKE) größer, Nutzer: kaum lesbar // Türsturz (0.23.6): Schrift liegt innerhalb des Türschilds
+  const s = (kind === 'door' ? Math.max(1.6, Math.min(2.0, 86 / (cw * maxC))) : Math.max(1.7, Math.min(2.9, 112 / (cw * maxC)))) * K; // 0.32.1: kurze Wandtitel (BRÜCKE) größer, Nutzer: kaum lesbar // Türsturz (0.23.6): Schrift liegt innerhalb des Türschilds
   const lh = Math.round(9 * s * fys), th = lines.length ? Math.round(lines.length * lh - 2 * s) : 0;
   const SG = sym && SYMS[sym] ? SYMS[sym] : null, ss = lines.length ? s * 1.3 : s * 2.2, symH = SG ? Math.round(SG.length * ss + (lines.length ? 5 * s : 0)) : 0; // ohne Text: Symbol allein, größer und mittig
-  const ty0 = kind === 'door' ? 14 + symH : Math.round(N / 2 - th / 2 + symH / 2);
+  const ty0 = kind === 'door' ? Math.max(30, Math.round(52 - (th + symH) / 2)) + symH : Math.round(N / 2 - th / 2 + symH / 2); // 0.47.14 (Nutzer: Türschrift zu groß, ragt über den Rahmen): Tür-Block mittig in der oberen Türfüllung (y 28–86, Schloss ab ca. y 96)
   // 0.19.11 (Nutzer: „gruseliger, nicht aus Druckschrift“): von Hand geschmiert – jeder Buchstabe leicht schief und versetzt, Striche aus runden Pinselflecken mit schwankender Dicke,
   // dicke Tropfen mit Kuppe, dunkle Gerinnsel und feuchte Lichter. Gleiche Lesbarkeit (gleiche Buchstabenraster), aber keine Blockschrift mehr.
   const mask = new Uint8Array(N * N);
@@ -872,27 +872,37 @@ function genPlaque(title, kind, styleName, seed, clipY = PLQ, sym = null, fontNa
   }
   for (let i = 0; i < N * N; i++) if (drip[i]) mask[i] = 1;
   if (clipY < PLQ) for (let i = clipY * N; i < N * N; i++) { mask[i] = 0; drip[i] = 0; }
-  const ink = sym === 'wuerfel' && !lines.length ? { fill: ['glow', 6.3], edge: ['ceil', 0] } : INKS[INK_OF[styleName]] || INKS.kreide; // Würfel: Elfenbein
-  const ol = kind === 'wall' ? 3 : 2; // Kontur: dunkel, hebt die helle Schrift ab
-  if (kind === 'wall' && (lines.length || SG)) { // dunkle Platte mit hellem Rand hinter Schrift und Symbol
+  // 0.47.14 (Nutzer: Irrlichtschild wirkt wie Neonreklame, Türschrift passt nicht zur Tür): Schrift sitzt auf einem Schild aus dem Material des Stils
+  // (Holz, Stein, Eisen, Moosbrett) mit Rand, Nägeln bzw. Nieten. Helle Bretter: dunkle aufgemalte Schrift ohne Kontur; dunkle Platten: Kreideschrift (Grau statt Blau/Gold).
+  const BOARDS = { wood: ['wood', 4.4, 'paint', true], dark: ['wood', 2.0, 'chalk', true], stone: ['stone', 4.6, 'paint', false], iron: ['iron', 2.8, 'chalk', true], moss: ['wood', 3.8, 'paint', true, true], arrow: ['wood', 4.4, 'paint', true], arch: ['stone', 4.2, 'paint', false], banner: ['moss', 3.6, 'paint', false], small: ['wood', 4.4, 'paint', true] };
+  const special = sym === 'wuerfel' && !lines.length; // Würfeltür: Elfenbein auf Eisen
+  const [bMat, bSh, inkMode, studs, mossy] = BOARDS[special ? 'iron' : styleName] || BOARDS.wood;
+  const ink = special ? { fill: ['glow', 6.3], edge: ['ceil', 0] } : inkMode === 'chalk' ? { fill: ['stone', 6.4], edge: ['ceil', 0] } : { fill: [bMat, 0.15], edge: null };
+  const ol = ink.edge ? (kind === 'wall' ? 3 : 2) : 0; // Kontur nur bei heller Schrift
+  if (lines.length || SG) { // Schild hinter Schrift und Symbol
     let bx0 = N, by0 = N, bx1 = -1, by1 = -1;
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (mask[y * N + x]) { if (x < bx0) bx0 = x; if (x > bx1) bx1 = x; if (y < by0) by0 = y; if (y > by1) by1 = y; }
     if (bx1 >= 0) {
-      const padX = 7 * K + Math.round(s), padY = 5 * K + Math.round(s * 0.8), rr = 6 * K, bw = 2 * K;
+      const padX = 9 * K + Math.round(s), padY = 7 * K + Math.round(s * 0.8), rr = 6 * K, bw = 2 * K;
       const px0 = Math.max(0, bx0 - padX), px1 = Math.min(N - 1, bx1 + padX), py0 = Math.max(0, by0 - padY), py1 = Math.min(N - 1, by1 + padY);
+      const studAt = [[px0 + 5 * K, py0 + 5 * K], [px1 - 5 * K, py0 + 5 * K], [px0 + 5 * K, py1 - 5 * K], [px1 - 5 * K, py1 - 5 * K]];
       for (let y = py0; y <= py1; y++) for (let x = px0; x <= px1; x++) {
         const cx0 = x < px0 + rr ? px0 + rr - x : x > px1 - rr ? x - (px1 - rr) : 0, cy0 = y < py0 + rr ? py0 + rr - y : y > py1 - rr ? y - (py1 - rr) : 0;
         if (cx0 && cy0 && Math.hypot(cx0, cy0) > rr) continue; // runde Ecken
         const edge = x < px0 + bw || x > px1 - bw || y < py0 + bw || y > py1 - bw || (cx0 && cy0 && Math.hypot(cx0, cy0) > rr - bw);
-        buf[y * N + x] = edge ? P('stone', 3.6 + hash(x >> 2, y >> 2, seed + 21) * 0.6) : P('ceil', 0.9 + hash(x >> 3, y >> 3, seed + 22) * 0.5);
+        let sh = bSh + (hash(x >> 2, y >> 1, seed + 22) - 0.5) * 0.7 + (bMat === 'wood' ? (hash(x >> 5, y, seed + 23) - 0.5) * 0.6 : 0); // Maserung bzw. Körnung
+        if (edge) sh = bSh - 2.0; else if (x < px0 + 2 * bw || y < py0 + 2 * bw) sh += 0.6; else if (x > px1 - 2 * bw || y > py1 - 2 * bw) sh -= 0.5;
+        buf[y * N + x] = P(bMat, sh);
+        if (mossy && !edge && y - py0 < 8 * K && hash(x >> 1, y >> 1, seed + 31) < 0.55 * (1 - (y - py0) / (8 * K))) buf[y * N + x] = P('moss', 3.2 + hash(x, y, seed + 32) * 1.2); // Moos am oberen Rand
+        if (studs && py1 - py0 > 22 * K) for (const [sx, sy] of studAt) { const d = Math.hypot(x + 0.5 - sx, y + 0.5 - sy); if (d <= 1.7 * K) buf[y * N + x] = P('iron', d <= 1 * K ? 5.2 : 2.4); } // Nägel/Nieten
       }
     }
   }
-  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+  if (ol) for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     if (mask[y * N + x]) continue;
     let near = false;
     for (let dy = -ol; dy <= ol && !near; dy++) for (let dx = -ol; dx <= ol; dx++) { const X = x + dx, Y = y + dy; if (X >= 0 && Y >= 0 && X < N && Y < N && mask[Y * N + X]) { near = true; break; } }
-    if (near) buf[y * N + x] = P(ink.edge[0], ink.edge[1]); // Kontur, damit die Schrift auf Holz und Stein lesbar bleibt
+    if (near) buf[y * N + x] = P(ink.edge[0], ink.edge[1]); // Kontur, damit die helle Schrift auf dem Schild lesbar bleibt
   }
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     if (!mask[y * N + x]) continue;
