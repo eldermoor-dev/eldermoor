@@ -10,13 +10,17 @@ const FILES = ['index.html', 'main.js', 'render.js', 'logic.js', 'scene.js', 'au
 
 export async function runTests(data, env = {}) {
   const results = [];
+  const realBalance = data.balance; data.balance = undefined; // 0.47.0: ältere Tests rechnen mit Rohwerten; der Staffel-Test setzt sie selbst ein
   const test = async (name, fn) => {
     try { const detail = await fn(); results.push({ name, ok: true, detail: detail || '' }); }
     catch (e) { results.push({ name, ok: false, detail: String(e && e.message ? e.message : e) }); }
   };
   const assert = (c, msg) => { if (!c) throw new Error(msg || 'Bedingung verletzt'); };
   const eq = (a, b, msg) => assert(JSON.stringify(a) === JSON.stringify(b), `${msg || 'ungleich'}: ${JSON.stringify(a)} ≠ ${JSON.stringify(b)}`);
-  const fresh = (seed = 1) => L.newGame(data, seed);
+  // 0.47.0: Der Moorschrat steht nicht mehr im Testgewölbe. Viele Kampf- und Balance-Tests nutzen aber en1 (16,7) als Standardgegner: hier nachgerüstet.
+  const toSiedlung = (s) => { L.changeArea(s, data, 'stairs_moor'); L.changeArea(s, data, 'stairs_licht_up'); return s; };
+  const withEn1 = (s) => { if (!s.objs.some((o) => o.id === 'en1')) s.objs.push({ id: 'en1', type: 'enemy', x: 16, y: 7, kind: 'schrat', hp: data.enemies.schrat.hp, dead: false }); return s; };
+  const fresh = (seed = 1) => withEn1(L.newGame(data, seed));
   const put = (s, x, y, dir) => { s.player.x = x; s.player.y = y; s.player.dir = dir; };
 
   await test('Leveldaten: Maße, Start, Objekte', () => {
@@ -970,7 +974,7 @@ export async function runTests(data, env = {}) {
     const s = fresh(10); s.objs.forEach((o) => { if (o.type === 'door') { o.open = true; o.locked = false; } if (o.type === 'enemy') o.dead = true; });
     put(s, 18, 7, 1);
     const m = L.tryMove(s, data, 'f'); assert(!m.moved && /Runenstein/.test(m.msg), 'blockiert: ' + JSON.stringify(m));
-    const r = L.interact(s, data); assert(r.long && /Runenstein/.test(r.msg), 'Inschrift: ' + JSON.stringify(r));
+    const r = L.interact(s, data); assert((r.long && /Runenstein/.test(r.msg)) || (r.page && /Labyrinth/.test(r.msg)), 'Inschrift: ' + JSON.stringify(r));
     const st = JSON.parse(JSON.stringify(L.serialize(s)));
     st.state.objs = st.state.objs.filter((o) => o.id !== 'rune_t1'); st.state.objs.push({ id: 'exit1', type: 'exit', x: 19, y: 7 });
     const back = L.deserialize(st, data);
@@ -1141,7 +1145,7 @@ export async function runTests(data, env = {}) {
     for (const [k, it] of Object.entries(data.items)) if (it.kind === 'equip') assert(it.slot && (it.atk || it.def || it.init || it.fx) && it.desc, `Item ${k} vollständig`);
   });
   await test('Mehrere Gegner (3c): Gruppen, Zielwahl, Alle angreifen, Schwerer Schlag, KI, Aufstehen, Rechenweg', () => {
-    const enemyObj = (id) => { const s = L.newGame(data, 31); return [s, s.objs.find((o) => o.id === id)]; };
+    const enemyObj = (id) => { const s = withEn1(L.newGame(data, 31)); return [s, s.objs.find((o) => o.id === id)]; };
     // Gruppen
     let [s, o] = enemyObj('en3'); L.startCombat(s, data, o);
     eq(s.combat.enemies.map((e) => e.name), ['Sumpfwolf', 'Moorkultist A', 'Moorkultist B'], 'Namen mit Buchstaben');
@@ -1652,7 +1656,7 @@ export async function runTests(data, env = {}) {
       for (const e of sh.stock) { assert(data.items[e.item], `Ware ${e.item}`); assert(L.itemWorth(null, data, e.item) > 0, `Ware ${e.item} ohne Preis`); assert(data.items[e.item].q !== 'unique' && data.items[e.item].kind !== 'quest', `Ware ${e.item} darf nicht handelbar sein`); }
       assert(L.analyzeLevel(data, lid).ok, `${lid} nicht lösbar`);
     }
-    const s = fresh(61); L.changeArea(s, data, 'stairs_moor');
+    const s = fresh(61); toSiedlung(s);
     eq(s.levelId, 'moorrand', 'Siedlung erreicht');
     s.player = { x: 8, y: 2, dir: 1 };
     const m = L.tryMove(s, data, 'f');
@@ -1685,7 +1689,7 @@ export async function runTests(data, env = {}) {
     assert(data.palettes[data.levels.moorpfad.palette] && Object.keys(data.palettes.moor).length === Object.keys(data.palettes.keller).length, 'Palette moor');
     assert(L.analyzeLevel(data, 'moorpfad').ok, 'Moorpfad lösbar');
     const s = fresh(63);
-    L.changeArea(s, data, 'stairs_moor'); eq(s.levelId, 'moorrand', 'Siedlung');
+    toSiedlung(s); eq(s.levelId, 'moorrand', 'Siedlung');
     s.player = { x: 8, y: 2, dir: 1 };
     const r1 = L.interact(s, data); assert(r1.shop && /Nebel/.test(r1.msg) && s.flags.talk_hedda, 'Auftrag beim ersten Gespräch');
     const r2 = L.interact(s, data); assert(r2.shop && !r2.msg, 'Auftrag nur einmal');
@@ -1723,7 +1727,7 @@ export async function runTests(data, env = {}) {
     const door = gl.objects.find((o) => o.id === 'door_boss');
     assert(key && door && door.locked && door.key === 'gruft_siegel', 'Siegelschloss vor Boss');
     const s = fresh(65);
-    L.changeArea(s, data, 'stairs_moor'); L.changeArea(s, data, 'stairs_pfad');
+    toSiedlung(s); L.changeArea(s, data, 'stairs_pfad');
     s.player = { x: 21, y: 4, dir: 1 };
     const to = s.objs.find((o) => o.id === 'stairs_gruft');
     assert(to && to.look === 'down', 'Treppe zur Gruft');
@@ -1780,13 +1784,13 @@ export async function runTests(data, env = {}) {
       const d = [[0, -1], [1, 0], [0, 1], [-1, 0]][s.player.dir];
       assert(L.cellChar(data.levels[o.to.level], s.player.x + d[0], s.player.y + d[1]) === '.', `${o.id}: Blick gegen Wand`);
     }
-    const s = fresh(69); L.changeArea(s, data, 'stairs_moor'); L.changeArea(s, data, 'stairs_pfad');
+    const s = fresh(69); toSiedlung(s); L.changeArea(s, data, 'stairs_pfad');
     eq(s.player.dir, 2, 'Moorpfad: Blick nach Süden in den Gang');
   });
 
   await test('Wandtafeln (0.16.8): lesbar vom Feld vor der Wand und einem Feld davor, nur mit Blick zur Tafel, blockieren nie', () => {
     const s = fresh(66);
-    L.changeArea(s, data, 'stairs_moor'); L.changeArea(s, data, 'stairs_pfad'); // Tafel sign_pfad1 bei (3,2), face 2 (Südwand)
+    toSiedlung(s); L.changeArea(s, data, 'stairs_pfad'); // Tafel sign_pfad1 bei (3,2), face 2 (Südwand)
     s.player = { x: 3, y: 2, dir: 2 };
     assert(L.wallSignAhead(s, data), 'vor der Wand erkannt');
     assert(/Moorpfad/.test(L.interact(s, data).msg), 'vom Feld vor der Wand');
@@ -1844,7 +1848,7 @@ export async function runTests(data, env = {}) {
 
   await test('Alte Stände bekommen neue feste Objekte (Treppe, Auftrag), Truhenzustand bleibt', () => {
     const s = fresh(64);
-    L.changeArea(s, data, 'stairs_moor'); // Siedlung aktiv
+    toSiedlung(s); // Siedlung aktiv
     // Zustand wie nach 0.12.0: ohne Treppe zum Moorpfad und ohne Auftragstext
     s.objs = s.objs.filter((o) => o.id !== 'stairs_pfad');
     delete s.objs.find((o) => o.id === 'merchant_hedda').talk;
@@ -1916,8 +1920,8 @@ export async function runTests(data, env = {}) {
   });
 
   await test('Sieg bringt Erfahrung: Gegner-EP gehen an alle stehenden Helden, Meldungen im Kampflog', () => {
-    const s = L.newGame(data, 777);
-    const en = s.objs.find((o) => o.type === 'enemy');
+    const s = fresh(777);
+    const en = s.objs.find((o) => o.id === 'en1');
     L.startCombat(s, data, en);
     s.combat.enemies[0].hp = 1;
     const all = [];
@@ -2116,7 +2120,7 @@ export async function runTests(data, env = {}) {
 
   await test('Gegnerzauber (0.16): Schadenszauber, Heilung, Fluch, Ansage großer Zauber', () => {
     const mk = (kinds, seed) => {
-      const s = L.newGame(data, seed), eo = s.objs.find((o) => o.type === 'enemy');
+      const s = fresh(seed), eo = s.objs.find((o) => o.id === 'en1');
       eo.kind = kinds[0]; eo.kinds = kinds; eo.hp = data.enemies[kinds[0]].hp;
       L.startCombat(s, data, eo);
       return s;
@@ -2204,10 +2208,49 @@ export async function runTests(data, env = {}) {
     assert(L.analyzeLevel(lv2, 'schratgruben').unreachableChests.includes('chest_s2'), 'Ohne Hebel bleibt die Truhe unerreichbar (Gegenprobe)');
   });
 
+  await test('0.47.0: Anfang neu erzählt – Staffelung, Moorlichtung, Runenstein-Seite, Vorgeschichte', () => {
+    // Staffelung nach höchstem erreichten Akt
+    const b = realBalance; assert(b && b.acts && b.acts[1] && b.acts[2] && b.acts[3], 'balance vorhanden');
+    assert(b.acts[1].gold > b.acts[2].gold && b.acts[2].gold > b.acts[3].gold, 'Gold fällt je Akt');
+    assert(b.acts[1].xp > b.acts[2].xp && b.acts[2].xp > b.acts[3].xp, 'EP fallen je Akt');
+    assert(b.acts[1].price < b.acts[2].price && b.acts[2].price < b.acts[3].price, 'Preise steigen je Akt');
+    data.balance = realBalance;
+    try {
+      const s = fresh(5); eq(L.reachedAct(s, data), 1, 'Start = Akt 1');
+      const p1 = L.buyPrice(s, data, 'potion'); data.balance = undefined; const p0 = L.buyPrice(s, data, 'potion'); data.balance = realBalance;
+      assert(p1 > p0, `Akt 1 teurer als roh: ${p1} > ${p0}`);
+      L.jumpToLevel(s, data, 'festung3'); assert(L.reachedAct(s, data) >= 2, 'Festung = Akt 2+');
+      L.jumpToLevel(s, data, 'moorrand'); assert(L.reachedAct(s, data) >= 2, 'Zurückgehen senkt den Akt nicht');
+      assert(L.buyPrice(s, data, 'potion') > p1, 'Preis in Akt 2 höher');
+      const sell0 = L.sellPrice(fresh(5), data, 'potion'), sell1 = L.sellPrice(s, data, 'potion'); eq(sell0, sell1, 'Verkaufspreis unverändert');
+    } finally { data.balance = undefined; }
+    // Moorlichtung: Kette, Schrat umgehbar
+    const lv = data.levels.moorlichtung; assert(lv, 'Gebiet da');
+    eq(data.levels.test1.objects.find((o) => o.id === 'stairs_moor').to.level, 'moorlichtung', 'Testgewölbe → Lichtung');
+    assert(!data.levels.test1.objects.some((o) => o.type === 'enemy' && o.kind === 'schrat'), 'Schrat nicht mehr im Testgewölbe');
+    const en = lv.objects.find((o) => o.type === 'enemy' && o.kind === 'schrat'), up = lv.objects.find((o) => o.id === 'stairs_licht_up'), dn = lv.objects.find((o) => o.id === 'stairs_licht_down');
+    assert(en && up && dn, 'Schrat und Treppen');
+    const w = lv.map[0].length, h = lv.map.length, ok = (x, y) => x >= 0 && y >= 0 && x < w && y < h && lv.map[y][x] !== '#' && Math.abs(x - en.x) + Math.abs(y - en.y) > 2;
+    const seen = new Set([lv.start.y * w + lv.start.x]), q = [[lv.start.x, lv.start.y]];
+    while (q.length) { const [x, y] = q.shift(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (ok(nx, ny) && !seen.has(ny * w + nx)) { seen.add(ny * w + nx); q.push([nx, ny]); } } }
+    assert(seen.has(up.y * w + up.x), 'Ausgang ohne Schrat-Nähe erreichbar (umgehbar)');
+    // Runenstein-Seite
+    const s2 = fresh(6); L.jumpToLevel(s2, data, 'test1'); const rs = s2.objs.find((o) => o.id === 'rune_t1');
+    assert(rs && rs.story, 'Runenstein trägt die Geschichte');
+    assert(rs.story.split(/[.!?]/).filter((x) => x.trim()).length <= 10, 'höchstens zehn Sätze');
+    s2.player.x = rs.x - 1; s2.player.y = rs.y; s2.player.dir = 1;
+    const r1 = L.interact(s2, data); assert(r1.page && r1.page.text === rs.story && r1.newNote, 'erste Berührung: Seite + Notizbuch');
+    const r2 = L.interact(s2, data); assert(!r2.page && r2.msg, 'danach Kurztext');
+    assert(s2.journal.some((e) => e.id === 'rune_t1'), 'im Notizbuch');
+    // Vorgeschichte
+    assert(data.story && data.story.intro && data.story.intro.text.length > 200 && /Quillon/.test(data.story.intro.text), 'Vorgeschichte da');
+    assert(/Wette/.test(data.levels.moorrand.objects.find((o) => o.id === 'merchant_hedda').talk.text), 'Hedda greift die Wette auf');
+  });
+
   await test('Schwerer Schlag (0.15.14): trifft nur die Vorderreihe, solange dort jemand steht', () => {
     let ran = 0;
     for (let seed = 1; seed <= 30; seed++) {
-      const s = L.newGame(data, seed), eo = s.objs.find((o) => o.type === 'enemy');
+      const s = fresh(seed), eo = s.objs.find((o) => o.id === 'en1');
       L.startCombat(s, data, eo);
       let g = 0; while (L.currentActor(s) && L.currentActor(s).side === 'h' && g++ < 20) L.heroAction(s, data, { type: 'defend' });
       const e = s.combat.enemies[0]; e.intent = 'heavy';
@@ -2220,9 +2263,9 @@ export async function runTests(data, env = {}) {
     assert(ran >= 5, 'Test hat gegriffen: ' + ran);
   });
   await test('Ölflasche und Gegengift (0.15.1): Wurf mit Elementfaktor, Gift nehmen, nur im Kampf, Vorrat sinkt', () => {
-    const s = L.newGame(data, 11);
+    const s = fresh(11);
     s.inv.oelflasche = 2; s.inv.gegengift = 1;
-    const eo = s.objs.find((o) => o.type === 'enemy');
+    const eo = s.objs.find((o) => o.id === 'en1');
     L.startCombat(s, data, eo);
     const toHero = () => { let g = 0; while (L.currentActor(s) && L.currentActor(s).side === 'e' && g++ < 20) L.enemyStep(s, data, {}); };
     toHero();
@@ -2548,7 +2591,7 @@ export async function runTests(data, env = {}) {
     eq(L.respecTalents(s, data, 0).error, 'nothing', 'nichts mehr zu verlernen');
   });
   await test('Talente im Kampf: Ausweichen, Schadensminderung, Krit, Fähigkeitsbonus, Statusabwehr, Gold, Regeneration', () => {
-    const mk = (fx) => { const d = JSON.parse(JSON.stringify(data)); d.talents.classes.warrior[0].nodes[0].fx = fx; const s = L.newGame(d, 3); s.heroes[0].level = 5; s.heroes[0].tal = { w_haut: true }; return { d, s }; };
+    const mk = (fx) => { const d = JSON.parse(JSON.stringify(data)); d.talents.classes.warrior[0].nodes[0].fx = fx; const s = withEn1(L.newGame(d, 3)); s.heroes[0].level = 5; s.heroes[0].tal = { w_haut: true }; return { d, s }; };
     let { d, s } = mk({ dodge: 100 });
     put(s, 15, 7, 1); L.startCombat(s, d, L.enemyInFront(s));
     for (let i = 0; i < 30 && !s.combat.over; i++) { const a = L.currentActor(s); if (!a) break; if (a.side === 'h') L.heroAction(s, d, { type: 'defend' }); else { s.combat.enemies.forEach(() => 0); const r = L.enemyStep(s, d); if (r.msgs.some((m) => /weicht aus/.test(m))) { assert(s.heroes[0].hp === s.heroes[0].maxHp, 'Ausgewichen: keine LP verloren'); return; } } }
@@ -2559,11 +2602,11 @@ export async function runTests(data, env = {}) {
     const d1 = L.calcDamage(a, 20, 0, { sure: true }), d2 = L.calcDamage(b, 20, 0, { sure: true, crit: true });
     eq(d2, Math.floor(d1 * 1.5), 'Krit ×1,5');
     const d = JSON.parse(JSON.stringify(data)); d.talents.classes.warrior[1].nodes[2].fx = { abil: 100 };
-    const t = L.newGame(d, 9); t.heroes[0].level = 5; t.heroes[0].tal = { w_zorn: true, w_krit: true, w_wucht: true };
+    const t = withEn1(L.newGame(d, 9)); t.heroes[0].level = 5; t.heroes[0].tal = { w_zorn: true, w_krit: true, w_wucht: true };
     eq(L.talentSum(d, t.heroes[0], 'abil'), 100, 'Summe');
     eq(L.talentSum(d, t.heroes[0], 'crit'), 8, 'Krit-Summe');
     // Alchemist: Tränke an andere Helden im Kampf (alle anderen Berufe dürfen nur an sich selbst)
-    const s = L.newGame(d, 5, [{ name: 'Al', race: 'human', cls: 'alchemist' }, { name: 'B', race: 'human', cls: 'warrior' }, { name: 'C', race: 'human', cls: 'rogue' }, { name: 'D', race: 'human', cls: 'mage' }]);
+    const s = withEn1(L.newGame(d, 5, [{ name: 'Al', race: 'human', cls: 'alchemist' }, { name: 'B', race: 'human', cls: 'warrior' }, { name: 'C', race: 'human', cls: 'rogue' }, { name: 'D', race: 'human', cls: 'mage' }]));
     s.inv.potion = 3; s.heroes[1].hp = 5;
     put(s, 15, 7, 1); L.startCombat(s, d, L.enemyInFront(s));
     for (let i = 0; i < 30; i++) { const c = L.currentActor(s); if (c.side === 'h' && s.heroes[c.idx].cls === 'alchemist') break; if (c.side === 'h') L.heroAction(s, d, { type: 'defend' }); else L.enemyStep(s, d); }
@@ -2571,12 +2614,12 @@ export async function runTests(data, env = {}) {
     eq(s.heroes[cur.idx].cls, 'alchemist', 'Alchemist ist am Zug');
     const r = L.heroAction(s, d, { type: 'item', item: 'potion', hero: 1 });
     assert(!r.error, 'Alchemist darf Tränke weitergeben: ' + r.error);
-    const w = L.newGame(d, 6); w.inv.potion = 1; put(w, 15, 7, 1); L.startCombat(w, d, L.enemyInFront(w));
+    const w = withEn1(L.newGame(d, 6)); w.inv.potion = 1; put(w, 15, 7, 1); L.startCombat(w, d, L.enemyInFront(w));
     for (let i = 0; i < 30; i++) { const c = L.currentActor(w); if (c.side === 'h') break; L.enemyStep(w, d); }
     eq(L.heroAction(w, d, { type: 'item', item: 'potion', hero: (L.currentActor(w).idx + 1) % 4 }).error, 'bad-target', 'andere Berufe nur an sich selbst');
   });
   await test('Schwierigkeit (0.17.0): Schwer = mehr LP/Angriff/Gold/EP, Normal unverändert, Speicherfeld geprüft', () => {
-    const n = L.newGame(data, 5), hd = L.newGame(data, 5, null, 'hard'), x = L.newGame(data, 5, null, 'quatsch');
+    const n = withEn1(L.newGame(data, 5)), hd = withEn1(L.newGame(data, 5, null, 'hard')), x = withEn1(L.newGame(data, 5, null, 'quatsch'));
     eq([n.difficulty, hd.difficulty, x.difficulty], ['normal', 'hard', 'normal'], 'Schwierigkeit gesetzt, Unbekanntes wird Normal');
     put(n, 15, 7, 1); put(hd, 15, 7, 1);
     L.startCombat(n, data, L.enemyInFront(n)); L.startCombat(hd, data, L.enemyInFront(hd));
@@ -3220,6 +3263,7 @@ export async function runTests(data, env = {}) {
     ms.eliteKills = 5; eq(L.achievements(ms, data).find((x) => x.id === 'elite').tier, 2, 'Elite Stufe 2');
   });
   const failed = results.filter((r) => !r.ok).length; // 0.23.0: erst am Ende zählen (vorher fehlten spätere Tests in der Summe)
+  data.balance = realBalance;
   return { results, passed: results.length - failed, failed };
 }
 

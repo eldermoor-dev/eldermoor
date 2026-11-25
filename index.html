@@ -111,6 +111,13 @@ body.incombat #ctl-left .btn,body.incombat .btn[data-a=interact]{opacity:.35}
 #modal{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.74);display:flex;align-items:center;justify-content:center;padding:8px}
 #foetags[hidden],#modal[hidden],#title[hidden],#banner[hidden],#toast[hidden],#fps[hidden],#enemybox[hidden],#actionbar[hidden]{display:none}
 #modal-box{background:#17120d;border:2px solid var(--line);border-radius:10px;width:min(94vw,640px);max-height:100%;overflow:auto;padding:12px;touch-action:pan-y;-webkit-user-select:text;user-select:text}
+#modal-box[data-kind=parchment]{background:radial-gradient(ellipse at 30% 20%,#f1e0b0 0%,#e2c88a 55%,#c9a463 100%);border:3px double #6b4a1e;border-radius:6px;box-shadow:inset 0 0 40px rgba(110,70,20,.55),0 0 24px #000;color:#3a2610;width:min(92vw,560px);padding:18px 20px}
+.parch p{font:italic 1.02rem/1.55 Georgia,'Palatino Linotype',serif;margin:.55em 0;color:#3a2610;text-align:justify;hyphens:auto}
+.parch p:first-of-type::first-letter{font:700 2.3em/0.9 Georgia,serif;float:left;margin:.05em .08em 0 0;color:#7a1f14}
+.parch .ph{font:700 1.1rem Georgia,serif;text-align:center;color:#6b1a10;letter-spacing:.04em}
+.parch .pr{height:2px;margin:8px 10%;background:linear-gradient(90deg,transparent,#6b4a1e,transparent)}
+.parch .pseal{width:34px;height:34px;margin:6px auto;border-radius:50%;background:radial-gradient(circle at 35% 30%,#c0392b,#7a1510);color:#f6d9a0;text-align:center;line-height:34px;box-shadow:0 2px 4px #0008}
+#modal-box[data-kind=parchment] .mb{background:#6b4a1e;color:#f6e6bd;border-color:#3a2610}
 #modal-box h2{margin:0 0 8px;font:700 1.15rem Georgia,serif;color:#f0dca8}
 #modal-box h3{margin:10px 0 4px;font-size:.95rem;color:var(--amber)}
 #modal-box p,#modal-box li{line-height:1.4}

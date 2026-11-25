@@ -3158,13 +3158,6 @@
           "key": "iron_key"
         },
         {
-          "id": "en1",
-          "type": "enemy",
-          "x": 16,
-          "y": 7,
-          "kind": "schrat"
-        },
-        {
           "id": "en2",
           "type": "enemy",
           "x": 10,
@@ -3192,7 +3185,9 @@
           "type": "runestone",
           "x": 19,
           "y": 7,
-          "text": "Ein alter Runenstein. Die Zeichen sind verwittert, aber lesbar: „Wer Licht sucht, steigt hinauf. Unten wartet nur, wer nicht mehr gefunden werden will.“"
+          "text": "Die Runen sind warm unter deiner Hand. Du kennst ihre Geschichte: Das Labyrinth ist älter als das Moor.",
+          "title": "Die Geschichte des Labyrinths",
+          "story": "Man sagt, das Labyrinth sei älter als das Moor. Zuerst gab es nur Stein und eine Quelle, die nie versiegte. Dann kamen Menschen, die Licht suchten, und gruben nach unten, weil das Licht oben nicht blieb. Sie bauten Kammer um Kammer und Siegel um Siegel, und mit jedem Siegel wurde es stiller unter der Erde. Das Moor wuchs über ihre Arbeit wie Haut über eine Wunde. Wer lange genug horcht, hört, dass dort unten etwas zählt. Sechs Siegel halten, was man vergessen wollte, doch ein Siegel ist nur so stark wie die, die sich an es erinnern. Die Runen werden warm, wenn man sie berührt, als hätten sie gewartet. Geht hinab, wenn ihr müsst. Aber merkt euch, wo das Licht ist."
         },
         {
           "id": "stairs_down",
@@ -3213,11 +3208,11 @@
           "type": "stairs",
           "x": 1,
           "y": 4,
-          "msg": "Du steigst hinauf in die Siedlung am Moorrand.",
+          "msg": "Du steigst hinauf auf die Moorlichtung.",
           "to": {
-            "level": "moorrand",
+            "level": "moorlichtung",
             "x": 2,
-            "y": 2,
+            "y": 7,
             "dir": 1
           },
           "look": "up"
@@ -3316,12 +3311,12 @@
           "type": "stairs",
           "x": 1,
           "y": 2,
-          "msg": "Du steigst hinab ins Testgewölbe.",
+          "msg": "Du steigst hinab auf die Moorlichtung.",
           "to": {
-            "level": "test1",
-            "x": 2,
-            "y": 4,
-            "dir": 1
+            "level": "moorlichtung",
+            "x": 16,
+            "y": 6,
+            "dir": 3
           },
           "look": "down"
         },
@@ -3333,7 +3328,7 @@
           "shop": "moorrand",
           "talk": {
             "flag": "talk_hedda",
-            "text": "Hedda: Seit Wochen steigt Nebel aus dem Moor. Die Kultisten graben im Osten bei der alten Gruft. Geht den Moorpfad entlang, findet den Gruftschlüssel und kommt lebend zurück."
+            "text": "Hedda: Ihr seht aus wie Leute, die eine Wette verloren haben. Keine Sorge, das sieht man hier öfter. Der Nebel steigt seit Wochen aus dem Moor, und im Osten graben Kultisten bei der alten Gruft. Den Schlüssel dafür trägt jemand am Moorpfad. Und noch etwas: Quillon zahlt nie und verliert nie. Fragt euch lieber, warum er das Moor so gut kennt."
           }
         },
         {
@@ -11201,6 +11196,96 @@
           "y1": 41
         }
       ]
+    },
+    "moorlichtung": {
+      "id": "moorlichtung",
+      "name": "Moorlichtung",
+      "palette": "moor",
+      "map": [
+        "###################",
+        "#m~~~.mm...m..T..m#",
+        "#~~~~.....mm......#",
+        "#~~~~......m......#",
+        "#......~~~.mmm.mmm#",
+        "#......~~~........#",
+        "#..m..............#",
+        "#...............~~#",
+        "#....m.......~~~~~#",
+        "#........m...~~~~~#",
+        "###################"
+      ],
+      "start": {
+        "x": 2,
+        "y": 7,
+        "dir": 1
+      },
+      "intro": {
+        "title": "Moorlichtung",
+        "text": "Ein Fleck Himmel, Moos und stehendes Wasser. Im Nordosten atmet etwas Großes."
+      },
+      "objects": [
+        {
+          "id": "stairs_licht_down",
+          "type": "stairs",
+          "x": 1,
+          "y": 7,
+          "msg": "Du steigst hinab ins Testgewölbe.",
+          "to": {
+            "level": "test1",
+            "x": 2,
+            "y": 4,
+            "dir": 1
+          },
+          "look": "down"
+        },
+        {
+          "id": "stairs_licht_up",
+          "type": "stairs",
+          "x": 17,
+          "y": 6,
+          "msg": "Du steigst hinauf zur Siedlung am Moorrand.",
+          "to": {
+            "level": "moorrand",
+            "x": 2,
+            "y": 2,
+            "dir": 1
+          },
+          "look": "up"
+        },
+        {
+          "id": "sign_licht",
+          "type": "sign",
+          "x": 2,
+          "y": 6,
+          "face": 1,
+          "title": "LICHTUNG",
+          "text": "Osten: Siedlung. Im Nordosten steht etwas im Nebel.",
+          "style": "moss"
+        },
+        {
+          "id": "en_schrat",
+          "type": "enemy",
+          "x": 14,
+          "y": 2,
+          "kind": "schrat"
+        },
+        {
+          "id": "chest_licht",
+          "type": "chest",
+          "x": 16,
+          "y": 2,
+          "loot": [
+            {
+              "gold": 12
+            },
+            {
+              "item": "potion",
+              "n": 1
+            }
+          ],
+          "mat": "moder"
+        }
+      ]
     }
   },
   "spot": {
@@ -14810,5 +14895,40 @@
     ],
     "teleportMin": 6,
     "wineHeal": 25
+  },
+  "balance": {
+    "note": "0.47.0: Beute und Preise nach Spielfortschritt (höchster erreichter Akt). Prozent. gold/xp = Kampfbeute, price = Kaufpreise (Verkaufspreise unverändert).",
+    "acts": {
+      "1": {
+        "gold": 90,
+        "xp": 95,
+        "price": 115
+      },
+      "2": {
+        "gold": 75,
+        "xp": 85,
+        "price": 135
+      },
+      "3": {
+        "gold": 60,
+        "xp": 75,
+        "price": 160
+      }
+    },
+    "levels": {
+      "festung1": 2,
+      "festung2": 2,
+      "festung3": 2,
+      "festung4": 2,
+      "festung5": 2,
+      "festung6": 2
+    }
+  },
+  "story": {
+    "intro": {
+      "title": "Eine verlorene Wette",
+      "text": "Es war eine schlechte Idee, gegen den Magister Quillon zu wetten. Eine noch schlechtere war es, den Einsatz zu bestimmen: Wer verliert, sieht nach, was nachts im Moor raschelt.\n\nDer Zauberer hat nicht einmal gelächelt. Er hat nur die Karten gemischt, ein einziges Mal, sehr gründlich.\n\nJetzt steht ihr mit vier Fackeln, etwas Proviant und der leisen Ahnung im Gewölbe unter dem Moorrand, dass er die Karten vorher gekannt hat.\n\nHinter euch ist die Tür ins Schloss gefallen. Von allein war das sicher nicht.",
+      "button": "Die Fackeln entzünden"
+    }
   }
 }

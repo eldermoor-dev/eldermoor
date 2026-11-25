@@ -3,6 +3,14 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.47.0 (25.11.2026, headless, nicht auf Gerät getestet)
+- Vorgeschichte: Pergamentseite „Eine verlorene Wette“ (Magister Quillon) direkt beim ersten Bild nach „Neues Spiel“ (nicht beim Laden). Text in game.json `story.intro`.
+- Neues Gebiet „Moorlichtung“ zwischen Testgewölbe und Siedlung (Treppe hinauf). Der Moorschrat steht jetzt dort in einer Nische abseits des Wegs (umgehbar, Test per Pfadsuche).
+- Runenstein im Testgewölbe: Geschichte des Labyrinths als Pergamentseite beim ersten Berühren, danach Kurztext; Eintrag im Notizbuch.
+- Hedda wiederholt Marga nicht mehr, greift die Wette auf und gibt Hinweise auf Quillon und die Gruft.
+- Balance nach höchstem erreichten Akt (game.json `balance`): Akt 1 Gold ×0,9 / EP ×0,95 / Preise ×1,15; Akt 2 ×0,75 / ×0,85 / ×1,35; Akt 3 ×0,6 / ×0,75 / ×1,6. Preise nur beim Kaufen. Simulation (1000 Läufe): „klug“ schafft die Kampagne 58 % (vorher 72 %), Ø Stufe 13,8 (vorher 14,5).
+- Tests/Sim: Standardgegner en1 wird nachgerüstet; neuer Test für Staffelung, Lichtung, Runenseite, Vorgeschichte (173 grün).
+
 ## 0.46.5 (25.11.2026, headless)
 - Taverne: Der Kamin war eingemauert (Vase bei 12,3 plus Hexe bei 12,5 versperrten alle Zugänge). Vase nach 12,2 versetzt; Kamin und alle Gäste sind jetzt von der Tür aus erreichbar. Neuer Test prüft die Erreichbarkeit.
 

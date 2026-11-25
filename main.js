@@ -11,7 +11,7 @@ import { Sfx } from './audio.js';
 import { startSleepScene } from './scene.js';
 import { store } from './store.js';
 
-const VERSION = '0.46.5';
+const VERSION = '0.47.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -357,6 +357,7 @@ function act(name) {
       const r = interact(g, S.data);
       if (r.encounter) { if (r.msg) say(r.msg); if (r.sfx) S.sfx.play(r.sfx); startCombatUI(r.encounter); break; } // 0.20.0: Monstertruhe erwacht
       if (r.talk) { S.held = []; openDialog(r.talk); break; } // 0.25.0: Begegnungsdialog
+      if (r.page) { S.sfx.play('ui'); say('Ins Notizbuch eingetragen.'); openParchment(r.page.title, r.page.text, 'Weiter'); renderAll(); break; } // 0.47.0: Erzählseite
       if (r.board) { S.held = []; S.sfx.play('ui'); openBoard(); break; } // 0.40.0: Aushangbrett
       if (r.shop) { if (r.msg) say(r.msg); S.shopTalk = r.msg || null; S.held = []; S.shopTab = 'buy'; S.shopSure = null; openShop(r.shop, true); break; }
       say(r.msg); if (r.sfx) S.sfx.play(r.sfx);
@@ -970,7 +971,7 @@ async function dialogPick(i) {
   if (r.tavern) { S.tav = { pi: null, sure: null }; openTavern(); return; } // 0.34.0: Taverne
   if (r.maps) { openMaps(); return; } // 0.40.0: Schatzkarten
   if (r.board) { openBoard(); return; } // 0.40.0: Aushangbrett
-  if (r.exorcise) { openExorcise(); return; } // 0.46.5: Hexe
+  if (r.exorcise) { openExorcise(); return; } // 0.47.0: Hexe
   if (r.game) { closeModal(); openDice(d.id); return; } // 0.32.0: Würfelspiel mit Murmel
   if (r.next) { openDialog(d.id, r.next); renderAll(); return; }
   closeModal(); renderAll();
@@ -1012,7 +1013,7 @@ function openBoard() {
   const rows = list.length ? list.map((v) => `<div class="row nw"><div><b>${icon[v.type] || ''} ${esc(v.title)}</b><div>${esc(v.text)}</div><div class="muted">Belohnung: ${v.xp} EP${v.gold ? ` und ${v.gold} Gold` : ''} · ${v.type === 'kill' ? `Fortschritt ${v.have}/${v.need}` : v.have ? 'Liegt im Beutel' : 'Noch nicht beschafft'}</div></div><div style="display:flex;flex-direction:column;gap:4px"><button class="mb${v.ready ? ' primary' : ''}" data-m="bd-in:${v.id}" ${v.ready ? '' : 'disabled'}>Abgeben</button><button class="mb" data-m="bd-x:${v.id}">Abreißen</button></div></div>`).join('') : '<p class="muted">Das Brett ist leer. Ein paar Schritte weiter hängt vielleicht ein neuer Zettel – oder es gibt noch nichts, was zu euren Gebieten passt.</p>';
   openModal(`<h2>Aushangbrett</h2><p class="muted">Steckbriefe zählen ab dem Aushang. Erfahrung gibt es für alle Helden, die noch stehen. Neue Zettel erscheinen nach etwa 60 Schritten.</p>${rows}<div class="acts">${closeBtn}</div>`, 'board');
 }
-// ---------- Hexe Ysolde (0.46.5); Logik: logic.js (cursedOwned, exorcise) ----------
+// ---------- Hexe Ysolde (0.47.0); Logik: logic.js (cursedOwned, exorcise) ----------
 function openExorcise() {
   const g = S.game, list = cursedOwned(g, S.data), pot = S.data.items[EXORCISE.item].name, have = g.inv[EXORCISE.item] || 0;
   const rows = list.length ? list.map((o) => `<div class="row nw"><div><b>${esc(o.name)}</b>${o.worn ? ` <span class="muted">(getragen von ${esc(o.worn)})</span>` : ''}<div class="muted">Fluch: ${esc(o.curse)}</div></div><button class="mb${o.ok ? ' primary' : ''}" data-m="exo:${o.id}" ${o.ok ? '' : 'disabled'}>Entfluchen</button></div>`).join('') : '<p class="muted">Ysolde schaut in euren Beutel und zuckt die Schultern: „Nichts Verfluchtes dabei. Noch.“</p>';
@@ -1104,6 +1105,11 @@ function openModal(html, kind = 'generic') {
 function closeModal() { if (S.modal === 'dice') S.dice = null; if (S.modal === 'inventory' && S.game) { clearNew(S.game); updateInvBadge(); } $('#modal').hidden = true; $('#modal-box').innerHTML = ''; S.modal = null; S.dlg = null; S.invUse = null; S.invEquip = null; S.invSell = null; S.shopId = null; S.shopSure = null; }
 const closeBtn = '<button class="mb" data-m="close">Schließen</button>';
 
+// 0.47.0: Pergamentseite (Vorgeschichte, Runensteine). Absätze durch Leerzeile getrennt; Schließen über data-m=close.
+function openParchment(title, text, button) {
+  const paras = String(text || '').split(/\n\n+/).map((p) => `<p>${esc(p)}</p>`).join('');
+  openModal(`<div class="parch"><div class="ph">❦ ${esc(title)} ❦</div><div class="pr"></div>${paras}<div class="pr"></div><div class="pseal">✦</div><div class="acts" style="justify-content:center"><button class="mb primary" data-m="close">${esc(button || 'Weiter')}</button></div></div>`, 'parchment');
+}
 function openMenu() {
   openModal(`<h2>Menü</h2><div class="acts" style="flex-direction:column;align-items:stretch">
     <button class="mb primary" data-m="close">Weiterspielen</button>
@@ -1837,6 +1843,7 @@ function startNewGame(specs) {
   const st = newGame(S.data, (Date.now() ^ Math.floor(Math.random() * 4294967296)) >>> 0, specs, S.newDiff || 'normal');
   startGame(st);
   say('Du stehst im Testgewölbe. Vor dir liegt eine Tür. Mit ◉ Interagieren öffnest du sie.');
+  const it = S.data.story && S.data.story.intro; if (it) openParchment(it.title, it.text, it.button); // 0.47.0: Vorgeschichte, nur beim Start eines neuen Spiels
 }
 function diffPicker() {
   const cur = S.newDiff || 'normal';

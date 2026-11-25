@@ -6,6 +6,8 @@ import fs from 'node:fs';
 import * as L from './logic.js';
 
 const data = JSON.parse(fs.readFileSync(new URL('./game.json', import.meta.url), 'utf8'));
+// 0.47.0: Der Moorschrat steht nicht mehr im Testgewölbe; die Simulation nutzt ihn weiter als Standardgegner en1 (Position wie früher).
+const ng = (...a) => { const s = L.newGame(...a); if (!s.objs.some((o) => o.id === 'en1')) s.objs.push({ id: 'en1', type: 'enemy', x: 16, y: 7, kind: 'schrat', hp: data.enemies.schrat.hp, dead: false }); return s; };
 const RUNS = +process.argv[2] || 2000;
 const ENC = { en2: '2 Sumpfwölfe', en3: 'Wolf + 2 Moorkultisten', en1: 'Moorschrat' };
 
@@ -121,7 +123,7 @@ function simShop(s) {
   buy('potion', 4); buy('ration', 3);
 }
 function campaign(seed, strat) {
-  const s = L.newGame(data, seed), log = {};
+  const s = ng(data, seed), log = {};
   let failed = null;
   for (const lid of CAMPAIGN) {
     if (failed) break;
@@ -166,7 +168,7 @@ out('|---|---|---|---|---|---|');
 for (const id of Object.keys(ENC)) {
   for (const strat of ['simple', 'smart']) {
     const res = [];
-    for (let i = 0; i < RUNS; i++) { const s = L.newGame(data, 1000 + i); res.push(fight(s, id, strat)); }
+    for (let i = 0; i < RUNS; i++) { const s = ng(data, 1000 + i); res.push(fight(s, id, strat)); }
     out(`| ${ENC[id]} | ${strat === 'simple' ? 'nur Angriff' : 'klug'} | ${pct(stats(res.map((r) => +r.won)))} | ${f1(stats(res.map((r) => r.rounds)))} | ${f1(stats(res.map((r) => r.ko)))} | ${f1(stats(res.map((r) => r.hpLost)))} |`);
   }
 }
@@ -179,7 +181,7 @@ out('|---|---|---|---|---|---|');
 for (const strat of ['simple', 'smart']) for (const rest of [false, 'ration', true]) {
   let w1 = 0, w2 = 0, w3 = 0; const kos = [];
   for (let i = 0; i < RUNS; i++) {
-    const s = L.newGame(data, 5000 + i); let ko = 0;
+    const s = ng(data, 5000 + i); let ko = 0;
     const order = ['en2', 'en3', 'en1'];
     let stage = 0;
     for (const id of order) {

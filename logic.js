@@ -847,6 +847,10 @@ export function interact(state, data, target = null) { // target (0.26.2): Objek
   if (o.type === 'barrel') return smashBarrel(state, data, o); // 0.44.0
   if (o.type === 'npc') return { talk: o.id, sfx: 'ui' };
   if (o.type === 'sign') return signClue(state, o);
+  if (o.type === 'runestone' && o.story) { // 0.47.0: Erzählseite beim ersten Berühren (Pergament), danach Kurztext; die Geschichte bleibt im Notizbuch
+    const first = noteClue(state, o.id, o.title || 'Runenstein', o.story);
+    return first ? { msg: o.story, page: { title: o.title || 'Runenstein', text: o.story }, newNote: true, sfx: 'ui' } : { msg: o.text, sfx: 'ui', long: true };
+  }
   if (o.type === 'runestone') return recClue(state, o.id, 'Runenstein', o.text, { msg: o.text, sfx: 'ui', long: true }); // 0.16.5: Inschrift übersetzt (später Reisenetz)
   if (o.type === 'merchant') {
     const r = { shop: o.shop, merchant: o.id };
@@ -1435,7 +1439,7 @@ export function sellItem(state, data, id) {
 // ---------- Handel (Phase 3, Schritt 5) ----------
 // data.shops.<id> = { name, owner, greeting, stock: [{ item }] } (feste Ware, unbegrenzt). Kaufpreis = voller Wert, Verkauf = Hälfte (siehe sellPrice).
 export const shopStock = (data, shopId) => ((data.shops && data.shops[shopId] && data.shops[shopId].stock) || []).filter((e) => data.items[e.item]);
-export const buyPrice = (state, data, id) => { const w = itemWorth(state, data, id); return w == null ? null : Math.max(1, Math.ceil((w * (100 - haggle(state, data))) / 100)); };
+export const buyPrice = (state, data, id) => { const w = itemWorth(state, data, id); return w == null ? null : Math.max(1, Math.ceil((w * balancePct(state, data, 'price') / 100 * (100 - haggle(state, data))) / 100)); }; // 0.47.0: Aufschlag je Akt
 export function buyItem(state, data, shopId, itemId) {
   if (state.combat) return { error: 'in-combat' };
   if (!shopStock(data, shopId).some((e) => e.item === itemId)) return { error: 'not-in-stock' };
@@ -1682,6 +1686,15 @@ export function addStatus(state, data, side, idx, inf, msgs, src = null) {
   const nm = data.statuses[inf.status].name;
   msgs.push(`${actorName(state, side, idx)}: ${nm}${(inf.status === 'poison' || inf.status === 'burn' || inf.status === 'bleed') ? ` (${inf.turns} Runden, ${inf.power} Schaden je Runde)` : (inf.status === 'weak' || inf.status === 'slow' || inf.status === 'curse') ? ` (${inf.turns} Runden)` : ''}.`);
 }
+// 0.47.0: Beute und Preise nach Spielfortschritt. data.balance.acts[akt] = { gold, xp, price } in Prozent; data.balance.levels[gebiet] = Akt (Standard 1).
+// Maßgeblich ist der höchste bisher erreichte Akt (aktuelles Gebiet + besuchte), damit Zurückgehen keine Beute-Landwirtschaft ermöglicht.
+export function reachedAct(state, data) {
+  const lv = (data.balance && data.balance.levels) || {};
+  let a = lv[state.levelId] || 1;
+  for (const id of Object.keys(state.areas || {})) a = Math.max(a, lv[id] || 1);
+  return a;
+}
+export const balancePct = (state, data, key) => { const b = data.balance && data.balance.acts && data.balance.acts[reachedAct(state, data)]; return b && b[key] != null ? b[key] : 100; };
 // Schwierigkeit (0.17.0): data.difficulty[state.difficulty] = { name, hp, atk, gold, xp } in Prozent; fehlt es, gilt Normal (100 %).
 // Gebietszuschlag (0.17.0): data.levels.<id>.foe = { hp, atk } in Prozent (Gegner der mittleren Gebiete sind stärker), wirkt zusätzlich zum Schwierigkeitsgrad.
 const areaPct = (state, data, key) => { const l = state && data.levels[state.levelId]; return (l && l.foe && l.foe[key]) || 100; };
@@ -1763,6 +1776,7 @@ function finishVictory(state, data, msgs) {
   const dg = diffPct(state, data, 'gold'), dx = diffPct(state, data, 'xp');
   if (dg !== 100) gold = Math.floor((gold * dg) / 100);
   if (dx !== 100) xp = Math.floor((xp * dx) / 100);
+  { const bg = balancePct(state, data, 'gold'), bx = balancePct(state, data, 'xp'); if (bg !== 100) gold = Math.floor((gold * bg) / 100); if (bx !== 100) xp = Math.floor((xp * bx) / 100); } // 0.47.0
   const gp = Math.min(60, state.heroes.reduce((a, h) => a + (h.hp > 0 ? fxSum(data, h, 'gold') : 0), 0));
   if (gp > 0 && gold > 0) gold += Math.floor((gold * gp) / 100);
   state.gold += gold;
