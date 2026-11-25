@@ -3,6 +3,9 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.52.0 (25.11.2026, headless gerendert, nicht auf Gerät getestet)
+- Testgewölbe, Ostflügel (Runenstein-Raum) zur Siegelhalle ausgebaut: Steinplattenboden mit rotem Läufer zum Runenstein, zwei Wandfackeln mehr, drei Feuerschalen (neues Sprite), Runenfriese an den Wänden (neue Wanddeko). Wege zu Runenstein, Schalterstein und Geheimwand bleiben frei. Werte unverändert.
+
 ## 0.51.2 (25.11.2026, nicht auf Gerät getestet)
 - Testgewölbe: Die Tafel vor der Speerfalle heißt „WARNUNG“ statt „KOHLE“ (Text unverändert).
 

@@ -460,7 +460,7 @@ function blockedText(b) {
   if (b.type === 'enemy') return 'Ein Gegner steht im Weg.';
   return 'Hier steht etwas im Weg.';
 }
-const DECOR_TEXT = { fass: 'Ein Fass versperrt den Weg.', schutt: 'Ein Schutthaufen versperrt den Weg.', palme: 'Eine Palme steht im Weg.', kaktus: 'Ein Kaktus steht im Weg.', tisch: 'Ein Tisch steht im Weg.', stuhl: 'Ein Stuhl steht im Weg.', boot: 'Ein Boot liegt im Weg.', kamin: 'Ein Kamin versperrt den Weg.', regal: 'Ein Regal versperrt den Weg.', bett: 'Ein Bett steht im Weg.', haengematte: 'Eine Hängematte hängt im Weg.', kueche: 'Der Herd versperrt den Weg.', vase: 'Eine Vase steht im Weg.', tresen: 'Der Tresen versperrt den Weg.', weinregal: 'Ein Weinregal versperrt den Weg.', weinfass: 'Ein Weinfass versperrt den Weg.', gast0: 'Ein Gast sitzt im Weg.', gast1: 'Ein Gast sitzt im Weg.', gast2: 'Ein Gast sitzt im Weg.' };
+const DECOR_TEXT = { feuerschale: 'Eine Feuerschale steht im Weg.', fass: 'Ein Fass versperrt den Weg.', schutt: 'Ein Schutthaufen versperrt den Weg.', palme: 'Eine Palme steht im Weg.', kaktus: 'Ein Kaktus steht im Weg.', tisch: 'Ein Tisch steht im Weg.', stuhl: 'Ein Stuhl steht im Weg.', boot: 'Ein Boot liegt im Weg.', kamin: 'Ein Kamin versperrt den Weg.', regal: 'Ein Regal versperrt den Weg.', bett: 'Ein Bett steht im Weg.', haengematte: 'Eine Hängematte hängt im Weg.', kueche: 'Der Herd versperrt den Weg.', vase: 'Eine Vase steht im Weg.', tresen: 'Der Tresen versperrt den Weg.', weinregal: 'Ein Weinregal versperrt den Weg.', weinfass: 'Ein Weinfass versperrt den Weg.', gast0: 'Ein Gast sitzt im Weg.', gast1: 'Ein Gast sitzt im Weg.', gast2: 'Ein Gast sitzt im Weg.' };
 
 // rel: 'f' vor, 'b' zurück, 'l' seitwärts links, 'r' seitwärts rechts
 export function tryMove(state, data, rel) {

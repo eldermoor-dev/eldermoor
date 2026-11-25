@@ -3215,11 +3215,11 @@
         "#.....m.....##m#######",
         "#.............m#...###",
         "#.....#.......##...###",
-        "#######.#########.####",
+        "#######.######T##.####",
         "#######.#####.......m#",
         "#######.............m#",
         "#############.......m#",
-        "################T#####"
+        "################T##T##"
       ],
       "start": {
         "x": 3,
@@ -3476,7 +3476,93 @@
           "title": "SEITE",
           "style": "dark",
           "text": "Eine lose Seite, vom Feuchten gewellt: „Ich fand diese Kammer, weil ich dem Riss folgte. Wer das liest: Nehmt, was ihr braucht, und lasst den Rest.“"
+        },
+        {
+          "id": "tg_feuer1",
+          "type": "decor",
+          "x": 15,
+          "y": 6,
+          "look": "feuerschale",
+          "scale": 0.7
+        },
+        {
+          "id": "tg_feuer2",
+          "type": "decor",
+          "x": 15,
+          "y": 8,
+          "look": "feuerschale",
+          "scale": 0.7
+        },
+        {
+          "id": "tg_feuer3",
+          "type": "decor",
+          "x": 18,
+          "y": 6,
+          "look": "feuerschale",
+          "scale": 0.7
+        },
+        {
+          "id": "dk_tg_runen1",
+          "type": "sign",
+          "x": 13,
+          "y": 6,
+          "face": 0,
+          "deco": "runen",
+          "text": "Runen im Stein.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_tg_runen2",
+          "type": "sign",
+          "x": 16,
+          "y": 6,
+          "face": 0,
+          "deco": "runen",
+          "text": "Runen im Stein.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_tg_runen3",
+          "type": "sign",
+          "x": 14,
+          "y": 8,
+          "face": 2,
+          "deco": "runen",
+          "text": "Runen im Stein.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_tg_runen4",
+          "type": "sign",
+          "x": 17,
+          "y": 8,
+          "face": 2,
+          "deco": "runen",
+          "text": "Runen im Stein.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_tg_runen5",
+          "type": "sign",
+          "x": 19,
+          "y": 6,
+          "face": 1,
+          "deco": "runen",
+          "text": "Runen im Stein.",
+          "style": "dark"
         }
+      ],
+      "floor": [
+        "......................",
+        "......................",
+        "......................",
+        "......................",
+        "......................",
+        "......................",
+        ".............sssssss..",
+        ".............rrrrrrs..",
+        ".............sssssss..",
+        "......................"
       ]
     },
     "test2": {

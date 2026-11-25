@@ -718,7 +718,7 @@ export async function runTests(data, env = {}) {
       for (const o of dk) {
         assert(!(o.x === lvl.start.x && o.y === lvl.start.y), `${o.id}: nicht auf dem Startfeld`);
         if (o.type === 'decor' || o.type === 'barrel') { assert(lvl.map[o.y][o.x] === '.', `${o.id}: auf Boden`); assert(['fass', 'schutt'].includes(o.look), 'bekannte Optik'); if (o.look === 'fass') barrels++; else rubble++; }
-        else { assert(['rohr', 'gitter', 'nischeleer', 'moos', 'blut', 'kratzer', 'painting'].includes(o.deco) && o.face != null && lvl.map[o.y + [-1, 0, 1, 0][o.face]][o.x + [0, 1, 0, -1][o.face]] !== '.', `${o.id}: Schmuck an einer Wand`); wall++; }
+        else { assert(['rohr', 'gitter', 'nischeleer', 'moos', 'blut', 'kratzer', 'painting', 'runen'].includes(o.deco) && o.face != null && lvl.map[o.y + [-1, 0, 1, 0][o.face]][o.x + [0, 1, 0, -1][o.face]] !== '.', `${o.id}: Schmuck an einer Wand`); wall++; }
       }
       assert(L.analyzeLevel(data, id).ok, `${id} bleibt lösbar`);
     }
@@ -3425,6 +3425,18 @@ export async function runTests(data, env = {}) {
     for (const k of Object.keys(data.enemies)) { const fs = figureScale(tex, k, 1), ss = spriteScale(k, 1); assert(fs > 0.3 && fs <= ss + 1e-9, `${k}: sichtbare Größe ${fs} ≤ Skalierung ${ss}`); }
     assert(figureScale(tex, 'wolf', 1) < spriteScale('wolf', 1) * 0.8, 'Wolf füllt sein Bild nur zum Teil');
     for (const st of ['leverUp', 'leverDown']) assert(![...tex.sprites[st].data].some((v) => v !== 255 && (v >> 3) === 7), `${st}: kein Leuchtmaterial (Ring entfernt)`);
+  });
+
+  await test('0.52.0 Siegelhalle (Testgewölbe Ost): Boden, Feuerschalen, Runenfriese, Weg zum Runenstein frei', () => {
+    const lvl = data.levels.test1, tex = makeTextures(1);
+    assert(lvl.floor && lvl.floor.length === lvl.map.length && lvl.floor.every((r, y) => r.length === lvl.map[y].length), 'Bodenraster passt zur Karte');
+    for (let x = 13; x <= 19; x++) assert(lvl.floor[7][x] !== '.', `Boden (${x},7) belegt`);
+    const bowls = lvl.objects.filter((o) => o.type === 'decor' && o.look === 'feuerschale');
+    assert(bowls.length === 3 && bowls.every((o) => lvl.map[o.y][o.x] === '.') && tex.sprites.feuerschale, 'drei Feuerschalen auf Boden');
+    assert(lvl.objects.filter((o) => o.deco === 'runen').length === 5, 'fünf Runenfriese');
+    // Weg zum Runenstein (19,7) und zum Schalterstein-Zugang (18,8) und zur Geheimwand (17,6) bleibt frei von Hindernissen
+    for (const [x, y] of [[13, 7], [14, 7], [15, 7], [16, 7], [17, 7], [18, 7], [18, 8], [17, 6]]) assert(!lvl.objects.some((o) => o.x === x && o.y === y && ['decor', 'barrel', 'npc', 'chest'].includes(o.type)), `Feld (${x},${y}) frei`);
+    assert(L.analyzeLevel(data, 'test1').ok, 'Lösbarkeit');
   });
 
   await test('0.43.0 Schlafkammer: Szene zeichnet in allen Zimmern ohne Fehler, ASSETS enthält scene.js', async () => {
