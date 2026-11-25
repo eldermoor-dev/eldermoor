@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.51.0 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.51.1 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -14,6 +14,7 @@ Autor: eldermoor-dev · Stand: Version 0.51.0 (25.11.2026). Auf dem Galaxy S25 v
 - **Rast im Dungeon (Nutzer 25.11.2026 22:26, gebaut in 0.49.0, nicht auf Gerät getestet):** Nachtlager wirkt zu gemütlich. Dunkler, Fackel/Fackelschein, Schlafen auf Decken, rote Augen im Dunkel lassen Monster ahnen, kein gemütlicher Schlaf.
 - **Testgewölbe (Nutzer 25.11.2026 22:44 und 23:14, gebaut in 0.50.0, nicht auf Gerät getestet):** Gewählt A Lehrpfad ohne Belehrung, C Geheimraum, D Atmosphäre, E Geschichte; nicht gewählt B (Plattenrätsel) und F (Wanderer). Grundriss vom Nutzer mit „Ja“ freigegeben. Die Moorlichtung bleibt vor dem Testgewölbe (Assistent, Begründung: Treppe 1/4 und Tests hängen daran).
 - **Wasserflächen (Nutzer 25.11.2026 23:25: „Alles bis auf 6“, gebaut in 0.51.0, nicht auf Gerät getestet):** Gewählt 1 Ufer und Tiefe, 2 Farbe an die Umgebung, 3 Schaumkante und Glanz, 4 Dinge im Wasser, 5 Dunst und Irrlichter. Nicht gewählt: 6 Spiegelung.
+- **Kampfgröße und Hebel (Nutzer 25.11.2026 23:36 und 23:37, gebaut in 0.51.1, nicht auf Gerät getestet):** Schrat-Größe im Kampf nach 0.49.9 „perfekt für Bosskampf“, auf dem Gerät bestätigt (Screenshot). „Andere Monster entsprechend anpassen“. Hebel: „Schalter mit Leuchtring weglassen“ (Runenring aus 0.48.0 entfällt).
 - Rassen: Mensch, Elf, Zwerg, Ork, Gnom. Berufe: Krieger, Schurke, Kleriker, Magier, Waldläufer; Alchemist geplant (sechs Berufe, je drei Talentzweige). Maximalstufe 15.
 - Kein Permadeath: bewusstlos statt tot, Bewusstlose bekommen keine EP. Zwei Schwierigkeitsgrade (Normal, Schwer).
 - Drei Akte, ca. 13 Gebiete (Akt 1 Moor, Akt 2 Moorfestung mit 4–5 Kellerebenen, Akt 3 Schlussabschnitt). Neue Ebenen deutlich größer und in der Bauart verschieden. Besiegte Gegner kehren nur nach Ereignissen zurück (stärker).
@@ -1930,3 +1931,13 @@ Auftrag aus den Vorschlägen vom 25.11.: **A** Lehrpfad ohne Belehrung, **C** Ge
 - Renderzeit auf dem Gerät nicht gemessen (je Wasserbildpunkt einige Rechenschritte mehr; Vermutung: unauffällig). Falls es ruckelt: zuerst Funkeln und Dunst abschalten (`mist`, Zeile Funkeln in render.js).
 - Offen: Gerätetest 0.49.6 bis 0.51.0 (Nutzer: erstmal keine Tests, Testliste auf Zuruf), Schrat im Kampf (0.49.9) messen, Siedlung wächst.
 - Rückfall: Commit 239e6b2 (0.50.0). Tag-Push liefert 403, nicht umgangen.
+
+## 0.51.1 (25.11.2026; Bilder headless gerendert, nicht auf Gerät getestet): Kampfgröße aller Monster, Hebel ohne Ring
+- Gerät bestätigt (Screenshots 23:36): Schrat-Kampf nach 0.49.9 hat die richtige Größe (Figur etwa 58 % der Bildhöhe, Kopf im Bild).
+- Befund (belegt, Rechnung am Code): `viewTarget` passt die Kampfkamera so ein, dass die höchste Figur den freien Bildbereich füllt. Gerechnet wurde aber mit der Skalierung des ganzen Spritebilds, nicht mit der bemalten Höhe. Wolf füllt sein Bild nur zu 66 %, Nebelgeist 78 %, Spinnen 77 %, Erzkäfer 87 %, Blutdiener 86 %; sichtbar nur 43–53 % der Bildhöhe, Kultist, Wächter, Hauptmann etwa 58–62 %.
+- Geändert: render.js `figureScale(tex, kind, n)` = Skalierung × Anteil der bemalten Zeilen (einmal je Sprite berechnet). main.js `viewTarget` nimmt sie für `maxS`. Ergebnis (gerechnet und für fünf Einzelkämpfe gerendert): alle Einzelgegner sichtbar etwa 60–65 % der Bildhöhe (Wolf 0,43 → 0,64, Nebelgeist 0,50 → 0,64, Riesenspinne 0,49 → 0,64, Brutspinne 0,49 → 0,60; Kultist unverändert). Relative Größen in Gruppen bleiben (die sichtbar höchste Figur bestimmt die Einpassung). Das Bild darf oben leere Fläche über den Bildrand ragen, sichtbar bleibt der Kopf im Bild. Lebensbalken nutzen die bemalte Oberkante (unverändert).
+- Nicht geändert: `bossScale`/`spriteScale` (Werte der Figuren untereinander), Schratabstand aus 0.49.9.
+- Hebel (render.js `genLever`): Runenring um den Sockel entfernt (beide Zustände). Betrifft alle Standhebel (Testgewölbe `tg_hebel`, Nebelturm). Wandhebel unberührt.
+- Tests 186 grün (neu: sichtbare Größe ≤ Skalierung, Wolf kleiner als sein Bild, Hebel ohne Leuchtmaterial). Gegner- und Heldenwerte unverändert.
+- Offen: Gerätetest 0.49.6 bis 0.51.1 (Nutzer: erstmal keine Tests, Testliste auf Zuruf). Schild „LAGER“ im Testgewölbe (Nutzerfrage 23:37 „Warum steht da jetzt Lager“): stammt aus 0.50.0, Tafel `tg_tafel_lager` bei (5,4), Entscheidung des Nutzers steht aus.
+- Rückfall: Commit 23fa5e6 (0.51.0). Tag-Push liefert 403, nicht umgangen.

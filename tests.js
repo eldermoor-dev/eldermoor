@@ -4,7 +4,7 @@
 // Handy:   Einstellungen → Selbsttest (läuft dieselbe Testsuite im Browser)
 
 import * as L from './logic.js';
-import { makeTextures, Raycaster, buildGrid, buildFloorGrid, buildSprites, setResolution, drawPortrait, PLAQUE_STYLES, plaqueMetrics, DOOR_LOOKS, doorWall, FONTMODES, W, H } from './render.js';
+import { makeTextures, figureScale, spriteScale, Raycaster, buildGrid, buildFloorGrid, buildSprites, setResolution, drawPortrait, PLAQUE_STYLES, plaqueMetrics, DOOR_LOOKS, doorWall, FONTMODES, W, H } from './render.js';
 
 const FILES = ['index.html', 'main.js', 'render.js', 'logic.js', 'scene.js', 'audio.js', 'store.js', 'tests.js', 'game.json', 'sw.js', 'manifest.webmanifest'];
 
@@ -3418,6 +3418,13 @@ export async function runTests(data, env = {}) {
     const old = L.newGame(data, 5); L.jumpToLevel(old, data, 'moorsee'); const w = old.objs.filter((o) => /^wa_/.test(o.id)).length; old.objs = old.objs.filter((o) => !/^wa_/.test(o.id)); L.syncStatic(old, data);
     assert(old.objs.filter((o) => /^wa_/.test(o.id)).length === w && w > 0, 'Altstand bekommt die Wasserdinge');
     return `${w} Dinge im Moorsee`;
+  });
+
+  await test('0.51.1 Kampfgröße nach sichtbarer Höhe, Hebel ohne Leuchtring', () => {
+    const tex = makeTextures(1);
+    for (const k of Object.keys(data.enemies)) { const fs = figureScale(tex, k, 1), ss = spriteScale(k, 1); assert(fs > 0.3 && fs <= ss + 1e-9, `${k}: sichtbare Größe ${fs} ≤ Skalierung ${ss}`); }
+    assert(figureScale(tex, 'wolf', 1) < spriteScale('wolf', 1) * 0.8, 'Wolf füllt sein Bild nur zum Teil');
+    for (const st of ['leverUp', 'leverDown']) assert(![...tex.sprites[st].data].some((v) => v !== 255 && (v >> 3) === 7), `${st}: kein Leuchtmaterial (Ring entfernt)`);
   });
 
   await test('0.43.0 Schlafkammer: Szene zeichnet in allen Zimmern ohne Fehler, ASSETS enthält scene.js', async () => {

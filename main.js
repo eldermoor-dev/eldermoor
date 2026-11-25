@@ -6,12 +6,12 @@ import {
   buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, shopLeft, shopRestockIn, readHint, pushError, formatErrorLog, itemDef, cursedOwned, exorcise, EXORCISE, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, partyAvgLevel, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
   activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogEnter, roomAt, floodLabel, dialogChoose, diceNew, diceRoll, diceKeep, diceNext, diceFinish, diceRoundLine, recruitHero, swapHero, dismissReserve, recruitCost, RESERVE_MAX, mapOffers, buyMap, mapQuota, MAP_MAX, boardView, boardTurnIn, boardDismiss, achievements, masteryLevel
 } from './logic.js';
-import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
+import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, figureScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
 import { Sfx } from './audio.js';
 import { startSleepScene } from './scene.js';
 import { store } from './store.js';
 
-const VERSION = '0.51.0';
+const VERSION = '0.51.1';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -234,7 +234,7 @@ function viewTarget(now) {
     const groups = {};
     c.enemies.forEach((e) => { if (e.hp > 0) (groups[e.objId] = groups[e.objId] || []).push(e.kind); });
     let maxS = 0.5;
-    for (const ks of Object.values(groups)) for (const k of ks) maxS = Math.max(maxS, spriteScale(k, ks.length));
+    for (const ks of Object.values(groups)) for (const k of ks) maxS = Math.max(maxS, figureScale(S.tex, k, ks.length)); // 0.51.1: nach sichtbarer Höhe, nicht nach dem ganzen Bild
     const hMax = f / tY * maxS;
     // 0.16.17 (Nutzer): Blick wie bei der Truhe leicht nach unten – die Füße stehen knapp über der Leiste, passt die Figur nicht, wird sie verkleinert (Kopf bleibt im Bild)
     const feetY = hud - H * 0.015, avail = feetY - H * 0.03, fit = Math.max(0.5, Math.min(1, avail / hMax));

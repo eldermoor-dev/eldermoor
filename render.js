@@ -1671,11 +1671,7 @@ function genLever(used, seed) {
     const y = used ? 48 + i * 0.6 : 48 - i * 1.0, x = 32 + (used ? 0 : 0);
     for (let w = -1; w <= 1; w++) set(x + w, Math.round(y), P('iron', 5 - Math.abs(w) * 1.2));
   }
-  for (let y = 24; y <= 63; y++) for (let x = 10; x <= 54; x++) { // 0.48.0: Runenring um den Sockel – leuchtet, solange der Hebel bereit ist
-    const r = Math.hypot((x - 32) / 21, (y - 46) / 19), onRing = r > 0.88 && r < 1.02, rune = onRing && (Math.floor((Math.atan2(y - 46, x - 32) + 3.1416) * 4) % 3 === 0 || hash(x >> 1, y >> 1, seed + 11) > 0.8);
-    if (!onRing || (y > 56 && Math.abs(x - 32) < 8)) continue;
-    if (used) { if (hash(x, y, seed + 12) > 0.35) set(x, y, P('iron', 2.2 + hash(x >> 1, y, seed + 13) * 0.8)); } else set(x, y, rune ? P('glow', 7) : P('glow', 4.2));
-  }
+  // 0.51.1 (Nutzer: „Schalter mit Leuchtring weglassen“): der Runenring um den Sockel (0.48.0) entfällt
   const ky = used ? 63 : 22, kx = 32;
   for (let y = -3; y <= 3; y++) for (let x = -4; x <= 4; x++) if (x * x + y * y <= 14) set(kx + x, Math.min(63, ky + y), P('wood', 5 - (x + y) * 0.2));
   return t;
@@ -3366,6 +3362,12 @@ export function buildGrid(lvl, objs) {
 }
 const spriteFor = (tex, k) => (k === 'moorlicht' ? tex.sprites.wisp : k === 'skeleton' ? tex.sprites.skeleton : k === 'kultwaechter' ? tex.sprites.guard : k === 'turmwache' ? tex.sprites.turmwache : k === 'schlackenwaechter' ? tex.sprites.schlacke : k === 'wolf' ? tex.sprites.wolf : k === 'kultist' ? tex.sprites.kultist : k === 'hauptmann' ? tex.sprites.captain : k === 'giessmeister' ? tex.sprites.giessmeister : k === 'erzkaefer' ? tex.sprites.kaefer : k === 'nebelgeist' ? tex.sprites.geist : (k === 'kultpriester' || k === 'quellhueterin') ? tex.sprites.priester : k === 'truhenmaul' ? tex.sprites.mimic : k === 'brandmagier' ? tex.sprites.magier : (k === 'riesenspinne' || k === 'brutspinne' || k === 'netzwaechter') ? tex.sprites.spinne : k === 'spinnenkoenigin' ? tex.sprites.koenigin : k === 'blutdiener' ? tex.sprites.diener : k === 'vampirbrut' ? tex.sprites.brut : k === 'blutgraefin' ? tex.sprites.graefin : k === 'teufel' ? tex.sprites.teufel : k === 'nebelhueter' ? tex.sprites.hueter : k === 'schrat' ? tex.sprites.moorschrat : k === 'grubenschrat' ? tex.sprites.grubenschrat : tex.sprites.schrat);
 const bossScale = (k) => (k === 'schrat' ? 1.5 : k === 'grubenschrat' || k === 'nebelhueter' ? 1.2 : k === 'hauptmann' || k === 'blutgraefin' || k === 'giessmeister' || k === 'quellhueterin' ? 1.12 : k === 'truhenmaul' ? 0.8 : k === 'spinnenkoenigin' ? 1.4 : k === 'brutspinne' ? 0.7 : k === 'netzwaechter' ? 1.0 : k === 'riesenspinne' ? 1.15 : k === 'teufel' ? 1.12 : 0.9); // Bosse stehen größer im Gang
+// 0.51.1 (Nutzer: Schrat-Größe „perfekt“, „andere Monster entsprechend anpassen“): sichtbare Höhe einer Figur = Skalierung × Anteil der bemalten Zeilen im Bild (Wolf, Geist, Spinnen füllen ihr Bild nur zu 66–78 %). Die Kampfkamera passt danach ein, damit jede Figur gleich viel vom freien Bildbereich füllt.
+export function figureScale(tex, k, n) {
+  const t = spriteFor(tex, k);
+  if (t._ct == null) { const N = t.w, hgt = t.h || t.w; let top = hgt, bot = -1; for (let y = 0; y < hgt; y++) for (let x = 0; x < N; x++) if (t.data[y * N + x] !== 255) { if (y < top) top = y; bot = y; } t._ct = bot < 0 ? 1 : (bot - top + 1) / hgt; }
+  return spriteScale(k, n) * t._ct;
+}
 export const GROUP_SCALE = 0.78, GROUP_GAP = 0.44, CHEST_SCALE = 0.58; // 0.16.4: Gruppen vorher 0.62/0.36, Truhe 0.5 (Nutzer: zu klein, hinter der Leiste)
 let combatFit = 1; // 0.16.17: im Kampf verkleinert die Kamera zu große Figuren so, dass sie samt Füßen über der Leiste ins Bild passen
 export const setCombatFit = (v) => { combatFit = v; };
