@@ -3,7 +3,7 @@
 import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, shopLeft, shopRestockIn, readHint, pushError, formatErrorLog, itemDef, cursedOwned, exorcise, EXORCISE, smithJobs, smithUpgrade, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, partyAvgLevel, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
+  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, shopLeft, shopRestockIn, readHint, pushError, formatErrorLog, itemDef, cursedOwned, exorcise, EXORCISE, smithJobs, smithUpgrade, smithSetJobs, smithFinishSet, smithPartJobs, smithCraft, setsComplete, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, partyAvgLevel, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
   activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogEnter, roomAt, floodLabel, dialogChoose, diceNew, diceRoll, diceKeep, diceNext, diceFinish, diceRoundLine, recruitHero, swapHero, dismissReserve, recruitCost, RESERVE_MAX, mapOffers, buyMap, mapQuota, MAP_MAX, boardView, boardTurnIn, boardDismiss, achievements, masteryLevel
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, figureScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
@@ -11,7 +11,7 @@ import { Sfx } from './audio.js';
 import { startSleepScene } from './scene.js';
 import { store } from './store.js';
 
-const VERSION = '0.53.0';
+const VERSION = '0.53.1';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -1059,13 +1059,18 @@ function exoAct(m) {
 }
 // ---------- Schmied (0.53.0); Logik: logic.js (smithJobs, smithUpgrade) ----------
 function openSmith() {
-  const g = S.game, list = smithJobs(g, S.data);
+  const g = S.game, list = smithJobs(g, S.data), sets = smithSetJobs(g, S.data), parts = smithPartJobs(g, S.data);
+  const partRows = parts.map((j) => `<div class="row nw"><div><b>${esc(j.name)}</b> <span class="muted">(Körperteil)</span><div class="muted">Brann: „${esc(j.hint)} Etwas Besonderes.“</div></div><button class="mb${j.ok ? ' primary' : ''}" data-m="smc:${j.part}" ${j.ok ? '' : 'disabled'}>Schmieden (${j.cost} G)</button></div>`).join('');
+  const setRows = sets.map((j) => `<div class="row nw"><div><b>Set „${esc(j.name)}“</b> <span class="muted">für ${esc(j.hero)}</span><div class="muted">Alle drei Teile getragen, noch nicht vollendet. ${esc(j.desc)}</div></div><button class="mb${j.ok ? ' primary' : ''}" data-m="smf:${encodeURIComponent(j.heroKey)}|${j.setId}" ${j.ok ? '' : 'disabled'}>Vollenden (${j.cost} G)</button></div>`).join('');
   const rows = list.length ? list.map((j) => `<div class="row nw"><div><b>${esc(j.name)}</b> <span class="muted">${esc(j.from)} → ${esc(j.to)}${j.worn ? ` · getragen von ${esc(j.worn)}` : ''}</span><div class="muted">Danach: ${esc(j.gain)}</div></div><button class="mb${j.ok ? ' primary' : ''}" data-m="smi:${j.id}" ${j.ok ? '' : 'disabled'}>Aufwerten (${j.cost} G)</button></div>`).join('') : '<p class="muted">Der Schmied dreht eure Stücke in der Hand: „Hier gibt es nichts mehr zu verbessern. Bringt mir Waffen und Rüstungen, die noch nicht Selten sind.“</p>';
-  openModal(`<h2>Schmied Brann</h2><p>Gold: <b>${g.gold}</b></p><p class="muted">Er hebt Waffen und Rüstungen um eine Stufe, höchstens bis Selten. Gewöhnlich → Gut: +1 auf den Hauptwert. Gut → Selten: eine Zufallseigenschaft. Der Preis steht am Knopf. Ringe, Amulette, Einzigartiges und Set-Teile fasst er nicht an. Auch getragene Stücke.</p>${rows}<div class="acts">${closeBtn}</div>`, 'smith');
+  openModal(`<h2>Schmied Brann</h2><p>Gold: <b>${g.gold}</b></p><p class="muted">Er hebt Waffen und Rüstungen um eine Stufe, höchstens bis Selten. Gewöhnlich → Gut: +1 auf den Hauptwert. Gut → Selten: eine Zufallseigenschaft. Ringe, Amulette, Einzigartiges und Set-Teile fasst er dabei nicht an. Auch getragene Stücke. Sets vollendet er, seltene Körperteile verarbeitet er.</p>${partRows ? '<h3>Körperteile</h3>' + partRows : ''}${setRows ? '<h3>Sets vollenden</h3>' + setRows : ''}<h3>Aufwerten</h3>${rows}<div class="acts">${closeBtn}</div>`, 'smith');
 }
 function smiAct(m) {
-  const r = smithUpgrade(S.game, S.data, m.slice(4));
-  const bad = { 'in-combat': 'Im Kampf geht das nicht.', gold: `Dafür fehlen ${r.cost} Gold.`, unknown: 'Das Stück ist nicht mehr zu verbessern.' }[r.error];
+  let r;
+  if (m.startsWith('smc:')) r = smithCraft(S.game, S.data, m.slice(4));
+  else if (m.startsWith('smf:')) { const [hn, sid] = m.slice(4).split('|'); r = smithFinishSet(S.game, S.data, decodeURIComponent(hn), sid); }
+  else r = smithUpgrade(S.game, S.data, m.slice(4));
+  const bad = { 'in-combat': 'Im Kampf geht das nicht.', gold: `Dafür fehlen ${r.cost} Gold.`, unknown: 'Das geht nicht mehr.' }[r.error];
   if (r.msg) { say(r.msg); S.sfx.play(r.sfx || 'ui'); toast(r.msg, 5000); } else toast(bad || 'Das geht nicht.', 3200);
   const sc = $('#modal-box').scrollTop; renderAll(); openSmith(); $('#modal-box').scrollTop = sc;
 }
@@ -1327,7 +1332,7 @@ function openInventory() {
   html += items.length ? items.map(([id, n, nw]) => {
     const it = itemDef(g, d, id);
     const use = it.kind === 'consumable' && (it.heal || it.mana) ? `<button class="mb" data-m="use:${id}">Benutzen</button>` : it.kind === 'supply' && !g.combat ? '<button class="mb" data-m="rest">Rasten</button>' : it.kind === 'equip' && !g.combat ? `<button class="mb" data-m="eqsel:${id}">Ausrüsten</button>` : '';
-    return `<div class="row nw${S.invEquip === id ? ' sel' : ''}"><div><b>${itemIcon(id, it)}${qTag(id, it)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : ` × ${n}`}${nw ? ' <span class="newtag">● neu</span>' : ''}<div class="muted">${esc(it.desc)}</div>${it.kind === 'equip' ? betterFor(id) : ''}${isCursed(it) && curseKnown(g, d, id) ? `<div style="font-size:.8em;color:#e86060">⚠ Verflucht: ${esc(curseText(it))}</div>` : ''}</div>${use}</div>`;
+    return `<div class="row nw${S.invEquip === id ? ' sel' : ''}"><div><b>${itemIcon(id, it)}${qTag(id, it)}</b>${it.kind === 'quest' ? ' <span class="muted">(Questgegenstand)</span>' : it.kind === 'part' ? ' <span class="muted">(Körperteil, nicht verkäuflich)</span>' : ` × ${n}`}${nw ? ' <span class="newtag">● neu</span>' : ''}<div class="muted">${esc(it.desc)}</div>${it.kind === 'equip' ? betterFor(id) : ''}${isCursed(it) && curseKnown(g, d, id) ? `<div style="font-size:.8em;color:#e86060">⚠ Verflucht: ${esc(curseText(it))}</div>` : ''}</div>${use}</div>`;
   }).join('') : '<p class="muted">Nichts dabei.</p>';
   if (S.invEquip && itemDef(g, d, S.invEquip) && (g.inv[S.invEquip] || 0) > 0) {
     html += `<h3>${qTag(S.invEquip, itemDef(g, d, S.invEquip))} an wen?</h3><div class="acts">` + g.heroes.map((h, i) =>
@@ -1365,7 +1370,7 @@ function gearLines(h, i) {
     const cu = it && isCursed(it) && curseKnown(S.game, S.data, id) ? `<div style="font-size:.72em;color:#e86060">⚠ Fluch: ${esc(curseText(it))}</div>` : '';
     const fx = (it && it.fx ? `<div class="muted" style="font-size:.72em">${esc(fxText(it.fx))}</div>` : '') + cu;
     return `<div class="muted">${S.data.slots[s]}: ${it ? qTag(id, it) + ` <button class="mb" data-m="uneq:${i}:${s}" style="padding:1px 6px;min-height:0">Ablegen</button>` : '–'}</div>${fx}`;
-  }).join('') + activeSets(S.data, h).map((st) => `<div style="font-size:.74em;color:#6fdc8c">Set „${esc(st.name)}“: ${esc(fxText(st.bonus))}</div>`).join('');
+  }).join('') + activeSets(S.data, h).map((st) => `<div style="font-size:.74em;color:#6fdc8c">Set „${esc(st.name)}“: ${esc(fxText(st.bonus))}</div>`).join('') + setsComplete(S.data, h).filter((st) => !(h.setFin && h.setFin[st.id])).map((st) => `<div style="font-size:.74em;color:#d9b36b">Set „${esc(st.name)}“ vollständig getragen, aber noch nicht vollendet (Schmied Brann).</div>`).join('');
 }
 // 0.21.0: Ausrüstungseffekte in Worten
 const FX_NAMES = { lifesteal: (v) => `Lebensraub ${v} %`, thorns: (v) => `Dornen ${v}`, crit: (v) => `Krit +${v} %`, dodge: (v) => `Ausweichen ${v} %`, resist: (v) => `Statusabwehr ${v} %`, soak: (v) => `Schaden gegen dich −${v}`, regen: (v) => `+${v} Ressource je Angriff/Verteidigen`, heal: (v) => `Heilung +${v}`, abil: (v) => `Fähigkeiten +${v} %`, gold: (v) => `Gold +${v} %` };
@@ -1835,7 +1840,7 @@ async function onModalClick(e) {
   else if (m.startsWith('tav-')) tavAct(m);
   else if (m.startsWith('map-buy:') || m.startsWith('bd-')) wirtAct(m);
   else if (m.startsWith('exo:')) exoAct(m);
-  else if (m.startsWith('smi:')) smiAct(m);
+  else if (m.startsWith('smi:') || m.startsWith('smc:') || m.startsWith('smf:')) smiAct(m);
   else if (m === 'shopgo') { S.shopTalk = null; openShop(S.shopId, false); }
   else if (m.startsWith('dlg:')) dialogPick(+m.slice(4));
   else if (m.startsWith('dice-')) diceAction(m);

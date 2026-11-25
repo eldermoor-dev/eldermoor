@@ -3,6 +3,12 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.53.1 (26.11.2026, nicht auf Gerät getestet)
+- Schmied Brann schon nach der Kultgruft statt nach dem Nebelturm.
+- Körperteile (5 Stück) fallen extrem selten (1,5 % je Sieg), nicht verkäuflich; Brann schmiedet daraus einzigartige Waffen und Rüstungen.
+- Sets wirken erst, wenn Brann sie vollendet hat; Alt-Stände behalten ihre vollständigen Sets.
+- Hedda ist Branns Schwester und gibt Hinweise auf Teile und Sets.
+
 ## 0.53.0 (26.11.2026, nicht auf Gerät getestet)
 - Schmied Brann in der Siedlung (nach dem Betreten des Nebelturms): wertet Waffen und Rüstungen gegen Gold um eine Stufe auf, höchstens bis Selten.
 - Kleriker: Zauber „Tote erwecken“ ab Stufe 12 (Kampf, einmal je Kampf, 18 Mana, 40 % LP).

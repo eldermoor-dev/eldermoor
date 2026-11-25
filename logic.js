@@ -315,8 +315,8 @@ export function passEntryDirs(lvl, o) {
 }
 // 0.47.9: Die Taverne erscheint erst, wenn die Schratgruben (3. Gebiet nach dem Moorpfad) betreten wurden: Marke 'taverne_offen' baut die Siedlung um (moorrand.alt fügt die Tür hinzu). Alte Stände, die die Taverne schon kennen, behalten sie.
 export const TAVERN_FLAG = 'taverne_offen', TAVERN_AREA = 'schratgruben';
-// 0.53.0: Der Schmied zieht in die Siedlung, sobald der Nebelturm betreten wurde (Marke 'schmied_offen', moorrand.alt fügt ihn hinzu).
-export const SMITH_FLAG = 'schmied_offen', SMITH_AREA = 'nebelturm';
+// 0.53.0: Der Schmied zieht in die Siedlung, sobald die Kultgruft betreten wurde (Marke 'schmied_offen', moorrand.alt fügt ihn hinzu). 0.53.1: früher (vorher Nebelturm; Nutzer: „viel zu spät“).
+export const SMITH_FLAG = 'schmied_offen', SMITH_AREA = 'kultgruft';
 function unlockWorld(state) {
   state.flags = state.flags || {};
   const seen = (id) => state.levelId === id || !!(state.areas && state.areas[id]);
@@ -954,7 +954,8 @@ export function interact(state, data, target = null) { // target (0.26.2): Objek
   if (o.type === 'runestone') return recClue(state, o.id, 'Runenstein', o.text, { msg: o.text, sfx: 'ui', long: true }); // 0.16.5: Inschrift übersetzt (später Reisenetz)
   if (o.type === 'merchant') {
     const r = { shop: o.shop, merchant: o.id };
-    if (o.talk && !state.flags[o.talk.flag]) { state.flags[o.talk.flag] = true; r.msg = o.talk.text; r.changed = true; recClue(state, 'talk:' + o.id, o.name || 'Händler', o.talk.text, r); }
+    const tk = [o.talk, o.talk2].filter(Boolean).find((t) => !state.flags[t.flag] && (!t.when || state.flags[t.when])); // 0.53.1: mehrere Gespräche nacheinander (when = Marke, die vorher gesetzt sein muss)
+    if (tk) { state.flags[tk.flag] = true; r.msg = tk.text; r.changed = true; recClue(state, 'talk:' + o.id + (tk.id ? ':' + tk.id : ''), o.name || 'Händler', tk.text, r); }
     return r;
   }
   if (o.type === 'door') {
@@ -1288,10 +1289,14 @@ const backPen = (data, h) => h.row === 'back' && !h.ranged && !talentSum(data, h
 // Feste Gegenstände (data.items) dürfen fx tragen: dieselben Schlüssel wie Talente (crit, dodge, resist, soak, regen, heal, abil, gold, trap, lock, secret, haggle)
 // plus lifesteal (Prozent des verursachten Schadens als LP) und thorns (Schaden zurück an den Angreifer, wenn der Träger getroffen wird).
 // Sets: data.sets.<id> = { name, items: [ids], bonus: { fx }, desc } – Bonus gilt, wenn ALLE Teile getragen werden. Erzeugte Beute (g1, g2 …) hat keine Effekte.
-export function activeSets(data, h) {
+// 0.53.1: Alle Teile getragen = Set vollständig; der Bonus wirkt erst, wenn der Schmied es für diesen Helden vollendet hat (h.setFin[id], Entscheidung des Nutzers).
+export function setsComplete(data, h) {
   if (!data.sets || !h || !h.equip) return [];
   const worn = new Set(SLOTS.map((s) => h.equip[s]).filter(Boolean));
   return Object.entries(data.sets).filter(([, st]) => st.items.every((i) => worn.has(i))).map(([id, st]) => ({ id, ...st }));
+}
+export function activeSets(data, h) {
+  return setsComplete(data, h).filter((st) => h.setFin && h.setFin[st.id]);
 }
 export function gearFx(data, h, key) {
   if (!h || !h.equip) return 0;
@@ -1479,6 +1484,50 @@ export function smithUpgrade(state, data, id) {
   const now = itemDef(state, data, uid);
   return { msg: `Der Schmied hämmert: ${job.name} wird ${job.to} (${job.gain}). Kosten: ${job.cost} Gold.`, id: uid, item: now, sfx: 'unlock', changed: true, price: job.cost };
 }
+// 0.53.1: Schmied vollendet Sets (je Held, alle drei Teile müssen getragen werden) und schmiedet aus seltenen Körperteilen etwas Besonderes (data.crafts).
+// Preis Set = Summe der Teilewerte × Akt-Aufschlag × Feilschen. Preis Schmieden = crafts.<teil>.cost × Akt-Aufschlag × Feilschen.
+const smithMoney = (state, data, base) => Math.max(1, Math.ceil((base * balancePct(state, data, 'price') / 100 * (100 - haggle(state, data))) / 100));
+export function smithSetJobs(state, data) {
+  const out = [];
+  [...(state.heroes || []), ...(state.reserve || [])].forEach((h, i) => {
+    if (!h) return;
+    for (const st of setsComplete(data, h)) {
+      if (h.setFin && h.setFin[st.id]) continue;
+      const cost = smithMoney(state, data, st.items.reduce((n, id) => n + ((data.items[id] && data.items[id].value) || 0), 0));
+      out.push({ hero: h.name, heroKey: h.name, setId: st.id, name: st.name, desc: st.desc, cost, ok: state.gold >= cost });
+    }
+  });
+  return out;
+}
+export function smithFinishSet(state, data, heroName, setId) {
+  if (state.combat) return { error: 'in-combat' };
+  const job = smithSetJobs(state, data).find((j) => j.heroKey === heroName && j.setId === setId);
+  if (!job) return { error: 'unknown' };
+  if (state.gold < job.cost) return { error: 'gold', cost: job.cost };
+  const h = [...state.heroes, ...(state.reserve || [])].find((x) => x && x.name === heroName);
+  state.gold -= job.cost; (h.setFin = h.setFin || {})[setId] = true;
+  return { msg: `Brann fasst die drei Teile neu zusammen: Set „${job.name}“ für ${h.name} vollendet. ${job.desc} Kosten: ${job.cost} Gold.`, sfx: 'unlock', changed: true, price: job.cost };
+}
+export function smithPartJobs(state, data) {
+  const out = [];
+  for (const id of Object.keys(data.crafts || {})) {
+    if (!((state.inv[id] || 0) > 0) || !data.items[id]) continue;
+    const c = data.crafts[id]; if (!data.items[c.result]) continue;
+    const cost = smithMoney(state, data, c.cost);
+    out.push({ part: id, name: data.items[id].name, hint: c.hint, cost, ok: state.gold >= cost });
+  }
+  return out;
+}
+export function smithCraft(state, data, partId) {
+  if (state.combat) return { error: 'in-combat' };
+  const job = smithPartJobs(state, data).find((j) => j.part === partId);
+  if (!job) return { error: 'unknown' };
+  if (state.gold < job.cost) return { error: 'gold', cost: job.cost };
+  const res = data.crafts[partId].result, it = data.items[res];
+  state.gold -= job.cost; state.inv[partId]--; if (state.inv[partId] <= 0) delete state.inv[partId];
+  state.inv[res] = (state.inv[res] || 0) + 1; markNew(state, res); state.flags['crafted:' + res] = true;
+  return { msg: `Brann schmiedet aus dem ${job.name}: ${it.name}! ${it.desc} Kosten: ${job.cost} Gold.`, id: res, sfx: 'unlock', changed: true, price: job.cost };
+}
 export function gearBonus(data, h, state) {
   const b = { atk: 0, def: 0, init: 0 };
   for (const s of SLOTS) { const it = h.equip && h.equip[s] && itemDef(state, data, h.equip[s]); if (it && it.kind === 'equip') { b.atk += (it.atk || 0) + ((it.curse && it.curse.atk) || 0); b.def += (it.def || 0) + ((it.curse && it.curse.def) || 0); b.init += (it.init || 0) + ((it.curse && it.curse.init) || 0); } }
@@ -1513,15 +1562,16 @@ export function equipItem(state, data, itemId, heroIdx) {
   if (!canEquip(data, h, itemId, state)) return { error: 'not-allowed' };
   const it = itemDef(state, data, itemId);
   h.equip = h.equip || { weapon: null, armor: null };
+  h.setFin = h.setFin || {};
   const old = h.equip[it.slot];
-  const setsBefore = activeSets(data, h).map((x) => x.id);
+  const setsBefore = setsComplete(data, h).map((x) => x.id);
   state.inv[itemId]--;
   if (old) state.inv[old] = (state.inv[old] || 0) + 1;
   h.equip[it.slot] = itemId;
   let curseMsg = '';
   if (it.curse && !(state.flags['id:' + itemId])) { state.flags['id:' + itemId] = true; curseMsg = ` Ein Fluch! ${it.name}: ${curseText(it)}.`; }
   for (const k of Object.keys(state.inv)) if (state.inv[k] === 0 && itemDef(state, data, k).kind === 'equip') delete state.inv[k];
-  const setNew = activeSets(data, h).filter((x) => !setsBefore.includes(x.id)).map((x) => ` Set „${x.name}“ vollständig! ${x.desc}`).join(''); // 0.47.18: Meldung bei Vollendung
+  const setNew = setsComplete(data, h).filter((x) => !setsBefore.includes(x.id)).map((x) => (h.setFin && h.setFin[x.id] ? ` Set „${x.name}“ vollständig! ${x.desc}` : ` Alle drei Teile des Sets „${x.name}“ sind angelegt. Der Schmied muss das Set vollenden, erst dann wirkt der Bonus.`)).join(''); // 0.47.18: Meldung bei Vollendung; 0.53.1: Schmied vollendet
   return { msg: `${h.name} legt ${it.name} an${old ? ` (${itemDef(state, data, old).name} zurück ins Inventar)` : ''}.${curseMsg}${setNew}`, sfx: setNew ? 'sting' : 'ui' };
 }
 export function unequipItem(state, data, heroIdx, slot) {
@@ -1582,7 +1632,17 @@ export function addGear(state, data, inst) {
 export const ownsItem = (state, id) => (state.inv[id] || 0) > 0 || state.heroes.some((h) => h.equip && SLOTS.some((s) => h.equip[s] === id));
 export const qualityOf = (state, data, id) => { const it = itemDef(state, data, id); return it && it.q ? (it.q === 'unique' ? { id: 'unique', name: 'Einzigartig', color: '#ffb347' } : it.q === 'set' ? { id: 'set', name: 'Set', color: '#6fdc8c' } : it.q === 'meister' ? { id: 'meister', name: 'Meisterwerk', color: '#e8a0ff' } : data.quality.find((q) => q.id === it.q)) : null; };
 // Beute nach einem Sieg: je Gegnerart data.enemies.<id>.drops (feste Gegenstände, einmalig) und gearDrop {chance, boost, slot?}
-function rollDrops(state, data, enemies, msgs) {
+export function rollDrops(state, data, enemies, msgs) {
+  enemies.forEach((e, idx) => { // 0.53.1: Körperteile, extrem selten (Prozent mit Nachkommastellen), nicht verkäuflich; Würfel ohne state.rng zu verändern
+    const en = data.enemies[e.kind];
+    for (const pd of en.parts || []) {
+      const res = data.crafts && data.crafts[pd.item] && data.crafts[pd.item].result;
+      if (!data.items[pd.item] || ownsItem(state, pd.item) || (res && (ownsItem(state, res) || state.flags['crafted:' + res]))) continue;
+      if (mix32(state.rng + idx * 977 + ((state.kills && state.kills[e.kind]) || 0) * 131 + strHash(pd.item)) % 10000 >= Math.round(pd.chance * 100)) continue;
+      state.inv[pd.item] = 1; markNew(state, pd.item);
+      msgs.push(`Beute von ${e.name}: ${data.items[pd.item].name} (Körperteil, sehr selten).`);
+    }
+  });
   for (const e of enemies) {
     const en = data.enemies[e.kind];
     for (const d of en.drops || []) { // { item | pick: [ids], chance }: Unikate fallen nur, solange sie noch nicht im Besitz sind
@@ -2512,6 +2572,8 @@ export function validateState(state, data) {
 const STATIC_TYPES = new Set(['stairs', 'sign', 'merchant', 'exit', 'runestone', 'decor', 'rail']);
 export function syncStatic(state, data) {
   unlockWorld(state);
+  state.flags = state.flags || {};
+  for (const h of [...(state.heroes || []), ...(state.reserve || [])]) if (h && h.setFin === undefined) for (const st of setsComplete(data, h)) (h.setFin = h.setFin || {})[st.id] = true; // 0.53.1: Alt-Stände behalten Sets, die schon vollständig getragen werden; wer nach dem Update ausrüstet, bekommt setFin in equipItem
   for (const h of state.heroes || []) if (h && data.classes[h.cls] && h.role !== data.classes[h.cls].name) h.role = data.classes[h.cls].name; // umbenannte Berufe (Priester → Kleriker)
   const areas = [{ id: state.levelId, objs: state.objs }, ...Object.entries(state.areas || {}).map(([id, a]) => ({ id, objs: a.objs }))];
   let n = 0;

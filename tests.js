@@ -2822,8 +2822,10 @@ export async function runTests(data, env = {}) {
     const r2 = L.equipItem(s, data, 'moorpanzer', 0);
     eq([L.fxSum(data, h, 'thorns'), L.fxSum(data, h, 'crit'), L.activeSets(data, h).length, /vollständig/.test(r2.msg)], [1, 0, 0, false], 'zwei von drei Teilen: noch kein Set-Bonus, keine Meldung');
     const r3 = L.equipItem(s, data, 'ring_moorwaechter', 0);
+    eq([L.activeSets(data, h).length, L.setsComplete(data, h).length, /Schmied/.test(r3.msg)], [0, 1, true], '0.53.1: komplett getragen, aber ohne Schmied kein Bonus; Meldung nennt den Schmied');
+    s.gold = 5000; s.flags.schmied_offen = true; const fin = L.smithFinishSet(s, data, h.name, 'moorwaechter'); assert(fin && !fin.error, 'Schmied vollendet Set: ' + JSON.stringify(fin));
     eq([L.fxSum(data, h, 'thorns'), L.fxSum(data, h, 'crit'), L.fxSum(data, h, 'soak'), L.fxSum(data, h, 'lifesteal'), L.activeSets(data, h)[0].id], [2, 12, 1, 15, 'moorwaechter'], 'komplett: Set-Bonus');
-    assert(/Set „Moorwächter“ vollständig/.test(r3.msg), 'Meldung bei Vollendung: ' + r3.msg);
+    assert(/Moorwächter/.test(r3.msg) && /Brann/.test(fin.msg || ''), 'Meldungen: ' + r3.msg + ' / ' + fin.msg);
     eq(L.sellPrice(s, data, 'moorklinge'), null, 'Set-Teile nicht verkäuflich');
     // Lebensraub und Dornen im Kampf
     put(s, 15, 7, 1); L.startCombat(s, data, L.enemyInFront(s)); h.hp = 10; let leech = false, thorns = false;
@@ -3522,8 +3524,8 @@ export async function runTests(data, env = {}) {
     assert(alts.some((a) => a.flag === 'taverne_offen'), 'Taverne bleibt im Umbau');
     // Freischaltung über den Nebelturm, Altstand
     const f = L.newGame(data, 531); L.jumpToLevel(f, data, 'moorrand'); assert(!f.objs.some((o) => o.id === 'npc_schmied'), 'Schmied am Anfang nicht da');
-    L.jumpToLevel(f, data, 'nebelturm'); L.jumpToLevel(f, data, 'moorrand'); assert(f.objs.some((o) => o.id === 'npc_schmied') && !f.objs.some((o) => o.id === 'stairs_taverne'), 'Schmied nach dem Nebelturm da, Taverne unabhängig davon erst nach den Schratgruben');
-    const o2 = L.newGame(data, 532); o2.areas = { nebelturm: { objs: [], seen: [], notes: [] } }; L.syncStatic(o2, data); assert(o2.flags.schmied_offen, 'alter Stand mit besuchtem Nebelturm: Schmied offen');
+    L.jumpToLevel(f, data, 'kultgruft'); L.jumpToLevel(f, data, 'moorrand'); assert(f.objs.some((o) => o.id === 'npc_schmied') && !f.objs.some((o) => o.id === 'stairs_taverne'), 'Schmied nach der Kultgruft da, Taverne unabhängig davon erst nach den Schratgruben');
+    const o2 = L.newGame(data, 532); o2.areas = { kultgruft: { objs: [], seen: [], notes: [] } }; L.syncStatic(o2, data); assert(o2.flags.schmied_offen, 'alter Stand mit besuchter Kultgruft: Schmied offen');
     // erreichbar (Nachbarfeld frei)
     { const lvl = L.levelFor(data, 'moorrand', { taverne_offen: true, schmied_offen: true }), n = lvl.objects.find((o) => o.id === 'npc_schmied'); assert(L.cellChar(lvl, n.x, n.y) === '.' && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => L.cellChar(lvl, n.x + dx, n.y + dy) === '.' && !lvl.objects.some((o) => o.x === n.x + dx && o.y === n.y + dy && ['decor', 'npc', 'merchant', 'sign'].includes(o.type))), 'Schmied steht frei'); }
     // Dialog öffnet das Fenster
@@ -3559,6 +3561,34 @@ export async function runTests(data, env = {}) {
     const a = fresh(544); a.gold = 500; a.inv.leather_armor = 1; const ra = L.smithUpgrade(a, data, 'leather_armor'); eq(L.itemDef(a, data, ra.id).def, data.items.leather_armor.def + 1, 'Rüstung +1 Verteidigung');
     // Speicherstand: Instanz bleibt über JSON erhalten
     const rt = JSON.parse(JSON.stringify(s)); eq(L.itemDef(rt, data, r1.id).q, 'rare', 'Aufgewertetes Stück übersteht Speichern');
+  });
+  await test('0.53.1 Körperteile: nicht verkäuflich, selten, Schmied schmiedet, Hedda und Brann', () => {
+    for (const [id, c] of Object.entries(data.crafts || {})) {
+      if (id === 'note') continue;
+      const it = data.items[id], r = data.items[c.result];
+      assert(it && it.kind === 'part' && it.noSell, `Teil ${id}`); assert(r && r.q === 'unique' && !/Ring|Amulett/.test(r.slot || '') && ['weapon', 'armor'].includes(r.slot), `Ergebnis ${c.result} Waffe/Rüstung`);
+      assert(c.hint && !c.hint.includes(r.name), `Hinweis nennt das Ergebnis nicht: ${id}`);
+    }
+    const s = fresh(11); s.inv.teil_wolfsfang = 1; s.gold = 1000;
+    eq(L.sellPrice(s, data, 'teil_wolfsfang'), null, 'Körperteil nicht verkäuflich');
+    const job = L.smithPartJobs(s, data); eq(job.length, 1, 'ein Teil im Beutel');
+    const g0 = s.gold, r = L.smithCraft(s, data, 'teil_wolfsfang');
+    assert(!r.error && s.inv.fangklinge === 1 && !s.inv.teil_wolfsfang && s.gold === g0 - job[0].cost, 'geschmiedet: ' + JSON.stringify(r));
+    eq(L.smithCraft(s, data, 'teil_wolfsfang').error, 'unknown', 'kein zweites Mal ohne Teil');
+    // Seltenheit: 1,5 % je Sieg, höchstens 3 % in 2000 simulierten Siegen, mindestens 1 Treffer
+    let hit = 0; for (let k = 0; k < 2000; k++) { const z = fresh(1000 + k); z.rng = 777 + k * 31; z.kills = { wolf: k }; L.rollDrops(z, data, [{ kind: 'wolf', name: 'Wolf' }], []); if (z.inv.teil_wolfsfang) hit++; }
+    assert(hit >= 1 && hit < 60, 'Teile-Quote plausibel (extrem selten): ' + hit + ' von 2000');
+    const h = data.levels.moorrand.objects.find((o) => o.id === 'merchant_hedda');
+    assert(h.talk2 && /Brann/.test(h.talk2.text) && h.talk2.when === 'schmied_offen', 'Hedda nennt Brann als Bruder, erst nach Schmied');
+    assert(/Set/.test(JSON.stringify(data.dialogs.schmied)) && /Körper|Auge|Zahn/.test(JSON.stringify(data.dialogs.schmied)), 'Brann erklärt Sets und Teile');
+  });
+  await test('0.53.1 Sets: Bonus erst nach Vollendung, Alt-Stände behalten ihre Sets', () => {
+    const s = fresh(12); s.flags.schmied_offen = true; const h = s.heroes[0]; s.gold = 10;
+    for (const i of ['moorklinge', 'moorpanzer', 'ring_moorwaechter']) { s.inv[i] = 1; L.equipItem(s, data, i, 0); }
+    eq([L.activeSets(data, h).length, L.smithSetJobs(s, data).length], [0, 1], 'angelegt, nicht vollendet, ein Auftrag');
+    eq(L.smithFinishSet(s, data, h.name, 'moorwaechter').error, 'gold', 'zu wenig Gold');
+    const alt = L.newGame(data, 13); const ah = alt.heroes[0]; ah.equip = { weapon: 'moorklinge', armor: 'moorpanzer', ring: 'ring_moorwaechter' }; delete ah.setFin; L.syncStatic(alt, data);
+    eq(L.activeSets(data, ah).length, 1, 'Alt-Stand: vollständiges Set wirkt weiter');
   });
   await test('0.53.0 Tote erwecken: Kleriker ab Stufe 12, im Kampf, einmal je Kampf, nur Bewusstlose, Erweckter handelt ab nächster Runde', () => {
     const sp = data.spells.awaken; assert(sp && sp.kind === 'revive' && sp.cost > 0 && sp.pct > 0 && sp.pct <= 100, 'Zauberdaten');

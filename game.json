@@ -920,6 +920,121 @@
       "init": 1,
       "desc": "Set „Nebelweber“. Ring. +1 Initiative. Erst mit Stab und Robe stark.",
       "value": 60
+    },
+    "teil_wolfsfang": {
+      "name": "Wolfsfang",
+      "kind": "part",
+      "noSell": true,
+      "desc": "Körperteil. Ein armlanger Fang, noch warm. Nicht verkäuflich. Der Schmied weiß vielleicht, was man damit anfängt."
+    },
+    "teil_blutzahn": {
+      "name": "Blutzahn",
+      "kind": "part",
+      "noSell": true,
+      "desc": "Körperteil. Ein langer, spitzer Zahn, am Ansatz rot. Nicht verkäuflich. Der Schmied weiß vielleicht, was man damit anfängt."
+    },
+    "teil_facettenauge": {
+      "name": "Facettenauge",
+      "kind": "part",
+      "noSell": true,
+      "desc": "Körperteil. Ein Auge aus hundert Spiegelflächen, kalt und glatt. Nicht verkäuflich. Der Schmied weiß vielleicht, was man damit anfängt."
+    },
+    "teil_kaeferkiefer": {
+      "name": "Käferkiefer",
+      "kind": "part",
+      "noSell": true,
+      "desc": "Körperteil. Zwei gezackte Kiefer, härter als Stahl. Nicht verkäuflich. Der Schmied weiß vielleicht, was man damit anfängt."
+    },
+    "teil_priesterauge": {
+      "name": "Priesterauge",
+      "kind": "part",
+      "noSell": true,
+      "desc": "Körperteil. Ein Auge, das noch nach etwas zu suchen scheint. Nicht verkäuflich. Der Schmied weiß vielleicht, was man damit anfängt."
+    },
+    "fangklinge": {
+      "name": "Fangklinge",
+      "kind": "equip",
+      "slot": "weapon",
+      "q": "unique",
+      "atk": 5,
+      "classes": [
+        "warrior",
+        "rogue",
+        "ranger"
+      ],
+      "fx": {
+        "crit": 5
+      },
+      "desc": "Einzigartige Waffe, vom Schmied aus einem Wolfsfang geschmiedet. +5 Angriff, Krit +5 %. Für Krieger, Schurke, Waldläufer."
+    },
+    "zahnstab": {
+      "name": "Blutzahnstab",
+      "kind": "equip",
+      "slot": "weapon",
+      "q": "unique",
+      "atk": 4,
+      "classes": [
+        "mage",
+        "priest",
+        "alchemist"
+      ],
+      "fx": {
+        "lifesteal": 6,
+        "abil": 5
+      },
+      "desc": "Einzigartige Waffe, vom Schmied aus einem Blutzahn geschmiedet. +4 Angriff, Lebensraub 6 %, Fähigkeiten +5 % Schaden. Für Magier, Kleriker, Alchemisten."
+    },
+    "facettenmantel": {
+      "name": "Facettenmantel",
+      "kind": "equip",
+      "slot": "armor",
+      "q": "unique",
+      "def": 3,
+      "init": 1,
+      "classes": [
+        "rogue",
+        "mage",
+        "alchemist",
+        "ranger"
+      ],
+      "fx": {
+        "dodge": 6,
+        "trap": 20
+      },
+      "desc": "Einzigartige Rüstung, vom Schmied aus einem Facettenauge geschmiedet. +3 Verteidigung, +1 Initiative, Ausweichen +6 %, Fallen entdecken +20 %. Für Schurke, Magier, Alchemist, Waldläufer."
+    },
+    "kieferpanzer": {
+      "name": "Kieferpanzer",
+      "kind": "equip",
+      "slot": "armor",
+      "q": "unique",
+      "def": 5,
+      "classes": [
+        "warrior",
+        "priest",
+        "ranger"
+      ],
+      "fx": {
+        "thorns": 2
+      },
+      "desc": "Einzigartige Rüstung, vom Schmied aus einem Käferkiefer geschmiedet. +5 Verteidigung, Dornen 2. Für Krieger, Kleriker, Waldläufer."
+    },
+    "augenrobe": {
+      "name": "Augenrobe",
+      "kind": "equip",
+      "slot": "armor",
+      "q": "unique",
+      "def": 2,
+      "classes": [
+        "mage",
+        "priest",
+        "alchemist"
+      ],
+      "fx": {
+        "resist": 25,
+        "heal": 3
+      },
+      "desc": "Einzigartige Rüstung, vom Schmied aus einem Priesterauge geschmiedet. +2 Verteidigung, Statusabwehr 25 %, Heilzauber +3 LP. Für Magier, Kleriker, Alchemisten."
     }
   },
   "races": {
@@ -1403,7 +1518,13 @@
           "below": 25,
           "chance": 50
         }
-      }
+      },
+      "parts": [
+        {
+          "item": "teil_wolfsfang",
+          "chance": 1.5
+        }
+      ]
     },
     "kultist": {
       "name": "Moorkultist",
@@ -1595,7 +1716,13 @@
         "fire": -25,
         "lightning": 25
       },
-      "enrage": true
+      "enrage": true,
+      "parts": [
+        {
+          "item": "teil_kaeferkiefer",
+          "chance": 1.5
+        }
+      ]
     },
     "grubenschrat": {
       "name": "Moorschrat",
@@ -1738,7 +1865,13 @@
           "chance": 40,
           "kind": "moorlicht"
         }
-      }
+      },
+      "parts": [
+        {
+          "item": "teil_priesterauge",
+          "chance": 1.5
+        }
+      ]
     },
     "turmwache": {
       "name": "Turmwache",
@@ -2023,7 +2156,13 @@
           "chance": 35,
           "kind": "blutdiener"
         }
-      }
+      },
+      "parts": [
+        {
+          "item": "teil_blutzahn",
+          "chance": 1.5
+        }
+      ]
     },
     "blutgraefin": {
       "name": "Blutgräfin",
@@ -2163,7 +2302,13 @@
           "chance": 40,
           "kind": "brutspinne"
         }
-      }
+      },
+      "parts": [
+        {
+          "item": "teil_facettenauge",
+          "chance": 1.5
+        }
+      ]
     },
     "teufel": {
       "name": "Teufel",
@@ -3686,6 +3831,12 @@
           "talk": {
             "flag": "talk_hedda",
             "text": "Hedda: Ihr seht aus wie Leute, die eine Wette verloren haben. Keine Sorge, das sieht man hier öfter. Der Nebel steigt seit Wochen aus dem Moor, und im Osten graben Kultisten bei der alten Gruft. Den Schlüssel dafür trägt jemand am Moorpfad. Und noch etwas: Quillon zahlt nie und verliert nie. Fragt euch lieber, warum er das Moor so gut kennt."
+          },
+          "talk2": {
+            "id": "schwester",
+            "flag": "talk_hedda2",
+            "when": "schmied_offen",
+            "text": "Hedda: Habt ihr meinen Bruder schon gesehen? Brann, der Schmied, ist wieder ins Dorf gezogen. Er war immer der Bessere von uns beiden, bloß nie der Lautere. Hört zu: Manchmal trägt ein Monster etwas bei sich, das man nicht kaufen kann, ein Auge, einen Zahn, einen Fang. Das fällt sehr selten, und verkaufen lässt es sich bei keinem, nicht bei mir und nicht bei Ysolde. Bringt es zu Brann. Er macht daraus etwas, das es nirgends zu kaufen gibt. Und wenn ihr je ein Set aus drei Teilen beisammen habt: auch das vollendet nur er."
           }
         },
         {
@@ -16115,7 +16266,7 @@
       "again": "a",
       "nodes": {
         "erst": {
-          "text": "Ein breiter Mann mit kahlem Kopf und rußigem Vollbart lehnt den Hammer an die Esse. „Brann. Der Nebel frisst Eisen, und das Moor frisst Männer, die schlechtes Eisen tragen. Ich schmiede nichts Neues, dafür mache ich aus eurem Gerät das Beste, was drinsteckt. Das kostet Gold, und es hat seine Grenze: Selten ist selten genug.“",
+          "text": "Ein breiter Mann mit kahlem Kopf und rußigem Vollbart lehnt den Hammer an die Esse. „Brann. Heddas Bruder, falls sie es nicht schon erzählt hat. Der Nebel frisst Eisen, und das Moor frisst Männer, die schlechtes Eisen tragen. Ich mache aus eurem Gerät das Beste, was drinsteckt. Das kostet Gold und hat seine Grenze: Selten ist selten genug.“",
           "choices": [
             {
               "t": "Ausrüstung aufwerten",
@@ -16124,6 +16275,10 @@
             {
               "t": "Wie weit geht das?",
               "to": "b"
+            },
+            {
+              "t": "Und Sets? Seltene Teile?",
+              "to": "c"
             },
             {
               "t": "Gehen",
@@ -16143,6 +16298,10 @@
               "to": "b"
             },
             {
+              "t": "Und Sets? Seltene Teile?",
+              "to": "c"
+            },
+            {
               "t": "Gehen",
               "done": true
             }
@@ -16150,6 +16309,15 @@
         },
         "b": {
           "text": "„Gewöhnliches wird gut, Gutes wird selten, mehr nicht. Ringe und Amulette rühre ich nicht an, und was seinen eigenen Namen trägt, hat schon einen Schmied gehabt, der besser war als ich. Bezahlt wird je Stück, die Preise steigen mit dem Wert des Grundstücks.“",
+          "choices": [
+            {
+              "t": "Verstanden",
+              "to": "a"
+            }
+          ]
+        },
+        "c": {
+          "text": "„Zwei Dinge, die nur ich kann. Erstens: Habt ihr Klinge, Panzer und Ring eines Satzes beisammen, dann wirkt der Bonus erst, wenn ich die drei Teile zusammengefasst habe. Anziehen allein reicht nicht, das Eisen muss sich erst kennenlernen. Zweitens: Manche Monster tragen etwas bei sich, ein Auge, einen Zahn. Das fällt selten. Bringt es mir, und ich mache etwas daraus, das ihr nirgends kaufen könnt. Verkaufen lässt es sich nicht, versucht es gar nicht erst.“",
           "choices": [
             {
               "t": "Verstanden",
@@ -16680,6 +16848,34 @@
       "title": "Eine verlorene Wette",
       "text": "Es war eine schlechte Idee, gegen den Magister Quillon zu wetten. Eine noch schlechtere war es, den Einsatz zu bestimmen: Wer verliert, sieht nach, was nachts im Moor raschelt.\n\nDer Zauberer hat nicht einmal gelächelt. Er hat nur die Karten gemischt, ein einziges Mal, sehr gründlich.\n\nJetzt steht ihr mit vier Fackeln, etwas Proviant und der leisen Ahnung im Gewölbe unter dem Moorrand, dass er die Karten vorher gekannt hat.\n\nHinter euch ist die Tür ins Schloss gefallen. Von allein war das sicher nicht.",
       "button": "Die Fackeln entzünden"
+    }
+  },
+  "crafts": {
+    "note": "0.53.1: Körperteil → Schmied schmiedet daraus ein einzigartiges Stück. cost = Grundpreis in Gold (mit Akt-Aufschlag), hint = Hinweis des Schmieds, ohne das Ergebnis zu nennen.",
+    "teil_wolfsfang": {
+      "result": "fangklinge",
+      "cost": 120,
+      "hint": "Ein Fang wie dieser gehört an eine Klinge."
+    },
+    "teil_blutzahn": {
+      "result": "zahnstab",
+      "cost": 250,
+      "hint": "Aus so einem Zahn wird etwas, das nach Blut dürstet. Gut für Hände, die zaubern."
+    },
+    "teil_facettenauge": {
+      "result": "facettenmantel",
+      "cost": 200,
+      "hint": "Dieses Auge sieht mehr als ein Mensch. Es gehört an etwas, das warnt."
+    },
+    "teil_kaeferkiefer": {
+      "result": "kieferpanzer",
+      "cost": 250,
+      "hint": "Hartes Zeug. Daraus wird ein Panzer, der zurückbeißt."
+    },
+    "teil_priesterauge": {
+      "result": "augenrobe",
+      "cost": 200,
+      "hint": "Ein Auge, das Flüche gesehen hat. Davon bleibt etwas in einer Robe."
     }
   }
 }

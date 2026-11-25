@@ -323,6 +323,11 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 | Witwenschleier | Rüstung | Vert. +3 | Ausweichen % 6 | – |
 | Ring des Hungers | Ring | Angriff +2 | Krit % 6 | – |
 | Aschenamulett | Amulett |  | Statusabwehr % 15 | – |
+| Fangklinge | Waffe | Angriff +5 | Krit % 5 | – |
+| Blutzahnstab | Waffe | Angriff +4 | Lebensraub % 6, Fähigkeiten % 5 | – |
+| Facettenmantel | Rüstung | Vert. +3, Init +1 | Ausweichen % 6, Fallen erkennen 20 | – |
+| Kieferpanzer | Rüstung | Vert. +5 | Dornen 2 | – |
+| Augenrobe | Rüstung | Vert. +2 | Statusabwehr % 25, Heilung + 3 | – |
 
 | Set | Teile | Bonus (alle Teile) |
 |---|---|---|
