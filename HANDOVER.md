@@ -1602,3 +1602,25 @@ Quelle: Entwicklungsauftrag (ChatGPT-Vorschläge, Anhang des Nutzers 13:26); Nut
 - Daten: `levels.<id>.rooms = [{name,x0,y0,x1,y1}]` (Rechtecke inklusive, erster Treffer gilt, spezielle vor allgemeinen), `roomAt` in logic.js; Felder ohne Raum heißen „Gang“, Gebiete ohne `rooms` zeigen keinen Namen. Bisher nur die Zisterne beschriftet (Ankunftshalle, Wächterkammer, Kerker, vier Hüterplattformen, Mittelinsel, Pumpenhaus, Schleusen, Sickerhalle, Archiv, Pumpenkeller, Quellkammer, Kanalnetz, Große Wasserhalle). Rechtecke nach der Karte gesetzt, Lage nicht auf dem Gerät geprüft.
 - Offen: Raumnamen für die übrigen Gebiete (Gießerei, Blutgruft usw.) nach demselben Muster. Tests 156 grün. Keine Werteänderung, BALANCE.md/SIM.md unverändert.
 
+
+## BACKLOG Tester-Rückmeldung (Nutzer 25.11.2026 17:19, erster Durchgang; NICHT gebaut; Reihenfolge = Empfehlung)
+Vorgehen je Punkt: erst nachstellen (Regel 8), Ursache belegen, dann bauen. Nichts davon auf Gerät geprüft.
+| Ver. | Punkt (Nutzerwortlaut verkürzt) | Entscheidung/Annahme des Assistenten |
+|---|---|---|
+| 0.47.2 | Seitliches Hereinziehen an Durchgängen/Treppen „immer noch nicht gelöst“ (0.46.0 hatte `stairs` nur bei `rel === 'f'`) | Zuerst nachstellen: vermutlich weitere Auslöser (Durchgangs-/Abkürzungsobjekte, `msg`-Stairs mit anderer Logik, Kreuzungsfeld). Offen: welche Treppe/Tür genau |
+| 0.47.2 | Gefangener nicht in Zelle | Eigene 1×1-Zelle mit Gitter-Textur, Schild „ZELLE“ |
+| 0.47.2 | Steinhaufen ersatzlos entfernen | Deko-Typ aus game.json/render/syncStatic streichen |
+| 0.47.2 | Fallen: „!“ mittig im Bild; Fallen selbst kaum sichtbar | Hinweis als Bildschirmmitte-Overlay, Fallen-Sprite fast unsichtbar (Riss/Staub) |
+| 0.47.2 | Rastbild außerhalb Taverne = gleiches Bild | Neue Szene (scene.js): Helden schlafen im Gang, keine Betten |
+| 0.47.2 | Schatzkarte in der Taverne schon beim ersten Besuch kaufbar | Marga-Dialog/`maps`-Bedingung prüfen |
+| 0.47.3 | Verfluchte Gegenstände: nach Heilung nur halbe Stärke | Annahme: positive Werte (atk/def/init, Boni) nach Exorzismus ×0,5; Fluch weg. Zu klären |
+| 0.47.3 | Taverne erst ab 3. Gebiet | Siedlungs-Reihenfolge/Flags prüfen (Heldenwechsel, Brett hängen daran) |
+| 0.47.3 | Händler: begrenzter Bestand, Nachschub nach 5 Stunden | Annahme: echte Zeit (Zeitstempel im Spielstand, optionales Feld), Bestand je Artikel |
+| 0.47.4 | XP viel zu hoch, Gold viel zu viel, Gegner viel zu leicht, Monster stärker, mehr Schwierigkeitsgrade im Menü | Hebel: `balance.acts`, Gegnerwerte, `difficulty` (+ „Leicht/Normal/Schwer/Albtraum“); danach BALANCE.md/SIM.md; Ziel in SIM: klug <40 % Kampagne ohne Niederlagen |
+| 0.47.4 | Ausrüstung zu früh zu gut, zu viele/zu früh einzigartige Items | Items nach Gebiet/Akt verschieben, Anzahl senken |
+| 0.47.4 | Sets = Waffe + Rüstung + Ring; erst vollständig stärker; Info bei Vollendung | Neues Feld `set` je Item, Bonus nur bei allen drei, Meldung beim Anlegen |
+| 0.48.0 | Alle Schriften unscharf/Ton in Ton (mehrfach gemeldet) → grundlegend; Schilder hängend, am Boden, auf Holzpfahl | Hoher Kontrast (helle Schrift, dunkle Platte, Kontur), größere Schrift, Text als eigene Ebene statt in der Textur |
+| 0.48.0 | Mehr Wanddeko (Moos, Blut, selten Gemälde); Schalter spektakulärer | Deko-Generator erweitern |
+| 0.48.0 | Hintergrundgeräusche überarbeiten (Fiepen, Tropfen schlecht; Erzkäfer gut lassen) | audio.js |
+| später | Zauber „Tote erwecken“ sehr spät im Spiel | Kleriker, hohe Stufe |
+**Unklar (Rückfrage nötig):** „Moorschrat im Testlevel noch zu früh; taucht erst im zweiten Level richtigerweise auf; im Raum nur der Runenstein“ – widersprüchlich lesbar: (a) Schrat in der Moorlichtung (2. Gebiet) ist noch zu früh/zu stark im Spielverlauf, oder (b) im Testgewölbe steht er noch (laut Code nicht, geprüft: kein Schrat in `test1`).
