@@ -1699,3 +1699,7 @@ Nächste: 0.47.4 (7–9), 0.47.5 (10–13 + BALANCE/SIM), 0.48.0 (14–17), spä
 - Offene Tests (Gerät): Siedlung ohne Taverne-Tür vor den Schratgruben; Tür erscheint nach Betreten der Schratgruben (auch bei laufendem Spiel, nach Rückkehr in die Siedlung); Moorlicht im Gang mit Wölfen innerhalb der Wände.
 - Nummerierung: 0.47.11 = Schrift, 0.47.12 = Balance (10–13), 0.48.0 = Rest Lesbarkeit/Stimmung, später „Tote erwecken“.
 - **Gerät bestätigt (Nutzer 25.11.2026 18:42):** Treppen-Problem (0.47.6, „Hereinziehen“) ist behoben, „läuft jetzt ohne Probleme“. Damit ist die Vermutung aus 0.47.6 bestätigt; Punkt erledigt.
+
+## BACKLOG Nutzer 25.11.2026 18:45 (NICHT gebaut)
+- Screenshot Schrat (grün, bemoost) steht allein im offenen Gang (Gruppe auf Stufe 1, vermutlich Moorlichtung, `en_schrat` 14,2 – Gebiet vor dem Bau am Objekt prüfen). Wunsch: „irgendwas einfallen lassen, damit er nicht so alleine in einem offenen Raum steht, vielleicht etwas Witziges“. Vorschlag des Assistenten (Entscheidung delegiert): **Schrats Vorgarten** = zwei Gartenzwerge (vorhandenes Gnomen-Sprite `gnom`, Deko ohne Funktion) links/rechts, davor Wandschild/Holzschild „SCHRATS VORGARTEN|BITTE NICHT FÜTTERN“, optional Pilze (vorhandene Deko). Reihenfolge: mit 0.48.0 (Stimmung/Wanddeko). Nur Deko, keine Wirkung auf Kampf oder Balance.
+
