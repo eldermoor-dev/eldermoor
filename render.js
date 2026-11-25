@@ -679,7 +679,7 @@ const FONT = {
   6: '00110/01000/10000/11110/10001/10001/01110', 7: '11111/00001/00010/00100/01000/01000/01000', 8: '01110/10001/10001/01110/10001/10001/01110',
   9: '01110/10001/10001/01111/00001/00010/01100',
   '.': '00000/00000/00000/00000/00000/01100/01100', '!': '00100/00100/00100/00100/00100/00000/00100', '?': '01110/10001/00001/00010/00100/00000/00100',
-  ':': '00000/01100/01100/00000/01100/01100/00000', '-': '00000/00000/00000/11111/00000/00000/00000', '→': '00000/00100/00010/11111/00010/00100/00000', ' ': '00000/00000/00000/00000/00000/00000/00000'
+  ':': '00000/01100/01100/00000/01100/01100/00000', '-': '00000/00000/00000/11111/00000/00000/00000', '→': '00000/00100/00010/11111/00010/00100/00000', '←': '00000/00100/01000/11111/01000/00100/00000', ' ': '00000/00000/00000/00000/00000/00000/00000'
 };
 function genSign(seed, title) {
   const t = mk(255);
@@ -3000,7 +3000,7 @@ export class Raycaster {
       const texStep = WN / lineH;
       let texPos = (y0 - topRaw) * texStep;
       const dec = decals && hf === 1 ? decals.get((mapY * gw + mapX) * 4 + (side === 0 ? (stepX > 0 ? 3 : 1) : (rdy > 0 ? 0 : 2))) : null;
-      const dN = dec ? dec.w : 0, dX = dec ? Math.max(0, dN - 1 - Math.min(dN - 1, Math.floor(texX * dN / WN))) : 0 /* gespiegelt: die Wandtextur-Spiegelung gilt für Beschriftung nicht */, dStep = dec ? dN / lineH : 0;
+      const dN = dec ? dec.w : 0, dX = dec ? Math.max(0, Math.min(dN - 1, dN - 1 - Math.floor((((side === 0 && rdx > 0) || (side === 1 && rdy < 0)) ? 1 - wallX : wallX) * dN))) : 0 /* gespiegelt: die Wandtextur-Spiegelung gilt für Beschriftung nicht; 0.47.12 (Nutzer: „Z ELLEN“, E/N ohne Steg): Spalte aus wallX in voller Schildauflösung statt aus der gröberen Wandtextur-Spalte texX (nur WN Stufen) */, dStep = dec ? dN / lineH : 0;
       for (let y = y0; y <= y1; y++) {
         let c = tbl[td[((texPos | 0) & WM) * WN + texX]];
         texPos += texStep;

@@ -3412,7 +3412,7 @@
           "x": 3,
           "y": 2,
           "text": "Moorpfad. Nach Osten liegt die alte Kultgruft. Wer nachts allein geht, folgt keinem Licht.",
-          "title": "MOORPFAD|→ GRUFT",
+          "title": "MOORPFAD|← GRUFT",
           "style": "arrow",
           "face": 2
         },
@@ -3450,7 +3450,7 @@
           "x": 21,
           "y": 6,
           "face": 3,
-          "title": "SEE →|INSEL",
+          "title": "SEE ←|INSEL",
           "text": "Die Treppe führt hinunter zum Moorsee. Von dort über die Brücke nach Osten, dahinter liegt der Steg mit der Fähre zur Schatzinsel.",
           "style": "iron"
         },
@@ -7282,7 +7282,7 @@
           "x": 15,
           "y": 8,
           "face": 2,
-          "title": "INSEL →",
+          "title": "INSEL ←",
           "text": "Der Steg mit der Fähre zur Schatzinsel liegt weiter im Osten.",
           "style": "iron"
         },

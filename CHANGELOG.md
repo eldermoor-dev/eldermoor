@@ -3,6 +3,12 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.47.12 (25.11.2026, headless, nicht auf Gerät getestet)
+- Pfeile in falscher Richtung (Nutzer 18:53, Schild „SEE INSEL“): Pfeil gilt aus Sicht des Lesers, der zur Wand schaut. Geprüft gegen die Karte: „MOORPFAD → GRUFT“ zeigte nach hinten (Gruft liegt östlich, Schild an der Südwand → Pfeil links), „SEE → INSEL“ (Moorpfad) und „INSEL →“ (Moorsee, 15,8) ebenfalls. Auf ← gedreht, Zeichen ← neu in der Schrift. Test prüft vier Schilder gegen ihr Ziel. NICHT geprüft/geändert, weil Ziel unklar: „SÜDEN →“ (Schratgruben), „THRON-SAAL →“ (Nebelturm).
+- Schrift „Z ELLEN“ (Nutzer 18:55, Screenshot ALTE ZELLEN: E und N ohne Steg): Ursache am Code belegt: Wandschilder wurden horizontal nur in `WN` Stufen (Spalten der Wandtextur) abgetastet, nicht in der vollen Schildauflösung; dünne Stege fielen aus. Jetzt Spalte direkt aus `wallX` in voller Auflösung. Im Testbrowser vorher/nachher gerendert: am Standort (4,4) Kultgruft nur leichter Unterschied, der Winkel des Nutzers (Fehler sichtbar) ließ sich nicht exakt treffen.
+- Offen/gemeldet: „Man kommt erst beim zweiten Mal durch einen Treppen-Auf- oder Abgang“ (Nutzer 18:54), nicht nachgestellt, Rückfrage: welche Treppe, aus welcher Richtung angelaufen, was beim ersten Mal passiert.
+- Nummerierung: 0.47.13 = Balance (10–13), 0.48.0 wie geplant.
+
 ## 0.47.11 (25.11.2026, headless, nicht auf Gerät getestet)
 - Moorlicht ragt weiter in die Wand (Nutzer 18:49, Screenshot, Problem bleibt): Ursache belegt am Bild: Aufstellung „Wand nur auf einer Seite“ (Wolf links, Moorlicht rechts bei +0,28, zweiter Wolf mittig dahinter); 0.47.10 deckte nur den engen Gang ab. Jetzt steht das Moorlicht in jeder Aufstellung höchstens 0,12 neben der Feldmitte. Test schlägt ohne die Korrektur fehl.
 - Nummerierung: Schrift (schräg gesehen) = 0.47.12, Balance = 0.47.13, 0.48.0 wie geplant.

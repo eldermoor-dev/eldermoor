@@ -2944,6 +2944,14 @@ export async function runTests(data, env = {}) {
     { const st = R.buildSprites([{ type: 'enemy', id: 'e1', x: 3, y: 3, kinds: ['wolf', 'wolf', 'moorlicht'] }], { sprites: new Proxy({}, { get: () => ({}) }) }, 0, 0, { e1: ['wolf', 'wolf', 'moorlicht'] }, null); const w = st[2]; assert(w && Math.abs(w.x - 3) <= 0.13 + 1e-9, 'Moorlicht steht höchstens 0,12 neben der Feldmitte (offene Aufstellung)'); }
     assert(!data.levels.moorrand.objects.some((o) => o.id === 'stairs_taverne') && data.levels.moorrand.alt.objects.some((o) => o.id === 'stairs_taverne') && data.levels.moorrand.alt.flag === 'taverne_offen', 'Tür nur im Umbau');
   });
+  await test('0.47.12: Pfeile auf Wandschildern zeigen zum Ziel (aus Sicht des Lesers, der zur Wand schaut)', () => {
+    const DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0], find = (lv, id) => data.levels[lv].objects.find((o) => o.id === id);
+    const want = (s, t) => { const r = (s.face + 1) % 4; return (t.x - s.x) * DX[r] + (t.y - s.y) * DY[r] > 0 ? '→' : '←'; };
+    for (const [lv, sid, tid] of [['moorpfad', 'sign_pfad1', 'stairs_gruft'], ['moorpfad', 'sign_pfad_insel', 'stairs_pfad_see'], ['moorsee', 'sign_s_insel1', 'npc_fuhrmann'], ['moorsee', 'sign_s_insel2', 'npc_fuhrmann']]) {
+      const s = find(lv, sid), t = find(lv, tid); assert(s && t, `${sid}/${tid} vorhanden`);
+      assert(s.title.includes(want(s, t)) && !s.title.includes(want(s, t) === '→' ? '←' : '→'), `${sid}: Pfeil ${want(s, t)} erwartet, Titel „${s.title}“`);
+    }
+  });
   await test('Taverne (0.34.0): Zugang, Wirtin, Anwerben, Reserve, Tausch, Verabschieden, Speichern', () => {
     const s = L.newGame(data, 11); L.jumpToLevel(s, data, 'moorrand');
     assert(!s.objs.some((o) => o.id === 'stairs_taverne') && !L.changeArea(s, data, 'stairs_taverne').ok && s.levelId === 'moorrand', '0.47.9: vor den Schratgruben gibt es keine Taverne (keine Tür, kein Zugang)');

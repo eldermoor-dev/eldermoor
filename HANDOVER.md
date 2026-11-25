@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.47.11 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.47.12 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1710,4 +1710,11 @@ Nächste: 0.47.4 (7–9), 0.47.5 (10–13 + BALANCE/SIM), 0.48.0 (14–17), spä
 - Nutzer 18:49 „Problem bleibt“ (Screenshot Wolf, Wolf, Moorlicht). Befund: Größe war schon ×0,84 (0.47.10 aktiv), aber die Lage blieb: Aufstellung „Wand auf einer Seite“ (`groupOffsets` n≥3, side≠0): lat −0,28 / +0,28 / 0 (dep 0,62) – Moorlicht stand vorn bei +0,28 an der rechten Wand. render.js `buildSprites`: für `moorlicht` in Gruppen lat auf ±0,12 begrenzt (eng: ×0,25 wie 0.47.10). Test: Moorlicht an Index 2 einer offenen Dreiergruppe steht ≤0,13 neben der Feldmitte (ohne Korrektur rot). Nicht per Render geprüft.
 - Offener Gerätetest: Moorlicht im Wolfkampf (Moorpfad/Moorlichtung) innerhalb der Wände.
 - Nummerierung: 0.47.12 = Schrift schräg gesehen, 0.47.13 = Balance (10–13), 0.48.0 = Treppenschilder, Schrats Vorgarten, Schildformen, Wanddeko, Hebel, Geräusche; später „Tote erwecken“.
+
+## 0.47.12 (25.11.2026; headless, nicht auf Gerät getestet): Pfeile + Schrift horizontal
+- Pfeile: siehe CHANGELOG 0.47.12. Regel: Wandschild bei (x,y) mit `face` f (Richtung zur Wand); Leser schaut nach f, rechts = (f+1)%4. „→“ nur, wenn das Ziel auf der rechten Seite liegt. Schilder ohne bekanntes Ziel (SÜDEN, THRON-SAAL) nicht angefasst – beim Bau der Treppenschilder (0.48.0) automatisch aus dem Zielgebiet erzeugen.
+- Schrift: render.js Raycaster, Decal-Spalte `dX` aus `wallX` statt `texX` (Wandtextur-Auflösung WN). Das erklärt zerrissene Buchstaben auch bei hoher Schildauflösung (0.47.8 half horizontal kaum). Bei schrägem Blick bleibt Unterabtastung (mehr Texel je Pixel) möglich → falls weiter zerrissen: Mip/Dilatation.
+- Offene Rückfrage an den Nutzer: Treppe „erst beim zweiten Mal“. Verdacht (Vermutung): Betreten des Treppenfelds quer zur Durchgangsrichtung löst nach 0.47.6 nicht aus (gewollt), danach gegen die Treppenwand laufen = nur Wand (Sonderfall aus 0.47.3 entfernt). Möglicher Fix: auf dem Treppenfeld mit Blick zur Treppenwand „Vor“ = Wechsel, wenn die Gruppe nicht gerade quer hereingekommen ist. Erst nach Angabe von Treppe und Anlaufrichtung bauen.
+- Offene Tests (Gerät): Schild „ALTE ZELLEN“ vollständig lesbar aus 1–3 Feldern; Pfeile Moorpfad (GRUFT, SEE/INSEL) und Moorsee (INSEL) zeigen zum Ziel.
+- Nummerierung: 0.47.13 = Balance (10–13), 0.48.0 = Treppenschilder (Zielgebiet), Schrats Vorgarten, Schildformen, Wanddeko, Hebel, Geräusche; später „Tote erwecken“.
 
