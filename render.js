@@ -1635,6 +1635,36 @@ function genPerson(seed, kind) {
 
 // 0.42.0: Wirtin Marga (Nutzer: „sieht nicht aus wie eine Wirtin“, vorher Bild des Waffenhändlers): Frau mit Haarknoten und Kopftuchband, rote Wangen,
 // freundliches Lächeln, weiße Bluse mit hochgekrempelten Ärmeln, rotes Mieder, lange helle Schürze, Bierkrug mit Schaum in der Hand, Schlüsselbund am Gürtel.
+// 0.46.0: Hexe (Taverne): spitzer Hut, graue Strähnen, moosgrüne Robe, Stab mit leuchtender Kugel
+function genHexe(seed) {
+  return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y }) => {
+    const l = lit(px, py), n = nz(x >> 1, y >> 1), dx = px - 32, ax = Math.abs(dx);
+    const skin = (b) => ['glow', b - l * 0.8 + n * 0.3], hair = (b) => ['stone', b - l * 0.7 + n * 0.4], robe = (b) => ['moss', b - l * 0.9 + n * 0.5], hat = (b) => ['iron', b - l * 0.6 + n * 0.3];
+    const hy = 17;
+    // Stab rechts (im Bild) mit leuchtender Kugel
+    if (ell(px, py, 52, 9, 3.6, 3.6) <= 1) return ['glow', 6.2 - Math.hypot(px - 52, py - 9) * 0.25];
+    if (Math.abs(px - 52 - (py - 9) * 0.02) < 1 && py > 11 && py < 62) return ['wood', 3.2 - l * 0.6 + n * 0.4];
+    // Gesicht: schmale Augen, Hakennase, Mund
+    if (ell(px, py, 32 - 2.8, hy, 1.1, 0.9) <= 1 || ell(px, py, 32 + 2.8, hy, 1.1, 0.9) <= 1) return ['glow', 7.2];
+    if (Math.abs(Math.abs(dx) - 3) < 1.6 && Math.abs(py - (hy - 2.4)) < 0.5) return hair(1.5);
+    if (ell(px, py, 32.4, hy + 2.6, 1, 2) <= 1) return skin(3.6);
+    if (Math.abs(py - (hy + 5.8)) < 0.5 && ax < 2.4) return ['blood', 2.8];
+    // Hut: Krempe und gebogene Spitze
+    const tipX = 32 + Math.max(0, (9 - py)) * 0.0 + (py < 5 ? (5 - py) * 0.5 : 0), half = Math.max(0, (py - 0) * 0.62);
+    if (py >= 0 && py < 9 && Math.abs(px - tipX) < half + 0.4) return hat(2.2 + (py < 5 ? 0.3 : 0));
+    if (ell(px, py, 32, 9.8, 13, 2.3) <= 1) return hat(2.6);
+    if (py > 7 && py < 10 && ax < 9.5) return ['blood', 2.6 - l * 0.3]; // Hutband
+    // Gesicht, Haar
+    if (ell(px, py, 32, hy, 6.6, 7.6) <= 1) return skin(4.4);
+    if (py > 9 && ((ax > 6 && ax < 9.6 && py < 36) || (py < 14 && ax < 7))) return hair(5.2);
+    // Hals, Robe (Kegel), Kragen, Ärmel
+    if (ax < 2.4 && py > 24 && py < 28) return skin(3.8);
+    if (py >= 26 && ax < 7 + (py - 26) * 0.44 + (py > 58 ? 0 : 0) && py < 64) { if (py < 29 && ax < 4) return robe(5.4); if (((x >> 2) + (y >> 3)) % 7 === 0 && py > 40) return robe(2.1); return robe(3.4); }
+    if (cap(px, py, 46, 31, 51, 37, 3.1, 2.8)) return robe(3.8);
+    if (ell(px, py, 51, 39, 2.2, 2.2) <= 1) return skin(4.2);
+    return null;
+  });
+}
 function genWirtin(seed) {
   return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y }) => {
     const l = lit(px, py), n = nz(x >> 1, y >> 1), dx = px - 32;
@@ -1709,6 +1739,34 @@ function genVendor2(seed) {
       if (py > 46) return ['ceil', 1.5 + n * 0.6 - l * 0.5]; // Hosen
       if (Math.abs(dx) < 6.5 && py > 29) return ['wood', 3.4 + n * 0.7 - l * 0.9]; // Schürze
       return ['wood', 2 + n * 0.8 - l * 0.9];
+    }
+    return null;
+  }, 128, true);
+}
+// 0.46.0: Brum – kahlköpfiger Schmied mit rotem Vollbart, Lederschürze und Hammer (Valdis trägt Augenklappe und Zweihänder)
+function genVendor3(seed) {
+  return paintFigure(seed, ({ ell, cap, lit, nz, px, py, x, y }) => {
+    const l = lit(px, py), n = nz(x >> 1, y >> 1), dx = px - 32, ax = Math.abs(dx);
+    const skin = (b) => ['glow', b - l * 0.8 + n * 0.3], beard = (b) => ['blood', b - l * 0.8 + ((x + y * 2) % 5 === 0 ? 0.5 : -0.1) + n * 0.5];
+    const head = ell(px, py, 32, 13, 7.6, 7.4) <= 1;
+    if (ell(px, py, 28.6, 12, 1.2, 1.1) <= 1 || ell(px, py, 35.4, 12, 1.2, 1.1) <= 1) return ['ceil', 0];
+    if (head && Math.abs(ax - 3.6) < 2 && Math.abs(py - 9.4 - (ax < 3.6 ? 0 : 0)) < 0.7) return beard(1.8); // buschige Brauen
+    if (ell(px, py, 32, 14.8, 1.6, 1.4) <= 1) return skin(4.2); // Nase
+    if (py > 15 && ell(px, py, 32, 20, 9, 9.5) <= 1) { if (py > 17.5 && py < 19 && ax < 2.6) return ['ceil', 0.9]; return beard(3.1); } // Vollbart
+    if (head) return skin(5.6);
+    // Hammer links (Kopf unten, im Bild links)
+    if (cap(px, py, 13, 56, 13, 22, 1.5, 1.5)) return ['wood', 2.2 - l * 0.5];
+    if (px > 5 && px < 21 && py > 12 && py < 24) return ['iron', 4.6 - l * 1.2 + n * 0.4];
+    // Schultern, Arme
+    if (ell(px, py, 19, 27, 6.2, 4.6) <= 1 || ell(px, py, 45, 27, 6.2, 4.6) <= 1) return ['wood', 3.4 - l * 1.0 + n * 0.5];
+    if (cap(px, py, 20, 29, 15, 41, 3.6, 3.2) || cap(px, py, 44, 29, 49, 41, 3.6, 3.2)) return skin(4.6 - l * 0.4);
+    if (ell(px, py, 14, 41, 3, 3) <= 1 || ell(px, py, 50, 41.5, 2.8, 2.8) <= 1) return skin(4.4);
+    // Rumpf: Lederschürze über dunklem Hemd, Gürtel
+    if (py >= 23 && py < 60 && ax < 11 + Math.max(0, py - 40) * 0.05) {
+      if (py > 43 && py < 45.6) return ax < 2 ? ['iron', 5] : ['ceil', 1.6];
+      if (py > 45.6) return ['stone', 2.4 + n * 0.6 - l * 0.5];
+      if (ax < 7.4 && py > 28) return ['wood', 4 + n * 0.8 - l * 0.9]; // Schürze
+      return ['moss', 1.6 + n * 0.6 - l * 0.6];
     }
     return null;
   }, 128, true);
@@ -2811,7 +2869,7 @@ export function makeTextures(detail = 1) {
     rug: genRug(64, nf),
     paving: genPaving(66, nf),
     ceil: genCeil(53, nf),
-    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), rail: genRail(441), railTorch: genRailTorch(442), palme: sm2(genPalm(461)), fass: sm2(genFurn('fass', 471)), fassKaputt: sm2(genFurn('fassKaputt', 491)), tisch: sm2(genFurn('tisch', 472)), stuhl: sm2(genFurn('stuhl', 473)), bett: sm2(genFurn('bett', 474)), regal: sm2(genFurn('regal', 475)), kamin: sm2(genFurn('kamin', 476)), tresen: sm2(genFurn('tresen', 485)), weinregal: sm2(genFurn('weinregal', 486)), weinfass: sm2(genFurn('weinfass', 487)), gast0: sm2(genGuest(488, 0)), gast1: sm2(genGuest(489, 1)), gast2: sm2(genGuest(490, 2)), kaktus: sm2(genFurn('kaktus', 477)), haengematte: sm2(genFurn('haengematte', 478)), spielautomat: sm2(genFurn('spielautomat', 479)), roulette: sm2(genFurn('roulette', 480)), vase: sm2(genFurn('vase', 483)), kueche: sm2(genFurn('kueche', 484)), kartentisch: sm2(genFurn('kartentisch', 481)), teufel: sm2(genDevil(482)), mound: sm2(genMound(463)), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)),  chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), giessmeister: sm2(genGiessmeister(195)), schlacke: sm2(genSchlacke(197)), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), fuhrmann: sm2(genFerryman(771)), boot: sm2(genBoat(772)), gnom: sm2(genGnome(773)), spinne: sm2(genSpider(774)), koenigin: sm2(genSpider(777, true)), kokon: sm2(genCocoon(778)), schutt: sm2(genFurn('schutt', 474)), diener: sm2(genVampire(741, 'diener')), brut: sm2(genVampire(742, 'brut')), graefin: sm2(genVampire(743, 'graefin')), wache: sm2(genPerson(721, 'wache')), haendler2: sm2(genVendor2(751)), wirtin: sm2(genWirtin(752)), gefangener: sm2(genPrisoner(761)), wund: sm2(genPerson(731, 'wund')), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
+    sprites: { gateOpen: smoothSprite(genGateOpen(431), 3), rail: genRail(441), railTorch: genRailTorch(442), palme: sm2(genPalm(461)), fass: sm2(genFurn('fass', 471)), fassKaputt: sm2(genFurn('fassKaputt', 491)), tisch: sm2(genFurn('tisch', 472)), stuhl: sm2(genFurn('stuhl', 473)), bett: sm2(genFurn('bett', 474)), regal: sm2(genFurn('regal', 475)), kamin: sm2(genFurn('kamin', 476)), tresen: sm2(genFurn('tresen', 485)), weinregal: sm2(genFurn('weinregal', 486)), weinfass: sm2(genFurn('weinfass', 487)), gast0: sm2(genGuest(488, 0)), gast1: sm2(genGuest(489, 1)), gast2: sm2(genGuest(490, 2)), kaktus: sm2(genFurn('kaktus', 477)), haengematte: sm2(genFurn('haengematte', 478)), spielautomat: sm2(genFurn('spielautomat', 479)), roulette: sm2(genFurn('roulette', 480)), vase: sm2(genFurn('vase', 483)), kueche: sm2(genFurn('kueche', 484)), kartentisch: sm2(genFurn('kartentisch', 481)), teufel: sm2(genDevil(482)), mound: sm2(genMound(463)), plate: genPlate(false, 411), plateDown: genPlate(true, 411), boulder: smoothSprite(genBoulder(421), 2), trapFaint: genTrap('faint', 401), trapSeen: genTrap('seen', 401), teleOn: genTele(true, 431), teleOff: genTele(false, 431), magier: sm2(genRobed(247, 'priester')), trapSprung: genTrap('sprung', 401), trapSprung_gas: genTrap('sprung', 403, 'gas'), trapSprung_rune: genTrap('sprung', 405, 'rune'), chest: sm2(genChest2(false, 61)), chestOpen: sm2(genChest2(true, 61)),  chestPrunk: sm2(genChest2(false, 63, true)), mimic: sm2(genMimic(67)), schrat: sm2(genSchrat(71)), portal: spr(genPortal(81), 109), merchant: sm2(genMerchant(91)), wisp: sm2(genWisp(121)), skeleton: sm2(genSkeleton(171)), guard: sm2(genGuard(181, 'wacht')), turmwache: sm2(genTurmwache(183)), captain: sm2(genGuard(191, 'haupt')), giessmeister: sm2(genGiessmeister(195)), schlacke: sm2(genSchlacke(197)), wolf: sm2(genWolf(301)), kultist: sm2(genKultist(311)), torf: sm2(genPerson(711, 'torf')), fuhrmann: sm2(genFerryman(771)), boot: sm2(genBoat(772)), gnom: sm2(genGnome(773)), spinne: sm2(genSpider(774)), koenigin: sm2(genSpider(777, true)), kokon: sm2(genCocoon(778)), schutt: sm2(genFurn('schutt', 474)), diener: sm2(genVampire(741, 'diener')), brut: sm2(genVampire(742, 'brut')), graefin: sm2(genVampire(743, 'graefin')), wache: sm2(genPerson(721, 'wache')), haendler2: sm2(genVendor2(751)), wirtin: sm2(genWirtin(752)), hexe: sm2(genHexe(753)), haendler3: sm2(genVendor3(754)), gefangener: sm2(genPrisoner(761)), wund: sm2(genPerson(731, 'wund')), kaefer: sm(genKaefer(201)), geist: sm2(genRobed(241, 'geist')), priester: sm2(genPriester(251)), hueter: sm2(genHueter(261)), moorschrat: sm2(genSchratBoss(221, 'moor')), grubenschrat: sm2(genSchratBoss(222, 'grube')), runeStone: spr(genRuneStone(231), 115), leverUp: genLever(false, 211), leverDown: genLever(true, 211), stairsDown: spr(genStairs('down', 141), 112), stairsUp: spr(genStairs('up', 151), 113), arch: spr(genArch(161), 114), sign: genSign(131) }
   };
 }
 

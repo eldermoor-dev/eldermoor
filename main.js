@@ -3,7 +3,7 @@
 import {
   DIRS, DIR_NAMES, dirToward, frontCell, newGame, tryMove, turn, interact, useItemOutside, startCombat, currentActor,
   heroAction, enemyStep, applyDefeat, serialize, deserialize, markSeen, getLevel, cellChar, blockerAt,
-  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, pushError, formatErrorLog, itemDef, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, partyAvgLevel, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
+  buildParty, deriveStats, skipStunned, restParty, enemyOf, sellItem, sellPrice, buyItem, buyPrice, haggle, shopStock, pushError, formatErrorLog, itemDef, cursedOwned, exorcise, EXORCISE, isCursed, curseKnown, curseText, qualityOf, changeArea, travelTo, castOutside, jumpToLevel, resetArea, wallSignAhead, grantXp, knownSpells, canCleanse, comboFor, talentBranches, talentPoints, talentSum, learnedTalents, canLearnTalent, partyAvgLevel, learnTalent, respecTalents, respecCost, equipItem, unequipItem, canEquip, gearBonus, statusOf, SEP, SWEEP_MULT, validateParty, randomParty, xpForNext, NAME_MAX,
   activeSets, coveredBy, gearCompare, wornOverview, isNew, clearNew, doorAhead2, dialogStartNode, dialogView, dialogEnter, roomAt, floodLabel, dialogChoose, diceNew, diceRoll, diceKeep, diceNext, diceFinish, diceRoundLine, recruitHero, swapHero, dismissReserve, recruitCost, RESERVE_MAX, mapOffers, buyMap, mapQuota, MAP_MAX, boardView, boardTurnIn, boardDismiss, achievements, masteryLevel
 } from './logic.js';
 import { Raycaster, makeTextures, buildGrid, buildFloorGrid, buildSprites, buildDecals, drawPortrait, setResolution, W, H, BASE_W, BASE_H, spriteScale, setCombatFit, groupOffsets, isNarrowAt, groupLayout } from './render.js';
@@ -11,7 +11,7 @@ import { Sfx } from './audio.js';
 import { startSleepScene } from './scene.js';
 import { store } from './store.js';
 
-const VERSION = '0.45.0';
+const VERSION = '0.46.0';
 const cellCharRaw = cellChar; // unverfälschte Kartenzelle (die Karte blendet Geheimwände als Mauer ein)
 const $ = (s, r = document) => r.querySelector(s);
 const hasKey = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -970,6 +970,7 @@ async function dialogPick(i) {
   if (r.tavern) { S.tav = { pi: null, sure: null }; openTavern(); return; } // 0.34.0: Taverne
   if (r.maps) { openMaps(); return; } // 0.40.0: Schatzkarten
   if (r.board) { openBoard(); return; } // 0.40.0: Aushangbrett
+  if (r.exorcise) { openExorcise(); return; } // 0.46.0: Hexe
   if (r.game) { closeModal(); openDice(d.id); return; } // 0.32.0: Würfelspiel mit Murmel
   if (r.next) { openDialog(d.id, r.next); renderAll(); return; }
   closeModal(); renderAll();
@@ -1010,6 +1011,18 @@ function openBoard() {
   const icon = { kill: '⚔', trophy: '✦', gear: '⚒' };
   const rows = list.length ? list.map((v) => `<div class="row nw"><div><b>${icon[v.type] || ''} ${esc(v.title)}</b><div>${esc(v.text)}</div><div class="muted">Belohnung: ${v.xp} EP${v.gold ? ` und ${v.gold} Gold` : ''} · ${v.type === 'kill' ? `Fortschritt ${v.have}/${v.need}` : v.have ? 'Liegt im Beutel' : 'Noch nicht beschafft'}</div></div><div style="display:flex;flex-direction:column;gap:4px"><button class="mb${v.ready ? ' primary' : ''}" data-m="bd-in:${v.id}" ${v.ready ? '' : 'disabled'}>Abgeben</button><button class="mb" data-m="bd-x:${v.id}">Abreißen</button></div></div>`).join('') : '<p class="muted">Das Brett ist leer. Ein paar Schritte weiter hängt vielleicht ein neuer Zettel – oder es gibt noch nichts, was zu euren Gebieten passt.</p>';
   openModal(`<h2>Aushangbrett</h2><p class="muted">Steckbriefe zählen ab dem Aushang. Erfahrung gibt es für alle Helden, die noch stehen. Neue Zettel erscheinen nach etwa 60 Schritten.</p>${rows}<div class="acts">${closeBtn}</div>`, 'board');
+}
+// ---------- Hexe Ysolde (0.46.0); Logik: logic.js (cursedOwned, exorcise) ----------
+function openExorcise() {
+  const g = S.game, list = cursedOwned(g, S.data), pot = S.data.items[EXORCISE.item].name, have = g.inv[EXORCISE.item] || 0;
+  const rows = list.length ? list.map((o) => `<div class="row nw"><div><b>${esc(o.name)}</b>${o.worn ? ` <span class="muted">(getragen von ${esc(o.worn)})</span>` : ''}<div class="muted">Fluch: ${esc(o.curse)}</div></div><button class="mb${o.ok ? ' primary' : ''}" data-m="exo:${o.id}" ${o.ok ? '' : 'disabled'}>Entfluchen</button></div>`).join('') : '<p class="muted">Ysolde schaut in euren Beutel und zuckt die Schultern: „Nichts Verfluchtes dabei. Noch.“</p>';
+  openModal(`<h2>Ysolde entflucht</h2><p>Gold: <b>${g.gold}</b> · ${esc(pot)}: <b>${have}</b></p><p class="muted">Preis je Gegenstand: ${EXORCISE.gold} Gold und ${esc(pot)}. Sie nimmt nur den Fluch, nie den Nutzen. Auch getragene Stücke. Noch unerkannte Flüche zeigt sie nicht an: erst wenn ein Fluch bekannt ist, steht das Stück hier.</p>${rows}<div class="acts">${closeBtn}</div>`, 'exo');
+}
+function exoAct(m) {
+  const r = exorcise(S.game, S.data, m.slice(4));
+  const bad = { 'in-combat': 'Im Kampf geht das nicht.', gold: `Dafür fehlen ${r.cost} Gold.`, item: `Ysolde braucht: ${r.item}.` }[r.error];
+  if (r.msg) { say(r.msg); S.sfx.play(r.sfx || 'ui'); toast(r.msg, 5000); } else toast(bad || 'Das geht nicht.', 3200);
+  const sc = $('#modal-box').scrollTop; renderAll(); openExorcise(); $('#modal-box').scrollTop = sc;
 }
 function wirtAct(m) {
   const g = S.game;
@@ -1767,6 +1780,7 @@ async function onModalClick(e) {
   }
   else if (m.startsWith('tav-')) tavAct(m);
   else if (m.startsWith('map-buy:') || m.startsWith('bd-')) wirtAct(m);
+  else if (m.startsWith('exo:')) exoAct(m);
   else if (m === 'shopgo') { S.shopTalk = null; openShop(S.shopId, false); }
   else if (m.startsWith('dlg:')) dialogPick(+m.slice(4));
   else if (m.startsWith('dice-')) diceAction(m);

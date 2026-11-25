@@ -784,6 +784,112 @@
       },
       "desc": "Meisterwerk. Waffe. +7 Angriff, +2 Mana je Angriff/Verteidigen. Nur für Mensch-Kleriker. Ein Streitkolben, der im Gebet warm wird.",
       "value": 1500
+    },
+    "zornklinge": {
+      "name": "Zornklinge",
+      "kind": "equip",
+      "slot": "weapon",
+      "q": "unique",
+      "atk": 7,
+      "classes": [
+        "warrior",
+        "rogue",
+        "ranger"
+      ],
+      "curse": {
+        "def": -3,
+        "init": -2
+      },
+      "desc": "Waffe. +7 Angriff. Für Krieger, Schurke, Waldläufer. Liegt zu gut in der Hand."
+    },
+    "schwarzstab": {
+      "name": "Stab der leeren Kammer",
+      "kind": "equip",
+      "slot": "weapon",
+      "q": "unique",
+      "atk": 7,
+      "classes": [
+        "mage",
+        "priest",
+        "alchemist"
+      ],
+      "curse": {
+        "def": -2,
+        "init": -3
+      },
+      "desc": "Waffe. +7 Angriff. Für Magier, Kleriker, Alchemisten. Das Holz ist kalt."
+    },
+    "schwerepanzer": {
+      "name": "Panzer der Schwere",
+      "kind": "equip",
+      "slot": "armor",
+      "q": "unique",
+      "def": 6,
+      "classes": [
+        "warrior",
+        "priest",
+        "ranger"
+      ],
+      "curse": {
+        "init": -4,
+        "atk": -1
+      },
+      "desc": "Rüstung. +6 Verteidigung. Für Krieger, Kleriker, Waldläufer. Wiegt mehr, als er sollte."
+    },
+    "witwenschleier": {
+      "name": "Witwenschleier",
+      "kind": "equip",
+      "slot": "armor",
+      "q": "unique",
+      "def": 3,
+      "fx": {
+        "dodge": 6
+      },
+      "classes": [
+        "rogue",
+        "mage",
+        "priest",
+        "ranger",
+        "alchemist"
+      ],
+      "curse": {
+        "atk": -2
+      },
+      "desc": "Rüstung. +3 Verteidigung, Ausweichen +6 %. Für alle außer Krieger. Er flüstert beim Gehen."
+    },
+    "ring_hunger": {
+      "name": "Ring des Hungers",
+      "kind": "equip",
+      "slot": "ring",
+      "q": "unique",
+      "atk": 2,
+      "fx": {
+        "crit": 6
+      },
+      "curse": {
+        "def": -2
+      },
+      "desc": "Ring. +2 Angriff, Krit +6 %. Er wird nie warm."
+    },
+    "amulett_aschen": {
+      "name": "Aschenamulett",
+      "kind": "equip",
+      "slot": "amulet",
+      "q": "unique",
+      "fx": {
+        "resist": 15
+      },
+      "curse": {
+        "atk": -2,
+        "init": -1
+      },
+      "desc": "Amulett. Widerstand +15 %. Es riecht nach kalter Asche."
+    },
+    "skizze_gefangener": {
+      "name": "Skizze des Gefangenen",
+      "kind": "quest",
+      "noSell": true,
+      "desc": "Mit dem Finger in den Staub gezeichnet und euch eingeprägt. Eine Wand in der Blutgruft ist nicht, was sie scheint. Auf der Gebietskarte steht dort ein Kreuz."
     }
   },
   "races": {
@@ -3716,10 +3822,15 @@
             },
             {
               "gold": 12
+            },
+            {
+              "item": "ring_hunger",
+              "n": 1
             }
           ],
           "lock": 15,
-          "mat": "stein"
+          "mat": "stein",
+          "lootV": 2
         },
         {
           "id": "en_g5",
@@ -4442,9 +4553,13 @@
             {
               "item": "ring_last",
               "n": 1
+            },
+            {
+              "item": "witwenschleier",
+              "n": 1
             }
           ],
-          "lootV": 3,
+          "lootV": 4,
           "look": "edel",
           "mat": "erz"
         },
@@ -5712,10 +5827,15 @@
             {
               "item": "potion_m",
               "n": 1
+            },
+            {
+              "item": "zornklinge",
+              "n": 1
             }
           ],
           "look": "eisen",
-          "mat": "eiche"
+          "mat": "eiche",
+          "lootV": 2
         },
         {
           "id": "sign_k_h",
@@ -6237,10 +6357,10 @@
         "##r..........rm.....m.....m.....m.....m.....m###############",
         "##r..........rm.....m.....m.....m.....m.....m###############",
         "##rrr.rrrrrrrrm.....m.....m.....m.....m.....m###############",
-        "####r.r#######m.....m.....m.....m.....m.....m###############",
-        "####r.r######rmmm.Tmmmm.mmmmm.Tmmmm.mmmmm.mmm###############",
-        "####r.r######r...............................###############",
-        "####r.r######r...............................#TrrrrrrrrrTr##",
+        "####r.r#######m.....m.....m.....m.....m.....m####.....######",
+        "####r.r######rmmm.Tmmmm.mmmmm.Tmmmm.mmmmm.mmm####.....######",
+        "####r.r######r...............................####.....######",
+        "####r.r######r...............................#Trrrr.rrrrTr##",
         "####r.r######r...............................#...........r##",
         "####r.r######r....r...r...r...r...r...r...r..#...........r##",
         "####r.r######r...............................#...........r##",
@@ -7077,6 +7197,42 @@
             {
               "item": "zaubertrank_g",
               "n": 1
+            }
+          ],
+          "look": "edel",
+          "mat": "stein"
+        },
+        {
+          "id": "gefangenenwand_festung3",
+          "type": "secret",
+          "x": 51,
+          "y": 13,
+          "needs": "skizze_gefangener",
+          "hint": "Eine Wand wie jede andere – nur das Kreuz auf der Skizze verrät sie.",
+          "msg": "Die Fuge sitzt genau dort, wo der Gefangene sie gemalt hat. Ein Druck, und die Wand gleitet zur Seite. Dahinter liegt die alte Vorratskammer der Wächter."
+        },
+        {
+          "id": "chest_gefangener_festung3",
+          "type": "chest",
+          "x": 51,
+          "y": 10,
+          "loot": [
+            {
+              "gold": 300
+            },
+            {
+              "gear": {
+                "boost": 3,
+                "minQ": 2
+              }
+            },
+            {
+              "item": "potion_g",
+              "n": 2
+            },
+            {
+              "item": "zaubertrank_g",
+              "n": 2
             }
           ],
           "look": "edel",
@@ -8096,10 +8252,15 @@
               "gear": {
                 "boost": 1
               }
+            },
+            {
+              "item": "schwarzstab",
+              "n": 1
             }
           ],
           "look": "eisen",
-          "mat": "stein"
+          "mat": "stein",
+          "lootV": 2
         },
         {
           "id": "en_s_h1",
@@ -8699,6 +8860,15 @@
           "style": "wood",
           "face": 3,
           "board": true
+        },
+        {
+          "id": "npc_hexe",
+          "type": "npc",
+          "x": 12,
+          "y": 5,
+          "name": "Hexe Ysolde",
+          "look": "hexe",
+          "dialog": "hexe"
         }
       ],
       "fog": 0.4
@@ -8813,7 +8983,7 @@
           "x": 5,
           "y": 27,
           "shop": "giesserei",
-          "look": "haendler2",
+          "look": "haendler3",
           "talk": {
             "flag": "talk_brum",
             "text": "Brum: Ich hab die Öfen nie ausgehen lassen, nur die Leute vergessen. Drei Dinge: Der Meister hinten trägt seine Rüstung wie eine zweite Haut. Feuer hilft nichts, Eis schon. Und lasst die Finger von den Truhen, die zu schön in der Ecke stehen."
@@ -8978,10 +9148,15 @@
               "gear": {
                 "boost": 2
               }
+            },
+            {
+              "item": "schwerepanzer",
+              "n": 1
             }
           ],
           "look": "edel",
-          "mat": "stein"
+          "mat": "stein",
+          "lootV": 2
         },
         {
           "id": "secret_gi1",
@@ -10417,10 +10592,15 @@
               "gear": {
                 "boost": 2
               }
+            },
+            {
+              "item": "amulett_aschen",
+              "n": 1
             }
           ],
           "look": "eisen",
-          "mat": "nebel"
+          "mat": "nebel",
+          "lootV": 2
         },
         {
           "id": "chest_z_k4",
@@ -13149,6 +13329,10 @@
                 {
                   "item": "ring_wunsch",
                   "n": 1
+                },
+                {
+                  "item": "skizze_gefangener",
+                  "n": 1
                 }
               ],
               "set": [
@@ -13156,7 +13340,7 @@
               ],
               "done": true,
               "leave": true,
-              "msg": "Er malt mit dem Finger Linien in den Staub. „Hier, hier und hier.“ Ihr prägt sie euch ein."
+              "msg": "„Gute Wahl. Wer die Gänge kennt, kommt lebend durch – und ich kenne mehr als die Gänge.“ Er malt mit dem Finger Linien in den Staub. „Hier, hier und hier. Und dies hier: Die Wächter haben ihre Vorräte vor der Gräfin versteckt, in einer Kammer hinter der Nordwand der Ostkammer. Dort sucht niemand, weil dort nichts zu sein scheint. Ich sah die Fuge, als sie mich hier hinunterschleppten. Ohne diese Skizze würdet ihr nie darauf kommen.“ Ihr prägt euch alles ein."
             }
           ]
         },
@@ -13790,6 +13974,52 @@
           "choices": [
             {
               "t": "Gehen"
+            }
+          ]
+        }
+      }
+    },
+    "hexe": {
+      "name": "Hexe Ysolde",
+      "start": "erst",
+      "again": "a",
+      "nodes": {
+        "erst": {
+          "text": "Am Ecktisch sitzt eine Frau mit spitzem Hut und einem Stab, dessen Kugel schwach glimmt. Der Wirtin zuliebe stellt sie ihren Becher ab. „Ysolde. Ich nehme Flüche von Dingen, die zu gut aussehen. Das kostet: hundert Gold und einen mittleren Heiltrank für den Sud. Gold allein bannt nichts, und der Trank sorgt dafür, dass ihr es ernst meint.“",
+          "choices": [
+            {
+              "t": "Zeigt mir, was ihr könnt",
+              "to": "a",
+              "done": true
+            },
+            {
+              "t": "Gehen",
+              "done": true
+            }
+          ]
+        },
+        "a": {
+          "text": "Ysolde dreht ihren Becher. „Kommt ihr mit etwas, das flüstert, zu schwer ist oder zu kalt? Legt es auf den Tisch. Hundert Gold und ein mittlerer Heiltrank, dann ist es nur noch ein Ding.“",
+          "choices": [
+            {
+              "t": "Fluch entfernen",
+              "exorcise": true
+            },
+            {
+              "t": "Wie erkenne ich Verfluchtes?",
+              "to": "b"
+            },
+            {
+              "t": "Gehen"
+            }
+          ]
+        },
+        "b": {
+          "text": "„Ein Fluch zeigt sich erst, wenn man das Stück anlegt, oder einem Auge, das Mauern durchschaut. Dann steht der Preis dabei: weniger Verteidigung, weniger Eile, weniger Schlag. Ich nehme nur den Preis, nie den Nutzen.“",
+          "choices": [
+            {
+              "t": "Verstanden",
+              "to": "a"
             }
           ]
         }

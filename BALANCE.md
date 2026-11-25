@@ -320,6 +320,9 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 | Mondsilberbogen | Waffe | Angriff +7, Init +2 | Krit % 8 | – |
 | Tüftlerstab | Waffe | Angriff +5 | potionplus 40, Fähigkeiten % 15 | – |
 | Lichtbringer | Waffe | Angriff +7 | Ressource + 2 | – |
+| Witwenschleier | Rüstung | Vert. +3 | Ausweichen % 6 | – |
+| Ring des Hungers | Ring | Angriff +2 | Krit % 6 | – |
+| Aschenamulett | Amulett |  | Statusabwehr % 15 | – |
 
 | Set | Teile | Bonus (alle Teile) |
 |---|---|---|

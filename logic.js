@@ -478,7 +478,7 @@ export function tryMove(state, data, rel) {
     res.events.push({ type: 'exit', id: ex.id });
   } else if (ex) res.events.push({ type: 'exitAgain', id: ex.id }); // 0.16.4: erneutes Betreten zeigt einen kurzen Hinweis
   const stairs = state.objs.find((o) => o.type === 'stairs' && o.x === nx && o.y === ny);
-  if (stairs) { res.events.push({ type: 'stairs', id: stairs.id }); return res; }
+  if (stairs && rel === 'f') { res.events.push({ type: 'stairs', id: stairs.id }); return res; } // 0.46.0: nur frontales Betreten löst den Gebietswechsel aus, seitliches Vorbeigehen nicht
   res.encounter = enemyInFront(state);
   if (!res.encounter) { const sp = spottedEnemy(state, data); if (sp) { res.encounter = sp.enemy; res.ambush = sp.ambush; } }
   if (!res.encounter) { const notes = [...scanTraps(state, data), ...scanSecrets(state, data), ...scanBuried(state, data), ...scanLuck(state, data)]; if (notes.length) res.notes = notes; }
@@ -1022,6 +1022,7 @@ export function dialogChoose(state, data, npc, nodeId, idx) {
   if (c.game) return { end: true, game: c.game, npc, changed: false }; // 0.32.0: öffnet das Würfelspiel (Oberfläche)
   if (c.maps) return { end: true, maps: true, npc, changed: false }; // 0.40.0: Schatzkarten des Wirts (Oberfläche)
   if (c.board) return { end: true, board: true, npc, changed: false }; // 0.40.0: Aushangbrett (Oberfläche)
+  if (c.exorcise) return { end: true, exorcise: true, npc, changed: false }; // 0.46.0: Hexe entfernt Flüche (Oberfläche)
   if (c.tavern) return { end: true, tavern: true, npc, changed: false }; // 0.34.0: öffnet die Gruppenverwaltung der Taverne (Oberfläche)
   const msgs = [];
   if (c.cost && c.cost.gold) state.gold -= c.cost.gold;
@@ -1251,7 +1252,40 @@ export function curseText(it) {
   return Object.entries(c).filter(([k, v]) => k !== 'fx' && v).map(([k, v]) => `${n[k] || k} ${v > 0 ? '+' : '−'}${Math.abs(v)}`).join(', ');
 }
 // Gegenstandsdefinition: erzeugte Ausrüstung (state.gear) hat Vorrang vor den festen Gegenständen (data.items)
-export const itemDef = (state, data, id) => (state && state.gear && state.gear[id]) || data.items[id];
+const _clean = new WeakMap();
+export const itemDef = (state, data, id) => {
+  const g = state && state.gear && state.gear[id]; if (g) return g;
+  const b = data.items[id];
+  if (b && b.curse && state && state.flags && state.flags['ent:' + id]) { // 0.46.0: von Ysolde entflucht (Flagge, kein Eintrag in state.gear – dessen Schlüssel sind g<Zahl>)
+    if (!_clean.has(b)) { const c = { ...b, cleansed: true, desc: (b.desc || '') + ' Von Ysolde entflucht.' }; delete c.curse; _clean.set(b, c); }
+    return _clean.get(b);
+  }
+  return b;
+};
+
+// 0.46.0: Hexe Ysolde (Taverne) nimmt Flüche von Gegenständen. Gegenleistung: EXORCISE.gold Gold und EXORCISE.item (ein mittlerer Heiltrank).
+// Sie nimmt nur den Malus (item.curse), nie den Nutzen. Feste Gegenstände werden dafür als Kopie ohne Fluch in state.gear abgelegt (itemDef hat dort Vorrang).
+export const EXORCISE = { gold: 100, item: 'potion_m' };
+export function cursedOwned(state, data) {
+  const all = [...(state.heroes || []), ...(state.reserve || [])];
+  const ids = new Set(Object.keys(state.inv || {}).filter((k) => (state.inv[k] || 0) > 0));
+  for (const h of all) for (const s of SLOTS) if (h && h.equip && h.equip[s]) ids.add(h.equip[s]);
+  return [...ids].filter((id) => { const it = itemDef(state, data, id); return it && it.kind === 'equip' && it.curse && curseKnown(state, data, id); }).map((id) => {
+    const it = itemDef(state, data, id), worn = all.find((h) => h && h.equip && SLOTS.some((s) => h.equip[s] === id));
+    return { id, name: it.name, curse: curseText(it), worn: worn ? worn.name : null, ok: state.gold >= EXORCISE.gold && (state.inv[EXORCISE.item] || 0) > 0 };
+  });
+}
+export function exorcise(state, data, id) {
+  if (state.combat) return { error: 'in-combat' };
+  const o = cursedOwned(state, data).find((x) => x.id === id);
+  if (!o) return { error: 'unknown' };
+  if (state.gold < EXORCISE.gold) return { error: 'gold', cost: EXORCISE.gold };
+  if (!((state.inv[EXORCISE.item] || 0) > 0)) return { error: 'item', item: data.items[EXORCISE.item].name };
+  const it = itemDef(state, data, id);
+  state.gold -= EXORCISE.gold; state.inv[EXORCISE.item]--; if (state.inv[EXORCISE.item] <= 0) delete state.inv[EXORCISE.item];
+  state.flags['ent:' + id] = true;
+  return { msg: `Ysolde murmelt über ${it.name}, der Sud zischt. Der Fluch (${curseText(it)}) ist fort. Kosten: ${EXORCISE.gold} Gold und ${data.items[EXORCISE.item].name}.`, sfx: 'unlock', changed: true };
+}
 export function gearBonus(data, h, state) {
   const b = { atk: 0, def: 0, init: 0 };
   for (const s of SLOTS) { const it = h.equip && h.equip[s] && itemDef(state, data, h.equip[s]); if (it && it.kind === 'equip') { b.atk += (it.atk || 0) + ((it.curse && it.curse.atk) || 0); b.def += (it.def || 0) + ((it.curse && it.curse.def) || 0); b.init += (it.init || 0) + ((it.curse && it.curse.init) || 0); } }

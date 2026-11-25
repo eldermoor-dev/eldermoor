@@ -3001,6 +3001,37 @@ export async function runTests(data, env = {}) {
     assert(!r.error && s.gold === 200 - p && s.heroes.every((h) => h.hp === h.maxHp && h.mp === h.maxMp) && s.reserve[0].hp === s.reserve[0].maxHp, 'alle ausgeruht, Gold abgezogen: ' + JSON.stringify(r));
     eq(L.dialogView(s, data, npc, 'a').choices.find((c) => /Zimmer/.test(c.t)).ok, false, 'ausgeruht: gesperrt'); eq(L.dialogChoose(s, data, npc, 'a', idx).error, 'not-possible', 'kein zweites Zimmer');
   });
+  await test('0.46.0 Flüche: neue Gegenstände, Hexe entflucht gegen Gold + Trank, nur bekannte Flüche', () => {
+    const cursed = Object.entries(data.items).filter(([, it]) => it.curse); assert(cursed.length >= 8, 'mindestens acht verfluchte Gegenstände: ' + cursed.length);
+    const inLoot = (id) => Object.values(data.levels).some((lv) => lv.objects.some((o) => o.type === 'chest' && o.loot.some((x) => x.item === id)));
+    for (const id of ['zornklinge', 'schwarzstab', 'schwerepanzer', 'witwenschleier', 'ring_hunger', 'amulett_aschen']) assert(data.items[id].curse && inLoot(id), id + ' verflucht und in einer Truhe');
+    const hx = data.levels.taverne.objects.find((o) => o.id === 'npc_hexe'); assert(hx && data.dialogs.hexe.nodes.a.choices.some((c) => c.exorcise), 'Hexe in der Taverne');
+    const s = fresh(60); s.inv.zornklinge = 1; s.gold = 500; s.inv.potion_m = 2;
+    eq(L.cursedOwned(s, data).length, 0, 'unbekannter Fluch wird nicht angezeigt');
+    s.flags['id:zornklinge'] = true; eq(L.cursedOwned(s, data).length, 1, 'bekannter Fluch wird angezeigt');
+    const d0 = L.gearCompare(s, data, s.heroes[0], 'zornklinge');
+    const r = L.exorcise(s, data, 'zornklinge'); assert(!r.error && s.gold === 400 && s.inv.potion_m === 1 && !L.isCursed(L.itemDef(s, data, 'zornklinge')), 'entflucht: ' + JSON.stringify(r));
+    assert(L.isCursed(data.items.zornklinge), 'Spieldaten bleiben unverändert'); eq(L.cursedOwned(s, data).length, 0, 'nicht mehr verflucht');
+    assert(L.itemDef(s, data, 'zornklinge').atk === 7, 'Nutzen bleibt'); assert(!L.validateState || true, 'ok');
+    const u = fresh(61); u.inv.zornklinge = 1; u.flags['id:zornklinge'] = true; u.gold = 50; u.inv.potion_m = 1; eq(L.exorcise(u, data, 'zornklinge').error, 'gold', 'zu wenig Gold');
+    u.gold = 500; delete u.inv.potion_m; eq(L.exorcise(u, data, 'zornklinge').error, 'item', 'ohne Trank');
+    const npc = s.objs && null; const dv = L.dialogChoose(fresh(62), data, { id: 'npc_hexe', dialog: 'hexe' }, 'a', 0); assert(dv.exorcise, 'Dialog öffnet die Entfluchung');
+  });
+  await test('0.46.0 Gefangenen-Skizze: Geheimraum in der Blutgruft, Kommentar, nur frontal durch Treppen', () => {
+    const lvl = data.levels.festung3, wall = lvl.objects.find((o) => o.id === 'gefangenenwand_festung3'), chest = lvl.objects.find((o) => o.id === 'chest_gefangener_festung3');
+    assert(wall && wall.needs === 'skizze_gefangener' && chest && L.cellChar(lvl, wall.x, wall.y) === '.' && L.cellChar(lvl, chest.x, chest.y) === '.', 'Wand und Truhe auf Boden');
+    const a = L.analyzeLevel(data, 'festung3'); assert(a.ok, 'Analyse ok ' + JSON.stringify(a));
+    const ch = data.dialogs.gefangener.nodes.b.choices.find((c) => /Karte/.test(c.t)); assert(/Gute Wahl/.test(ch.msg) && ch.give.some((g) => g.item === 'skizze_gefangener'), 'Kommentar und Skizze');
+    const w = fresh(63); L.jumpToLevel(w, data, 'festung3'); const p = w.objs.find((o) => o.id === 'npc_gefangener');
+    const sw = w.objs.find((o) => o.id === 'gefangenenwand_festung3'); assert(sw && !sw.open, 'Wand da, zu');
+    L.dialogChoose(w, data, p, 'b', 3); eq(w.inv.skizze_gefangener, 1, 'Skizze erhalten');
+    w.player.x = 51; w.player.y = 14; w.player.dir = 0; const r2 = L.interact(w, data); assert(sw.open, 'Wand öffnet mit Skizze: ' + JSON.stringify(r2));
+    // Treppen: seitlich vorbei löst nichts aus, frontal schon
+    const s = fresh(64); L.jumpToLevel(s, data, 'festung3'); const st = s.objs.find((o) => o.type === 'stairs');
+    s.player.x = st.x - 1; s.player.y = st.y; s.player.dir = 0; const side = L.tryMove(s, data, 'r');
+    assert(side.moved && !(side.events || []).some((e) => e.type === 'stairs'), 'seitlich: keine Treppe');
+    s.player.x = st.x - 1; s.player.y = st.y; s.player.dir = 1; const fr = L.tryMove(s, data, 'f'); assert((fr.events || []).some((e) => e.type === 'stairs'), 'frontal: Treppe');
+  });
   await test('0.40.0 Schatzkarten: Daten, Kartenwand ohne/mit Karte, Kauf, Extraraum erreichbar', () => {
     const ids = Object.keys(data.maps || {}); assert(ids.length >= 10, 'mindestens zehn Gebiete mit Karte: ' + ids.length);
     for (const id of ids) {
@@ -3008,7 +3039,7 @@ export async function runTests(data, env = {}) {
       assert(it && it.kind === 'quest' && it.noSell, id + ': Karte ist ein unverkäuflicher Questgegenstand'); assert(m.price >= 150 && m.price <= 400, id + ': Preis 150–400');
       const wall = lvl.objects.find((o) => o.type === 'secret' && o.needs === m.item), chest = lvl.objects.find((o) => o.id === 'chest_karte_' + id);
       assert(wall && chest, id + ': Kartenwand und Truhe'); assert(L.cellChar(lvl, wall.x, wall.y) === '.' && L.cellChar(lvl, chest.x, chest.y) === '.', id + ': beide auf Boden');
-      assert(!lvl.objects.some((o) => o.type === 'secret' && o.needs !== m.item && o.needs), id + ': nur eine Karte je Gebiet');
+      assert(!lvl.objects.some((o) => o.type === 'secret' && o.needs !== m.item && o.needs && o.needs !== 'skizze_gefangener'), id + ': nur eine Karte je Gebiet'); // 0.46.0: Skizze des Gefangenen ist keine Schatzkarte
       const a = L.analyzeLevel(data, id); assert(a.ok, id + ': Analyse ok ' + JSON.stringify(a));
     }
     const lvl = data.levels.kultgruft, wall = lvl.objects.find((o) => o.id === 'kartenwand_kultgruft'), chest = lvl.objects.find((o) => o.id === 'chest_karte_kultgruft');
