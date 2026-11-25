@@ -1426,13 +1426,15 @@ export function equipItem(state, data, itemId, heroIdx) {
   const it = itemDef(state, data, itemId);
   h.equip = h.equip || { weapon: null, armor: null };
   const old = h.equip[it.slot];
+  const setsBefore = activeSets(data, h).map((x) => x.id);
   state.inv[itemId]--;
   if (old) state.inv[old] = (state.inv[old] || 0) + 1;
   h.equip[it.slot] = itemId;
   let curseMsg = '';
   if (it.curse && !(state.flags['id:' + itemId])) { state.flags['id:' + itemId] = true; curseMsg = ` Ein Fluch! ${it.name}: ${curseText(it)}.`; }
   for (const k of Object.keys(state.inv)) if (state.inv[k] === 0 && itemDef(state, data, k).kind === 'equip') delete state.inv[k];
-  return { msg: `${h.name} legt ${it.name} an${old ? ` (${itemDef(state, data, old).name} zurück ins Inventar)` : ''}.${curseMsg}`, sfx: 'ui' };
+  const setNew = activeSets(data, h).filter((x) => !setsBefore.includes(x.id)).map((x) => ` Set „${x.name}“ vollständig! ${x.desc}`).join(''); // 0.47.18: Meldung bei Vollendung
+  return { msg: `${h.name} legt ${it.name} an${old ? ` (${itemDef(state, data, old).name} zurück ins Inventar)` : ''}.${curseMsg}${setNew}`, sfx: setNew ? 'sting' : 'ui' };
 }
 export function unequipItem(state, data, heroIdx, slot) {
   if (state.combat) return { error: 'in-combat' };

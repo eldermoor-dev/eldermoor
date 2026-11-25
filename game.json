@@ -246,9 +246,9 @@
         "ranger"
       ],
       "fx": {
-        "lifesteal": 15
+        "lifesteal": 8
       },
-      "desc": "Set „Moorwächter“. Waffe. +3 Angriff, Lebensraub 15 % (Treffer heilen den Träger). Für Krieger, Schurke, Waldläufer.",
+      "desc": "Set „Moorwächter“. Waffe. +3 Angriff, Lebensraub 8 % (Treffer heilen den Träger). Für Krieger, Schurke, Waldläufer.",
       "value": 60
     },
     "moorpanzer": {
@@ -265,9 +265,9 @@
         "ranger"
       ],
       "fx": {
-        "thorns": 2
+        "thorns": 1
       },
-      "desc": "Set „Moorwächter“. Rüstung. +3 Verteidigung, Dornen 2 (Angreifer nehmen Schaden). Für Krieger, Schurke, Kleriker, Waldläufer.",
+      "desc": "Set „Moorwächter“. Rüstung. +3 Verteidigung, Dornen 1 (Angreifer nehmen Schaden). Für Krieger, Schurke, Kleriker, Waldläufer.",
       "value": 60
     },
     "nebelstab": {
@@ -283,9 +283,9 @@
         "alchemist"
       ],
       "fx": {
-        "abil": 10
+        "abil": 5
       },
-      "desc": "Set „Nebelweber“. Waffe. +3 Angriff, Fähigkeiten und Zauber +10 % Schaden. Für Magier, Kleriker, Alchemisten.",
+      "desc": "Set „Nebelweber“. Waffe. +3 Angriff, Fähigkeiten und Zauber +5 % Schaden. Für Magier, Kleriker, Alchemisten.",
       "value": 60
     },
     "nebelrobe": {
@@ -890,6 +890,36 @@
       "kind": "quest",
       "noSell": true,
       "desc": "Mit dem Finger in den Staub gezeichnet und euch eingeprägt. Eine Wand in der Blutgruft ist nicht, was sie scheint. Auf der Gebietskarte steht dort ein Kreuz."
+    },
+    "ring_moorwaechter": {
+      "name": "Moorwächter-Ring",
+      "kind": "equip",
+      "slot": "ring",
+      "q": "set",
+      "set": "moorwaechter",
+      "classes": [
+        "warrior",
+        "rogue",
+        "ranger"
+      ],
+      "init": 1,
+      "desc": "Set „Moorwächter“. Ring. +1 Initiative. Erst mit Klinge und Panzer stark.",
+      "value": 60
+    },
+    "ring_nebelweber": {
+      "name": "Nebelweber-Ring",
+      "kind": "equip",
+      "slot": "ring",
+      "q": "set",
+      "set": "nebelweber",
+      "classes": [
+        "mage",
+        "priest",
+        "alchemist"
+      ],
+      "init": 1,
+      "desc": "Set „Nebelweber“. Ring. +1 Initiative. Erst mit Stab und Robe stark.",
+      "value": 60
     }
   },
   "races": {
@@ -1626,10 +1656,6 @@
             "wurzelstab"
           ],
           "chance": 100
-        },
-        {
-          "item": "amulett_moor",
-          "chance": 100
         }
       ],
       "intro": {
@@ -2090,6 +2116,10 @@
         {
           "item": "ring_blut",
           "chance": 100
+        },
+        {
+          "item": "witwenschleier",
+          "chance": 100
         }
       ]
     },
@@ -2350,6 +2380,12 @@
           },
           "callChance": -25,
           "msg": "Alders Rat wirkt: Die Königin scheut Feuer, und ihre Brut folgt dem Ruf seltener."
+        }
+      ],
+      "drops": [
+        {
+          "item": "ring_hunger",
+          "chance": 100
         }
       ]
     },
@@ -3328,7 +3364,11 @@
             "kultist"
           ]
         }
-      ]
+      ],
+      "foe": {
+        "hp": 140,
+        "atk": 120
+      }
     },
     "moorrand": {
       "id": "moorrand",
@@ -3741,8 +3781,8 @@
         "text": "Nebel kriecht über den Weg. Irgendwo tropft es."
       },
       "foe": {
-        "hp": 125,
-        "atk": 115
+        "hp": 165,
+        "atk": 135
       }
     },
     "kultgruft": {
@@ -3916,13 +3956,12 @@
               "gold": 12
             },
             {
-              "item": "ring_hunger",
-              "n": 1
+              "gold": 20
             }
           ],
           "lock": 15,
           "mat": "stein",
-          "lootV": 2
+          "lootV": 3
         },
         {
           "id": "en_g5",
@@ -4125,13 +4164,9 @@
             {
               "item": "moorklinge",
               "n": 1
-            },
-            {
-              "item": "amulett_gier",
-              "n": 1
             }
           ],
-          "lootV": 3,
+          "lootV": 4,
           "look": "edel",
           "mat": "stein",
           "hidden": true
@@ -4300,8 +4335,8 @@
         "text": "Kalte Luft. Wer hier liegt, liegt nicht still."
       },
       "foe": {
-        "hp": 200,
-        "atk": 160
+        "hp": 224,
+        "atk": 172
       }
     },
     "schratgruben": {
@@ -4680,13 +4715,9 @@
             {
               "item": "ring_last",
               "n": 1
-            },
-            {
-              "item": "witwenschleier",
-              "n": 1
             }
           ],
-          "lootV": 4,
+          "lootV": 5,
           "look": "edel",
           "mat": "erz"
         },
@@ -4864,8 +4895,8 @@
         "text": "Erz, Staub und Holz, das knarrt, ohne dass jemand es berührt."
       },
       "foe": {
-        "hp": 245,
-        "atk": 195
+        "hp": 274,
+        "atk": 209
       }
     },
     "nebelturm": {
@@ -5117,10 +5148,15 @@
               "gear": {
                 "boost": 1
               }
+            },
+            {
+              "item": "ring_moorwaechter",
+              "n": 1
             }
           ],
           "look": "edel",
-          "mat": "nebel"
+          "mat": "nebel",
+          "lootV": 2
         },
         {
           "id": "stairs_turm_festung",
@@ -5285,8 +5321,8 @@
         }
       ],
       "foe": {
-        "hp": 155,
-        "atk": 140
+        "hp": 174,
+        "atk": 150
       }
     },
     "festung1": {
@@ -5299,8 +5335,8 @@
         "dir": 1
       },
       "foe": {
-        "hp": 250,
-        "atk": 200
+        "hp": 220,
+        "atk": 186
       },
       "intro": {
         "title": "Moorfestung",
@@ -5800,8 +5836,8 @@
         "dir": 1
       },
       "foe": {
-        "hp": 280,
-        "atk": 215
+        "hp": 246,
+        "atk": 200
       },
       "intro": {
         "title": "Kellergewölbe",
@@ -6486,10 +6522,15 @@
             {
               "item": "zaubertrank_g",
               "n": 1
+            },
+            {
+              "item": "amulett_moor",
+              "n": 1
             }
           ],
           "look": "edel",
-          "mat": "stein"
+          "mat": "stein",
+          "lootV": 2
         },
         {
           "id": "tw_stairs_k_up",
@@ -6527,8 +6568,8 @@
         "dir": 1
       },
       "foe": {
-        "hp": 300,
-        "atk": 225
+        "hp": 264,
+        "atk": 209
       },
       "intro": {
         "title": "Blutgruft",
@@ -7393,10 +7434,15 @@
             {
               "item": "zaubertrank_g",
               "n": 2
+            },
+            {
+              "item": "amulett_gier",
+              "n": 1
             }
           ],
           "look": "edel",
-          "mat": "stein"
+          "mat": "stein",
+          "lootV": 2
         },
         {
           "id": "tw_stairs_b_up",
@@ -7434,8 +7480,8 @@
         "dir": 1
       },
       "foe": {
-        "hp": 130,
-        "atk": 120
+        "hp": 114,
+        "atk": 111
       },
       "intro": {
         "title": "Moorsee",
@@ -7717,8 +7763,8 @@
         "dir": 0
       },
       "foe": {
-        "hp": 150,
-        "atk": 130
+        "hp": 132,
+        "atk": 121
       },
       "intro": {
         "title": "Schatzinsel",
@@ -8204,8 +8250,8 @@
         "dir": 1
       },
       "foe": {
-        "hp": 330,
-        "atk": 240
+        "hp": 290,
+        "atk": 223
       },
       "intro": {
         "title": "Spinnenhöhle",
@@ -8669,10 +8715,15 @@
               "gear": {
                 "boost": 2
               }
+            },
+            {
+              "item": "ring_nebelweber",
+              "n": 1
             }
           ],
           "look": "edel",
-          "mat": "stein"
+          "mat": "stein",
+          "lootV": 2
         },
         {
           "id": "stairs_s_tiefe",
@@ -9103,8 +9154,8 @@
         "dir": 1
       },
       "foe": {
-        "hp": 350,
-        "atk": 255
+        "hp": 308,
+        "atk": 237
       },
       "intro": {
         "title": "Die Gießerei",
@@ -9862,8 +9913,8 @@
         "dir": 1
       },
       "foe": {
-        "hp": 380,
-        "atk": 270
+        "hp": 334,
+        "atk": 251
       },
       "intro": {
         "title": "Die Zisterne",
@@ -11544,6 +11595,10 @@
         "patch": {
           "palette": "alptraum"
         }
+      },
+      "foe": {
+        "hp": 112,
+        "atk": 107
       }
     }
   },
@@ -13186,25 +13241,30 @@
       "name": "Moorwächter",
       "items": [
         "moorklinge",
-        "moorpanzer"
+        "moorpanzer",
+        "ring_moorwaechter"
       ],
       "bonus": {
-        "crit": 10,
-        "soak": 1
+        "crit": 12,
+        "soak": 1,
+        "lifesteal": 7,
+        "thorns": 1
       },
-      "desc": "Beide Teile: kritische Treffer +10 %, Schaden gegen den Träger −1."
+      "desc": "Alle drei Teile: kritische Treffer +12 %, Schaden gegen den Träger −1, Lebensraub +7 %, Dornen +1."
     },
     "nebelweber": {
       "name": "Nebelweber",
       "items": [
         "nebelstab",
-        "nebelrobe"
+        "nebelrobe",
+        "ring_nebelweber"
       ],
       "bonus": {
         "heal": 6,
-        "resist": 25
+        "resist": 25,
+        "abil": 5
       },
-      "desc": "Beide Teile: Heilzauber +6 LP, 25 % Statusabwehr."
+      "desc": "Alle drei Teile: Heilzauber +6 LP, 25 % Statusabwehr, Fähigkeiten +5 % Schaden."
     }
   },
   "dialogs": {
@@ -15194,18 +15254,18 @@
     "note": "0.47.0: Beute und Preise nach Spielfortschritt (höchster erreichter Akt). Prozent. gold/xp = Kampfbeute, price = Kaufpreise (Verkaufspreise unverändert).",
     "acts": {
       "1": {
-        "gold": 90,
-        "xp": 95,
+        "gold": 70,
+        "xp": 85,
         "price": 115
       },
       "2": {
-        "gold": 75,
-        "xp": 85,
+        "gold": 55,
+        "xp": 70,
         "price": 135
       },
       "3": {
-        "gold": 60,
-        "xp": 75,
+        "gold": 40,
+        "xp": 60,
         "price": 160
       }
     },

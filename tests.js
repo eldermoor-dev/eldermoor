@@ -948,7 +948,7 @@ export async function runTests(data, env = {}) {
     const fromChest = rare.filter((k) => Object.values(data.levels).some((lv) => lv.objects.some((o) => o.type === 'chest' && (o.loot || []).some((l) => l.item === k))));
     const fromTalk = rare.filter((k) => Object.values(data.dialogs).some((dl) => Object.values(dl.nodes).some((n) => n.choices.some((c) => (c.give || []).some((l) => l.item === k)))));
     for (const k of rare) assert(fromBoss.includes(k) || fromChest.includes(k) || fromTalk.includes(k) || k === data.dicegame.amulet, `${k} hat keine Fundquelle`);
-    assert(rare.every((k) => data.items[k].q === 'unique'), 'alle einzigartig (nicht verkäuflich)');
+    assert(rare.every((k) => data.items[k].q === 'unique' || data.items[k].q === 'set'), 'alle einzigartig oder Set-Teil (nicht verkäuflich)');
     // Gefangener: Zelle, Schlüssel in der Galerie-Truhe, Wunsch + Ring
     const f3 = data.levels.festung3, zd = f3.objects.find((o) => o.id === 'door_b_zelle');
     assert(zd && zd.locked && f3.objects.some((o) => o.type === 'chest' && o.loot.some((l) => l.item === zd.key)), 'Zellentür verschlossen, Schlüssel in einer Truhe');
@@ -2784,11 +2784,14 @@ export async function runTests(data, env = {}) {
   await test('Ausrüstungseffekte, Sets, Gegnertaktik (0.21.0): Effekte zählen, Set-Bonus nur komplett, Lebensraub, Dornen, Deckung, Raserei, Heiler-Ziel, Set-Teile in Truhen', () => {
     for (const [id, st] of Object.entries(data.sets)) { assert(st.name && st.items.length >= 2 && st.bonus, `Set ${id}`); for (const i of st.items) assert(data.items[i] && data.items[i].set === id && data.items[i].q === 'set', `Set ${id}: ${i}`); }
     const s = fresh(5), h = s.heroes[0];
-    s.inv.moorklinge = 1; s.inv.moorpanzer = 1;
+    s.inv.moorklinge = 1; s.inv.moorpanzer = 1; s.inv.ring_moorwaechter = 1;
     L.equipItem(s, data, 'moorklinge', 0);
-    eq([L.fxSum(data, h, 'lifesteal'), L.fxSum(data, h, 'crit'), L.activeSets(data, h).length], [15, 0, 0], 'eine Hälfte: Effekt, kein Set');
-    L.equipItem(s, data, 'moorpanzer', 0);
-    eq([L.fxSum(data, h, 'thorns'), L.fxSum(data, h, 'crit'), L.fxSum(data, h, 'soak'), L.activeSets(data, h)[0].id], [2, 10, 1, 'moorwaechter'], 'komplett: Set-Bonus');
+    eq([L.fxSum(data, h, 'lifesteal'), L.fxSum(data, h, 'crit'), L.activeSets(data, h).length], [8, 0, 0], 'ein Teil: kleiner Effekt, kein Set');
+    const r2 = L.equipItem(s, data, 'moorpanzer', 0);
+    eq([L.fxSum(data, h, 'thorns'), L.fxSum(data, h, 'crit'), L.activeSets(data, h).length, /vollständig/.test(r2.msg)], [1, 0, 0, false], 'zwei von drei Teilen: noch kein Set-Bonus, keine Meldung');
+    const r3 = L.equipItem(s, data, 'ring_moorwaechter', 0);
+    eq([L.fxSum(data, h, 'thorns'), L.fxSum(data, h, 'crit'), L.fxSum(data, h, 'soak'), L.fxSum(data, h, 'lifesteal'), L.activeSets(data, h)[0].id], [2, 12, 1, 15, 'moorwaechter'], 'komplett: Set-Bonus');
+    assert(/Set „Moorwächter“ vollständig/.test(r3.msg), 'Meldung bei Vollendung: ' + r3.msg);
     eq(L.sellPrice(s, data, 'moorklinge'), null, 'Set-Teile nicht verkäuflich');
     // Lebensraub und Dornen im Kampf
     put(s, 15, 7, 1); L.startCombat(s, data, L.enemyInFront(s)); h.hp = 10; let leech = false, thorns = false;
@@ -3166,7 +3169,7 @@ export async function runTests(data, env = {}) {
   });
   await test('0.46.0 Flüche: neue Gegenstände, Hexe entflucht gegen Gold + Trank, nur bekannte Flüche', () => {
     const cursed = Object.entries(data.items).filter(([, it]) => it.curse); assert(cursed.length >= 8, 'mindestens acht verfluchte Gegenstände: ' + cursed.length);
-    const inLoot = (id) => Object.values(data.levels).some((lv) => lv.objects.some((o) => o.type === 'chest' && o.loot.some((x) => x.item === id)));
+    const inLoot = (id) => Object.values(data.levels).some((lv) => lv.objects.some((o) => o.type === 'chest' && o.loot.some((x) => x.item === id))) || Object.values(data.enemies).some((e) => (e.drops || []).some((dr) => dr.item === id || (dr.pick || []).includes(id))); // 0.47.18: auch Bossbeute
     for (const id of ['zornklinge', 'schwarzstab', 'schwerepanzer', 'witwenschleier', 'ring_hunger', 'amulett_aschen']) assert(data.items[id].curse && inLoot(id), id + ' verflucht und in einer Truhe');
     const hx = data.levels.taverne.objects.find((o) => o.id === 'npc_hexe'); assert(hx && data.dialogs.hexe.nodes.a.choices.some((c) => c.exorcise), 'Hexe in der Taverne');
     const s = fresh(60); s.inv.zornklinge = 1; s.gold = 500; s.inv.potion_m = 2;

@@ -274,7 +274,7 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 | Gruftskelett | 4 % | – |
 | Kultwächter | 8 % | – |
 | Kultwächter-Hauptmann | 100 %, Boost 1 | Siegelpanzer oder Nebelmantel (100 %, nur einmal); Siegelring des Hauptmanns (100 %, nur einmal) |
-| Moorschrat | 100 %, Boost 1 | Schratdorn oder Wurzelstab (100 %, nur einmal); Moorstein-Amulett (100 %, nur einmal) |
+| Moorschrat | 100 %, Boost 1 | Schratdorn oder Wurzelstab (100 %, nur einmal) |
 | Nebelgeist | 4 % | – |
 | Kultpriester | 8 % | – |
 | Turmwache | 8 % | – |
@@ -283,11 +283,11 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 | Brandmagier | 8 % | – |
 | Blutdiener | 6 % | – |
 | Vampirbrut | 9 % | – |
-| Blutgräfin | 100 %, Boost 2 | Ring der Blutgräfin (100 %, nur einmal) |
+| Blutgräfin | 100 %, Boost 2 | Ring der Blutgräfin (100 %, nur einmal); Witwenschleier (100 %, nur einmal) |
 | Riesenspinne | 100 %, Boost 1 | – |
 | Teufel | 100 %, Boost 2 | – |
 | Netzwächter | 100 %, Boost 1 | – |
-| Spinnenkönigin | 100 %, Boost 2 | – |
+| Spinnenkönigin | 100 %, Boost 2 | Ring des Hungers (100 %, nur einmal) |
 | Schlackenwächter | 10 % | – |
 | Gießmeister Harkon | 100 %, Boost 2 | Ring der Esse (100 %, nur einmal) |
 | Quellhüterin Maris | 100 %, Boost 2 | Ring der Tiefe (100 %, nur einmal) |
@@ -300,9 +300,9 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 | Wurzelstab | Waffe | Angriff +4, Init +1 | Ressource + 1 | – |
 | Siegelpanzer | Rüstung | Vert. +4 | Dornen 3 | – |
 | Nebelmantel | Rüstung | Vert. +3, Init +1 | Ausweichen % 8 | – |
-| Moorklinge | Waffe | Angriff +3 | Lebensraub % 15 | Moorwächter |
-| Moorpanzer | Rüstung | Vert. +3 | Dornen 2 | Moorwächter |
-| Nebelstab | Waffe | Angriff +3 | Fähigkeiten % 10 | Nebelweber |
+| Moorklinge | Waffe | Angriff +3 | Lebensraub % 8 | Moorwächter |
+| Moorpanzer | Rüstung | Vert. +3 | Dornen 1 | Moorwächter |
+| Nebelstab | Waffe | Angriff +3 | Fähigkeiten % 5 | Nebelweber |
 | Nebelrobe | Rüstung | Vert. +2 | Ressource + 1 | Nebelweber |
 | Glücksamulett | Amulett |  | Krit % 4, Fallen erkennen 10 | – |
 | Siegelring des Hauptmanns | Ring | Angriff +1 | Krit % 6 | – |
@@ -326,5 +326,5 @@ Erzeugte Ausrüstung: Grundgegenstand zufällig aus Eisenschwert, Eichenstab, Le
 
 | Set | Teile | Bonus (alle Teile) |
 |---|---|---|
-| Moorwächter | Moorklinge, Moorpanzer | Krit % 10, Schaden − 1 |
-| Nebelweber | Nebelstab, Nebelrobe | Heilung + 6, Statusabwehr % 25 |
+| Moorwächter | Moorklinge, Moorpanzer, Moorwächter-Ring | Krit % 12, Schaden − 1, Lebensraub % 7, Dornen 1 |
+| Nebelweber | Nebelstab, Nebelrobe, Nebelweber-Ring | Heilung + 6, Statusabwehr % 25, Fähigkeiten % 5 |
