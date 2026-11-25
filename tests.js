@@ -718,7 +718,7 @@ export async function runTests(data, env = {}) {
       for (const o of dk) {
         assert(!(o.x === lvl.start.x && o.y === lvl.start.y), `${o.id}: nicht auf dem Startfeld`);
         if (o.type === 'decor' || o.type === 'barrel') { assert(lvl.map[o.y][o.x] === '.', `${o.id}: auf Boden`); assert(['fass', 'schutt'].includes(o.look), 'bekannte Optik'); if (o.look === 'fass') barrels++; else rubble++; }
-        else { assert(['rohr', 'gitter', 'nischeleer', 'moos', 'blut', 'kratzer', 'painting', 'runen'].includes(o.deco) && o.face != null && lvl.map[o.y + [-1, 0, 1, 0][o.face]][o.x + [0, 1, 0, -1][o.face]] !== '.', `${o.id}: Schmuck an einer Wand`); wall++; }
+        else { assert(['rohr', 'gitter', 'nischeleer', 'moos', 'blut', 'kratzer', 'painting', 'runen', 'netz'].includes(o.deco) && o.face != null && lvl.map[o.y + [-1, 0, 1, 0][o.face]][o.x + [0, 1, 0, -1][o.face]] !== '.', `${o.id}: Schmuck an einer Wand`); wall++; }
       }
       assert(L.analyzeLevel(data, id).ok, `${id} bleibt lösbar`);
     }

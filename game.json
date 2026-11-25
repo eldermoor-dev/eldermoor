@@ -3343,14 +3343,16 @@
           "x": 5,
           "y": 2,
           "gate": "tg_gitter",
-          "msg": "Der Hebel rastet ein. Im Osten rasselt eine Kette."
+          "msg": "Der Hebel rastet ein. Im Osten schabt schwerer Stein über Stein."
         },
         {
           "id": "tg_gitter",
           "type": "gate",
           "x": 11,
           "y": 1,
-          "hint": "Ein Gitter versperrt die Nische. Die Stäbe sind kalt und sitzen fest."
+          "hint": "Eine schwere Steinplatte versperrt die Nische. Sie sitzt fest, in den Fugen glänzt Fett. Irgendwo muss ein Mechanismus sein.",
+          "look": "stein",
+          "hintTitle": "Steinplatte"
         },
         {
           "id": "tg_falle",
@@ -3453,9 +3455,10 @@
           "x": 5,
           "y": 4,
           "face": 2,
-          "title": "LAGER",
-          "style": "dark",
-          "text": "Ein verlassenes Lager. Unter einem Becher liegt ein Zettel: „Tag neun. Das Licht reicht nur noch bis zur Tür. Wer nach uns kommt: Zählt eure Schritte.“"
+          "title": "Lager",
+          "text": "Ein verlassenes Lager. Unter einem Becher liegt ein Zettel: „Tag neun. Das Licht reicht nur noch bis zur Tür. Wer nach uns kommt: Zählt eure Schritte.“",
+          "deco": "zettel",
+          "textless": true
         },
         {
           "id": "tg_tafel_zaehler",
@@ -3463,7 +3466,7 @@
           "x": 11,
           "y": 7,
           "face": 0,
-          "title": "STRICHE",
+          "title": "ZÄHLUNG",
           "style": "stone",
           "text": "Strich um Strich in den Stein geritzt, Hunderte. Die letzten sind schief, als hätte die Hand gezittert."
         },
@@ -3473,7 +3476,7 @@
           "x": 16,
           "y": 3,
           "face": 0,
-          "title": "SEITE",
+          "title": "RAT",
           "style": "dark",
           "text": "Eine lose Seite, vom Feuchten gewellt: „Ich fand diese Kammer, weil ich dem Riss folgte. Wer das liest: Nehmt, was ihr braucht, und lasst den Rest.“"
         },
@@ -8121,7 +8124,7 @@
         "..................................",
         "..................................",
         "..................................",
-        "...........sss......====..........",
+        "..=========sss==========..........",
         "...........sss......===...........",
         "..................................",
         "..................................",
@@ -8599,6 +8602,36 @@
           "y": 13,
           "look": "irrlicht",
           "scale": 0.3
+        },
+        {
+          "id": "dk_moorsee_netz1",
+          "type": "sign",
+          "x": 21,
+          "y": 1,
+          "face": 0,
+          "deco": "netz",
+          "text": "Ein altes Fischernetz hängt an der Wand. Die Korken sind gesprungen, das Garn modert.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_moorsee_netz2",
+          "type": "sign",
+          "x": 29,
+          "y": 1,
+          "face": 0,
+          "deco": "netz",
+          "text": "Ein altes Fischernetz hängt an der Wand. Die Korken sind gesprungen, das Garn modert.",
+          "style": "dark"
+        },
+        {
+          "id": "dk_moorsee_netz3",
+          "type": "sign",
+          "x": 21,
+          "y": 17,
+          "face": 2,
+          "deco": "netz",
+          "text": "Ein altes Fischernetz hängt an der Wand. Die Korken sind gesprungen, das Garn modert.",
+          "style": "dark"
         }
       ],
       "waterMsg": "Das Wasser ist tief und kalt. Zur Schatzinsel kommt man nicht durchs Wasser: Der Fuhrmann am Steg im Osten setzt euch über.",

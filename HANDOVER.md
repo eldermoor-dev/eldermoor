@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.52.0 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.52.1 (25.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -15,6 +15,8 @@ Autor: eldermoor-dev · Stand: Version 0.52.0 (25.11.2026). Auf dem Galaxy S25 v
 - **Testgewölbe (Nutzer 25.11.2026 22:44 und 23:14, gebaut in 0.50.0, nicht auf Gerät getestet):** Gewählt A Lehrpfad ohne Belehrung, C Geheimraum, D Atmosphäre, E Geschichte; nicht gewählt B (Plattenrätsel) und F (Wanderer). Grundriss vom Nutzer mit „Ja“ freigegeben. Die Moorlichtung bleibt vor dem Testgewölbe (Assistent, Begründung: Treppe 1/4 und Tests hängen daran).
 - **Wasserflächen (Nutzer 25.11.2026 23:25: „Alles bis auf 6“, gebaut in 0.51.0, nicht auf Gerät getestet):** Gewählt 1 Ufer und Tiefe, 2 Farbe an die Umgebung, 3 Schaumkante und Glanz, 4 Dinge im Wasser, 5 Dunst und Irrlichter. Nicht gewählt: 6 Spiegelung.
 - **Kampfgröße und Hebel (Nutzer 25.11.2026 23:36 und 23:37, gebaut in 0.51.1, nicht auf Gerät getestet):** Schrat-Größe im Kampf nach 0.49.9 „perfekt für Bosskampf“, auf dem Gerät bestätigt (Screenshot). „Andere Monster entsprechend anpassen“. Hebel: „Schalter mit Leuchtring weglassen“ (Runenring aus 0.48.0 entfällt).
+- **Schilder und Steinplatte (Nutzer 25.11.2026 23:45, gebaut in 0.52.1, nicht auf Gerät getestet):** „WARNUNG“ ist gut. Lager: nur die Notizen, ohne Titel. Andere Schilder nach dem Muster WARNUNG (Titel nennt die Funktion, nicht das Schreibmittel). Der „Käfig“ (Gitter vor der Truhennische im Testgewölbe) sieht komisch aus: durch Steinplatte ersetzt (Deutung des Assistenten).
+- **Moorsee dezenter im Stil der Siegelhalle (Nutzer 25.11.2026 23:47, gebaut in 0.52.1, nicht auf Gerät getestet):** Seecharakter bleibt; Deutung des Assistenten: Fischernetze an der Wand, Bohlenwege.
 - **Siegelhalle (Nutzer 25.11.2026 23:41, gebaut in 0.52.0, nicht auf Gerät getestet):** „Raum leider immer noch unverändert. Setze deine eigenen Pläne um.“ Gemeint (Deutung des Assistenten, Screenshot Runenstein-Gang): der Ostflügel des Testgewölbes mit dem Runenstein. Gestaltung delegiert und vom Assistenten gewählt.
 - Rassen: Mensch, Elf, Zwerg, Ork, Gnom. Berufe: Krieger, Schurke, Kleriker, Magier, Waldläufer; Alchemist geplant (sechs Berufe, je drei Talentzweige). Maximalstufe 15.
 - Kein Permadeath: bewusstlos statt tot, Bewusstlose bekommen keine EP. Zwei Schwierigkeitsgrade (Normal, Schwer).
@@ -1952,4 +1954,10 @@ Auftrag aus den Vorschlägen vom 25.11.: **A** Lehrpfad ohne Belehrung, **C** Ge
 - Gebaut (game.json `test1`, render.js): Bodenraster `floor` (Steinplatten `s` im ganzen Raum, roter Läufer `r` auf Reihe 7 von der Tür zum Runenstein), zwei Wandfackeln mehr (Karte (14,5) und (19,9)), drei Feuerschalen `tg_feuer1..3` (15,6), (15,8), (18,6) (neues Sprite `feuerschale`, Glühmaterial, Typ decor), fünf Runenfriese `dk_tg_runen1..5` (neue Wanddeko `runen`: zwei Reihen glühender Zeichen). Frei bleiben Reihe 7, (18,8) (Zugang Schalterstein) und (17,6) (Geheimwand).
 - Vorher/nachher von denselben Standorten gerendert und angesehen. Läufer ist rot (Rasenmuster Wohnteppich aus 0.32.1); falls zu gemütlich (vgl. Nutzer zur Rast 0.49), schlicht auf Steinplatten umstellen (`r` → `s`).
 - Tests 187 grün (neu: Siegelhalle; Deko-Test kennt `runen`). Gegner- und Heldenwerte unverändert. Rückfall: Commit d598d09 (0.51.2).
-- Offen: Gerätetest 0.49.6 bis 0.52.0 (Nutzer: erstmal keine Tests), Schilder „LAGER“, „STRICHE“, „SEITE“ (Frage an den Nutzer offen), Siedlung wächst.
+- Offen: Gerätetest 0.49.6 bis 0.52.1 (Nutzer: erstmal keine Tests), Siedlung wächst.
+
+## 0.52.1 (25.11.2026; Bilder headless gerendert, nicht auf Gerät getestet): Schilder, Steinplatte, Moorsee
+- Lager: Zettel-Dekor (`zettel`) statt Tafel, ohne Titel im Lesefeld (`textless`), Notizbuch-Eintrag bleibt. STRICHE → ZÄHLUNG, SEITE → RAT.
+- Gitter `tg_gitter` mit `look: stein` wird als Steinplatte gezeichnet (kein Gitter-Sprite, wenn offen); Text und Notizbuchtitel „Steinplatte“.
+- Moorsee: Dekor `netz` (3 Fischernetze an Wänden, `dk_moorsee_netz1..3`), Bohlenwege auf Zeile 8 (x 2–10, 14–19).
+- Tests: 187 grün (nicht auf Gerät getestet). Offen: Gerätetest, Siedlung wächst.

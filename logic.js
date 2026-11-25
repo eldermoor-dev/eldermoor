@@ -451,7 +451,7 @@ function blockedText(b) {
   if (b.type === 'npc') return `${b.name || 'Jemand'} steht im Weg. Mit ◉ sprichst du an.`;
   if (b.type === 'sign') return 'Eine Hinweistafel steht im Weg.';
   if (b.type === 'runestone') return 'Ein Runenstein. Die Zeichen glimmen schwach.';
-  if (b.type === 'gate') return 'Ein Fallgitter versperrt den Weg.';
+  if (b.type === 'gate') return b.look ? 'Eine schwere Steinplatte versperrt den Weg.' : 'Ein Fallgitter versperrt den Weg.';
   if (b.type === 'secret' && b.needs) return 'Die Wand stimmt mit dem Kreuz auf eurer Schatzkarte überein. ◉ untersucht sie.';
   if (b.type === 'secret') return 'Eine Wand. Durch die Fugen läuft ein feiner Riss.';
   if (b.type === 'lever') return b.torch ? 'Eine Wandfackel. Ihre Halterung sitzt locker.' : b.wall ? 'Ein Stein in der Wand sitzt locker.' : 'Ein Wandhebel steht im Weg.';
@@ -974,7 +974,7 @@ export function interact(state, data, target = null) { // target (0.26.2): Objek
   }
   if (o.type === 'boulder') return pullBoulder(state, data, o);
   if (o.type === 'gate' && o.web) { o.open = true; const w = state.heroes.find((h) => h.hp > 0 && (h.row === 'front')) || state.heroes.find((h) => h.hp > 0); return { msg: o.cutMsg || `${w ? w.name : 'Jemand'} durchtrennt das zähe Netz. Die Fäden zucken noch einen Augenblick nach.`, sfx: 'door', changed: true }; } // 0.33.0: Spinnennetz – mit ◉ oder Dagegenlaufen durchtrennen
-  if (o.type === 'gate') { const gr = { msg: o.hint || 'Das Gitter sitzt fest. Es muss einen Hebel geben.', sfx: 'bump' }; return o.hint ? recClue(state, o.id, 'Gitter', o.hint, gr) : gr; }
+  if (o.type === 'gate') { const gr = { msg: o.hint || 'Das Gitter sitzt fest. Es muss einen Hebel geben.', sfx: 'bump' }; return o.hint ? recClue(state, o.id, o.hintTitle || 'Gitter', o.hint, gr) : gr; }
   if (o.type === 'lever') { // wall: true = versteckter Schalter (lockerer Stein in der Mauer); Ziel ist ein Gitter oder eine Geheimwand
     if (o.seq) return runePlate(state, o); // 0.38.0: Runenplatten in fester Reihenfolge
     const gate = state.objs.find((x) => x.id === o.gate);

@@ -1065,6 +1065,27 @@ function genDeco(kind, seed, full = true) {
     for (let y = 56; y < 100; y++) for (let x = 78; x < 116; x++) { const dx = (x - 97) / 13, dy = (y - 78) / 15, a = Math.atan2(dy, dx), rim = 1 + Math.sin(a * 7 + hash(1, 1, seed) * 6) * 0.22 + Math.sin(a * 13) * 0.12; if (Math.hypot(dx, dy) <= rim) set(x, y, P('blood', 1.9 + hash(x >> 2, y >> 2, seed + 5) * 0.5 + (y - 56) * 0.012)); }
   } else if (kind === 'kratzer') { // 0.48.0: drei Krallenspuren im Stein: dunkle Rille, helle Bruchkanten
     for (let k = 0; k < 3; k++) { const x0 = 66 + k * 26, y0 = 30 + k * 5; for (let i = 0; i < 110; i++) { const x = x0 + i * 0.34 + Math.sin(i * 0.09 + k) * 1.6, y = y0 + i * 1.0, w = i < 10 ? 0.8 + i / 10 : i > 96 ? (110 - i) / 14 + 0.6 : 2.6 + Math.sin(i * 0.3 + k) * 0.3; for (let dx = -4; dx <= 4; dx++) { const ad = Math.abs(dx); if (ad > w + 1.2) continue; set(Math.round(x) + dx, Math.round(y), ad <= w * 0.55 ? P('stone', 0.9 + hash(i, k, seed) * 0.5) : ad <= w + 0.2 ? P('stone', 3 + hash(i, k + 3, seed)) : P('stone', 7.2 - hash(i, k + 6, seed) * 0.8)); } } }
+  } else if (kind === 'zettel') { // 0.52.1: drei an die Wand gesteckte Zettel (Lager): schief, mit Schriftzeilen, Nadel und Fleck
+    for (const [cx, cy, w, h, a, sd] of [[70, 88, 40, 52, -0.12, 1], [114, 78, 34, 44, 0.09, 2], [96, 124, 46, 32, 0.04, 3]]) {
+      const ca = Math.cos(a), sa = Math.sin(a);
+      for (let y = cy - h; y <= cy + h; y++) for (let x = cx - w; x <= cx + w; x++) {
+        const dx = x - cx, dy = y - cy, u = dx * ca + dy * sa, v = -dx * sa + dy * ca;
+        if (Math.abs(u) > w / 2 || Math.abs(v) > h / 2) continue;
+        const edge = Math.abs(u) > w / 2 - 1.2 || Math.abs(v) > h / 2 - 1.2, line = ((Math.floor(v + h / 2) % 7) === 4) && Math.abs(u) < w / 2 - 5 && hash(Math.floor(u / 3), Math.floor(v / 7), seed + sd) > 0.28, stain = Math.hypot(u - w / 3, v + h / 3) < 5 && hash(x, y, seed) > 0.3;
+        set(x, y, line ? P('ceil', 0.6) : stain ? P('floor', 3.6) : edge ? P('floor', 4.2) : P('floor', 6 + hash(x >> 1, y >> 1, seed + sd) * 0.6 - (v > h / 4 ? 0.4 : 0)));
+      }
+      const px0 = Math.round(cx - 2 * sa), py0 = Math.round(cy - h / 2 + 4);
+      for (let yy = -2; yy <= 2; yy++) for (let xx = -2; xx <= 2; xx++) if (xx * xx + yy * yy <= 5) set(px0 + xx, py0 + yy, P('blood', 4 - (xx + yy) * 0.3)); // Nadelkopf
+    }
+  } else if (kind === 'netz') { // 0.52.1: Fischernetz an der Wand (Moorsee): Maschen, Korkschwimmer, Tangfäden, zwei Wandhaken
+    const x0 = 36, x1 = 156, top = 40, sag = (x) => 8 * Math.sin((x - x0) / (x1 - x0) * Math.PI);
+    for (let x = x0; x <= x1; x++) for (let y = top; y < 150 + sag(x) * 2.2; y++) {
+      const u = (x - x0) / 9 + (y - top) / 11, v = (x - x0) / 9 - (y - top) / 11, ru = Math.abs(u - Math.round(u)), rv = Math.abs(v - Math.round(v));
+      if ((ru < 0.1 || rv < 0.1) && hash(x >> 1, y >> 1, seed) > 0.12) set(x, y + Math.round(sag(x) * 0.5), P('wood', 4.6 + hash(x, y, seed + 2) * 0.9));
+    }
+    for (let i = 0; i < 6; i++) { const cx = x0 + 10 + i * 20, cy = top + 4 + Math.round(sag(cx) * 0.5); for (let yy = -3; yy <= 3; yy++) for (let xx = -3; xx <= 3; xx++) if (xx * xx + yy * yy <= 9) set(cx + xx, cy + yy, P('floor', 5.2 - (xx + yy) * 0.25)); } // Korkschwimmer
+    for (let x = x0 + 6; x < x1 - 4; x += 5) { const h0 = hash(x, 4, seed + 3); if (h0 < 0.5) continue; for (let y = 150; y < 150 + 8 + h0 * 26; y++) set(x + Math.round(Math.sin(y * 0.2 + x) * 1.2), y + Math.round(sag(x) * 2.2), P('moss', 3.6 + hash(x, y, seed) * 0.8)); } // Tang
+    for (const hx of [x0 - 2, x1 + 2]) for (let yy = -3; yy <= 3; yy++) for (let xx = -3; xx <= 3; xx++) if (xx * xx + yy * yy <= 9) set(hx + xx, top + yy, P('iron', 3.2 - (xx + yy) * 0.2));
   } else if (kind === 'runen') { // 0.52.0: Runenfries: zwei Reihen eingemeißelter Zeichen, die schwach glühen (Siegelhalle)
     for (let row = 0; row < 2; row++) {
       const y0 = 62 + row * 46;
@@ -3383,7 +3404,7 @@ export function buildGrid(lvl, objs) {
     grid[o.y * w + o.x] = nb || WALL_STONE;
   }
   for (const o of objs) if (o.type === 'door' && !o.open) grid[o.y * w + o.x] = doorWall(o);
-  for (const o of objs) if (o.type === 'gate' && !o.open) grid[o.y * w + o.x] = o.web ? WALL_WEB : WALL_GATE;
+  for (const o of objs) if (o.type === 'gate' && !o.open) grid[o.y * w + o.x] = o.look ? doorWall({ look: o.look }) : o.web ? WALL_WEB : WALL_GATE; // 0.52.1: look = Steinplatte statt Gitter
   for (const o of objs) { if (o.type === 'secret' && !o.open && !o.needs) grid[o.y * w + o.x] = WALL_SECRET; else if (o.type === 'lever' && o.wall) grid[o.y * w + o.x] = o.torch ? WALL_TORCH : o.used ? WALL_SWITCH_ON : WALL_SWITCH; } // torch (0.23.7): Schalter sieht aus wie eine gewöhnliche Wandfackel
   return { grid, gw: w, gh: h };
 }
@@ -3496,7 +3517,7 @@ export function buildSprites(objs, tex, time, angle = 0, alive = null, grid = nu
       const ns = wl(o.x - 1, o.y) && wl(o.x + 1, o.y);
       out.push({ x: o.x, y: o.y, tex: cachedTex(tex, 'frames', styleFor(o) + (o.look || '') + (o.textless ? '#' : o.title || ''), () => genDoorFrame(o.textless ? '' : o.title, styleFor(o), 137, o.look)), scale: 1, axis: ns ? [0, 1] : [1, 0] });
     }
-    else if (o.type === 'gate' && o.open && grid) { // offenes Gitter: hochgezogene Stäbe im Durchgang (nur beim Blick längs, wie offene Tür)
+    else if (o.type === 'gate' && o.open && grid && !o.look) { // offenes Gitter: hochgezogene Stäbe im Durchgang (nur beim Blick längs, wie offene Tür)
       const wl = (x, y) => x < 0 || y < 0 || x >= grid.gw || y >= grid.gh || grid.grid[y * grid.gw + x] !== 0;
       const ns = wl(o.x - 1, o.y) && wl(o.x + 1, o.y), ew = wl(o.x, o.y - 1) && wl(o.x, o.y + 1);
       if (ns || ew) out.push({ x: o.x, y: o.y, tex: tex.sprites.gateOpen, scale: 1, axis: ns ? [0, 1] : [1, 0] });
