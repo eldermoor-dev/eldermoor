@@ -1807,3 +1807,9 @@ Nächste: 0.47.4 (7–9), 0.47.5 (10–13 + BALANCE/SIM), 0.48.0 (14–17), spä
 - Schildformen: bewusst ausgelassen (Schilder testet der Nutzer nicht).
 - Tests: `node tests.js` 183 bestanden, 0 fehlgeschlagen. Keine neuen Dateien. VERSION 0.48.0 in main.js und sw.js.
 - Offen (Gerät): Optik Blut/Kratzer/Moos, Hebelring, Klang der Geräusche. Offene Rückfragen: Treppe „erst beim zweiten Mal“ (Gebiet + Anlaufrichtung), zweite Figur im Schrat-Bild, mehr als zwei Schwierigkeitsgrade?
+
+## Treppe/Durchgang „erst beim zweiten Mal“ – Nachstellung (25.11.2026 22:2x; headless, nicht auf Gerät getestet)
+- Nutzer: „Beim ersten Mal vor einem Durchgang komme ich nicht hindurch, wie gegen eine Wand. Erst drücken, im zweiten Anlauf geht es.“
+- Geprüft (alle 82 geraden Anläufe auf Treppen/Ausgänge in allen Gebieten, `tryMove` vor): Wechsel löst jedes Mal sofort aus, 0 Fehlschläge. Der Fehler ist so NICHT nachgestellt.
+- Einziger gefundener Mechanismus (Vermutung): Treppenfeld quer/seitlich betreten (löst gewollt nichts aus), dann zur Treppenwand drehen und „Vor“ = nur Wand (Sonderfall seit 0.47.6 entfernt). Zweiter Anlauf (zurück, gerade hinein) funktioniert.
+- Fix-Idee, NICHT gebaut (würde bestätigte 0.47.6-Entscheidung berühren): auf dem Treppenfeld mit Blick in erlaubte Eintrittsrichtung „Vor“ = Wechsel. Erst nach Rückmeldung des Nutzers (steht er beim Drücken schon auf dem Feld mit dem Treppenbild?).
