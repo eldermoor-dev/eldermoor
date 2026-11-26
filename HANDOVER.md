@@ -1,6 +1,6 @@
 # HANDOVER – Die Schatten von Eldermoor
 
-Autor: eldermoor-dev · Stand: Version 0.55.1 (26.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
+Autor: eldermoor-dev · Stand: Version 0.55.2 (26.11.2026). Auf dem Galaxy S25 vom Nutzer bestätigt: 0.16.3, die Testliste 0.16.4–0.16.7 („passt“) und nach Gerätetest am 16.11.2026 auch 0.16.8–0.16.13 („Es passt alles“, Gesamtmeldung, siehe Abschnitt „Gerätetest 0.16.8–0.16.13“). Versionsübersicht: CHANGELOG.md. Ältere Einträge unten sind chronologisch, neueste am Ende.
 
 ## Arbeitsregeln des Nutzers (verbindlich, gelten bei jeder Version)
 - **Testliste immer als Artefakt (Abhakseite „Eldermoor Testliste“, ✓ und ✗ je Punkt, erledigte Punkte verschwinden), automatisch mit jeder neuen Version.** Nie als Chat-Liste, nie mit „☐“-Zeichen, nie als Codeblock. Neue Punkte = gleiche URL neu veröffentlichen, erledigte IDs bleiben erhalten. Hintergrund: Der Nutzer hat das mehrfach angemerkt; eine Ergänzung der Projektanweisungen kann der Assistent nicht selbst vornehmen, deshalb steht die Regel hier.
@@ -1976,6 +1976,12 @@ Auftrag aus den Vorschlägen vom 25.11.: **A** Lehrpfad ohne Belehrung, **C** Ge
 - **Schilder** (Muster WARNUNG: Titel nennt die Funktion, nicht das Schreibmittel): `deco_g1` KRATZER → TAGE GEZÄHLT, `sign_trap_t1` RUNEN → NICHT BLIND. Alle 124 Schildtitel im Spiel durchgesehen; alle anderen nennen Ort, Warnung oder Inhalt. Nicht geändert (Entscheidung offen): AUGE (`sign_secret_g1`, Motiv eines Geheimhinweises, kein Schreibmittel).
 - Tests: 189 grün (neu: Schmied, Tote erwecken). VERSION 0.53.0 in main.js und sw.js, keine neuen Dateien (ASSETS unverändert). Gegner- und Heldenwerte unverändert (neuer Zauber ausgenommen).
 - Rückfall: Commit 1ee530c (0.52.1). Tag-Push liefert 403, nicht umgangen.
+
+## 0.55.2 (26.11.2026; nicht auf Gerät getestet; Tests 194 grün, nur Node): weniger frühe Ausrüstung
+- Nutzer 00:57 (Screenshot Inventar: Eisenschwert, zwei Lederharnische, Schratdorn): „Nach 3 Kämpfen bereits zu viel Ausrüstung“; 01:00 (verbindlich): **Startertruhe und die gute Beute nach dem Sieg über den Schrat bleiben.**
+- Quellen laut game.json (belegt): Starttruhe `chest_a` (Eisenschwert + Lederharnisch fest), Truhe `chest_b` in der Unteren Gruft (erzeugte Ausrüstung), Moorschrat (Unikat + erzeugte Ausrüstung, Boost 1).
+- Geändert (Entscheidung des Assistenten): nur `chest_b` gibt keine erzeugte Ausrüstung mehr (bleibt Trank + 10 Gold). Test legt für die Erzeugungsprüfung die Ausrüstung selbst in die Truhe. Weitere frühe Quellen (Moorpfad `chest_p4`, Gebietskarten-Truhen) unverändert.
+- SIM.md/BALANCE.md neu erzeugt. Offen: Ob das reicht, weiß ich nicht (Gerät). Rückfrage an den Nutzer: welche Kämpfe/Truhen genau vor dem Screenshot.
 
 ## 0.55.0 (26.11.2026; nicht auf Gerät getestet; Tests 194 grün, nur Node): Ysolde-Aufträge, Rastereignisse, Bestiarium-Erweiterung, Simulation mit Schmied
 - Nutzer 00:36: „Die Ideen oben alle umsetzen“ (die fünf Vorschläge: Küche = 0.54.0, Ysolde-Aufträge, Simulation, Monsterbuch, Rastereignisse).

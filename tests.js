@@ -1595,6 +1595,7 @@ export async function runTests(data, env = {}) {
     const s = fresh(44); L.changeArea(s, data, 'stairs_down');
     s.player = { x: 11, y: 3, dir: 1 };
     s.objs.find((o) => o.id === 'en21').dead = true; // Wächter der Truhe
+    s.objs.find((o) => o.id === 'chest_b').loot.push({ gear: { boost: 0 } }); // 0.55.2: die Truhe gibt im Spiel keine Ausrüstung mehr (Nutzer: zu viel früh); der Test prüft die Erzeugung
     const r = L.interact(s, data);
     assert(/Truhe geöffnet/.test(r.msg) && Object.keys(s.gear).length === 1, 'Truhe ohne Ausrüstung: ' + r.msg);
   });
