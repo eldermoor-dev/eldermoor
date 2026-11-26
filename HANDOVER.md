@@ -702,6 +702,7 @@ Nur headless geprüft (Node 103 Tests, Chrome/Playwright), **nicht auf Gerät ge
 - Sumpfwolf neu von vorn gezeichnet (`genWolf`: gesenkter Kopf, glühende Augen, Fänge, gesträubte Schultern, Moos), vorher Profil nach links. Alle Gegner blicken jetzt zur Gruppe.
 - Gruppen kleiner je nach Größe (`GROUP_SIZE` 2: 0,72, 3: 0,6; Wolf ×1,25) und Abstände neu (`groupOffsets`: eng 0,38/0,31, offen 0,46/0,42). Headless im Moorpfad (Wolf–Moorlicht–Wolf) in Erkundung und Kampf ohne Überschneidung gesehen, **nicht auf Gerät getestet**. Risiko: Gruppen wirken kleiner (Nutzer fand Gruppen in 0.16.4 zu klein).
 - Nutzerwunsch (17.11.2026): im Chat keine Codeblöcke mehr (z. B. Testlisten), nur auf Aufforderung; sonst Stichwortlisten.
+- **Stand 26.11.2026: aktuelle Testliste ist „Eldermoor Testliste 0.53“ (Artifact https://claude.ai/artifact/HxKCdQVQdADqK3gRiNG4Qq), siehe Abschnitt „Testliste 0.53“ am Dateiende. Die Liste unten (XeP4NUhR6ckPcZZtTbyjYv, Stand 0.34.1) ist veraltet, ihre Ergebnisse bleiben dort lesbar.**
 - Gerätetests laufen über die abhakbare Seite „Eldermoor Testliste“ (Artifact https://claude.ai/artifact/XeP4NUhR6ckPcZZtTbyjYv, Quelle im Scratchpad testliste.html). Punkt antippen = ok (verschwindet), ✗ = Fehler mit Notiz. Ergebnisse stehen in der Artifact-Datenbank, Sammlung `results` (Dokument-ID = Testpunkt-ID, Felder s = ok|fail, note, t) und sind per ArtifactData lesbar. Neue Testpunkte: Seite mit neuen IDs neu veröffentlichen (gleiche URL); erledigte IDs bleiben erhalten.
 - Nutzerwunsch (17.11.2026, grundsätzlich): Testfragen und Testanleitungen immer als Stichwortliste in sinnvoller Abarbeitungsreihenfolge, wenn möglich zum Abhaken (Kästchen), ohne Codeblock.
 
@@ -2011,3 +2012,10 @@ Auftrag aus den Vorschlägen vom 25.11.: **A** Lehrpfad ohne Belehrung, **C** Ge
 - Nicht gebaut: Ysolde kauft/beauftragt (nicht im Umfang der Entscheidung), Simulation kennt Schmied/Sets/Teile nicht (BALANCE.md neu erzeugt, SIM.md Lauf ohne neue Mechanik).
 - Offen auf Gerät: Schmied nach Kultgruft, Teile-Fund (extrem selten, evtl. Dev-Weg nötig), Schmieden, Set vollenden, Hedda-Gespräch.
 
+
+## Testliste 0.53 (26.11.2026; Nutzer verlangte „jetzt aktuelle Checkliste“)
+- Neues Abhak-Artefakt „Eldermoor Testliste 0.53“: https://claude.ai/artifact/HxKCdQVQdADqK3gRiNG4Qq. Quelle: Scratchpad testliste053.html (nicht im Repo). Ergebnisse in der Artifact-Datenbank, Sammlung `results` (Dokument-ID = Testpunkt-ID, Felder s = ok|fail, note, t), per ArtifactData lesbar. Beim Anlegen leer (geprüft).
+- Umfang: 38 Prüfpunkte (Start, frühe Ausrüstung 0.55.2, Schmied und Sets 0.53.x, Körperteile, Tote erwecken, Tränke und Küche 0.54.0, Ysolde, Rastereignisse, Schilder 0.55.x) und 5 Rückmeldepunkte (Ausrüstungskürzung, Gold, Körperteil-Seltenheit 1,5 %, Preis Set-Vollendung, Zeitpunkt Schmied). Alles **nicht auf Gerät getestet**, bis der Nutzer abhakt.
+- Nicht übernommen: offene Punkte der 0.34er-Liste (u. a. Taverne tav-*, Spinnenhöhle, Gruppe U). Sie stehen weiter im alten Artefakt (XeP4NUhR6ckPcZZtTbyjYv); Ergebnisse dort nicht ausgewertet.
+- Ungeprüft im Code (in der Liste als Notizfrage): ob die Kultgruft für den Schmied betreten oder abgeschlossen sein muss; ob die Taverne-Rast ein Rastereignis auslöst.
+- Neue Testpunkte: Seite mit neuen IDs neu veröffentlichen (gleiche URL).
