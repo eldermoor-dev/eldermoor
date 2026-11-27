@@ -3,6 +3,12 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.55.3 (27.11.2026, nicht auf Gerät getestet)
+- Schild „ZÄHLUNG“ steht nicht mehr an der Wand vor der Eisentür im Testgewölbe, sondern im Raum dahinter (Nordwand bei 15/6).
+- Neues Rätsel in diesem Raum, ohne Monster: drei Wandplatten in der Reihenfolge sechs, zwei, vier Felder von der Tür (nach Osten gezählt), danach öffnet sich eine versiegelte Truhe (Trank, Ration, 12 Gold; keine Ausrüstung). Falsche Reihenfolge setzt zurück.
+- Truhen mit Runensiegel können eigene Texte tragen (`runesHint`, `runesDone`); Standardtexte bleiben.
+- Tests: 195 grün (nur Node).
+
 ## 0.55.2 (26.11.2026, nicht auf Gerät getestet)
 - Truhe der Unteren Gruft gibt keine erzeugte Ausrüstung mehr (weniger frühe Ausrüstung). Starttruhe und Schrat-Beute bleiben.
 

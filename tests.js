@@ -2253,6 +2253,30 @@ export async function runTests(data, env = {}) {
     assert(/Wette/.test(data.levels.moorrand.objects.find((o) => o.id === 'merchant_hedda').talk.text), 'Hedda greift die Wette auf');
   });
 
+  await test('0.55.3 Testgewölbe: Zählung hinter der Eisentür (Platten 6, 2, 4 Felder von der Tür), Truhe versiegelt, ohne Monster', () => {
+    const lvl = data.levels.test1, door = lvl.objects.find((o) => o.id === 'door_b');
+    const sg = lvl.objects.find((o) => o.id === 'tg_tafel_zaehler');
+    assert(sg.x > door.x && lvl.map[sg.y][sg.x] === '.', 'Schild liegt hinter der Tür (Ostseite), nicht an der Wand davor');
+    const pl = [1, 2, 3].map((n) => lvl.objects.find((o) => o.id === 'tg_zaehl_' + n));
+    assert(pl.every((p) => p && p.type === 'lever' && p.wall && p.seq.chest === 'tg_truhe_zaehl' && p.seq.n), 'drei Platten mit Reihenfolge');
+    eq(pl.map((p) => p.x - door.x), [6, 2, 4], 'Abstände in Feldern von der Tür: Sechs, Zwei, Vier');
+    assert(/Sechs\. Zwei\. Vier\./.test(sg.text), 'Schildtext nennt die Reihenfolge');
+    assert(pl.every((p) => p.y !== door.y && lvl.map[p.y][p.x] === '.'), 'Platten stehen im Raum auf Bodenfeldern, Mittelreihe bleibt frei');
+    assert(!lvl.objects.some((o) => o.type === 'enemy' && o.x > door.x), 'kein Gegner im Raum hinter der Tür');
+    const ids = new Set(); for (const L2 of Object.values(data.levels)) for (const o of L2.objects) { assert(!ids.has(o.id), 'ID doppelt: ' + o.id); ids.add(o.id); }
+    assert(L.analyzeLevel(data, 'test1').ok, 'Lösbarkeit');
+    const s = fresh(21), ch = s.objs.find((o) => o.id === 'tg_truhe_zaehl'), p = [1, 2, 3].map((n) => s.objs.find((o) => o.id === 'tg_zaehl_' + n));
+    assert(ch && ch.runes && !ch.runesOk && !ch.guard, 'Truhe versiegelt, unbewacht');
+    assert(/Platten im Raum/.test(L.interact(s, data, ch).msg) && !ch.open, 'Siegeltext passt zum Raum (nicht Nordwand)');
+    L.interact(s, data, p[0]); const bad = L.interact(s, data, p[2]); assert(/Von vorn/.test(bad.msg) && !p[0].used && ch.prog === 0, 'falsche Reihenfolge setzt zurück');
+    L.interact(s, data, p[0]); L.interact(s, data, p[1]); const fin = L.interact(s, data, p[2]);
+    assert(ch.runesOk && /Siegel/.test(fin.msg) && !/Süden/.test(fin.msg), 'dritte Platte löst das Siegel, eigener Text');
+    assert(/Truhe geöffnet/.test(L.interact(s, data, ch).msg) && ch.open, 'Truhe öffnet sich');
+    assert(ch.loot.every((l) => l.gold ? l.gold <= 15 : !l.gear && data.items[l.item]), 'Beute klein: kein Gold über 15, keine erzeugte Ausrüstung');
+    const old = fresh(22); old.objs = old.objs.filter((o) => !/^tg_(zaehl_|truhe_zaehl)/.test(o.id)); L.syncStatic(old, data);
+    assert(['tg_zaehl_1', 'tg_zaehl_2', 'tg_zaehl_3', 'tg_truhe_zaehl'].every((id) => old.objs.some((o) => o.id === id)), 'Nachlieferung in alten Ständen');
+  });
+
   await test('0.50.0 Testgewölbe: Hebel öffnet Gitter, Geheimkammer, Falle im Gang, Tafeln im Notizbuch, Altstand', () => {
     const lvl = data.levels.test1;
     assert(L.analyzeLevel(data, 'test1').ok, 'Lösbarkeit');
@@ -2273,7 +2297,7 @@ export async function runTests(data, env = {}) {
     const ch = s.objs.find((o) => o.id === 'tg_truhe_geheim'); assert(ch && ch.hidden && !ch.guard, 'Truhe in der Kammer, ohne Wache');
     assert(ch.loot.every((l) => !l.item || data.items[l.item]), 'Beute nur aus vorhandenen Gegenständen');
     // Tafel: Notizbuch
-    put(s, 11, 7, 0); const rt = L.interact(s, data); assert(rt && rt.newNote && s.journal.some((e) => e.id === 'tg_tafel_zaehler'), 'Tafel trägt ins Notizbuch ein');
+    put(s, 15, 6, 0); const rt = L.interact(s, data); assert(rt && rt.newNote && s.journal.some((e) => e.id === 'tg_tafel_zaehler'), 'Tafel trägt ins Notizbuch ein');
     // Altstand: ohne die neuen Objekte geladen, Gruppe steht in der jetzt zugemauerten Zelle (12,2)
     const old = fresh(12); old.objs = old.objs.filter((o) => !/^(tg_|dk_tg_)/.test(o.id)); put(old, 12, 2, 1);
     assert(L.syncStatic(old, data) > 0, 'Altstand wird ergänzt');

@@ -3703,12 +3703,68 @@
         {
           "id": "tg_tafel_zaehler",
           "type": "sign",
-          "x": 11,
-          "y": 7,
+          "x": 15,
+          "y": 6,
           "face": 0,
           "title": "ZÄHLUNG",
           "style": "stone",
-          "text": "Strich um Strich in den Stein geritzt, Hunderte. Die letzten sind schief, als hätte die Hand gezittert."
+          "text": "Strich um Strich in den Stein geritzt, Hunderte. Die letzten sind schief. Darunter, tief und ordentlich: „Sechs. Zwei. Vier. Felder von der Tür, nach Osten gezählt.“"
+        },
+        {
+          "id": "tg_zaehl_1",
+          "type": "lever",
+          "wall": true,
+          "x": 18,
+          "y": 6,
+          "seq": {
+            "chest": "tg_truhe_zaehl",
+            "n": 1
+          }
+        },
+        {
+          "id": "tg_zaehl_2",
+          "type": "lever",
+          "wall": true,
+          "x": 14,
+          "y": 6,
+          "seq": {
+            "chest": "tg_truhe_zaehl",
+            "n": 2
+          }
+        },
+        {
+          "id": "tg_zaehl_3",
+          "type": "lever",
+          "wall": true,
+          "x": 16,
+          "y": 8,
+          "seq": {
+            "chest": "tg_truhe_zaehl",
+            "n": 3
+          }
+        },
+        {
+          "id": "tg_truhe_zaehl",
+          "type": "chest",
+          "x": 13,
+          "y": 8,
+          "loot": [
+            {
+              "item": "potion",
+              "n": 1
+            },
+            {
+              "item": "ration",
+              "n": 1
+            },
+            {
+              "gold": 12
+            }
+          ],
+          "mat": "stein",
+          "runes": true,
+          "runesHint": "Die Truhe ist mit Runen versiegelt. Die Platten im Raum gehören dazu.",
+          "runesDone": "Die dritte Platte rastet ein. Hinter euch knackt ein Siegel."
         },
         {
           "id": "tg_tafel_seite",
@@ -3739,7 +3795,7 @@
         {
           "id": "tg_feuer3",
           "type": "decor",
-          "x": 18,
+          "x": 19,
           "y": 6,
           "look": "feuerschale",
           "scale": 0.7

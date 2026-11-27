@@ -866,7 +866,7 @@ function runePlate(state, o) {
   const want = (ch.prog || 0) + 1;
   if (o.seq.n !== want) { ch.prog = 0; for (const p of plates) p.used = false; return { msg: 'Die Platte sinkt ein. Ein Zischen läuft durch den Boden, und alle Platten springen zurück. Von vorn.', sfx: 'bump', changed: true }; }
   o.used = true; ch.prog = want;
-  if (want >= plates.length) { ch.runesOk = true; return { msg: 'Die letzte Rune leuchtet auf. Weit im Süden des Raums knackt ein Siegel.', sfx: 'unlock', changed: true, long: true }; }
+  if (want >= plates.length) { ch.runesOk = true; return { msg: ch.runesDone || 'Die letzte Rune leuchtet auf. Weit im Süden des Raums knackt ein Siegel.', sfx: 'unlock', changed: true, long: true }; }
   return { msg: `Die Platte rastet ein, die Rune glimmt (${want} von ${plates.length}).`, sfx: 'door', changed: true };
 }
 // ---------- Zerschlagbare Fässer (0.44.0) ----------
@@ -993,7 +993,7 @@ export function interact(state, data, target = null) { // target (0.26.2): Objek
   if (o.type === 'chest') {
     if (o.open) return { msg: 'Die Truhe ist leer.' };
     if (chestGuarded(state, data, o)) return { msg: 'Die Truhe ist bewacht. Erst die Gegner in diesem Raum besiegen.', sfx: 'bump', guarded: true };
-    if (o.runes && !o.runesOk) return { msg: 'Die Truhe ist mit Runen versiegelt. Die Platten an der Nordwand gehören dazu.', sfx: 'bump' }; // 0.38.0
+    if (o.runes && !o.runesOk) return { msg: o.runesHint || 'Die Truhe ist mit Runen versiegelt. Die Platten an der Nordwand gehören dazu.', sfx: 'bump' }; // 0.38.0; runesHint (0.55.3): eigener Text je Truhe
     const cfg = chestCfg(state, data, o), pre = [];
     if (cfg.mimic) return wakeMimic(state, data, o, cfg);
     if (cfg.trap && !o.trapDone) { const r = chestTrap(state, data, o, cfg); if (r.stop) return r; pre.push(r.msg); }

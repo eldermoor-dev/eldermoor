@@ -2019,3 +2019,14 @@ Auftrag aus den Vorschlägen vom 25.11.: **A** Lehrpfad ohne Belehrung, **C** Ge
 - Nicht übernommen: offene Punkte der 0.34er-Liste (u. a. Taverne tav-*, Spinnenhöhle, Gruppe U). Sie stehen weiter im alten Artefakt (XeP4NUhR6ckPcZZtTbyjYv); Ergebnisse dort nicht ausgewertet.
 - Ungeprüft im Code (in der Liste als Notizfrage): ob die Kultgruft für den Schmied betreten oder abgeschlossen sein muss; ob die Taverne-Rast ein Rastereignis auslöst.
 - Neue Testpunkte: Seite mit neuen IDs neu veröffentlichen (gleiche URL).
+
+## 0.55.3 (27.11.2026; nicht auf Gerät getestet; Tests 195 grün, nur Node): Zählung hinter der Eisentür
+- Nutzer 06:34 (Screenshot): Schild „ZÄHLUNG“ stand an der Wand vor der Eisentür (`door_b`, 12/7). „Soll nicht an der Wand stehen, sondern in dem Raum dahinter, in dem noch irgendetwas passieren soll. Krin monster.“ Gedeutet als „kein Monster“ (Vermutung, im Chat so gesagt). Auf Rückfrage gewählt: „Rätsel mit der Zählung“.
+- Schild `tg_tafel_zaehler` jetzt bei (15,6), Nordwand der Siegelhalle (Testgewölbe Ost); Text nennt „Sechs. Zwei. Vier. Felder von der Tür, nach Osten gezählt.“ (Notizbuch-Eintrag bleibt).
+- Rätsel (Mechanik wie Runentruhe Pumpenkeller): Platten `tg_zaehl_1..3` (Hebel `wall` mit `seq`) bei (18,6), (14,6), (16,8) = 6, 2, 4 Felder östlich der Tür; falsche Reihenfolge setzt alle zurück. Truhe `tg_truhe_zaehl` (13,8), `runes: true`; Beute Heiltrank, Ration, 12 Gold (Entscheidung des Assistenten, wegen „nicht zu viel Gold und Ausrüstung“; keine erzeugte Ausrüstung).
+- Randbedingungen (aus bestehenden Tests, Siegelhalle 0.52.0): Mittelreihe y=7 (13–18), (18,8) und (17,6) bleiben frei. Deshalb liegen die Platten in den Reihen 6 und 8. Feuerschale `tg_feuer3` von (18,6) nach (19,6) verschoben. Schild nicht auf Wandfackel (14,5), daher (15,6).
+- Neu im Code: Truhenfelder `runesHint` (Text bei versiegelter Truhe) und `runesDone` (Text bei gelöstem Siegel), Standardtexte unverändert (Pumpenkeller). Alte Stände bekommen Platten, Truhe und das versetzte Schild über `syncStatic`.
+- Headless gesehen: Schild lesbar aus der Nähe; Platten und Truhe nicht einzeln begutachtet. **Nicht auf Gerät getestet.**
+- Entscheidung noch offen: ob „Felder“ (Spalten ab Tür) ohne Hinweis verständlich ist; die Platten liegen in zwei Reihen, gezählt wird nur nach Osten.
+- Testliste: Punkte `zl-*` in „Eldermoor Testliste 0.53“ ergänzt.
+- Rückfall: Commit 9fae2f0 (0.55.2 plus HANDOVER-Link). Tag-Push liefert 403, nicht umgangen.
