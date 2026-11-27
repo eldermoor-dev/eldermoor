@@ -969,6 +969,13 @@ export function interact(state, data, target = null) { // target (0.26.2): Objek
     }
     if (o.sealed) return { msg: 'Die Tür sitzt fest. Kein Schloss, kein Griff – sie rührt sich nicht.', sfx: 'bump' }; // 0.48.1: zugefallen, bis der Albtraum endet
     if (o.locked) {
+      // 0.55.5: Innenseite (exitSide, aus den Spieldaten): von hier lässt sich ein Schlüsselschloss ohne Schlüssel öffnen, damit die Gruppe nach der Treppe nicht zwischen Tür und Treppe festsitzt (Nutzer 23:11 „Komme nicht mehr zurück“: Kultgruft ohne Schlüssel betreten).
+      const dEx = (getLevel(data, state).objects || []).find((x) => x.id === o.id);
+      const ex = o.exitSide != null ? o.exitSide : dEx && dEx.exitSide;
+      if (ex != null && state.player.x - o.x === DIRS[ex].dx && state.player.y - o.y === DIRS[ex].dy) {
+        o.locked = false; o.open = true;
+        return { msg: 'Ihr schiebt den Riegel an der Innenseite zurück. Die Tür schwingt auf.', sfx: 'unlock', changed: true };
+      }
       if ((state.inv[o.key] || 0) > 0) {
         o.locked = false; o.open = true;
         return { msg: 'Der Schlüssel dreht sich im Schloss. Die Tür schwingt auf.', sfx: 'unlock', changed: true };

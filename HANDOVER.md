@@ -2036,3 +2036,10 @@ Auftrag aus den Vorschlägen vom 25.11.: **A** Lehrpfad ohne Belehrung, **C** Ge
 - Neu: `tg_tafel_zaehler` an der Südwand bei (18,8), face 2. Ein Feld ohne Dekor, ohne Wandfackel (Fackeln der Südwand bei x=16 und x=19), ohne anderes Schild; (18,8) bleibt der Zugang zum Schalterstein. Headless gerendert: Schild frei lesbar, nicht auf Gerät.
 - Test ergänzt: auf dem Schildfeld steht kein decor/barrel/chest/lever/npc; Schildwand ist echte Wand. Grundsatz künftig: Schilder nie auf Felder mit blockierendem Dekor setzen.
 - Rest von 0.55.3 unverändert (Platten 6, 2, 4; Truhe 13/8). Rückfall: Commit 0564698 (0.55.3).
+
+## 0.55.5 (27.11.2026; nicht auf Gerät getestet; Tests 196 grün, nur Node): Kultgruft-Tür von innen öffnen
+- Anlass: Nutzer 23:11, Screenshot (Moorpfad, Tür „KULT-GRUFT“, Meldungen „Du steigst die Treppe hinauf zum Moorpfad.“ und „Die Tür ist verschlossen. Das Schloss ist aus Eisen.“): „Komme nicht mehr zurück“.
+- Ursache (nachgestellt in Node): `stairs_gruft_up` landet bei (21,4) mit Blick nach Westen, also auf der Innenseite von `door_gruft` (20,4). Mit Schlüssel bleibt die Tür nach dem ersten Öffnen offen (geprüft). Ohne Schlüssel, z. B. nach Gebietssprung per Debug (Vermutung: so kam der Nutzer in die Gruft; Schlüssel liegt in `chest_pfad_key` bei 19/1, bewacht von `en_p3`, `en_p4`), steht die Gruppe zwischen verschlossener Tür und Treppe. Die Frage, wie der Nutzer in die Gruft kam, ist nicht beantwortet.
+- Fix: neues Türfeld `exitSide` (Richtung der Innenseite, hier 1 = Osten). Steht die Gruppe auf dieser Seite, öffnet ◉/Vor die verschlossene Tür ohne Schlüssel („Ihr schiebt den Riegel an der Innenseite zurück.“). Gelesen aus den Spieldaten, daher auch in alten Ständen ohne Migration. Außenseite unverändert (Schlüssel nötig). Analyse (`analyzeLevel`) unverändert.
+- Nicht geprüft: andere Türen mit derselben Lage (Treppe landet hinter einer Schlüsseltür). Nur diese Tür wurde angepasst.
+- Rückfall: Commit 8120676 (0.55.4).

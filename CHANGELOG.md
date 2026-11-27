@@ -3,6 +3,10 @@
 Quelle: HANDOVER.md (Stand 0.19.4, 16.11.2026). Neueste Version oben. Ausführliche Begründungen und Datenformate stehen in HANDOVER.md.
 Status: „Gerät“ = vom Nutzer auf dem Galaxy S25 bestätigt. „headless“ = Node/Desktop-Chrome, nicht auf Gerät getestet. 0.16.8–0.16.13: Gesamtmeldung „Es passt alles“ am 16.11.2026.
 
+## 0.55.5 (27.11.2026, nicht auf Gerät getestet)
+- Kultgruft-Tür am Moorpfad (`door_gruft`): Die Treppe aus der Kultgruft landet auf der Innenseite der Tür. Ohne Schlüssel (z. B. Gruft per Debug betreten) saß die Gruppe dort fest („Komme nicht mehr zurück“). Neu: von der Innenseite lässt sich die Tür ohne Schlüssel öffnen (Feld `exitSide`, aus den Spieldaten, wirkt auch in alten Ständen). Von außen weiter nur mit Schlüssel.
+- Tests: 196 grün (nur Node).
+
 ## 0.55.4 (27.11.2026, nicht auf Gerät getestet)
 - Schild „ZÄHLUNG“ im Testgewölbe stand hinter einer Feuerschale (15/6) und war verdeckt und unzugänglich („Eine Feuerschale steht im Weg“). Jetzt an der Südwand bei 18/8, frei lesbar. Test prüft, dass nichts auf dem Schildfeld steht.
 

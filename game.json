@@ -4316,6 +4316,7 @@
           "y": 4,
           "locked": true,
           "key": "gruft_key",
+          "exitSide": 1,
           "title": "KULT-|GRUFT",
           "style": "dark",
           "look": "stein",

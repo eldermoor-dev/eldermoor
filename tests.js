@@ -2279,6 +2279,18 @@ export async function runTests(data, env = {}) {
     assert(['tg_zaehl_1', 'tg_zaehl_2', 'tg_zaehl_3', 'tg_truhe_zaehl'].every((id) => old.objs.some((o) => o.id === id)), 'Nachlieferung in alten Ständen');
   });
 
+  await test('0.55.5 Kultgruft-Tür: von der Innenseite (Treppe) ohne Schlüssel zu öffnen, von außen weiter nur mit Schlüssel', () => {
+    const up = data.levels.kultgruft.objects.find((o) => o.id === 'stairs_gruft_up');
+    assert(up.to.level === 'moorpfad' && up.to.x === 21, 'Treppe landet auf der Innenseite (21/4)');
+    const s = fresh(31); L.travelTo(s, data, { level: 'kultgruft', x: 4, y: 4, dir: 0 }); L.travelTo(s, data, up.to);
+    const dr = s.objs.find((o) => o.id === 'door_gruft'); assert(dr.locked && !dr.open && !(s.inv.gruft_key > 0), 'Ausgangslage: ohne Schlüssel, Tür zu');
+    const r = L.interact(s, data); assert(dr.open && !dr.locked && /Innenseite/.test(r.msg), 'Innenseite öffnet ohne Schlüssel');
+    const t = fresh(32); L.travelTo(t, data, { level: 'moorpfad', x: 19, y: 4, dir: 1 });
+    const d2 = t.objs.find((o) => o.id === 'door_gruft'); t.player.x = 19; t.player.y = 4; t.player.dir = 1;
+    assert(/verschlossen/.test(L.interact(t, data).msg) && d2.locked, 'Außenseite ohne Schlüssel bleibt zu');
+    t.inv.gruft_key = 1; assert(/Schlüssel dreht/.test(L.interact(t, data).msg) && d2.open, 'Außenseite mit Schlüssel öffnet');
+  });
+
   await test('0.50.0 Testgewölbe: Hebel öffnet Gitter, Geheimkammer, Falle im Gang, Tafeln im Notizbuch, Altstand', () => {
     const lvl = data.levels.test1;
     assert(L.analyzeLevel(data, 'test1').ok, 'Lösbarkeit');
