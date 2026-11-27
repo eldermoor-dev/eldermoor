@@ -2030,3 +2030,9 @@ Auftrag aus den Vorschlägen vom 25.11.: **A** Lehrpfad ohne Belehrung, **C** Ge
 - Entscheidung noch offen: ob „Felder“ (Spalten ab Tür) ohne Hinweis verständlich ist; die Platten liegen in zwei Reihen, gezählt wird nur nach Osten.
 - Testliste: Punkte `zl-*` in „Eldermoor Testliste 0.53“ ergänzt.
 - Rückfall: Commit 9fae2f0 (0.55.2 plus HANDOVER-Link). Tag-Push liefert 403, nicht umgangen.
+
+## 0.55.4 (27.11.2026; nicht auf Gerät getestet; Tests 195 grün, nur Node): Schild ZÄHLUNG nicht mehr verdeckt
+- Anlass: Nutzer 15:25, Screenshot ohne Text: Schild „ZÄHLUNG“ (0.55.3, Position 15/6) wird von der Feuerschale `tg_feuer1` (ebenfalls 15/6) verdeckt, Meldung „Eine Feuerschale steht im Weg.“. Ursache: eigener Fehler bei 0.55.3. Dekor (`decor`) blockiert das Feld, das Schild war damit weder sichtbar noch ablesbar. Die Absicht des Nutzers wurde aus dem Bild geschlossen (kein Text), nicht bestätigt.
+- Neu: `tg_tafel_zaehler` an der Südwand bei (18,8), face 2. Ein Feld ohne Dekor, ohne Wandfackel (Fackeln der Südwand bei x=16 und x=19), ohne anderes Schild; (18,8) bleibt der Zugang zum Schalterstein. Headless gerendert: Schild frei lesbar, nicht auf Gerät.
+- Test ergänzt: auf dem Schildfeld steht kein decor/barrel/chest/lever/npc; Schildwand ist echte Wand. Grundsatz künftig: Schilder nie auf Felder mit blockierendem Dekor setzen.
+- Rest von 0.55.3 unverändert (Platten 6, 2, 4; Truhe 13/8). Rückfall: Commit 0564698 (0.55.3).

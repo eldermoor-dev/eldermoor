@@ -3703,9 +3703,9 @@
         {
           "id": "tg_tafel_zaehler",
           "type": "sign",
-          "x": 15,
-          "y": 6,
-          "face": 0,
+          "x": 18,
+          "y": 8,
+          "face": 2,
           "title": "ZÄHLUNG",
           "style": "stone",
           "text": "Strich um Strich in den Stein geritzt, Hunderte. Die letzten sind schief. Darunter, tief und ordentlich: „Sechs. Zwei. Vier. Felder von der Tür, nach Osten gezählt.“"

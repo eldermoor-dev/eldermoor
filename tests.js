@@ -2261,6 +2261,8 @@ export async function runTests(data, env = {}) {
     assert(pl.every((p) => p && p.type === 'lever' && p.wall && p.seq.chest === 'tg_truhe_zaehl' && p.seq.n), 'drei Platten mit Reihenfolge');
     eq(pl.map((p) => p.x - door.x), [6, 2, 4], 'Abstände in Feldern von der Tür: Sechs, Zwei, Vier');
     assert(/Sechs\. Zwei\. Vier\./.test(sg.text), 'Schildtext nennt die Reihenfolge');
+    assert(!lvl.objects.some((o) => o !== sg && o.x === sg.x && o.y === sg.y && ['decor', 'barrel', 'chest', 'lever', 'npc'].includes(o.type)), '0.55.4 nichts steht auf dem Schildfeld (Feuerschale verdeckte es)');
+    assert(!lvl.objects.some((o) => o.type === 'sign' && o !== sg && o.x === sg.x && o.y === sg.y && o.face === sg.face) && lvl.map[sg.y + 1][sg.x] === '#', 'Schildwand frei von anderem Schild, echte Wand');
     assert(pl.every((p) => p.y !== door.y && lvl.map[p.y][p.x] === '.'), 'Platten stehen im Raum auf Bodenfeldern, Mittelreihe bleibt frei');
     assert(!lvl.objects.some((o) => o.type === 'enemy' && o.x > door.x), 'kein Gegner im Raum hinter der Tür');
     const ids = new Set(); for (const L2 of Object.values(data.levels)) for (const o of L2.objects) { assert(!ids.has(o.id), 'ID doppelt: ' + o.id); ids.add(o.id); }
@@ -2297,7 +2299,7 @@ export async function runTests(data, env = {}) {
     const ch = s.objs.find((o) => o.id === 'tg_truhe_geheim'); assert(ch && ch.hidden && !ch.guard, 'Truhe in der Kammer, ohne Wache');
     assert(ch.loot.every((l) => !l.item || data.items[l.item]), 'Beute nur aus vorhandenen Gegenständen');
     // Tafel: Notizbuch
-    put(s, 15, 6, 0); const rt = L.interact(s, data); assert(rt && rt.newNote && s.journal.some((e) => e.id === 'tg_tafel_zaehler'), 'Tafel trägt ins Notizbuch ein');
+    put(s, 18, 8, 2); const rt = L.interact(s, data); assert(rt && rt.newNote && s.journal.some((e) => e.id === 'tg_tafel_zaehler'), 'Tafel trägt ins Notizbuch ein');
     // Altstand: ohne die neuen Objekte geladen, Gruppe steht in der jetzt zugemauerten Zelle (12,2)
     const old = fresh(12); old.objs = old.objs.filter((o) => !/^(tg_|dk_tg_)/.test(o.id)); put(old, 12, 2, 1);
     assert(L.syncStatic(old, data) > 0, 'Altstand wird ergänzt');
